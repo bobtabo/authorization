@@ -1,0 +1,34 @@
+name: Backend PHP CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backends/php-laravel/**'
+  pull_request:
+    paths:
+      - 'backends/php-laravel/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: ./.github/actions/backend

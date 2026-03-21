@@ -1,0 +1,61 @@
+name: 'Backend CI Steps'
+description: 'Reusable steps for backend CI'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: pdo, pdo_mysql, redis, mbstring, bcmath, xml, curl, zip, intl
+        tools: composer:v2
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: backends/php-laravel/vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('backends/php-laravel/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      working-directory: backends/php-laravel
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+      shell: bash
+
+    - name: Copy environment file
+      working-directory: backends/php-laravel
+      run: cp .env.example .env
+      shell: bash
+
+    - name: Generate application key
+      working-directory: backends/php-laravel
+      run: php artisan key:generate
+      shell: bash
+
+    - name: Run database migrations
+      working-directory: backends/php-laravel
+      run: php artisan migrate --force
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_DATABASE: laravel
+        DB_USERNAME: root
+        DB_PASSWORD: root
+      shell: bash
+
+    - name: Run tests
+      working-directory: backends/php-laravel
+      run: composer run test
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_DATABASE: laravel
+        DB_USERNAME: root
+        DB_PASSWORD: root
+      shell: bash
