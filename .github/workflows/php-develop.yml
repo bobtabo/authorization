@@ -1,0 +1,23 @@
+# PHP Develop CI ワークフロー
+# developブランチの変更時にCIを実行
+name: PHP Develop CI
+
+# トリガー: developブランチへのプッシュで、backends/php-laravel/** の変更時のみ実行
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/php-laravel/**'
+
+jobs:
+  test:
+    # 共通テンプレート php.yml を使用し、develop環境の設定を渡す
+    uses: ./.github/workflows/php.yml
+    with:
+      env_name: 'testing'
+      db_name: 'laravel'
+      db_user: 'root'
+      db_password: 'root'
+      redis_host: '127.0.0.1'
+      redis_port: '6379'

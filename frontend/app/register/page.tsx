@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck } from "lucide-react";
 
-export default function LoginPage(): JSX.Element {
+export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -31,13 +31,13 @@ export default function LoginPage(): JSX.Element {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">
-              A
+            <div className="w-9 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+              <ShieldCheck size={16} />
             </div>
             <span className="text-sm font-semibold text-gray-800">
-              Acme Admin
+              Authorization Console
             </span>
           </div>
         </div>

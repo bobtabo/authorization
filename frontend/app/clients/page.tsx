@@ -1,27 +1,25 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import {
   Plus,
   Pencil,
-  Trash2,
+  FileSearch,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   ChevronsLeft,
   ChevronsRight,
-  Bell,
-  User,
-  LogOut,
   Search,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Building2,
-  ShieldCheck,
-  X,
+  Eraser,
+  Filter,
 } from "lucide-react";
+import { ConsoleHeader } from "@/components/console-header";
 
 // =========================
 // Types
@@ -39,14 +37,6 @@ interface ClientType {
   updatedAt: string;
 }
 
-interface NotificationItem {
-  id: number;
-  title: string;
-  detail: string;
-  tone: "info" | "warn" | "ok";
-  unread: boolean;
-}
-
 type SortKey = keyof Pick<ClientType, "companyName" | "status" | "startedAt" | "stoppedAt" | "createdAt" | "updatedAt">;
 type SortOrder = "asc" | "desc";
 
@@ -57,12 +47,9 @@ type SortOrder = "asc" | "desc";
 export default function ClientsPage(): React.JSX.Element {
   const [clients, setClients] = useState<ClientType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [toast, setToast] = useState<string | null>(null);
   const [query, setQuery] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-  const [deleteTarget, setDeleteTarget] = useState<ClientType | null>(null);
-  const [deleting, setDeleting] = useState<boolean>(false);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(5);
@@ -73,38 +60,6 @@ export default function ClientsPage(): React.JSX.Element {
   const [useStartedTime, setUseStartedTime] = useState<boolean>(false);
   const [startedFromTime, setStartedFromTime] = useState<string>("00:00");
   const [startedToTime, setStartedToTime] = useState<string>("23:59");
-  const [accountMenuOpen, setAccountMenuOpen] = useState<boolean>(false);
-  const [notificationOpen, setNotificationOpen] = useState<boolean>(false);
-  const [showUnreadOnly, setShowUnreadOnly] = useState<boolean>(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 1,
-      title: "新しいクライアントが登録されました",
-      detail: "株式会社ABC / 2分前",
-      tone: "info",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "停止中クライアントが1件あります",
-      detail: "JKLホールディングス / 15分前",
-      tone: "warn",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "定期バックアップが完了しました",
-      detail: "本日 09:30",
-      tone: "ok",
-      unread: false,
-    },
-  ]);
-  const accountMenuRef = useRef<HTMLDivElement | null>(null);
-  const notificationRef = useRef<HTMLDivElement | null>(null);
-  const unreadCount = notifications.filter((n) => n.unread).length;
-  const visibleNotifications = showUnreadOnly
-    ? notifications.filter((n) => n.unread)
-    : notifications;
 
   useEffect(() => {
     setTimeout(() => {
@@ -121,45 +76,6 @@ export default function ClientsPage(): React.JSX.Element {
       setLoading(false);
     }, 800);
   }, []);
-
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    if (!accountMenuOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        accountMenuRef.current &&
-        !accountMenuRef.current.contains(event.target as Node)
-      ) {
-        setAccountMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [accountMenuOpen]);
-
-  useEffect(() => {
-    if (!notificationOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target as Node)
-      ) {
-        setNotificationOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [notificationOpen]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -242,16 +158,6 @@ export default function ClientsPage(): React.JSX.Element {
     }
   }, [currentPage, totalPages]);
 
-  const handleDelete = (id: number) => {
-    setDeleting(true);
-    setTimeout(() => {
-      setClients((prev) => prev.filter((c) => c.id !== id));
-      setToast("クライアントを削除しました");
-      setDeleteTarget(null);
-      setDeleting(false);
-    }, 900);
-  };
-
   const handleClearFilters = () => {
     setQuery("");
     setSelectedStatuses([]);
@@ -283,172 +189,7 @@ export default function ClientsPage(): React.JSX.Element {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
-              <ShieldCheck size={16} />
-            </div>
-            <span className="text-sm font-semibold text-gray-800">
-              Authorization Console
-            </span>
-          </div>
-
-          {/* Right Area */}
-          <div className="flex items-center gap-6">
-            <div ref={notificationRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setNotificationOpen((prev) => !prev)}
-                disabled={unreadCount === 0}
-                aria-disabled={unreadCount === 0}
-                className="relative rounded-lg p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Bell size={18} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] leading-4 text-center rounded-full font-semibold">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {notificationOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden z-20"
-                  >
-                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-gray-800">通知</p>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setShowUnreadOnly((prev) => !prev)}
-                          className={`text-xs font-medium ${
-                            showUnreadOnly
-                              ? "text-indigo-700"
-                              : "text-gray-500 hover:text-gray-700"
-                          }`}
-                        >
-                          未読
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setNotifications((prev) =>
-                              prev.map((item) => ({ ...item, unread: false }))
-                            )
-                          }
-                          className="text-xs text-indigo-600 hover:text-indigo-700 font-medium disabled:text-gray-400"
-                          disabled={unreadCount === 0}
-                        >
-                          全既読
-                        </button>
-                        <span className="text-xs text-gray-500">未読 {unreadCount}件</span>
-                      </div>
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {visibleNotifications.length === 0 ? (
-                        <div className="px-4 py-8 text-center text-sm text-gray-500">
-                          {showUnreadOnly
-                            ? "未読なし"
-                            : "通知なし"}
-                        </div>
-                      ) : (
-                        visibleNotifications.map((item) => (
-                          <div
-                            key={item.id}
-                            className={`px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${
-                              item.unread ? "" : "opacity-60"
-                            }`}
-                          >
-                            <div className="flex items-start gap-2">
-                              <span
-                                className={`mt-1 h-2 w-2 rounded-full ${
-                                  item.tone === "warn"
-                                    ? "bg-amber-500"
-                                    : item.tone === "ok"
-                                      ? "bg-emerald-500"
-                                      : "bg-indigo-500"
-                                }`}
-                              />
-                              <div className="min-w-0">
-                                <p className="text-sm text-gray-800">{item.title}</p>
-                                <p className="text-xs text-gray-500 mt-1">{item.detail}</p>
-                              </div>
-                              {item.unread && (
-                                <span className="ml-auto inline-block px-1.5 py-0.5 text-[10px] rounded bg-indigo-100 text-indigo-700">
-                                  NEW
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-                      <a
-                        href="#"
-                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
-                      >
-                        全て表示
-                      </a>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div ref={accountMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setAccountMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <User size={16} />
-                </div>
-                <span className="text-sm text-gray-700">Platform Admin</span>
-                <ChevronDown
-                  size={16}
-                  className={`text-gray-500 transition-transform duration-200 ${accountMenuOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              <AnimatePresence>
-                {accountMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden z-20"
-                  >
-                    <a
-                      href="/accounts"
-                      onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <User size={15} />
-                      <span>アカウント一覧</span>
-                    </a>
-                    <a
-                      href="/login"
-                      onClick={() => setAccountMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
-                    >
-                      <LogOut size={15} />
-                      <span>ログアウト</span>
-                    </a>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </header>
+      <ConsoleHeader />
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-6 py-10">
@@ -458,10 +199,13 @@ export default function ClientsPage(): React.JSX.Element {
               クライアント一覧
             </h1>
 
-            <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            <a
+              href="/clients/create"
+              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+            >
               <Plus size={16} />
               新規登録
-            </button>
+            </a>
           </div>
 
           {/* Search */}
@@ -478,7 +222,7 @@ export default function ClientsPage(): React.JSX.Element {
                       setQuery(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
                 <span className="text-sm font-medium text-gray-700">利用開始日時</span>
@@ -541,6 +285,7 @@ export default function ClientsPage(): React.JSX.Element {
                   onClick={() => setStatusFilterOpen((prev) => !prev)}
                   className="inline-flex items-center gap-2 border border-indigo-200 bg-indigo-50/70 px-3 py-2 rounded-lg text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors"
                 >
+                  <Filter size={16} className="shrink-0 opacity-90" aria-hidden />
                   <span>状態</span>
                   <ChevronDown
                     size={16}
@@ -550,8 +295,9 @@ export default function ClientsPage(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={handleClearFilters}
-                  className="ml-auto inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
+                  className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
                 >
+                  <Eraser size={16} className="text-gray-500 shrink-0" aria-hidden />
                   条件クリア
                 </button>
               </div>
@@ -687,7 +433,27 @@ export default function ClientsPage(): React.JSX.Element {
                             className="border-t border-gray-200 hover:bg-gray-50"
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">
-                              {client.companyName}
+                              <a
+                                href="/clients/show"
+                                className="group relative inline-flex max-w-full min-w-0 items-center gap-2"
+                                aria-label={`${client.companyName}の詳細を表示`}
+                              >
+                                <span
+                                  className="inline-flex shrink-0 rounded-md border border-indigo-100 bg-indigo-50 p-1.5 text-indigo-600 group-hover:border-indigo-200 group-hover:bg-indigo-100"
+                                  aria-hidden
+                                >
+                                  <FileSearch size={16} strokeWidth={2} />
+                                </span>
+                                <span className="truncate text-indigo-600 group-hover:text-indigo-700 group-hover:underline">
+                                  {client.companyName}
+                                </span>
+                                <span
+                                  className="pointer-events-none absolute left-1/2 top-full z-30 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 opacity-0 shadow-md ring-1 ring-black/5 transition-opacity duration-100 group-hover:opacity-100"
+                                  role="tooltip"
+                                >
+                                  詳細表示します
+                                </span>
+                              </a>
                             </td>
                             <td className="px-6 py-4">
                               <span
@@ -711,17 +477,19 @@ export default function ClientsPage(): React.JSX.Element {
                               {client.updatedAt}
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button className="p-1 text-gray-500 hover:text-indigo-600 transition-colors">
-                                  <Pencil size={16} />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteTarget(client)}
-                                  className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+                              <a
+                                href="/clients/edit"
+                                className="group relative inline-flex p-1 text-gray-500 transition-colors hover:text-indigo-600"
+                                aria-label="編集します"
+                              >
+                                <Pencil size={16} />
+                                <span
+                                  className="pointer-events-none absolute left-1/2 top-full z-30 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 opacity-0 shadow-md ring-1 ring-black/5 transition-opacity duration-100 group-hover:opacity-100"
+                                  role="tooltip"
                                 >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
+                                  編集します
+                                </span>
+                              </a>
                             </td>
                           </motion.tr>
                         ))
@@ -797,76 +565,6 @@ export default function ClientsPage(): React.JSX.Element {
         © 2026 Authorization Console. All rights reserved.
       </footer>
 
-      {/* Delete Modal */}
-      <AnimatePresence>
-        {deleteTarget && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => !deleting && setDeleteTarget(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  削除の確認
-                </h2>
-                <button
-                  onClick={() => !deleting && setDeleteTarget(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <p className="text-gray-600 mb-6">
-                「{deleteTarget.companyName}」を削除してもよろしいですか？この操作は取り消せません。
-              </p>
-
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={deleting}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={() => handleDelete(deleteTarget.id)}
-                  disabled={deleting}
-                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {deleting && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  削除する
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm"
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

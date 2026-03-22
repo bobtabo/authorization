@@ -1,0 +1,23 @@
+# PHP Staging CI ワークフロー
+# stagingブランチの変更時にCIを実行
+name: PHP Staging CI
+
+# トリガー: stagingブランチへのプッシュで、backends/php-laravel/** の変更時のみ実行
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'backends/php-laravel/**'
+
+jobs:
+  test:
+    # 共通テンプレート php.yml を使用し、staging環境の設定を渡す
+    uses: ./.github/workflows/php.yml
+    with:
+      env_name: 'staging'
+      db_name: 'laravel_staging'
+      db_user: 'root'
+      db_password: 'root'
+      redis_host: '127.0.0.1'
+      redis_port: '6379'

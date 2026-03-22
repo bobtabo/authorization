@@ -211,45 +211,21 @@ paths:
 
 components:
   schemas:
-    Account:
-      type: object
-      description: クライアントアカウント情報を表すオブジェクトです。
-      required:
-        - name
-        - email
-      properties:
-        name:
-          type: string
-          example: "長柴聡史"
-        email:
-          type: string
-          format: email
-          example: "nagashibas@sii-japan.co.jp"
-
-    Accounts:
-      type: array
-      description: クライアントアカウントのリストです。
-      items:
-        $ref: '#/components/schemas/Account'
-
     ClientCreate:
       type: object
       description: クライアント登録情報を表すオブジェクトです。
       required:
         - name
-        - identifier
         - post_code
         - pref
         - city
         - address
         - tel
+        - email
       properties:
         name:
           type: string
           example: "株式会社ストラテジックインサイト"
-        identifier:
-          type: string
-          example: "sii"
         post_code:
           type: string
           example: "1070061"
@@ -268,8 +244,9 @@ components:
         tel:
           type: string
           example: "0312345678"
-        accounts:
-          $ref: '#/components/schemas/Accounts'
+        email:
+          type: string
+          example: "nagashibas@sii-japan.co.jp"
 
     Client:
       type: object
@@ -283,6 +260,8 @@ components:
         - city
         - address
         - tel
+        - email
+        - status
         - created_at
         - created_name
         - updated_at
@@ -317,6 +296,20 @@ components:
         tel:
           type: string
           example: "0312345678"
+        email:
+          type: string
+          example: "0312345678"
+        status:
+          type: integer
+          example: 1
+        start_at:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:00:00Z"
+        stop_at:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:00:00Z"
         created_at:
           type: string
           format: date-time
