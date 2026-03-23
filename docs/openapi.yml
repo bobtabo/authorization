@@ -5,16 +5,16 @@ info:
   version: 1.0.0
   contact:
     name: API開発チーム
-    email: nagashibas@sii-japan.co.jp
+    email: satoshi.nagashiba@gmail.com
 
 servers:
-  - url: https://apis.sii-japan.jp/v1
+  - url: https://apis.authorization.com/v1
     description: 本番環境
-  - url: https://apis-stg.sii-japan.jp/v1
+  - url: https://apis-stg.authorization.com/v1
     description: ステージング環境
-  - url: https://apis-dev.sii-japan.jp/v1
+  - url: https://apis-dev.authorization.com/v1
     description: 開発環境
-  - url: https://apis.sii-japan.local/v1
+  - url: https://apis.authorization.local/v1
     description: ローカル環境
 
 paths:
@@ -144,6 +144,130 @@ paths:
                     example: "SUCCESS"
         '404':
           description: ユーザーが存在しない場合のエラー
+
+  /accounts:
+    get:
+      summary: アカウント一覧
+      tags:
+        - account
+      responses:
+        '200':
+          description: 正常応答
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accounts'
+        '404':
+          description: ユーザーが存在しない場合のエラー
+
+  /accounts/{id}/updateRole:
+    put:
+      summary: 権限を更新します
+      tags:
+        - account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: アカウントID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: integer
+                  format: int64
+                  description: 権限種別
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "SUCCESS"
+        '400':
+          description: リクエストが不正です
+        '404':
+          description: ユーザーが存在しない場合のエラー
+        '500':
+          description: サーバーエラー
+
+  /accounts/{id}/delete:
+    delete:
+      summary: アカウントを削除
+      tags:
+        - account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: クライアントID
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "SUCCESS"
+        '404':
+          description: アカウントが存在しない場合のエラー
+
+  /invitation:
+    get:
+      summary: 招待URLを取得します
+      tags:
+        - invitation
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: 招待用トークン（ハッシュ）を含むURL
+                    example: "7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
+        '404':
+          description: アカウントが存在しない場合のエラー
+
+  /invitation/issue:
+    get:
+      summary: 招待URLを発行します
+      tags:
+        - invitation
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: 招待用トークン（ハッシュ）を含むURL
+                    example: "7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
 
   /auth/issue:
     get:
@@ -341,6 +465,165 @@ components:
       items:
         $ref: '#/components/schemas/Client'
 
+    AccountStatusOption:
+      type: object
+      description: アカウント状態の1選択肢（連想配列）
+      required:
+        - value
+        - label
+      properties:
+        value:
+          type: integer
+          format: int64
+          description: 状態コード（例：1=有効、0=無効）
+          example: 1
+        label:
+          type: string
+          description: 表示ラベル
+          example: "有効"
+
+    AccountStatus:
+      type: object
+      description: |
+        アカウント状態。現在値に加え、取り得る選択肢を choices で返す（UI のプルダウン等に利用）。
+      required:
+        - value
+        - label
+        - choices
+      properties:
+        value:
+          type: integer
+          format: int64
+          description: 現在の状態コード
+          example: 1
+        label:
+          type: string
+          description: 現在の状態の表示ラベル
+          example: "有効"
+        choices:
+          type: array
+          description: 選択可能な状態の一覧（各要素は value / label のオブジェクト）
+          items:
+            $ref: '#/components/schemas/AccountStatusOption'
+          example:
+            - value: 1
+              label: "有効"
+            - value: 0
+              label: "無効"
+
+    AccountRoleOption:
+      type: object
+      description: 権限の1選択肢（連想配列）
+      required:
+        - value
+        - label
+      properties:
+        value:
+          type: integer
+          format: int64
+          description: 権限コード（例：1=管理者、2=メンバー）
+          example: 1
+        label:
+          type: string
+          description: 表示ラベル
+          example: "管理者"
+
+    AccountRole:
+      type: object
+      description: |
+        権限。現在値に加え、取り得る選択肢を choices で返す。
+      required:
+        - value
+        - label
+        - choices
+      properties:
+        value:
+          type: integer
+          format: int64
+          description: 現在の権限コード
+          example: 1
+        label:
+          type: string
+          description: 現在の権限の表示ラベル
+          example: "管理者"
+        choices:
+          type: array
+          description: 選択可能な権限の一覧（各要素は value / label のオブジェクト）
+          items:
+            $ref: '#/components/schemas/AccountRoleOption'
+          example:
+            - value: 1
+              label: "管理者"
+            - value: 2
+              label: "メンバー"
+
+    Account:
+      type: object
+      description: |
+        アカウント一覧の1行です。active / role はフラットな enum ではなく、
+        現在値と選択肢一覧を含むオブジェクトで返す。
+      required:
+        - id
+        - name
+        - email
+        - active
+        - role
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          description: 表示名
+          example: "山田 太郎"
+        email:
+          type: string
+          format: email
+          example: "yamada@example.com"
+        active:
+          $ref: '#/components/schemas/AccountStatus'
+        role:
+          $ref: '#/components/schemas/AccountRole'
+        createdAt:
+          type: string
+          description: 登録日時（表示形式はAPI実装に依存）
+          example: "2026-01-15 09:30"
+        updatedAt:
+          type: string
+          description: 更新日時（表示形式はAPI実装に依存）
+          example: "2026-01-20 10:00"
+      example:
+        id: 1
+        accountName: "山田 太郎"
+        email: "yamada@example.com"
+        active:
+          value: 1
+          label: "有効"
+          choices:
+            - value: 1
+              label: "有効"
+            - value: 0
+              label: "無効"
+        role:
+          value: 1
+          label: "管理者"
+          choices:
+            - value: 1
+              label: "管理者"
+            - value: 2
+              label: "メンバー"
+        createdAt: "2026-01-15 09:30"
+        updatedAt: "2026-01-20 10:00"
+
+    Accounts:
+      type: array
+      description: アカウントのリストです。
+      items:
+        $ref: '#/components/schemas/Account'
+
     Payload:
       type: object
       description: JWTのPayload情報を表すオブジェクトです。
@@ -395,5 +678,9 @@ components:
 tags:
   - name: client
     description: クライアントAPI
+  - name: account
+    description: アカウントAPI
+  - name: invitation
+    description: 招待API
   - name: auth
     description: 認可API
