@@ -18,6 +18,59 @@ servers:
     description: ローカル環境
 
 paths:
+  /auth/login:
+    get:
+      summary: ログインページに遷移します
+      tags:
+        - auth
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+        '404':
+          description: ログインページが存在しない場合のエラー
+
+  /auth/invitation/{token}:
+    get:
+      summary: 招待URLでログインページに遷移します
+      tags:
+        - auth
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 招待トークン
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+        '404':
+          description: ログインページが存在しない場合のエラー
+        '500':
+          description: 招待トークンが不正な場合のエラー
+
+  /auth/google/redirect:
+    get:
+      summary: Googleログインします
+      tags:
+        - auth
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+        '500':
+          description: Googleログインに失敗した場合のエラー
+
+  /auth/logout:
+    get:
+      summary: ログアウトします
+      tags:
+        - auth
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+        '500':
+          description: ログアウトに失敗した場合のエラー
+
   /clients:
     get:
       summary: クライアント一覧
@@ -267,13 +320,13 @@ paths:
                   url:
                     type: string
                     description: 招待用トークン（ハッシュ）を含むURL
-                    example: "7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
+                    example: "/auth/invitation/7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
 
-  /auth/issue:
+  /gate/issue:
     get:
       summary: JWTを発行する
       tags:
-        - auth
+        - gate
       description: クライアントに対してJWTを発行します。
       security:
         - bearerAuth: []    # アクセストークン
@@ -300,11 +353,11 @@ paths:
         '500':
           description: サーバーエラー
 
-  /auth/client/{identifier}/verify:
+  /gate/client/{identifier}/verify:
     get:
       summary: JWTを検証する
       tags:
-        - auth
+        - gate
       parameters:
         - name: identifier
           in: path
@@ -676,11 +729,13 @@ components:
       bearerFormat: JWT
 
 tags:
+  - name: auth
+    description: 認証API
   - name: client
     description: クライアントAPI
   - name: account
     description: アカウントAPI
   - name: invitation
     description: 招待API
-  - name: auth
+  - name: gate
     description: 認可API
