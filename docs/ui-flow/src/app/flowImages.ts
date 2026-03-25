@@ -1,14 +1,14 @@
-/** `public/flow/*.svg` をルートから配信。`BASE_URL` でサブパスデプロイにも対応（バンドルの `?url` より確実）。 */
+/** `public/flow/*.png` をルートから配信。`BASE_URL` でサブパスデプロイにも対応。 */
 function flowAsset(file: string): string {
   return `${import.meta.env.BASE_URL}flow/${file}`;
 }
 
 export const flowImages = {
-  login: flowAsset("login.svg"),
-  header: flowAsset("header.svg"),
-  clientList: flowAsset("client-list.svg"),
-  accountList: flowAsset("account-list.svg"),
-  clientRegister: flowAsset("client-register.svg"),
-  clientEdit: flowAsset("client-edit.svg"),
-  clientDetail: flowAsset("client-detail.svg"),
+  login: flowAsset("login.png"),
+  header: flowAsset("header.png"),
+  clientList: flowAsset("client-list.png"),
+  accountList: flowAsset("account-list.png"),
+  clientRegister: flowAsset("client-register.png"),
+  clientEdit: flowAsset("client-edit.png"),
+  clientDetail: flowAsset("client-detail.png"),
 } as const;
