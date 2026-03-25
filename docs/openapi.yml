@@ -20,7 +20,7 @@ servers:
 paths:
   /auth/login:
     get:
-      summary: ログインページに遷移します
+      summary: ログイン情報を取得します
       tags:
         - auth
       responses:
@@ -31,7 +31,7 @@ paths:
 
   /auth/invitation/{token}:
     get:
-      summary: 招待URLでログインページに遷移します
+      summary: 招待URLトークンを検証し、ログイン情報を取得します
       tags:
         - auth
       parameters:
