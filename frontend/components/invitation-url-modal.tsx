@@ -1,9 +1,17 @@
-"use client";
-
 import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCopy, X, Loader2 } from "lucide-react";
+import { apiClient } from "@/src/api/client";
 import { formatInvitationUrlForDisplay } from "@/lib/format-invitation-url";
+
+/** API 未実装・500・CORS 等のときに見せる、それっぽいモックURL */
+function buildMockInvitationUrl(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/invitation/${token}`;
+}
 
 type Props = {
   open: boolean;
@@ -16,17 +24,18 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
   const [reissuing, setReissuing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const [isMock, setIsMock] = useState<boolean>(false);
 
   const loadUrl = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/invitation", { cache: "no-store" });
-      if (!res.ok) throw new Error("取得に失敗しました");
-      const data = (await res.json()) as { url: string };
-      setUrl(data.url);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      const { data } = await apiClient.get<{ url: string }>("/invitation");
+      setUrl(typeof data.url === "string" ? data.url : buildMockInvitationUrl());
+      setIsMock(false);
+    } catch {
+      setUrl(buildMockInvitationUrl());
+      setIsMock(true);
     } finally {
       setLoading(false);
     }
@@ -63,12 +72,12 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
     setError(null);
     setReissuing(true);
     try {
-      const res = await fetch("/api/invitation", { method: "POST" });
-      if (!res.ok) throw new Error("再発行に失敗しました");
-      const data = (await res.json()) as { url: string };
-      setUrl(data.url);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "再発行に失敗しました");
+      const { data } = await apiClient.get<{ url: string }>("/invitation/issue");
+      setUrl(typeof data.url === "string" ? data.url : buildMockInvitationUrl());
+      setIsMock(false);
+    } catch {
+      setUrl(buildMockInvitationUrl());
+      setIsMock(true);
     } finally {
       setReissuing(false);
     }
@@ -97,7 +106,7 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
           >
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
               <h2 id="invitation-modal-title" className="text-lg font-semibold text-gray-900">
-                招待URL管理
+                招待URL
               </h2>
               <button
                 type="button"
@@ -110,6 +119,11 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
             </div>
 
             <div className="space-y-4 px-5 py-5">
+              {isMock && (
+                <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
+                  APIが未接続・エラー時のため、モックの招待URLを表示しています（見た目の確認用です）。
+                </div>
+              )}
               {error && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
                   {error}

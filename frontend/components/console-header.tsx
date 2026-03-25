@@ -1,6 +1,5 @@
-"use client";
-
 import React, { useState, useEffect, useRef } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -8,7 +7,6 @@ import {
   ChevronDown,
   ShieldCheck,
   Settings,
-  Users,
   Link2,
 } from "lucide-react";
 import { InvitationUrlModal } from "@/components/invitation-url-modal";
@@ -109,10 +107,19 @@ export function ConsoleHeader(): React.JSX.Element {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [settingsMenuOpen]);
 
+  const navTabClass = ({ isActive }: { isActive: boolean }): string =>
+    [
+      "inline-block pb-2.5 pt-1 text-xs font-semibold tracking-wide transition-colors border-b-2 -mb-px",
+      isActive
+        ? "text-violet-600 border-violet-600"
+        : "text-gray-500 border-transparent hover:text-gray-700",
+    ].join(" ");
+
   return (
     <>
     <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="h-14 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
             <ShieldCheck size={16} />
@@ -147,24 +154,16 @@ export function ConsoleHeader(): React.JSX.Element {
                   exit={{ opacity: 0, y: -6 }}
                   className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden z-20"
                 >
-                  <a
-                    href="/accounts"
-                    onClick={() => setSettingsMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <Users size={15} />
-                    <span>アカウント一覧</span>
-                  </a>
                   <button
                     type="button"
                     onClick={() => {
                       setSettingsMenuOpen(false);
                       setInvitationModalOpen(true);
                     }}
-                    className="flex w-full items-center gap-2 border-t border-gray-100 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <Link2 size={15} aria-hidden />
-                    <span>招待URL管理</span>
+                    <span>招待URL</span>
                   </button>
                 </motion.div>
               )}
@@ -306,19 +305,32 @@ export function ConsoleHeader(): React.JSX.Element {
                   exit={{ opacity: 0, y: -6 }}
                   className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden z-20"
                 >
-                  <a
-                    href="/login"
+                  <Link
+                    to="/login"
                     onClick={() => setAccountMenuOpen(false)}
                     className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <LogOut size={15} />
                     <span>ログアウト</span>
-                  </a>
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
+        </div>
+
+        <nav
+          className="flex items-center gap-3 sm:gap-8"
+          aria-label="メインナビゲーション"
+        >
+          <NavLink to="/clients" className={navTabClass} end={false}>
+            クライアント
+          </NavLink>
+          <NavLink to="/accounts" className={navTabClass} end>
+            アカウント
+          </NavLink>
+        </nav>
       </div>
     </header>
 
