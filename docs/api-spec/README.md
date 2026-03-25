@@ -5,6 +5,8 @@
 OpenAPI仕様を Swagger UI でローカル確認するためのリポジトリです。  
 Docker Compose で起動します。
 
+API 仕様のドキュメントルートは **`docs/api-spec/`** です。
+
 ---
 
 ## 🛠 事前準備
@@ -12,7 +14,7 @@ Docker Compose で起動します。
 `.env.example` をコピーして `.env` を作成してください。
 
 ```bash
-cd docs
+cd docs/api-spec
 cp .env.example .env
 ```
 
@@ -37,6 +39,7 @@ http://localhost:8082
 ## 🛑 停止方法
 
 ```bash
+cd docs
 docker compose down
 ```
 
@@ -45,15 +48,16 @@ docker compose down
 ## 📁 ディレクトリ構成
 
 ```
-authorization/docs
-├── docker-compose.yml
+authorization/docs/api-spec/    # API ドキュメントルート
 ├── .env.example
 ├── .gitignore
+├── docker-compose.yml
 ├── index.html
 ├── openapi.yml
+├── README.md
 └── swagger-ui/
     ├── index.css
     ├── swagger-ui.css
-    └── swagger-ui.js
+    ├── swagger-ui.js
     ・・・
 ```

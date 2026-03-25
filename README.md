@@ -6,8 +6,9 @@
 ## 🏗️ システム構造 (Directory Architecture)
 
 ```.
-├── 📂 docs/               # ここに Swagger 関連を全集結
-│   ├── openapi.yml
+├── 📂 docs/               # Swagger 用 Docker 設定
+│   ├── api-spec/          # API ドキュメントルート (OpenAPI / Swagger UI)
+│   │   └── openapi.yml
 │   ├── docker-compose.yml
 │   └── .env
 ├── 📂 backend/            # (まだ空でOK) ここに backend を入れる
@@ -17,11 +18,11 @@
 
 ## 📂 プロジェクト構成
 
-| ディレクトリ | 内容 | ドキュメント |
-| :--- | :--- | :--- |
-| **`docs/`** | API仕様書 (OpenAPI) & Swagger UI 環境 | [README.md](./docs/README.md) |
-| **`backend/`** | 認可サーバー本体 (API) | [README.md](./backend/README.md) |
-| **`frontend/`** | 認可管理画面 (Next.js 等) | [README.md](./frontend/README.md) |
+| ディレクトリ | 内容 | ドキュメント                                 |
+| :--- | :--- |:---------------------------------------|
+| **`docs/api-spec`** | API仕様書 (OpenAPI) & Swagger UI 環境 | [README.md](./docs/api-spec/README.md) |
+| **`backend/`** | 認可サーバー本体 (API) | [README.md](./backend/README.md)       |
+| **`frontend/`** | 認可管理画面 (Next.js 等) | [README.md](./frontend/README.md)      |
 
 ---
 
@@ -31,6 +32,5 @@
 ローカルで OpenAPI エディタと UI を起動します。
 
 ```bash
-cd docs
-docker compose up -d
+cd docs && docker compose up -d
 ```

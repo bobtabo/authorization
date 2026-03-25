@@ -16,7 +16,7 @@ jobs:
       - name: Validate OpenAPI
         uses: docker://openapitools/openapi-generator-cli:v7.5.0
         with:
-          args: validate -i docs/openapi.yml
+          args: validate -i docs/api-spec/openapi.yml
 
   deploy-pages:
     if: github.ref == 'refs/heads/main'
@@ -37,7 +37,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs
+          path: ./docs/api-spec
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
