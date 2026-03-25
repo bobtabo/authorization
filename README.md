@@ -8,9 +8,11 @@
 ```.
 ├── 📂 docs/               # Swagger 用 Docker 設定
 │   ├── api-spec/          # API ドキュメントルート (OpenAPI / Swagger UI)
-│   │   └── openapi.yml
-│   ├── docker-compose.yml
-│   └── .env
+│   │   ├── openapi.yml
+│   │   ├── docker-compose.yml
+│   │   └── .env
+│   └── ui-flow/           # 画面フロー
+│       └── src
 ├── 📂 backend/            # (まだ空でOK) ここに backend を入れる
 ├── 📂 frontend/           # (まだ空でOK) ここに frontend を入れる
 └── 📜 README.md           # これはプロジェクトの「ルート」に置く
@@ -18,11 +20,12 @@
 
 ## 📂 プロジェクト構成
 
-| ディレクトリ | 内容 | ドキュメント                                 |
-| :--- | :--- |:---------------------------------------|
+| ディレクトリ              | 内容                               | ドキュメント                                 |
+|:--------------------|:---------------------------------|:---------------------------------------|
 | **`docs/api-spec`** | API仕様書 (OpenAPI) & Swagger UI 環境 | [README.md](./docs/api-spec/README.md) |
-| **`backend/`** | 認可サーバー本体 (API) | [README.md](./backend/README.md)       |
-| **`frontend/`** | 認可管理画面 (Next.js 等) | [README.md](./frontend/README.md)      |
+| **`docs/ui-flow`**  | 画面フロー                            | [README.md](./docs/ui-flow/README.md)  |
+| **`backend/`**      | 認可サーバー本体 (API)                   | [README.md](./backend/README.md)       |
+| **`frontend/`**     | 認可管理画面 (Next.js 等)               | [README.md](./frontend/README.md)      |
 
 ---
 
