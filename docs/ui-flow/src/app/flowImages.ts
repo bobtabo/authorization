@@ -1,18 +1,14 @@
-/** Vite が解決する URL（dev / build / Vercel 共通）。差し替えは同パスのファイルを上書き。 */
-import login from "../assets/flow/login.svg?url";
-import header from "../assets/flow/header.svg?url";
-import clientList from "../assets/flow/client-list.svg?url";
-import accountList from "../assets/flow/account-list.svg?url";
-import clientRegister from "../assets/flow/client-register.svg?url";
-import clientEdit from "../assets/flow/client-edit.svg?url";
-import clientDetail from "../assets/flow/client-detail.svg?url";
+/** `public/flow/*.svg` をルートから配信。`BASE_URL` でサブパスデプロイにも対応（バンドルの `?url` より確実）。 */
+function flowAsset(file: string): string {
+  return `${import.meta.env.BASE_URL}flow/${file}`;
+}
 
 export const flowImages = {
-  login,
-  header,
-  clientList,
-  accountList,
-  clientRegister,
-  clientEdit,
-  clientDetail,
+  login: flowAsset("login.svg"),
+  header: flowAsset("header.svg"),
+  clientList: flowAsset("client-list.svg"),
+  accountList: flowAsset("account-list.svg"),
+  clientRegister: flowAsset("client-register.svg"),
+  clientEdit: flowAsset("client-edit.svg"),
+  clientDetail: flowAsset("client-detail.svg"),
 } as const;

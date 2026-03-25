@@ -9,6 +9,6 @@
 
   Run `npm run dev` to start the development server.
 
-  ## 画面キャプチャ（`src/assets/flow/`）
+  ## 画面キャプチャ（`public/flow/`）
 
-  SVG は **`src/assets/flow/*.svg`** に置き、`src/app/flowImages.ts` で `?url` import しています（Vite が dev / 本番とも URL を解決するので表示が安定します）。PNG に差し替えるときは同じパスに `.png` を置き、`flowImages.ts` の import を `../assets/flow/login.png?url` のように変更してください。
+  SVG は **`public/flow/*.svg`** に置きます。`src/app/flowImages.ts` は `import.meta.env.BASE_URL` と組み合わせたパス（例: `/flow/login.svg`）を参照します。差し替えは同じファイル名で上書きしてください。PNG にする場合は `public/flow/` に置き、`flowImages.ts` の拡張子を合わせてください。
