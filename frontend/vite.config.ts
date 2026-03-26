@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const proxyTarget = env.VITE_API_PROXY_TARGET || "http://localhost:8080";
 
   return {
+    envPrefix: ["VITE_", "POSTCODE_"],
     plugins: [react()],
     resolve: {
       alias: {

@@ -28,5 +28,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src", "app/**/page.tsx", "components", "lib"]
+  "include": ["src", "app/**/page.tsx", "components", "lib", "hooks"]
 }

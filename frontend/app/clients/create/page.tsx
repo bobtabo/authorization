@@ -1,65 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, Save, X } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
-
-const PREFECTURES = [
-  "北海道",
-  "青森県",
-  "岩手県",
-  "宮城県",
-  "秋田県",
-  "山形県",
-  "福島県",
-  "茨城県",
-  "栃木県",
-  "群馬県",
-  "埼玉県",
-  "千葉県",
-  "東京都",
-  "神奈川県",
-  "新潟県",
-  "富山県",
-  "石川県",
-  "福井県",
-  "山梨県",
-  "長野県",
-  "岐阜県",
-  "静岡県",
-  "愛知県",
-  "三重県",
-  "滋賀県",
-  "京都府",
-  "大阪府",
-  "兵庫県",
-  "奈良県",
-  "和歌山県",
-  "鳥取県",
-  "島根県",
-  "岡山県",
-  "広島県",
-  "山口県",
-  "徳島県",
-  "香川県",
-  "愛媛県",
-  "高知県",
-  "福岡県",
-  "佐賀県",
-  "長崎県",
-  "熊本県",
-  "大分県",
-  "宮崎県",
-  "鹿児島県",
-  "沖縄県",
-] as const;
+import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
+import { formatCityWard } from "@/lib/postcode-jp";
 
 export default function ClientCreatePage(): React.JSX.Element {
   const [clientName, setClientName] = useState<string>("");
   const [postalCode, setPostalCode] = useState<string>("");
   const [prefecture, setPrefecture] = useState<string>("");
   const [city, setCity] = useState<string>("");
+  /** rows.length > 1 のときの市区町村プルダウン選択インデックス */
+  const [cityChoiceIndex, setCityChoiceIndex] = useState<number>(0);
   const [street, setStreet] = useState<string>("");
   const [building, setBuilding] = useState<string>("");
   const [tel, setTel] = useState<string>("");
@@ -75,8 +29,26 @@ export default function ClientCreatePage(): React.JSX.Element {
 
   const handlePostalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
-    setPostalCode(v.slice(0, 255));
+    setPostalCode(v.slice(0, 7));
   };
+
+  const { loading: postcodeLoading, error: postcodeError, rows: postcodeRows } =
+    usePostcodeJpLookup(postalCode);
+
+  useEffect(() => {
+    if (postcodeRows.length === 0) {
+      const digits = postalCode.replace(/\D/g, "");
+      if (digits.length < 7) {
+        setPrefecture("");
+        setCity("");
+        setCityChoiceIndex(0);
+      }
+      return;
+    }
+    setPrefecture(postcodeRows[0].pref);
+    setCityChoiceIndex(0);
+    setCity(formatCityWard(postcodeRows[0]));
+  }, [postcodeRows, postalCode]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,7 +75,8 @@ export default function ClientCreatePage(): React.JSX.Element {
   const fieldBaseClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent";
   const inputClass = `${fieldBaseClass} text-gray-900 placeholder:text-gray-300`;
-  const selectClass = `${fieldBaseClass} ${prefecture === "" ? "text-gray-300" : "text-gray-900"}`;
+  const readOnlyFieldClass = `${inputClass} bg-gray-50 cursor-default`;
+  const citySelectClass = `${fieldBaseClass} text-gray-900 bg-white`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -158,6 +131,11 @@ export default function ClientCreatePage(): React.JSX.Element {
                   <label className="block text-sm font-medium text-gray-700">
                     郵便番号
                     <span className="text-red-500 ml-0.5">*</span>
+                    {postcodeLoading && (
+                      <span className="ml-2 text-xs font-normal text-indigo-600">
+                        住所を検索中…
+                      </span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -167,7 +145,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                     onChange={handlePostalChange}
                     placeholder="1070061"
                     required
-                    maxLength={255}
+                    maxLength={7}
                     className={inputClass}
                   />
                 </div>
@@ -175,39 +153,67 @@ export default function ClientCreatePage(): React.JSX.Element {
                 <div className="space-y-2 w-full min-w-0">
                   <label className="block text-sm font-medium text-gray-700">
                     都道府県
-                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <select
+                  <input
+                    type="text"
+                    readOnly
                     value={prefecture}
-                    onChange={(e) => setPrefecture(e.target.value)}
-                    required
-                    className={`${selectClass} w-full`}
-                  >
-                    <option value="">選択してください</option>
-                    {PREFECTURES.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="郵便番号から自動入力されます"
+                    className={`${readOnlyFieldClass} w-full`}
+                    aria-readonly="true"
+                  />
                 </div>
 
                 <div className="space-y-2 min-w-0 w-full">
                   <label className="block text-sm font-medium text-gray-700">
                     市区町村
                     <span className="text-red-500 ml-0.5">*</span>
+                    {postcodeRows.length > 1 && (
+                      <span className="ml-2 text-xs font-normal text-gray-500">
+                        複数候補があります。選択してください。
+                      </span>
+                    )}
                   </label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value.slice(0, 255))}
-                    placeholder="港区北青山"
-                    required
-                    maxLength={255}
-                    className={inputClass}
-                  />
+                  {postcodeRows.length > 1 ? (
+                    <select
+                      value={cityChoiceIndex}
+                      onChange={(e) => {
+                        const i = Number(e.target.value);
+                        setCityChoiceIndex(i);
+                        const row = postcodeRows[i];
+                        if (row) setCity(formatCityWard(row));
+                      }}
+                      required
+                      className={`${citySelectClass} w-full`}
+                    >
+                      {postcodeRows.map((row, i) => (
+                        <option
+                          key={`${row.pref}-${row.city}-${row.town}-${i}`}
+                          value={i}
+                        >
+                          {formatCityWard(row)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value.slice(0, 255))}
+                      placeholder="港区北青山"
+                      required
+                      maxLength={255}
+                      className={inputClass}
+                    />
+                  )}
                 </div>
               </div>
+
+              {postcodeError && (
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  {postcodeError}
+                </p>
+              )}
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
