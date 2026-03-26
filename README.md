@@ -41,5 +41,5 @@
 ローカルで OpenAPI エディタと UI を起動します。
 
 ```bash
-cd docs && docker compose up -d
+cd docs/api-spec && docker compose up -d
 ```
