@@ -15,6 +15,7 @@
 │       └── src
 ├── 📂 backend/            # (まだ空でOK) ここに backend を入れる
 ├── 📂 frontend/           # (まだ空でOK) ここに frontend を入れる
+├── 📂 function/           # AWS Lambda 関数 (Go)
 └── 📜 README.md           # これはプロジェクトの「ルート」に置く
 ```
 
@@ -26,6 +27,7 @@
 | **`docs/ui-flow`**  | 画面フロー                            | [README.md](./docs/ui-flow/README.md)  |
 | **`backend/`**      | 認可サーバー本体 (API)                   | [README.md](./backend/README.md)       |
 | **`frontend/`**     | 認可管理画面 (Next.js 等)               | [README.md](./frontend/README.md)      |
+| **`function/`**     | AWS Lambda 関数 (Go)                  | [README.md](./function/README.md)      |
 
 ---
 

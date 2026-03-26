@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Authorization — Go Lambda (API Gateway HTTP API)
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+
+  HttpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Zip
+      CodeUri: .
+      Handler: bootstrap
+      Runtime: provided.al2023
+      Architectures:
+        - x86_64
+      Events:
+        Root:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /
+            Method: ANY
+        Proxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+      Metadata:
+        # main が ./cmd にあるため go1.x 自動検出ではなく Makefile で bootstrap を生成する
+        BuildMethod: makefile
+
+Outputs:
+  HttpApiId:
+    Description: API Gateway HTTP API ID（コンソールまたは !Sub で URL を組み立て可能）
+    Value: !Ref HttpApi

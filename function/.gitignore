@@ -1,0 +1,5 @@
+bootstrap
+function.zip
+*.test
+.env
+.env.*
