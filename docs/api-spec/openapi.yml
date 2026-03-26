@@ -75,7 +75,7 @@ paths:
     get:
       summary: クライアント一覧
       tags:
-        - client
+        - clients
       responses:
         '200':
           description: 正常応答
@@ -90,7 +90,7 @@ paths:
     get:
       summary: クライアント検索
       tags:
-        - client
+        - clients
       parameters:
         - name: id
           in: path
@@ -113,7 +113,7 @@ paths:
     post:
       summary: クライアント登録
       tags:
-        - client
+        - clients
       requestBody:
         required: true
         content:
@@ -140,7 +140,7 @@ paths:
     put:
       summary: クライアント変更
       tags:
-        - client
+        - clients
       parameters:
         - name: id
           in: path
@@ -175,7 +175,7 @@ paths:
     delete:
       summary: クライアント削除
       tags:
-        - client
+        - clients
       parameters:
         - name: id
           in: path
@@ -202,7 +202,7 @@ paths:
     get:
       summary: アカウント一覧
       tags:
-        - account
+        - accounts
       responses:
         '200':
           description: 正常応答
@@ -217,7 +217,7 @@ paths:
     put:
       summary: 権限を更新します
       tags:
-        - account
+        - accounts
       parameters:
         - name: id
           in: path
@@ -261,7 +261,7 @@ paths:
     delete:
       summary: アカウントを削除
       tags:
-        - account
+        - accounts
       parameters:
         - name: id
           in: path
@@ -394,7 +394,7 @@ paths:
 
         **モダンな点:** cursor ベースのページネーションを採用する。
       tags:
-        - notification
+        - notifications
       security:
         - bearerAuth: []
       parameters:
@@ -432,7 +432,7 @@ paths:
 
         **モダンな点:** べき等キー（`Idempotency-Key`）を許容する。
       tags:
-        - notification
+        - notifications
       parameters:
         - name: Idempotency-Key
           in: header
@@ -463,7 +463,7 @@ paths:
 
         **モダンな点:** 複数 ID 指定や `all: true` を Body で受け取る。
       tags:
-        - notification
+        - notifications
       security:
         - bearerAuth: []
       requestBody:
@@ -490,7 +490,7 @@ paths:
 
         **モダンな点:** 複数種類のカウントを一度に返す。
       tags:
-        - notification
+        - notifications
       security:
         - bearerAuth: []
       responses:
@@ -522,7 +522,7 @@ paths:
 
         **モダンな点:** Partial Update（差分更新）の原則に従う。
       tags:
-        - notification
+        - notifications
       security:
         - bearerAuth: []
       requestBody:
@@ -536,26 +536,6 @@ paths:
           description: 更新成功
         '400':
           description: リクエストが不正
-        '401':
-          description: 未認証
-        '404':
-          description: 通知が存在しない
-        '500':
-          description: サーバーエラー
-
-    delete:
-      summary: 通知のアーカイブ（論理削除）
-      description: |
-        通知をアーカイブする。物理削除は行わない。
-
-        **モダンな点:** 物理削除せず状態遷移として扱う。
-      tags:
-        - notification
-      security:
-        - bearerAuth: []
-      responses:
-        '204':
-          description: アーカイブ成功（本文なし）
         '401':
           description: 未認証
         '404':
@@ -986,13 +966,13 @@ components:
 tags:
   - name: auth
     description: 認証API
-  - name: client
+  - name: clients
     description: クライアントAPI
-  - name: account
+  - name: accounts
     description: アカウントAPI
   - name: invitation
     description: 招待API
   - name: gate
     description: 認可API
-  - name: notification
+  - name: notifications
     description: 通知API
