@@ -386,6 +386,183 @@ paths:
         '500':
           description: サーバーエラー
 
+  /notifications:
+    get:
+      summary: 通知一覧（メタデータ含む）
+      description: |
+        通知の一覧を返す。各アイテムにメタデータを含む。
+
+        **モダンな点:** cursor ベースのページネーションを採用する。
+      tags:
+        - notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 次ページ取得用の不透明カーソル（初回は省略可）
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1ページあたりの件数
+      responses:
+        '200':
+          description: 正常応答
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+        '401':
+          description: 未認証
+        '500':
+          description: サーバーエラー
+
+    post:
+      summary: 通知のトリガー（内部/システム）
+      description: |
+        内部ジョブや連携システムから通知を発火する。利用者向け一覧取得とは用途が異なる。
+
+        **モダンな点:** べき等キー（`Idempotency-Key`）を許容する。
+      tags:
+        - notification
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+          description: 同一キーでの重複送信を冪等に扱う
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationTriggerRequest'
+      responses:
+        '200':
+          description: 受理・作成結果
+        '202':
+          description: 非同期受理
+        '409':
+          description: べき等キー競合など
+        '500':
+          description: サーバーエラー
+
+    patch:
+      summary: 一括既読更新
+      description: |
+        複数通知を一括で既読などの状態に更新する。
+
+        **モダンな点:** 複数 ID 指定や `all: true` を Body で受け取る。
+      tags:
+        - notification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationBulkPatchRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '400':
+          description: リクエストが不正
+        '401':
+          description: 未認証
+        '500':
+          description: サーバーエラー
+
+  /notifications/counts:
+    get:
+      summary: 未読・全件などのサマリー
+      description: |
+        未読件数・全件数など、通知まわりの集計を返す。
+
+        **モダンな点:** 複数種類のカウントを一度に返す。
+      tags:
+        - notification
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 正常応答
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationCounts'
+        '401':
+          description: 未認証
+        '500':
+          description: サーバーエラー
+
+  /notifications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: 通知 ID
+
+    patch:
+      summary: 単一通知の状態更新（既読等）
+      description: |
+        1件の通知に対する部分更新（既読フラグなど）。
+
+        **モダンな点:** Partial Update（差分更新）の原則に従う。
+      tags:
+        - notification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPatchRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '400':
+          description: リクエストが不正
+        '401':
+          description: 未認証
+        '404':
+          description: 通知が存在しない
+        '500':
+          description: サーバーエラー
+
+    delete:
+      summary: 通知のアーカイブ（論理削除）
+      description: |
+        通知をアーカイブする。物理削除は行わない。
+
+        **モダンな点:** 物理削除せず状態遷移として扱う。
+      tags:
+        - notification
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: アーカイブ成功（本文なし）
+        '401':
+          description: 未認証
+        '404':
+          description: 通知が存在しない
+        '500':
+          description: サーバーエラー
+
 components:
   schemas:
     ClientCreate:
@@ -722,6 +899,84 @@ components:
           description: JWTを発行するたびに割り振られる重複しないID（UUID v4）
           example: "f55a406c-8d3c-4306-836f-5cc0d508a07f"
 
+    Notification:
+      type: object
+      description: 通知1件（メタデータを含む。実フィールドは実装に依存）
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    NotificationListResponse:
+      type: object
+      description: cursor ページネーション付き一覧
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        next_cursor:
+          type: string
+          nullable: true
+          description: 次ページがなければ null
+
+    NotificationCounts:
+      type: object
+      description: 複数種類のカウントを一度に返す
+      additionalProperties:
+        type: integer
+        format: int64
+      example:
+        unread: 3
+        total: 42
+
+    NotificationPatchRequest:
+      type: object
+      description: 単一通知の差分更新（送ったフィールドのみ更新）
+      properties:
+        read:
+          type: boolean
+        archived:
+          type: boolean
+
+    NotificationBulkPatchRequest:
+      type: object
+      description: 一括更新。ids または all のいずれかを指定
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        all:
+          type: boolean
+          description: true のとき対象を一括指定（運用上の制約は実装側）
+        read:
+          type: boolean
+
+    NotificationTriggerRequest:
+      type: object
+      description: 内部/システムからの通知発火ペイロード（詳細は実装に依存）
+      properties:
+        type:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -739,3 +994,5 @@ tags:
     description: 招待API
   - name: gate
     description: 認可API
+  - name: notification
+    description: 通知API
