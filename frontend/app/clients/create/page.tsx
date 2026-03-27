@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, Save, X } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
+import { ConsoleFooter } from "@/components/console-footer";
 import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
 import { formatCityWard } from "@/lib/postcode-jp";
 
@@ -302,6 +303,8 @@ export default function ClientCreatePage(): React.JSX.Element {
           </motion.div>
         </div>
       </main>
+
+      <ConsoleFooter />
 
       {/* 登録確認モーダル（一覧の削除確認と同系） */}
       <AnimatePresence>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, Save, X } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
+import { ConsoleFooter } from "@/components/console-footer";
 import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
 import { formatCityWard } from "@/lib/postcode-jp";
 
@@ -313,6 +314,8 @@ export default function ClientEditPage(): React.JSX.Element {
           </motion.div>
         </div>
       </main>
+
+      <ConsoleFooter />
 
       <AnimatePresence>
         {confirmOpen && (
