@@ -65,16 +65,18 @@ services:
     networks:
       - authorization
 
-  mailhog:
-    image: mailhog/mailhog
-    container_name: ${MAILHOG_CONTAINER}
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${MAILPIT_CONTAINER}
     ports:
-      - '${MAILHOG_PORT}:8025'
+      - "${MAILPIT_SMTP_PORT}:1025"
+      - "${MAILPIT_UI_PORT}:8025"
     networks:
       - authorization
 
   lambda:
     image: public.ecr.aws/lambda/go:1.2024.10.04.19
+    platform: linux/amd64
     command: [ "index.handler" ]
     restart: always
     volumes:

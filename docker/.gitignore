@@ -1,2 +1,4 @@
 /local/backends/common/proxy/certs/default.crt
 /local/backends/common/proxy/certs/default.key
+/local/backends/common/data/redis/
+/local/backends/common/logs/

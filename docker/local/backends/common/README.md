@@ -15,7 +15,8 @@
 * Nginx Proxy 最新版
 * MySQL 8.x
 * Redis 最新版
-* MailHog 最新版
+* MailPit 最新版
+* AWS lambda/go:1.2024.10.04.19
 
 ## :bulb: 使い方
 
@@ -40,6 +41,6 @@ $ bin/docker-common-down.sh
 
 ## :bulb: 各ツール
 
-| ツール | URL |
-| ---- | ---- |
-| MailHog | http://localhost:8025/ |
+| ツール     | URL |
+|---------| ---- |
+| MailPit | http://localhost:8025/ |
