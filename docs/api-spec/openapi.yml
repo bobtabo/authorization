@@ -76,6 +76,37 @@ paths:
       summary: クライアント一覧
       tags:
         - clients
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: キーワード
+          schema:
+            type: string
+        - name: start_from
+          in: query
+          required: false
+          description: 利用開始日 From
+          schema:
+            type: string
+            format: date
+        - name: start_to
+          in: query
+          required: false
+          description: 利用開始日 To
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          description: 状態（複数指定可）
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: true
       responses:
         '200':
           description: 正常応答
@@ -203,6 +234,33 @@ paths:
       summary: アカウント一覧
       tags:
         - accounts
+      parameters:
+        - name: keyword
+          in: query
+          required: false
+          description: キーワード
+          schema:
+            type: string
+        - name: role
+          in: query
+          required: false
+          description: 権限（複数指定可）
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: true
+        - name: status
+          in: query
+          required: false
+          description: 状態（複数指定可）
+          schema:
+            type: array
+            items:
+              type: integer
+          style: form
+          explode: true
       responses:
         '200':
           description: 正常応答
@@ -214,7 +272,7 @@ paths:
           description: ユーザーが存在しない場合のエラー
 
   /accounts/{id}/updateRole:
-    put:
+    patch:
       summary: 権限を更新します
       tags:
         - accounts
