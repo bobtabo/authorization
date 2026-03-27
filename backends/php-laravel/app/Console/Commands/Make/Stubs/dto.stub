@@ -1,0 +1,20 @@
+<?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+namespace App\Domains\Dtos;
+
+use Sii\Selloop\Core\Dtos\Dto;
+
+/**
+ * Dtoクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Domains\Dtos
+ */
+class DummyClass implements Dto
+{
+    //
+}

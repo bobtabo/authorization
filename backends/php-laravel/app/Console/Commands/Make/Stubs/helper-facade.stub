@@ -1,0 +1,28 @@
+<?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+namespace App\Helpers\Facades;
+
+use Illuminate\Support\Facades\Facade;
+
+/**
+ * ヘルパーFacadeクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Helpers\Facades
+ */
+class {{ class }}Facade extends Facade
+{
+    /**
+     * アクセサ
+     *
+     * @return string
+     */
+    protected static function getFacadeAccessor()
+    {
+        return 'helper.{{ class }}';
+    }
+}

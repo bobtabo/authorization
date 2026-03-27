@@ -1,0 +1,22 @@
+<?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+namespace App\Domains\ValueObjects;
+
+use Sii\Selloop\Core\ValueObjects\AbstractValueObject;
+
+/**
+ * ValueObjectクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Domains\ValueObjects
+ */
+class DummyClass extends AbstractValueObject
+{
+    public function __construct()
+    {
+    }
+}

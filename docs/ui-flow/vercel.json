@@ -1,0 +1,17 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://www.notion.so https://notion.so https://billowy-plant-463.notion.site; default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.postcode-jp.com; connect-src 'self' https://apis.postcode-jp.com;"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOW-FROM https://billowy-plant-463.notion.site"
+        }
+      ]
+    }
+  ]
+}

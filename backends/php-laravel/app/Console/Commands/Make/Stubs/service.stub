@@ -1,0 +1,29 @@
+<?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+namespace App\Domains\Services;
+
+use Illuminate\Foundation\Application;
+use Sii\Selloop\Core\Services\AbstractService;
+
+/**
+ * Serviceクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Domains\Services
+ */
+class DummyClass extends AbstractService
+{
+    /**
+     * コンストラクタ
+     *
+     * @param Application $app アプリケーション
+     */
+    public function __construct(Application $app)
+    {
+        parent::__construct($app);
+    }
+}
