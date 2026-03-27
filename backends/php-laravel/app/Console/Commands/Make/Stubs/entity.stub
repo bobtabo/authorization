@@ -1,0 +1,20 @@
+<?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+namespace App\Domains\Entities;
+
+use Sii\Selloop\Core\Entities\AbstractEntity;
+
+/**
+ * Entityクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Domains\Entities
+ */
+class DummyClass extends AbstractEntity
+{
+    //
+}
