@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, ArrowLeft, X, Trash2, Play } from "lucide-react";
+import { Building2, ArrowLeft, X, Trash2, Play, Square } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
 
@@ -23,13 +23,23 @@ const DEFAULT_DETAIL = {
   updatedAt: "2026-01-20 10:00",
 };
 
+type ClientStatus = "準備中" | "利用中" | "停止中" | "アーカイブ";
+
+type ClientDetail = Omit<typeof DEFAULT_DETAIL, "status"> & { status: ClientStatus };
+
+function formatNowForDetail(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 function getStatusStyle(status: string) {
   switch (status) {
-    case "有効":
+    case "利用中":
       return "bg-emerald-100 text-emerald-800 border border-emerald-200";
-    case "無効":
+    case "アーカイブ":
       return "bg-slate-100 text-slate-600 border border-slate-200";
-    case "停止":
+    case "停止中":
       return "bg-rose-100 text-rose-700 border border-rose-200";
     case "準備中":
       return "bg-amber-100 text-amber-700 border border-amber-200";
@@ -54,11 +64,13 @@ function DetailRow({
 }
 
 export default function ClientShowPage(): React.JSX.Element {
-  const [data] = useState(DEFAULT_DETAIL);
+  const [detail, setDetail] = useState<ClientDetail>(DEFAULT_DETAIL);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [startOpen, setStartOpen] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [stopOpen, setStopOpen] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,9 +94,33 @@ export default function ClientShowPage(): React.JSX.Element {
   const handleStart = () => {
     setStarting(true);
     setTimeout(() => {
+      const now = formatNowForDetail();
       setStarting(false);
       setStartOpen(false);
+      setDetail((prev) => ({
+        ...prev,
+        status: "利用中",
+        startedAt: now,
+        stoppedAt: "—",
+        updatedAt: now,
+      }));
       setToast("利用を開始しました（モック）");
+    }, 600);
+  };
+
+  const handleStop = () => {
+    setStopping(true);
+    setTimeout(() => {
+      const now = formatNowForDetail();
+      setStopping(false);
+      setStopOpen(false);
+      setDetail((prev) => ({
+        ...prev,
+        status: "停止中",
+        stoppedAt: now,
+        updatedAt: now,
+      }));
+      setToast("利用を停止しました（モック）");
     }, 600);
   };
 
@@ -116,38 +152,38 @@ export default function ClientShowPage(): React.JSX.Element {
             <div className="px-6 pt-6 pb-2">
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  {data.clientName}
+                  {detail.clientName}
                 </h2>
                 <span
                   className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(
-                    data.status
+                    detail.status
                   )}`}
                 >
-                  {data.status}
+                  {detail.status}
                 </span>
               </div>
             </div>
 
             <div className="px-6 pb-6">
               <dl>
-                <DetailRow label="郵便番号">〒{data.postalCode}</DetailRow>
-                <DetailRow label="都道府県">{data.prefecture}</DetailRow>
-                <DetailRow label="市区町村">{data.city}</DetailRow>
-                <DetailRow label="丁目・番地">{data.street}</DetailRow>
-                <DetailRow label="ビル名">{data.building}</DetailRow>
-                <DetailRow label="電話番号">{data.tel}</DetailRow>
+                <DetailRow label="郵便番号">〒{detail.postalCode}</DetailRow>
+                <DetailRow label="都道府県">{detail.prefecture}</DetailRow>
+                <DetailRow label="市区町村">{detail.city}</DetailRow>
+                <DetailRow label="丁目・番地">{detail.street}</DetailRow>
+                <DetailRow label="ビル名">{detail.building}</DetailRow>
+                <DetailRow label="電話番号">{detail.tel}</DetailRow>
                 <DetailRow label="メールアドレス">
                   <a
-                    href={`mailto:${data.email}`}
+                    href={`mailto:${detail.email}`}
                     className="text-indigo-600 hover:text-indigo-700 hover:underline"
                   >
-                    {data.email}
+                    {detail.email}
                   </a>
                 </DetailRow>
-                <DetailRow label="利用開始日時">{data.startedAt}</DetailRow>
-                <DetailRow label="利用停止日時">{data.stoppedAt}</DetailRow>
-                <DetailRow label="登録日時">{data.createdAt}</DetailRow>
-                <DetailRow label="更新日時">{data.updatedAt}</DetailRow>
+                <DetailRow label="利用開始日時">{detail.startedAt}</DetailRow>
+                <DetailRow label="利用停止日時">{detail.stoppedAt}</DetailRow>
+                <DetailRow label="登録日時">{detail.createdAt}</DetailRow>
+                <DetailRow label="更新日時">{detail.updatedAt}</DetailRow>
               </dl>
             </div>
 
@@ -156,7 +192,7 @@ export default function ClientShowPage(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={() => setDeleteOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border border-red-200 bg-white text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors w-full md:w-auto shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 border-red-500/80 bg-white text-red-600 hover:bg-red-50 hover:border-red-600 transition-colors w-full md:w-auto shrink-0"
                 >
                   <Trash2 size={16} />
                   削除
@@ -171,14 +207,26 @@ export default function ClientShowPage(): React.JSX.Element {
                   >
                     キャンセル
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => setStartOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                  >
-                    <Play size={16} />
-                    利用開始
-                  </button>
+                  {detail.status === "利用中" ? (
+                    <button
+                      type="button"
+                      onClick={() => setStopOpen(true)}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
+                    >
+                      <Square size={16} />
+                      利用停止
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setStartOpen(true)}
+                      disabled={detail.status === "アーカイブ"}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                      <Play size={16} />
+                      利用開始
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -218,7 +266,7 @@ export default function ClientShowPage(): React.JSX.Element {
                 </button>
               </div>
               <p className="text-gray-600 mb-6">
-                「{data.clientName}」を削除してもよろしいですか？この操作は取り消せません。
+                「{detail.clientName}」を削除してもよろしいですか？この操作は取り消せません。
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -276,7 +324,7 @@ export default function ClientShowPage(): React.JSX.Element {
                 </button>
               </div>
               <p className="text-gray-600 mb-6">
-                「{data.clientName}」の利用を開始してもよろしいですか？
+                「{detail.clientName}」の利用を開始してもよろしいですか？
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -297,6 +345,64 @@ export default function ClientShowPage(): React.JSX.Element {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   )}
                   利用を開始する
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 利用停止確認 */}
+      <AnimatePresence>
+        {stopOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => !stopping && setStopOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  利用停止の確認
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => !stopping && setStopOpen(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-gray-600 mb-6">
+                「{detail.clientName}」の利用を停止してもよろしいですか？
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setStopOpen(false)}
+                  disabled={stopping}
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStop}
+                  disabled={stopping}
+                  className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {stopping && (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  利用を停止する
                 </button>
               </div>
             </motion.div>

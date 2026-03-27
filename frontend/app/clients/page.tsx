@@ -26,7 +26,7 @@ import { ConsoleFooter } from "@/components/console-footer";
 // Types
 // =========================
 
-type Status = "有効" | "無効" | "停止" | "準備中";
+type Status = "準備中" | "利用中" | "停止中" | "アーカイブ";
 
 interface ClientType {
   id: number;
@@ -58,20 +58,17 @@ export default function ClientsPage(): React.JSX.Element {
   const [statusFilterOpen, setStatusFilterOpen] = useState<boolean>(false);
   const [startedFromDate, setStartedFromDate] = useState<string>("");
   const [startedToDate, setStartedToDate] = useState<string>("");
-  const [useStartedTime, setUseStartedTime] = useState<boolean>(false);
-  const [startedFromTime, setStartedFromTime] = useState<string>("00:00");
-  const [startedToTime, setStartedToTime] = useState<string>("23:59");
 
   useEffect(() => {
     setTimeout(() => {
       setClients([
-        { id: 1, companyName: "株式会社ABC", status: "有効", startedAt: "2026-01-20 10:00", stoppedAt: null, createdAt: "2026-01-15 09:30", updatedAt: "2026-01-20 10:00" },
+        { id: 1, companyName: "株式会社ABC", status: "利用中", startedAt: "2026-01-20 10:00", stoppedAt: null, createdAt: "2026-01-15 09:30", updatedAt: "2026-01-20 10:00" },
         { id: 2, companyName: "DEF株式会社", status: "準備中", startedAt: null, stoppedAt: null, createdAt: "2026-01-20 14:00", updatedAt: "2026-01-20 14:00" },
-        { id: 3, companyName: "GHI産業", status: "有効", startedAt: "2026-02-05 09:00", stoppedAt: null, createdAt: "2026-02-01 11:00", updatedAt: "2026-02-05 09:00" },
-        { id: 4, companyName: "JKLホールディングス", status: "停止", startedAt: "2026-02-10 08:00", stoppedAt: "2026-03-01 18:00", createdAt: "2026-02-05 15:30", updatedAt: "2026-03-01 18:00" },
-        { id: 5, companyName: "MNO商事", status: "有効", startedAt: "2026-02-15 10:00", stoppedAt: null, createdAt: "2026-02-10 09:00", updatedAt: "2026-02-15 10:00" },
-        { id: 6, companyName: "PQRシステム", status: "無効", startedAt: null, stoppedAt: null, createdAt: "2026-02-15 13:00", updatedAt: "2026-02-20 16:00" },
-        { id: 7, companyName: "STUテクノロジー", status: "有効", startedAt: "2026-02-25 09:00", stoppedAt: null, createdAt: "2026-02-20 10:30", updatedAt: "2026-02-25 09:00" },
+        { id: 3, companyName: "GHI産業", status: "利用中", startedAt: "2026-02-05 09:00", stoppedAt: null, createdAt: "2026-02-01 11:00", updatedAt: "2026-02-05 09:00" },
+        { id: 4, companyName: "JKLホールディングス", status: "停止中", startedAt: "2026-02-10 08:00", stoppedAt: "2026-03-01 18:00", createdAt: "2026-02-05 15:30", updatedAt: "2026-03-01 18:00" },
+        { id: 5, companyName: "MNO商事", status: "利用中", startedAt: "2026-02-15 10:00", stoppedAt: null, createdAt: "2026-02-10 09:00", updatedAt: "2026-02-15 10:00" },
+        { id: 6, companyName: "PQRシステム", status: "アーカイブ", startedAt: null, stoppedAt: null, createdAt: "2026-02-15 13:00", updatedAt: "2026-02-20 16:00" },
+        { id: 7, companyName: "STUテクノロジー", status: "利用中", startedAt: "2026-02-25 09:00", stoppedAt: null, createdAt: "2026-02-20 10:30", updatedAt: "2026-02-25 09:00" },
         { id: 8, companyName: "VWXコンサルティング", status: "準備中", startedAt: null, stoppedAt: null, createdAt: "2026-03-01 08:00", updatedAt: "2026-03-01 08:00" },
       ]);
       setLoading(false);
@@ -96,7 +93,7 @@ export default function ClientsPage(): React.JSX.Element {
     setCurrentPage(1);
   };
 
-  const allStatuses: Status[] = ["有効", "無効", "停止", "準備中"];
+  const allStatuses: Status[] = ["準備中", "利用中", "停止中", "アーカイブ"];
 
   const parseDateTime = (value: string | null): Date | null => {
     if (!value) return null;
@@ -108,10 +105,10 @@ export default function ClientsPage(): React.JSX.Element {
 
   const sortedClients = useMemo<ClientType[]>(() => {
     const fromBoundary = startedFromDate
-      ? new Date(`${startedFromDate}T${useStartedTime ? startedFromTime : "00:00"}`)
+      ? new Date(`${startedFromDate}T00:00:00`)
       : null;
     const toBoundary = startedToDate
-      ? new Date(`${startedToDate}T${useStartedTime ? startedToTime : "23:59"}`)
+      ? new Date(`${startedToDate}T23:59:59.999`)
       : null;
 
     const filtered = clients.filter(
@@ -141,9 +138,6 @@ export default function ClientsPage(): React.JSX.Element {
     selectedStatuses,
     startedFromDate,
     startedToDate,
-    useStartedTime,
-    startedFromTime,
-    startedToTime,
     sortKey,
     sortOrder,
   ]);
@@ -164,9 +158,6 @@ export default function ClientsPage(): React.JSX.Element {
     setSelectedStatuses([]);
     setStartedFromDate("");
     setStartedToDate("");
-    setUseStartedTime(false);
-    setStartedFromTime("00:00");
-    setStartedToTime("23:59");
     setCurrentPage(1);
   };
 
@@ -177,11 +168,11 @@ export default function ClientsPage(): React.JSX.Element {
 
   const getStatusStyle = (status: Status) => {
     switch (status) {
-      case "有効":
+      case "利用中":
         return "bg-emerald-100 text-emerald-800 border border-emerald-200";
-      case "無効":
+      case "アーカイブ":
         return "bg-slate-100 text-slate-600 border border-slate-200";
-      case "停止":
+      case "停止中":
         return "bg-rose-100 text-rose-700 border border-rose-200";
       case "準備中":
         return "bg-amber-100 text-amber-700 border border-amber-200";
@@ -226,7 +217,7 @@ export default function ClientsPage(): React.JSX.Element {
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-700">利用開始日時</span>
+                <span className="text-sm font-medium text-gray-700">利用開始日</span>
                 <input
                   type="date"
                   value={startedFromDate}
@@ -246,41 +237,6 @@ export default function ClientsPage(): React.JSX.Element {
                   }}
                   className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700"
                 />
-                <label className="inline-flex items-center gap-2 ml-1 text-sm text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useStartedTime}
-                    onChange={(e) => {
-                      setUseStartedTime(e.target.checked);
-                      setCurrentPage(1);
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  時間指定
-                </label>
-                {useStartedTime && (
-                  <>
-                    <input
-                      type="time"
-                      value={startedFromTime}
-                      onChange={(e) => {
-                        setStartedFromTime(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="border border-gray-300 rounded-md px-2 py-2 text-sm text-gray-700"
-                    />
-                    <span className="text-sm text-gray-500">〜</span>
-                    <input
-                      type="time"
-                      value={startedToTime}
-                      onChange={(e) => {
-                        setStartedToTime(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="border border-gray-300 rounded-md px-2 py-2 text-sm text-gray-700"
-                    />
-                  </>
-                )}
                 <button
                   type="button"
                   onClick={() => setStatusFilterOpen((prev) => !prev)}
