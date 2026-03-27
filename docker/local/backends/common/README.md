@@ -21,20 +21,21 @@
 
 #### 事前準備
 ```
+$ cd docker
 $ find ./bin -type f -exec chmod 755 {} +
-$ cp ./environment/default.crt ./proxy/certs/default.crt
-$ cp ./environment/default.key ./proxy/certs/default.key
-$ cp ./environment/.env.example .env
+$ bin/docker-environment.sh
 ```
 
 #### コンテナ起動
 ```
-$ bin/docker-up.sh
+$ cd docker
+$ bin/docker-common-up.sh
 ```
 
 #### コンテナ破棄
 ```
-$ bin/docker-down.sh
+$ cd docker
+$ bin/docker-common-down.sh
 ```
 
 ## :bulb: 各ツール
