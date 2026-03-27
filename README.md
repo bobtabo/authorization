@@ -7,7 +7,6 @@
 
 ```.
 ├── 📂 backends/           # バックエンド構成（go-gin / php-laravel 等）
-├── 📂 bin/                # (まだ空でOK) ここに 便利スクリプト を入れる
 ├── 📂 docker/             # コンテナ定義
 ├── 📂 docs/               # Swagger 用 Docker 設定
 │   ├── api-spec/          # API ドキュメントルート (OpenAPI / Swagger UI)
@@ -26,7 +25,6 @@
 | ディレクトリ              | 内容                               | ドキュメント                                 |
 |:--------------------|:---------------------------------|:---------------------------------------|
 | **`backends/`**     | バックエンド構成                         | [README.md](./backends/README.md)      |
-| **`bin/`**          | 便利スクリプト                          | [README.md](./bin/README.md)           |
 | **`docker/`**       | コンテナ定義                           | [README.md](./docker/README.md)        |
 | **`docs/api-spec`** | API仕様書 (OpenAPI) & Swagger UI 環境 | [README.md](./docs/api-spec/README.md) |
 | **`docs/ui-flow`**  | 画面フロー                            | [README.md](./docs/ui-flow/README.md)  |

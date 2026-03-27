@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, X, Trash2, Play } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
+import { ConsoleFooter } from "@/components/console-footer";
 
 /** モック: 詳細取得想定の初期データ（必須系は入力済み） */
 const DEFAULT_DETAIL = {
@@ -184,6 +185,8 @@ export default function ClientShowPage(): React.JSX.Element {
           </motion.div>
         </div>
       </main>
+
+      <ConsoleFooter />
 
       {/* 削除確認 */}
       <AnimatePresence>

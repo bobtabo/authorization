@@ -20,6 +20,7 @@ import {
   Filter,
 } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
+import { ConsoleFooter } from "@/components/console-footer";
 
 // =========================
 // Types
@@ -560,10 +561,7 @@ export default function ClientsPage(): React.JSX.Element {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-6 text-center text-xs text-gray-400">
-        © 2026 Authorization Console. All rights reserved.
-      </footer>
+      <ConsoleFooter />
 
     </div>
   );
