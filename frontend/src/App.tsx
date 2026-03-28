@@ -8,6 +8,7 @@ import ClientsCreatePage from "@/app/clients/create/page";
 import ClientsEditPage from "@/app/clients/edit/page";
 import ClientsShowPage from "@/app/clients/show/page";
 import InvitationTokenPage from "@/app/invitation/[token]/page";
+import NotionIntegrationPage from "@/app/settings/notion/page";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/clients/edit" element={<ClientsEditPage />} />
         <Route path="/clients/show" element={<ClientsShowPage />} />
         <Route path="/clients" element={<ClientsPage />} />
+        <Route path="/settings/notion" element={<NotionIntegrationPage />} />
         <Route path="/invitation/:token" element={<InvitationTokenPage />} />
         <Route
           path="*"

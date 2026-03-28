@@ -1,9 +1,13 @@
 "use client";
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 
 export default function LoginPage(): React.JSX.Element {
+  const navigate = useNavigate();
+  const e2eLogin = import.meta.env.VITE_E2E === "1";
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
@@ -33,6 +37,10 @@ export default function LoginPage(): React.JSX.Element {
             <button
               type="button"
               onClick={() => {
+                if (e2eLogin) {
+                  navigate("/clients");
+                  return;
+                }
                 // OAuth 連携後に Google ログインへリダイレクト
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#d0d7de] bg-white px-3 py-2.5 text-sm font-medium text-[#24292f] shadow-sm transition hover:bg-gray-50 hover:border-[#b6bcc3] active:bg-gray-100"
