@@ -2,3 +2,4 @@
 /local/common/proxy/certs/default.key
 /local/common/data/
 /local/common/logs/
+/local/app-php/logs/
