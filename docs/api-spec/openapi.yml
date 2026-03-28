@@ -14,8 +14,14 @@ servers:
     description: ステージング環境
   - url: https://apis-dev.authorization.com/v1
     description: 開発環境
-  - url: https://apis.authorization.local/v1
-    description: ローカル環境
+  - url: https://apis.authorization-go.local/v1
+    description: ローカルGo環境
+  - url: https://apis.authorization-php.local/v1
+    description: ローカルPHP環境
+  - url: https://apis.authorization-python.local/v1
+    description: ローカルPython環境
+  - url: https://apis.authorization-ts.local/v1
+    description: ローカルTypeScript環境
 
 paths:
   /auth/login:
