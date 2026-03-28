@@ -35,7 +35,7 @@ services:
     ports:
       - '${PHP_XDEBUG_PORT}:9003'
     volumes:
-      - ./../../web:/var/www/${APP_NAME}
+      - ./../../backends/php-laravel:/var/www/${APP_NAME}
       - ./php/docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf
       - ./php/php.ini:/usr/local/etc/php/php.ini
       - ./php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
