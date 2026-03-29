@@ -8,6 +8,7 @@ namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Invitation\Entities\Invitation;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use app\Support\Repositories\AbstractRepository;
 use Random\RandomException;
 
 /**

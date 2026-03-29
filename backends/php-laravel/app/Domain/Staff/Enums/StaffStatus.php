@@ -6,6 +6,8 @@
  */
 namespace App\Domain\Staff\Enums;
 
+use app\Support\Enums\Values;
+
 /**
  * スタッフの状態を表す列挙型です。
  *
@@ -14,6 +16,8 @@ namespace App\Domain\Staff\Enums;
  */
 enum StaffStatus: int
 {
+    use Values;
+
     case Inactive = 0;
     case Active = 1;
 }

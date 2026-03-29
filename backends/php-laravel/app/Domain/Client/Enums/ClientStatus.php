@@ -6,6 +6,8 @@
  */
 namespace App\Domain\Client\Enums;
 
+use app\Support\Enums\Values;
+
 /**
  * クライアントの状態を表す列挙型です。
  *
@@ -14,6 +16,8 @@ namespace App\Domain\Client\Enums;
  */
 enum ClientStatus: int
 {
+    use Values;
+
     case Inactive = 0;
     case Active = 1;
     case Suspended = 2;

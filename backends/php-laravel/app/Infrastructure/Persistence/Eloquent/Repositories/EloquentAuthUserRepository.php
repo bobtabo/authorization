@@ -9,6 +9,7 @@ namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 use App\Domain\Auth\Entities\AuthUser;
 use App\Domain\Auth\Repositories\AuthUserRepositoryInterface;
 use App\Models\User;
+use app\Support\Repositories\AbstractRepository;
 use Illuminate\Database\QueryException;
 
 /**

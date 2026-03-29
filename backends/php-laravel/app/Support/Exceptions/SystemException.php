@@ -19,10 +19,10 @@ class SystemException extends AppException
     /**
      * 汎用メッセージ
      */
-    const GENERAL = 'general';
+    public const string GENERAL = 'general';
 
     /**
      * データが見つからない
      */
-    const NOT_FOUND = 'not_found';
+    public const string NOT_FOUND = 'not_found';
 }

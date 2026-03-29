@@ -6,6 +6,8 @@
  */
 namespace App\Domain\Staff\Enums;
 
+use app\Support\Enums\Values;
+
 /**
  * スタッフ権限を表す列挙型です。
  *
@@ -14,6 +16,8 @@ namespace App\Domain\Staff\Enums;
  */
 enum StaffRole: int
 {
+    use Values;
+
     case Administrator = 1;
     case Member = 2;
 }

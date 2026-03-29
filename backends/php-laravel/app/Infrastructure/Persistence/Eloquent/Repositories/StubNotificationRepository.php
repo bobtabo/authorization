@@ -7,6 +7,7 @@
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
+use app\Support\Repositories\AbstractRepository;
 
 /**
  * 永続化未接続時に通知一覧・件数を空で返すStubのRepositoryクラスです。

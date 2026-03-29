@@ -11,6 +11,7 @@ use App\Domain\Staff\Enums\StaffRole;
 use App\Domain\Staff\Enums\StaffStatus;
 use App\Domain\Staff\Repositories\StaffRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\Staff as Model;
+use app\Support\Repositories\AbstractRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 

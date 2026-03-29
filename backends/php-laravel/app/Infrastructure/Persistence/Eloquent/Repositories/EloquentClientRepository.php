@@ -10,6 +10,7 @@ use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Enums\ClientStatus;
 use App\Domain\Client\Repositories\ClientRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\Client as Model;
+use app\Support\Repositories\AbstractRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 

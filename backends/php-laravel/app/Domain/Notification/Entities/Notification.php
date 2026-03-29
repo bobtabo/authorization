@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Notification\Entities;
 
-use app\Domain\AbstractEntity;
+use app\Support\Entities\AbstractEntity;
 
 /**
  * 通知1件の状態を表すEntityクラスです。

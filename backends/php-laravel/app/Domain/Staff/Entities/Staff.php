@@ -6,30 +6,24 @@
  */
 namespace App\Domain\Staff\Entities;
 
-use app\Domain\AbstractEntity;
 use App\Domain\Staff\Enums\StaffRole;
-use App\Domain\Staff\Enums\StaffStatus;
+use App\Support\Entities\AbstractEntity;
+use Carbon\Carbon;
 
 /**
- * スタッフ集約のルートを表すEntityクラスです。
+ * スタッフEntityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Staff\Entities
  */
-final readonly class Staff extends AbstractEntity
+class Staff extends AbstractEntity
 {
-    /**
-     * @param  int  $id  スタッフID
-     * @param  string  $name  表示名
-     * @param  string  $email  メールアドレス
-     * @param  StaffStatus  $status  状態
-     * @param  StaffRole  $role  権限
-     */
-    public function __construct(
-        public int $id,
-        public string $name,
-        public string $email,
-        public StaffStatus $status,
-        public StaffRole $role,
-    ) {}
+    public ?int $id = null;
+    public ?string $name = null;
+    public ?string $email = null;
+    public ?int $provider = null;
+    public ?string $providerId = null;
+    public ?string $avater = null;
+    public ?StaffRole $role = null;
+    public ?Carbon $lastLoginAt = null;
 }

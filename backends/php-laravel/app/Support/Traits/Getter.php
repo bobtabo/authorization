@@ -6,6 +6,8 @@
  */
 namespace App\Support\Traits;
 
+use App\Support\Exceptions\SystemException;
+
 /**
  * オブジェクトのプロパティ取得Traitです。
  *

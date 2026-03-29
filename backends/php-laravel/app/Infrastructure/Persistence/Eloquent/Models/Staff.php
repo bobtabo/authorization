@@ -6,7 +6,8 @@
  */
 namespace App\Infrastructure\Persistence\Eloquent\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Support\Models\AppMasterModel;
+use Database\Factories\StaffFactory;
 
 /**
  * スタッフModelクラスです。
@@ -14,9 +15,17 @@ use Illuminate\Database\Eloquent\Model;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Models
  */
-class Staff extends Model
+class Staff extends AppMasterModel
 {
     protected $table = 'staffs';
 
     protected $guarded = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    protected static function newFactory()
+    {
+        return StaffFactory::new();
+    }
 }

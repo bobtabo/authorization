@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Auth\Entities;
 
-use app\Domain\AbstractEntity;
+use app\Support\Entities\AbstractEntity;
 
 /**
  * 認証ドメインのログイン主体の状態を表すEntityクラスです。

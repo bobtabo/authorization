@@ -6,27 +6,33 @@
  */
 namespace App\Domain\Client\Entities;
 
-use app\Domain\AbstractEntity;
 use App\Domain\Client\Enums\ClientStatus;
+use App\Support\Entities\AbstractEntity;
+use Carbon\Carbon;
 
 /**
- * クライアント集約のルートを表すEntityクラスです。
+ * クライアントEntityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\Entities
  */
-final readonly class Client extends AbstractEntity
+class Client extends AbstractEntity
 {
-    /**
-     * @param  int  $id  クライアントID
-     * @param  string  $name  名称
-     * @param  string  $identifier  識別子
-     * @param  ClientStatus  $status  状態
-     */
-    public function __construct(
-        public int $id,
-        public string $name,
-        public string $identifier,
-        public ClientStatus $status,
-    ) {}
+    public ?int $id = null;
+    public ?string $name = null;
+    public ?string $identifer = null;
+    public ?string $postCode = null;
+    public ?string $pref = null;
+    public ?string $city = null;
+    public ?string $address = null;
+    public ?string $building = null;
+    public ?string $tel = null;
+    public ?string $email = null;
+    public ?string $accessToken = null;
+    public ?string $privateKey = null;
+    public ?string $publicKey = null;
+    public ?string $fingerprint = null;
+    public ?ClientStatus $status = null;
+    public ?Carbon $startAt = null;
+    public ?Carbon $stopAt = null;
 }
