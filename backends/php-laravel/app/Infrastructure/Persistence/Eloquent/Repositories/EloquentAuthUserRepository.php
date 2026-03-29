@@ -6,7 +6,7 @@
  */
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
-use App\Domain\Auth\Entities\AuthUser;
+use App\Domain\Auth\Entities\Auth;
 use App\Domain\Auth\Repositories\AuthUserRepositoryInterface;
 use App\Models\User;
 use app\Support\Repositories\AbstractRepository;
@@ -26,7 +26,7 @@ final class EloquentAuthUserRepository extends AbstractRepository implements Aut
      * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
-    public function findById(int $id): ?AuthUser
+    public function findById(int $id): ?Auth
     {
         $row = User::query()->find($id);
 
@@ -34,7 +34,7 @@ final class EloquentAuthUserRepository extends AbstractRepository implements Aut
             return null;
         }
 
-        return new AuthUser(
+        return new Auth(
             id: (int) $row->getKey(),
             name: (string) $row->name,
             email: (string) $row->email,
@@ -47,7 +47,7 @@ final class EloquentAuthUserRepository extends AbstractRepository implements Aut
      * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
-    public function findByEmail(string $email): ?AuthUser
+    public function findByEmail(string $email): ?Auth
     {
         $row = User::query()->where('email', $email)->first();
 
@@ -55,7 +55,7 @@ final class EloquentAuthUserRepository extends AbstractRepository implements Aut
             return null;
         }
 
-        return new AuthUser(
+        return new Auth(
             id: (int) $row->getKey(),
             name: (string) $row->name,
             email: (string) $row->email,

@@ -4,17 +4,17 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Domain\Notification\Entities;
+namespace App\Domain\Auth\Entities;
 
 use app\Support\Entities\AbstractEntity;
 
 /**
- * 通知Entityクラスです。
+ * 認証Entityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domain\Notification\Entities
+ * @package App\Domain\Auth\Entities
  */
-class Notification extends AbstractEntity
+class Auth extends AbstractEntity
 {
 
 }

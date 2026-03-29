@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Auth\Repositories;
 
-use App\Domain\Auth\Entities\AuthUser;
+use App\Domain\Auth\Entities\Auth;
 
 /**
  * 認証ユーザーを永続化層から取得するRepositoryのインターフェースです。
@@ -20,15 +20,15 @@ interface AuthUserRepositoryInterface
      * ID で認証ユーザーを1件取得します。
      *
      * @param  int  $id  ユーザーID
-     * @return AuthUser|null 該当がなければ null
+     * @return Auth|null 該当がなければ null
      */
-    public function findById(int $id): ?AuthUser;
+    public function findById(int $id): ?Auth;
 
     /**
      * メールアドレスで認証ユーザーを1件取得します。
      *
      * @param  string  $email  メールアドレス
-     * @return AuthUser|null 該当がなければ null
+     * @return Auth|null 該当がなければ null
      */
-    public function findByEmail(string $email): ?AuthUser;
+    public function findByEmail(string $email): ?Auth;
 }

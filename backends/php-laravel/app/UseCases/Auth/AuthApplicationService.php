@@ -6,7 +6,7 @@
  */
 namespace App\UseCases\Auth;
 
-use App\Domain\Auth\Entities\AuthUser;
+use App\Domain\Auth\Entities\Auth;
 use App\Domain\Auth\Repositories\AuthUserRepositoryInterface;
 use App\UseCases\Common\AbstractService;
 use Illuminate\Database\QueryException;
@@ -30,10 +30,10 @@ final class AuthApplicationService extends AbstractService
      * ID で認証ユーザーを1件取得します。
      *
      * @param  int  $id  ユーザーID
-     * @return AuthUser|null 該当がなければ null
+     * @return Auth|null 該当がなければ null
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
-    public function findUser(int $id): ?AuthUser
+    public function findUser(int $id): ?Auth
     {
         return $this->users->findById($id);
     }
