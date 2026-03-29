@@ -16,7 +16,17 @@ use App\Domain\Invitation\Entities\Invitation;
  */
 interface InvitationRepositoryInterface
 {
+    /**
+     * 現在の招待情報を取得します。
+     *
+     * @return Invitation|null 未設定時は null
+     */
     public function getCurrent(): ?Invitation;
 
+    /**
+     * 新しい招待を発行します。
+     *
+     * @return Invitation 発行された招待
+     */
     public function issue(): Invitation;
 }

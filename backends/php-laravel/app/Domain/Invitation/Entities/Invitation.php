@@ -14,6 +14,10 @@ namespace App\Domain\Invitation\Entities;
  */
 final readonly class Invitation
 {
+    /**
+     * @param  string  $token  招待トークン
+     * @param  string  $url  招待URL
+     */
     public function __construct(
         public string $token,
         public string $url,

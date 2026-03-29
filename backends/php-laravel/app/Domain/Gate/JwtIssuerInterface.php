@@ -15,7 +15,10 @@ namespace App\Domain\Gate;
 interface JwtIssuerInterface
 {
     /**
-     * @return array{message: string}
+     * 会員ID に紐づく JWT を発行します。
+     *
+     * @param  string  $memberId  クライアント会員ID
+     * @return array{message: string} 発行処理結果
      */
     public function issueForMember(string $memberId): array;
 }

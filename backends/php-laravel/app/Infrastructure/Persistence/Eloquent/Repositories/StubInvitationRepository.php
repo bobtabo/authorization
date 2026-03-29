@@ -8,6 +8,7 @@ namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Invitation\Entities\Invitation;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use Random\RandomException;
 
 /**
  * 永続化未接続時に招待を仮返却するStubのRepositoryクラスです。
@@ -19,6 +20,8 @@ final class StubInvitationRepository implements InvitationRepositoryInterface
 {
     /**
      * {@inheritdoc}
+     *
+     * @return Invitation|null 常に null（スタブ）
      */
     #[\Override]
     public function getCurrent(): ?Invitation
@@ -28,6 +31,8 @@ final class StubInvitationRepository implements InvitationRepositoryInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws RandomException 暗号論的乱数の生成に失敗した場合
      */
     #[\Override]
     public function issue(): Invitation

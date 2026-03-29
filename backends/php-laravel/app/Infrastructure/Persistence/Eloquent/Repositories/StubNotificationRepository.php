@@ -18,6 +18,10 @@ final class StubNotificationRepository implements NotificationRepositoryInterfac
 {
     /**
      * {@inheritdoc}
+     *
+     * @param  string|null  $cursor  未使用（スタブ）
+     * @param  int  $limit  未使用（スタブ）
+     * @return array{items: list<never>, next_cursor: null} 空一覧
      */
     #[\Override]
     public function listPage(?string $cursor, int $limit): array
@@ -30,6 +34,8 @@ final class StubNotificationRepository implements NotificationRepositoryInterfac
 
     /**
      * {@inheritdoc}
+     *
+     * @return array<string, int> 件数ゼロのスタブ
      */
     #[\Override]
     public function counts(): array

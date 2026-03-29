@@ -6,28 +6,34 @@
  */
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
-use App\Domain\Account\Entities\Account;
-use App\Domain\Account\Repositories\AccountRepositoryInterface;
-use App\Infrastructure\Persistence\Eloquent\Models\AdminAccountModel;
+use App\Domain\Staff\Entities\Staff;
+use App\Domain\Staff\Repositories\StaffRepositoryInterface;
+use App\Infrastructure\Persistence\Eloquent\Models\Staff as Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\QueryException;
 
 /**
- * Eloquent によりアカウントを読み取るRepositoryクラスです。
+ * Eloquent によりスタッフを読み取るRepositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class EloquentAccountRepository implements AccountRepositoryInterface
+final class EloquentStaffRepository implements StaffRepositoryInterface
 {
+    /**
+     * @param  Model  $model  スタッフ Eloquent モデル
+     */
     public function __construct(
-        private readonly AdminAccountModel $model,
+        private readonly Model $model,
     ) {}
 
     /**
      * {@inheritdoc}
+     *
+     * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
-    public function findById(int $id): ?Account
+    public function findById(int $id): ?Staff
     {
         $row = $this->model->newQuery()->find($id);
 
@@ -40,6 +46,8 @@ final class EloquentAccountRepository implements AccountRepositoryInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
     public function search(
@@ -64,12 +72,18 @@ final class EloquentAccountRepository implements AccountRepositoryInterface
             $q->whereIn('active', $statuses);
         }
 
-        return $q->get()->map(fn (AdminAccountModel $row): Account => $this->toEntity($row))->all();
+        return $q->get()->map(fn (Model $row): Staff => $this->toEntity($row))->all();
     }
 
-    private function toEntity(AdminAccountModel $row): Account
+    /**
+     * Eloquent 行をドメイン Entity に変換します。
+     *
+     * @param  Model  $row  Eloquent スタッフ行
+     * @return Staff ドメインのスタッフ
+     */
+    private function toEntity(Model $row): Staff
     {
-        return new Account(
+        return new Staff(
             id: (int) $row->getKey(),
             name: (string) ($row->name ?? ''),
             email: (string) ($row->email ?? ''),

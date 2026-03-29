@@ -1,4 +1,4 @@
-FROM php:8.4-fpm
+FROM php:8.5-fpm
 
 # ライブラリのインストール
 RUN apt-get update
@@ -21,8 +21,7 @@ RUN docker-php-ext-install \
       mbstring \
       pdo \
       bcmath \
-      pdo_mysql \
-      opcache
+      pdo_mysql
 
 # Xdebugのインストール
 RUN pecl install xdebug

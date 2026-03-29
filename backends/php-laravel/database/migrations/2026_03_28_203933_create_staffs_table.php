@@ -10,7 +10,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * 管理アカウントMigrationクラスです。
+ * スタッフテーブル用Migrationクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('admin_accounts', function (Blueprint $table) {
+        Schema::create('staffs', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name', 100)->comment('名前');
             $table->string('email', 255)->comment('メールアドレス');

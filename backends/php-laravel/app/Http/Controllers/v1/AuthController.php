@@ -18,6 +18,12 @@ use Illuminate\Http\Request;
  */
 class AuthController extends Controller
 {
+    /**
+     * ログイン情報を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function login(Request $request): JsonResponse
     {
         return response()->json([
@@ -25,6 +31,13 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * 招待トークンを検証しログイン情報を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @param  string  $token  招待トークン
+     * @return JsonResponse JSON レスポンス
+     */
     public function invitation(Request $request, string $token): JsonResponse
     {
         return response()->json([
@@ -33,6 +46,12 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Google OAuth リダイレクト用の応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function googleRedirect(Request $request): JsonResponse
     {
         return response()->json([
@@ -40,6 +59,12 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * ログアウト処理の応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function logout(Request $request): JsonResponse
     {
         return response()->json([

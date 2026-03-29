@@ -18,11 +18,24 @@ use Illuminate\Http\Request;
  */
 class ClientController extends Controller
 {
+    /**
+     * クライアント一覧を返します（未実装の場合は空配列）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function index(Request $request): JsonResponse
     {
         return response()->json([]);
     }
 
+    /**
+     * クライアント詳細を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @param  int  $id  クライアントID
+     * @return JsonResponse JSON レスポンス
+     */
     public function show(Request $request, int $id): JsonResponse
     {
         return response()->json([
@@ -31,6 +44,12 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * クライアントを登録します（スタブ応答）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function store(Request $request): JsonResponse
     {
         return response()->json([
@@ -38,6 +57,13 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * クライアントを更新します（スタブ応答）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @param  int  $id  クライアントID
+     * @return JsonResponse JSON レスポンス
+     */
     public function update(Request $request, int $id): JsonResponse
     {
         return response()->json([
@@ -46,6 +72,13 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * クライアントを削除します（スタブ応答）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @param  int  $id  クライアントID
+     * @return JsonResponse JSON レスポンス
+     */
     public function destroy(Request $request, int $id): JsonResponse
     {
         return response()->json([

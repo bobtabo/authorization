@@ -18,6 +18,12 @@ use Illuminate\Http\Request;
  */
 class NotificationController extends Controller
 {
+    /**
+     * 通知一覧（カーソルページング）を返します（スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function index(Request $request): JsonResponse
     {
         return response()->json([
@@ -26,6 +32,12 @@ class NotificationController extends Controller
         ]);
     }
 
+    /**
+     * 通知トリガーを受理する応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス（202）
+     */
     public function store(Request $request): JsonResponse
     {
         return response()->json([
@@ -33,6 +45,12 @@ class NotificationController extends Controller
         ], 202);
     }
 
+    /**
+     * 通知の一括更新（既読など）の応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function bulkPatch(Request $request): JsonResponse
     {
         return response()->json([
@@ -40,6 +58,12 @@ class NotificationController extends Controller
         ]);
     }
 
+    /**
+     * 通知件数の集計を返します（スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function counts(Request $request): JsonResponse
     {
         return response()->json([
@@ -48,6 +72,13 @@ class NotificationController extends Controller
         ]);
     }
 
+    /**
+     * 単一通知を更新する応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @param  string  $id  通知ID（UUID）
+     * @return JsonResponse JSON レスポンス
+     */
     public function update(Request $request, string $id): JsonResponse
     {
         return response()->json([

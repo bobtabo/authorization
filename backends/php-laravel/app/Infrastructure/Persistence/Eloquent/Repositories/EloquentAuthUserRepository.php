@@ -9,6 +9,7 @@ namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 use App\Domain\Auth\Entities\AuthUser;
 use App\Domain\Auth\Repositories\AuthUserRepositoryInterface;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 
 /**
  * Laravel User をドメインの認証ユーザーへ変換して返すRepositoryクラスです。
@@ -20,6 +21,8 @@ final class EloquentAuthUserRepository implements AuthUserRepositoryInterface
 {
     /**
      * {@inheritdoc}
+     *
+     * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
     public function findById(int $id): ?AuthUser
@@ -39,6 +42,8 @@ final class EloquentAuthUserRepository implements AuthUserRepositoryInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
     public function findByEmail(string $email): ?AuthUser

@@ -18,6 +18,10 @@ final class StubJwtVerifier implements JwtVerifierInterface
 {
     /**
      * {@inheritdoc}
+     *
+     * @param  string  $identifier  クライアント識別名（aud に反映）
+     * @param  string  $token  JWT 文字列（スタブでは未検証）
+     * @return array<string, mixed> 固定値の Payload 相当
      */
     #[\Override]
     public function verify(string $identifier, string $token): array

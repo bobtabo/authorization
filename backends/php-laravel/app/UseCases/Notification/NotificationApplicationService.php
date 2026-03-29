@@ -17,12 +17,19 @@ use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
  */
 final class NotificationApplicationService
 {
+    /**
+     * @param  NotificationRepositoryInterface  $notifications  通知Repository
+     */
     public function __construct(
         private readonly NotificationRepositoryInterface $notifications,
     ) {}
 
     /**
-     * @return array{items: list<Notification>, next_cursor: ?string}
+     * カーソル付きで通知一覧ページを取得します。
+     *
+     * @param  string|null  $cursor  次ページカーソル（先頭は null）
+     * @param  int  $limit  1ページあたりの最大件数
+     * @return array{items: list<Notification>, next_cursor: ?string} 一覧と次カーソル
      */
     public function listPage(?string $cursor, int $limit): array
     {
@@ -30,7 +37,9 @@ final class NotificationApplicationService
     }
 
     /**
-     * @return array<string, int>
+     * 通知件数の集計を取得します。
+     *
+     * @return array<string, int> 種別ごとの件数
      */
     public function counts(): array
     {

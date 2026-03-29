@@ -16,7 +16,19 @@ use App\Domain\Auth\Entities\AuthUser;
  */
 interface AuthUserRepositoryInterface
 {
+    /**
+     * ID で認証ユーザーを1件取得します。
+     *
+     * @param  int  $id  ユーザーID
+     * @return AuthUser|null 該当がなければ null
+     */
     public function findById(int $id): ?AuthUser;
 
+    /**
+     * メールアドレスで認証ユーザーを1件取得します。
+     *
+     * @param  string  $email  メールアドレス
+     * @return AuthUser|null 該当がなければ null
+     */
     public function findByEmail(string $email): ?AuthUser;
 }

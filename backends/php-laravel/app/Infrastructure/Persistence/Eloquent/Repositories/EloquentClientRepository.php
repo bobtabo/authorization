@@ -8,8 +8,9 @@ namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Repositories\ClientRepositoryInterface;
-use App\Infrastructure\Persistence\Eloquent\Models\ClientModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Client as Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\QueryException;
 
 /**
  * Eloquent によりクライアントを読み取るRepositoryクラスです。
@@ -19,12 +20,17 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class EloquentClientRepository implements ClientRepositoryInterface
 {
+    /**
+     * @param  Model  $model  クライアント Eloquent モデル
+     */
     public function __construct(
-        private readonly ClientModel $model,
+        private readonly Model $model,
     ) {}
 
     /**
      * {@inheritdoc}
+     *
+     * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
     public function findById(int $id): ?Client
@@ -40,6 +46,8 @@ final class EloquentClientRepository implements ClientRepositoryInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws QueryException クエリ実行に失敗した場合
      */
     #[\Override]
     public function search(
@@ -68,10 +76,16 @@ final class EloquentClientRepository implements ClientRepositoryInterface
             $q->whereIn('status', $statuses);
         }
 
-        return $q->get()->map(fn (ClientModel $row): Client => $this->toEntity($row))->all();
+        return $q->get()->map(fn (Model $row): Client => $this->toEntity($row))->all();
     }
 
-    private function toEntity(ClientModel $row): Client
+    /**
+     * Eloquent 行をドメイン Entity に変換します。
+     *
+     * @param  Model  $row  Eloquent クライアント行
+     * @return Client ドメインのクライアント
+     */
+    private function toEntity(Model $row): Client
     {
         return new Client(
             id: (int) $row->getKey(),

@@ -18,6 +18,9 @@ final class StubJwtIssuer implements JwtIssuerInterface
 {
     /**
      * {@inheritdoc}
+     *
+     * @param  string  $memberId  クライアント会員ID（スタブでは未使用）
+     * @return array{message: string} 成功メッセージのみ
      */
     #[\Override]
     public function issueForMember(string $memberId): array

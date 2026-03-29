@@ -14,6 +14,11 @@ namespace App\Domain\Notification\Entities;
  */
 final readonly class Notification
 {
+    /**
+     * @param  string  $id  通知ID
+     * @param  string  $title  タイトル
+     * @param  \DateTimeImmutable|null  $readAt  既読日時（未読は null）
+     */
     public function __construct(
         public string $id,
         public string $title,

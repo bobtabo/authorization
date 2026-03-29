@@ -18,6 +18,12 @@ use Illuminate\Http\Request;
  */
 class InvitationController extends Controller
 {
+    /**
+     * 招待 URL を取得する応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function index(Request $request): JsonResponse
     {
         return response()->json([
@@ -26,6 +32,12 @@ class InvitationController extends Controller
         ]);
     }
 
+    /**
+     * 招待 URL を発行する応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function issue(Request $request): JsonResponse
     {
         return response()->json([

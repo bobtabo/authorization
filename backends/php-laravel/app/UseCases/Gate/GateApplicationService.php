@@ -17,13 +17,20 @@ use App\Domain\Gate\JwtVerifierInterface;
  */
 final class GateApplicationService
 {
+    /**
+     * @param  JwtIssuerInterface  $issuer  JWT 発行ポート
+     * @param  JwtVerifierInterface  $verifier  JWT 検証ポート
+     */
     public function __construct(
         private readonly JwtIssuerInterface $issuer,
         private readonly JwtVerifierInterface $verifier,
     ) {}
 
     /**
-     * @return array{message: string}
+     * 会員ID に紐づく JWT 発行結果を取得します。
+     *
+     * @param  string  $memberId  クライアント会員ID
+     * @return array{message: string} 発行処理結果
      */
     public function issueToken(string $memberId): array
     {
@@ -31,7 +38,11 @@ final class GateApplicationService
     }
 
     /**
-     * @return array<string, mixed>
+     * JWT を検証しクレームを返します。
+     *
+     * @param  string  $identifier  クライアント識別名
+     * @param  string  $token  JWT 文字列
+     * @return array<string, mixed> 検証結果（Payload 相当）
      */
     public function verify(string $identifier, string $token): array
     {

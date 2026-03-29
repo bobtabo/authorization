@@ -18,6 +18,12 @@ use Illuminate\Http\Request;
  */
 class GateController extends Controller
 {
+    /**
+     * クライアント会員向け JWT を発行する応答を返します（スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @return JsonResponse JSON レスポンス
+     */
     public function issue(Request $request): JsonResponse
     {
         return response()->json([
@@ -25,6 +31,13 @@ class GateController extends Controller
         ]);
     }
 
+    /**
+     * JWT を検証し Payload 相当の応答を返します（未実装スタブ）。
+     *
+     * @param  Request  $request  HTTP リクエスト
+     * @param  string  $identifier  クライアント識別名
+     * @return JsonResponse JSON レスポンス
+     */
     public function verify(Request $request, string $identifier): JsonResponse
     {
         return response()->json([

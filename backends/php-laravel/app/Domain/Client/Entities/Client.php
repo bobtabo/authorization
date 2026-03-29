@@ -14,6 +14,12 @@ namespace App\Domain\Client\Entities;
  */
 final readonly class Client
 {
+    /**
+     * @param  int  $id  クライアントID
+     * @param  string  $name  名称
+     * @param  string  $identifier  識別子
+     * @param  int  $status  状態コード
+     */
     public function __construct(
         public int $id,
         public string $name,

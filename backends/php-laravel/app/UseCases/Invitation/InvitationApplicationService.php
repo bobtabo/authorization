@@ -8,6 +8,7 @@ namespace App\UseCases\Invitation;
 
 use App\Domain\Invitation\Entities\Invitation;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use Random\RandomException;
 
 /**
  * 招待の取得・発行のユースケースを提供するApplicationServiceクラスです。
@@ -17,15 +18,29 @@ use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
  */
 final class InvitationApplicationService
 {
+    /**
+     * @param  InvitationRepositoryInterface  $invitations  招待Repository
+     */
     public function __construct(
         private readonly InvitationRepositoryInterface $invitations,
     ) {}
 
+    /**
+     * 現在の招待情報を取得します。
+     *
+     * @return Invitation|null 未設定時は null
+     */
     public function current(): ?Invitation
     {
         return $this->invitations->getCurrent();
     }
 
+    /**
+     * 新しい招待を発行します。
+     *
+     * @return Invitation 発行された招待
+     * @throws RandomException 乱数生成に失敗した場合（永続化実装に依存）
+     */
     public function issue(): Invitation
     {
         return $this->invitations->issue();

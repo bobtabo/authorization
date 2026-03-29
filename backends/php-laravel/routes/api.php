@@ -5,12 +5,12 @@
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
 
-use App\Http\Controllers\v1\AccountController;
 use App\Http\Controllers\v1\AuthController;
 use App\Http\Controllers\v1\ClientController;
 use App\Http\Controllers\v1\GateController;
 use App\Http\Controllers\v1\InvitationController;
 use App\Http\Controllers\v1\NotificationController;
+use App\Http\Controllers\v1\StaffController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,10 +35,10 @@ Route::prefix('v1')->group(function () {
     Route::put('clients/{id}/update', [ClientController::class, 'update'])->whereNumber('id');
     Route::delete('clients/{id}/delete', [ClientController::class, 'destroy'])->whereNumber('id');
 
-    // --- accounts ---
-    Route::get('accounts', [AccountController::class, 'index']);
-    Route::patch('accounts/{id}/updateRole', [AccountController::class, 'updateRole'])->whereNumber('id');
-    Route::delete('accounts/{id}/delete', [AccountController::class, 'destroy'])->whereNumber('id');
+    // --- staff ---
+    Route::get('staff', [StaffController::class, 'index']);
+    Route::patch('staff/{id}/updateRole', [StaffController::class, 'updateRole'])->whereNumber('id');
+    Route::delete('staff/{id}/delete', [StaffController::class, 'destroy'])->whereNumber('id');
 
     // --- invitation（/invitation/issue を先に）---
     Route::get('invitation/issue', [InvitationController::class, 'issue']);
