@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('provider_id', 255)->comment('連携アカウントID');
             $table->text('avater')->nullable()->comment('アバターURL');
             $table->integer('role')->unsigned()->comment('権限');
+            $table->unsignedTinyInteger('status')->default(1)->comment('状態（StaffStatus）');
             $table->string('last_login_at')->comment('最終ログイン日時');
             $table->string('created_at')->useCurrent()->comment('登録日時');
             $table->integer('created_by')->unsigned()->comment('登録者ID');
@@ -45,6 +46,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admin_accounts');
+        Schema::dropIfExists('staffs');
     }
 };

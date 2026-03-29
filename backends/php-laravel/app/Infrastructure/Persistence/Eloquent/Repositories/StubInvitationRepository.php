@@ -16,7 +16,7 @@ use Random\RandomException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class StubInvitationRepository implements InvitationRepositoryInterface
+final class StubInvitationRepository extends AbstractRepository implements InvitationRepositoryInterface
 {
     /**
      * {@inheritdoc}

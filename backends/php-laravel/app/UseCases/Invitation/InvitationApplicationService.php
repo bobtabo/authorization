@@ -8,6 +8,7 @@ namespace App\UseCases\Invitation;
 
 use App\Domain\Invitation\Entities\Invitation;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use App\UseCases\Common\AbstractService;
 use Random\RandomException;
 
 /**
@@ -16,7 +17,7 @@ use Random\RandomException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Invitation
  */
-final class InvitationApplicationService
+final class InvitationApplicationService extends AbstractService
 {
     /**
      * @param  InvitationRepositoryInterface  $invitations  招待Repository

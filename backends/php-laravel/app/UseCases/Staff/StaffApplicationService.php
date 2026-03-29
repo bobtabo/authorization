@@ -8,6 +8,7 @@ namespace App\UseCases\Staff;
 
 use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Repositories\StaffRepositoryInterface;
+use App\UseCases\Common\AbstractService;
 use Illuminate\Database\QueryException;
 
 /**
@@ -16,7 +17,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Staff
  */
-final class StaffApplicationService
+final class StaffApplicationService extends AbstractService
 {
     /**
      * @param  StaffRepositoryInterface  $staffRepository  スタッフRepository

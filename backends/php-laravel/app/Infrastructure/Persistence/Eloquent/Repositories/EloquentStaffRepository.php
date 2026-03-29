@@ -7,6 +7,8 @@
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Staff\Entities\Staff;
+use App\Domain\Staff\Enums\StaffRole;
+use App\Domain\Staff\Enums\StaffStatus;
 use App\Domain\Staff\Repositories\StaffRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\Staff as Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +20,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class EloquentStaffRepository implements StaffRepositoryInterface
+final class EloquentStaffRepository extends AbstractRepository implements StaffRepositoryInterface
 {
     /**
      * @param  Model  $model  スタッフ Eloquent モデル
@@ -69,7 +71,7 @@ final class EloquentStaffRepository implements StaffRepositoryInterface
         }
 
         if ($statuses !== []) {
-            $q->whereIn('active', $statuses);
+            $q->whereIn('status', $statuses);
         }
 
         return $q->get()->map(fn (Model $row): Staff => $this->toEntity($row))->all();
@@ -83,12 +85,15 @@ final class EloquentStaffRepository implements StaffRepositoryInterface
      */
     private function toEntity(Model $row): Staff
     {
+        $status = StaffStatus::tryFrom((int) ($row->status ?? 1)) ?? StaffStatus::Active;
+        $role = StaffRole::tryFrom((int) ($row->role ?? 1)) ?? StaffRole::Member;
+
         return new Staff(
             id: (int) $row->getKey(),
             name: (string) ($row->name ?? ''),
             email: (string) ($row->email ?? ''),
-            activeValue: (int) ($row->active ?? 0),
-            roleValue: (int) ($row->role ?? 0),
+            status: $status,
+            role: $role,
         );
     }
 }

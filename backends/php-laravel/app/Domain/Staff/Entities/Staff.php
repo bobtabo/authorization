@@ -6,26 +6,30 @@
  */
 namespace App\Domain\Staff\Entities;
 
+use app\Domain\AbstractEntity;
+use App\Domain\Staff\Enums\StaffRole;
+use App\Domain\Staff\Enums\StaffStatus;
+
 /**
  * スタッフ集約のルートを表すEntityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Staff\Entities
  */
-final readonly class Staff
+final readonly class Staff extends AbstractEntity
 {
     /**
      * @param  int  $id  スタッフID
      * @param  string  $name  表示名
      * @param  string  $email  メールアドレス
-     * @param  int  $activeValue  状態コード
-     * @param  int  $roleValue  権限コード
+     * @param  StaffStatus  $status  状態
+     * @param  StaffRole  $role  権限
      */
     public function __construct(
         public int $id,
         public string $name,
         public string $email,
-        public int $activeValue,
-        public int $roleValue,
+        public StaffStatus $status,
+        public StaffRole $role,
     ) {}
 }

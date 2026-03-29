@@ -6,13 +6,15 @@
  */
 namespace App\Domain\Invitation\Entities;
 
+use app\Domain\AbstractEntity;
+
 /**
  * 招待トークンと招待URLを表すEntityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Invitation\Entities
  */
-final readonly class Invitation
+final readonly class Invitation extends AbstractEntity
 {
     /**
      * @param  string  $token  招待トークン

@@ -8,6 +8,7 @@ namespace App\UseCases\Client;
 
 use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Repositories\ClientRepositoryInterface;
+use App\UseCases\Common\AbstractService;
 use Illuminate\Database\QueryException;
 
 /**
@@ -16,7 +17,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Client
  */
-final class ClientApplicationService
+final class ClientApplicationService extends AbstractService
 {
     /**
      * @param  ClientRepositoryInterface  $clients  クライアントRepository

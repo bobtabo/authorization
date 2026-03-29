@@ -6,13 +6,15 @@
  */
 namespace App\Domain\Auth\Entities;
 
+use app\Domain\AbstractEntity;
+
 /**
  * 認証ドメインのログイン主体の状態を表すEntityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Auth\Entities
  */
-final readonly class AuthUser
+final readonly class AuthUser extends AbstractEntity
 {
     /**
      * @param  int  $id  ユーザーID

@@ -7,6 +7,7 @@
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Client\Entities\Client;
+use App\Domain\Client\Enums\ClientStatus;
 use App\Domain\Client\Repositories\ClientRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\Client as Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +19,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class EloquentClientRepository implements ClientRepositoryInterface
+final class EloquentClientRepository extends AbstractRepository implements ClientRepositoryInterface
 {
     /**
      * @param  Model  $model  クライアント Eloquent モデル
@@ -87,11 +88,13 @@ final class EloquentClientRepository implements ClientRepositoryInterface
      */
     private function toEntity(Model $row): Client
     {
+        $status = ClientStatus::tryFrom((int) ($row->status ?? 0)) ?? ClientStatus::Inactive;
+
         return new Client(
             id: (int) $row->getKey(),
             name: (string) ($row->name ?? ''),
-            identifier: (string) ($row->identifier ?? ''),
-            status: (int) ($row->status ?? 0),
+            identifier: (string) ($row->identifer ?? $row->identifier ?? ''),
+            status: $status,
         );
     }
 }
