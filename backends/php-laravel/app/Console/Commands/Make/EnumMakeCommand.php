@@ -41,22 +41,25 @@ class EnumMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/enum.stub';
+        return __DIR__.'/Stubs/enum.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Enums';
+        return $rootNamespace.'\Enums';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getOptions()
     {
         return [
@@ -69,6 +72,7 @@ class EnumMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function replaceClass($stub, $name)
     {
         $result = parent::replaceClass($stub, $name);
@@ -77,6 +81,7 @@ class EnumMakeCommand extends GeneratorCommand
         if (empty($valueType)) {
             return $result;
         }
+
         return str_replace(['{{ value }}', '{{value}}'], $valueType, $result);
     }
 }

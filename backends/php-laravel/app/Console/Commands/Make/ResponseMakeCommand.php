@@ -9,7 +9,7 @@ namespace App\Console\Commands\Make;
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * レスポンス生成Commandクラスです。
+ * Response生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Console\Commands\Make
@@ -40,16 +40,18 @@ class ResponseMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/response.stub';
+        return __DIR__.'/Stubs/response.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Http\Responses';
+        return $rootNamespace.'\Http\Responses';
     }
 }

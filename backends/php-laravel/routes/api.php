@@ -1,4 +1,9 @@
 <?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
 
 use App\Http\Controllers\v1\AccountController;
 use App\Http\Controllers\v1\AuthController;
@@ -6,12 +11,7 @@ use App\Http\Controllers\v1\ClientController;
 use App\Http\Controllers\v1\GateController;
 use App\Http\Controllers\v1\InvitationController;
 use App\Http\Controllers\v1\NotificationController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
 
 /*
 |--------------------------------------------------------------------------

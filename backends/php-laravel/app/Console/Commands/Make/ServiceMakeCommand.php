@@ -9,7 +9,7 @@ namespace App\Console\Commands\Make;
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * サービス生成Commandクラスです。
+ * Service生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Console\Commands\Make
@@ -40,16 +40,18 @@ class ServiceMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/service.stub';
+        return __DIR__.'/Stubs/service.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Domains\Services';
+        return $rootNamespace.'\Domains\Services';
     }
 }

@@ -9,7 +9,7 @@ namespace App\Console\Commands\Make;
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * データオブジェクト生成Commandクラスです。
+ * ValueObject生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Console\Commands\Make
@@ -40,16 +40,18 @@ class ValueObjectMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/value-object.stub';
+        return __DIR__.'/Stubs/value-object.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Domains\ValueObjects';
+        return $rootNamespace.'\Domains\ValueObjects';
     }
 }

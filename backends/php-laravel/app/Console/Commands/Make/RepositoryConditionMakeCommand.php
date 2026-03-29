@@ -9,7 +9,7 @@ namespace App\Console\Commands\Make;
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * リポジトリ検索条件の生成Commandクラスです。
+ * RepositoryCondition生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Console\Commands\Make
@@ -40,24 +40,27 @@ class RepositoryConditionMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/repository-condition.stub';
+        return __DIR__.'/Stubs/repository-condition.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Domains\Repositories\Conditions';
+        return $rootNamespace.'\Domains\Repositories\Conditions';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getPath($name)
     {
-        return parent::getPath($name . 'Condition');
+        return parent::getPath($name.'Condition');
     }
 }
