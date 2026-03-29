@@ -7,7 +7,7 @@ export const flowImages = {
   login: flowAsset("login.png"),
   header: flowAsset("header.png"),
   clientList: flowAsset("client-list.png"),
-  accountList: flowAsset("account-list.png"),
+  staffList: flowAsset("staff-list.png"),
   clientRegister: flowAsset("client-register.png"),
   clientEdit: flowAsset("client-edit.png"),
   clientDetail: flowAsset("client-detail.png"),

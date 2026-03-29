@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace Sii\Selloop\Core\Console\Commands\Make;
+namespace App\Console\Commands\Make;
 
 use Illuminate\Console\GeneratorCommand;
 
@@ -12,7 +12,7 @@ use Illuminate\Console\GeneratorCommand;
  * DTO生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package Sii\Selloop\Core\Console\Commands\Make
+ * @package App\Console\Commands\Make
  */
 class DtoMakeCommand extends GeneratorCommand
 {
@@ -40,16 +40,18 @@ class DtoMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/dto.stub';
+        return __DIR__.'/Stubs/dto.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Domains\Dtos';
+        return $rootNamespace.'\Domains\Dtos';
     }
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { getInitials } from "@/lib/session-user";
 
 /**
- * ヘッダー・アカウント一覧で同じ見た目のアバターを使う
+ * ヘッダー・スタッフ一覧で同じ見た目のアバターを使う
  */
 export function UserAvatar({
   name,

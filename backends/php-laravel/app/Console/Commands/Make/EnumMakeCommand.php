@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace Sii\Selloop\Core\Console\Commands\Make;
+namespace App\Console\Commands\Make;
 
 use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputOption;
@@ -13,7 +13,7 @@ use Symfony\Component\Console\Input\InputOption;
  * Enum生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package Sii\Selloop\Core\Console\Commands\Make
+ * @package App\Console\Commands\Make
  */
 class EnumMakeCommand extends GeneratorCommand
 {
@@ -41,22 +41,25 @@ class EnumMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/enum.stub';
+        return __DIR__.'/Stubs/enum.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Enums';
+        return $rootNamespace.'\Enums';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getOptions()
     {
         return [
@@ -69,6 +72,7 @@ class EnumMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function replaceClass($stub, $name)
     {
         $result = parent::replaceClass($stub, $name);
@@ -77,6 +81,7 @@ class EnumMakeCommand extends GeneratorCommand
         if (empty($valueType)) {
             return $result;
         }
+
         return str_replace(['{{ value }}', '{{value}}'], $valueType, $result);
     }
 }

@@ -4,15 +4,15 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace Sii\Selloop\Core\Console\Commands\Make;
+namespace App\Console\Commands\Make;
 
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * リポジトリファサード生成Commandクラスです。
+ * RepositoryFacade生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package Sii\Selloop\Core\Console\Commands\Make
+ * @package App\Console\Commands\Make
  */
 class RepositoryFacadeMakeCommand extends GeneratorCommand
 {
@@ -40,24 +40,27 @@ class RepositoryFacadeMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/repository-facade.stub';
+        return __DIR__.'/Stubs/repository-facade.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Domains\Repositories\Facades';
+        return $rootNamespace.'\Domains\Repositories\Facades';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getPath($name)
     {
-        return parent::getPath($name . 'Facade');
+        return parent::getPath($name.'Facade');
     }
 }

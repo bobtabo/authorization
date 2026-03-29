@@ -6,9 +6,10 @@ import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", ".next", "test-results", "playwright-report"]),
   {
     files: ["**/*.{ts,tsx}"],
+    ignores: ["e2e/**"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -18,6 +19,13 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+  },
+  {
+    files: ["e2e/**/*.ts", "playwright.config.ts"],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 ]);

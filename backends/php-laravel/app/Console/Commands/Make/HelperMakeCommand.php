@@ -4,15 +4,15 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace Sii\Selloop\Core\Console\Commands\Make;
+namespace App\Console\Commands\Make;
 
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * ヘルパー生成Commandクラスです。
+ * Helper生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package Sii\Selloop\Core\Console\Commands\Make
+ * @package App\Console\Commands\Make
  */
 class HelperMakeCommand extends GeneratorCommand
 {
@@ -40,16 +40,18 @@ class HelperMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/helper.stub';
+        return __DIR__.'/Stubs/helper.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Helpers';
+        return $rootNamespace.'\Helpers';
     }
 }

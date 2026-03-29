@@ -4,15 +4,15 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace Sii\Selloop\Core\Console\Commands\Make;
+namespace App\Console\Commands\Make;
 
 use Illuminate\Console\GeneratorCommand;
 
 /**
- * データオブジェクト生成Commandクラスです。
+ * ValueObject生成Commandクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package Sii\Selloop\Core\Console\Commands\Make
+ * @package App\Console\Commands\Make
  */
 class ValueObjectMakeCommand extends GeneratorCommand
 {
@@ -40,16 +40,18 @@ class ValueObjectMakeCommand extends GeneratorCommand
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getStub()
     {
-        return __DIR__ . '/Stubs/value-object.stub';
+        return __DIR__.'/Stubs/value-object.stub';
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Domains\ValueObjects';
+        return $rootNamespace.'\Domains\ValueObjects';
     }
 }

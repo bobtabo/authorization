@@ -1,0 +1,121 @@
+<p align="center">
+    <span style="margin-right:50px;"><img src="https://cdn.worldvectorlogo.com/logos/nginx.svg" width=120px /></span>
+    <span style="margin-right:50px;"><img src="https://cdn.cdnlogo.com/logos/m/10/mysql.svg" width=100px /></span>
+    <span><img src="https://www.vectorlogo.zone/logos/redis/redis-ar21.svg" width=100px /></span>
+</p>
+
+<p align="center">
+    <span style="margin-right:10px;"><img src="https://img.shields.io/badge/nginx-v1.x-008000.svg?style=flat"></span>
+    <span style="margin-right:10px;"><img src="https://img.shields.io/badge/mysql-v8.x-1e90ff.svg?style=flat"></span>
+    <span><img src="https://img.shields.io/badge/redis-stable-ff7964.svg?style=flat"></span>
+</p>
+
+## ディレクトリ構成
+
+| パス                                                           | 内容                                                                 |
+|--------------------------------------------------------------|--------------------------------------------------------------------|
+| [`develop/`](./develop/)                                     | AWSの開発環境用を想定                                                       |
+| [`local/app-go/`](local/app-go/)         | Go 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                     |
+| [`local/app-php/`](local/app-php/)       | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                    |
+| [`local/app-python/`](local/app-python/) | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                 |
+| [`local/app-ts/`](local/app-ts/)         | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。             |
+| [`local/common/`](local/common/)         | 共通インフラ（リバースプロキシ、DB、キャッシュ、メール検証用など）。複数バックエンドで共有する前提のスタック。 |
+| [`production/`](./production/)                               | AWSの本番環境用を想定                                                       |
+| [`staging/`](./staging/)                                     | AWSの検証環境用を想定                                                       |
+
+`common` 側で Docker ネットワーク `authorization` を作成し、各 `docker-compose` はそのネットワークに参加します（`external: true`）。
+
+## 前提
+
+- Docker Engine および Docker Compose（`docker compose` または `docker-compose`）が使えること
+- ポート **443**（プロキシ）、**3306**（MySQL）、**6379**（Redis）などがローカルで空いていること（`.env` で変更可）
+
+## 共通コンテナ操作
+
+### 事前準備
+```bash
+cd docker
+
+# 初回のみ: スクリプトに実行権限、証明書・環境変数
+find ./bin -type f -exec chmod 755 {} +
+bin/docker-environment.sh
+```
+
+### コンテナを起動する
+```bash
+# 起動（内部で authorization ネットワーク作成 + compose up）
+bin/docker-common-up.sh
+```
+
+### コンテナを破棄する
+```bash
+# ボリュームや data も消えるので注意！
+bin/docker-common-down.sh
+```
+
+## アプリコンテナ操作
+
+`common` でネットワークとプロキシが立ち上がった状態で、各アプリ環境を起動します。
+
+### コンテナを起動する
+
+```bash
+# Go環境を起動する
+bin/docker-go-up.sh
+
+# PHP環境を起動する
+bin/docker-php-up.sh
+
+# Python環境を起動する
+bin/docker-python-up.sh
+
+# TypeScript環境を起動する
+bin/docker-ts-up.sh
+```
+
+### コンテナに入る
+
+```bash
+# Go環境に入る
+bin/docker-go-exec.sh
+
+# PHP環境に入る
+bin/docker-php-exec.sh
+
+# Python環境に入る
+bin/docker-python-exec.sh
+
+# TypeScript環境に入る
+bin/docker-ts-exec.sh
+```
+
+### コンテナを破棄する
+
+```bash
+# Go環境を破棄する
+bin/docker-go-down.sh
+
+# PHP環境を破棄する
+bin/docker-php-down.sh
+
+# Python環境を破棄する
+bin/docker-python-down.sh
+
+# TypeScript環境を破棄する
+bin/docker-ts-down.sh
+```
+
+## :fire: 注意
+
+- `docker-xxx-down.sh` は **データディレクトリやログを削除する**処理が入っています。実行前に内容を確認してください。
+- 証明書・パスワード類は **開発用サンプル**です。共有環境では流用しないでください。
+
+# :bulb: 各ツール
+
+| ツール     | URL |
+|---------| ---- |
+| MailPit | http://localhost:8025/ |
+
+# 関連ドキュメント
+
+- リポジトリ全体: [../README.md](../README.md)
