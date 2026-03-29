@@ -235,11 +235,11 @@ paths:
         '404':
           description: ユーザーが存在しない場合のエラー
 
-  /accounts:
+  /staff:
     get:
-      summary: アカウント一覧
+      summary: スタッフ一覧
       tags:
-        - accounts
+        - staff
       parameters:
         - name: keyword
           in: query
@@ -273,15 +273,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Accounts'
+                $ref: '#/components/schemas/StaffList'
         '404':
           description: ユーザーが存在しない場合のエラー
 
-  /accounts/{id}/updateRole:
+  /staff/{id}/updateRole:
     patch:
       summary: 権限を更新します
       tags:
-        - accounts
+        - staff
       parameters:
         - name: id
           in: path
@@ -289,7 +289,7 @@ paths:
           schema:
             type: integer
             format: int64
-          description: アカウントID
+          description: スタッフID
       requestBody:
         required: true
         content:
@@ -321,11 +321,11 @@ paths:
         '500':
           description: サーバーエラー
 
-  /accounts/{id}/delete:
+  /staff/{id}/delete:
     delete:
-      summary: アカウントを削除
+      summary: スタッフを削除
       tags:
-        - accounts
+        - staff
       parameters:
         - name: id
           in: path
@@ -333,7 +333,7 @@ paths:
           schema:
             type: integer
             format: int64
-          description: クライアントID
+          description: スタッフID
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -346,7 +346,7 @@ paths:
                     type: string
                     example: "SUCCESS"
         '404':
-          description: アカウントが存在しない場合のエラー
+          description: スタッフが存在しない場合のエラー
 
   /invitation:
     get:
@@ -366,7 +366,7 @@ paths:
                     description: 招待用トークン（ハッシュ）を含むURL
                     example: "7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
         '404':
-          description: アカウントが存在しない場合のエラー
+          description: スタッフが存在しない場合のエラー
 
   /invitation/issue:
     get:
@@ -739,9 +739,9 @@ components:
       items:
         $ref: '#/components/schemas/Client'
 
-    AccountStatusOption:
+    StaffStatusOption:
       type: object
-      description: アカウント状態の1選択肢（連想配列）
+      description: スタッフ状態の1選択肢（連想配列）
       required:
         - value
         - label
@@ -756,10 +756,10 @@ components:
           description: 表示ラベル
           example: "有効"
 
-    AccountStatus:
+    StaffStatus:
       type: object
       description: |
-        アカウント状態。現在値に加え、取り得る選択肢を choices で返す（UI のプルダウン等に利用）。
+        スタッフ状態。現在値に加え、取り得る選択肢を choices で返す（UI のプルダウン等に利用）。
       required:
         - value
         - label
@@ -778,14 +778,14 @@ components:
           type: array
           description: 選択可能な状態の一覧（各要素は value / label のオブジェクト）
           items:
-            $ref: '#/components/schemas/AccountStatusOption'
+            $ref: '#/components/schemas/StaffStatusOption'
           example:
             - value: 1
               label: "有効"
             - value: 0
               label: "無効"
 
-    AccountRoleOption:
+    StaffRoleOption:
       type: object
       description: 権限の1選択肢（連想配列）
       required:
@@ -802,10 +802,10 @@ components:
           description: 表示ラベル
           example: "管理者"
 
-    AccountRole:
+    StaffRole:
       type: object
       description: |
-        権限。現在値に加え、取り得る選択肢を choices で返す。
+        スタッフの権限。現在値に加え、取り得る選択肢を choices で返す。
       required:
         - value
         - label
@@ -824,17 +824,17 @@ components:
           type: array
           description: 選択可能な権限の一覧（各要素は value / label のオブジェクト）
           items:
-            $ref: '#/components/schemas/AccountRoleOption'
+            $ref: '#/components/schemas/StaffRoleOption'
           example:
             - value: 1
               label: "管理者"
             - value: 2
               label: "メンバー"
 
-    Account:
+    Staff:
       type: object
       description: |
-        アカウント一覧の1行です。active / role はフラットな enum ではなく、
+        スタッフ一覧の1行です。active / role はフラットな enum ではなく、
         現在値と選択肢一覧を含むオブジェクトで返す。
       required:
         - id
@@ -858,9 +858,9 @@ components:
           format: email
           example: "yamada@example.com"
         active:
-          $ref: '#/components/schemas/AccountStatus'
+          $ref: '#/components/schemas/StaffStatus'
         role:
-          $ref: '#/components/schemas/AccountRole'
+          $ref: '#/components/schemas/StaffRole'
         createdAt:
           type: string
           description: 登録日時（表示形式はAPI実装に依存）
@@ -871,7 +871,7 @@ components:
           example: "2026-01-20 10:00"
       example:
         id: 1
-        accountName: "山田 太郎"
+        name: "山田 太郎"
         email: "yamada@example.com"
         active:
           value: 1
@@ -892,11 +892,11 @@ components:
         createdAt: "2026-01-15 09:30"
         updatedAt: "2026-01-20 10:00"
 
-    Accounts:
+    StaffList:
       type: array
-      description: アカウントのリストです。
+      description: スタッフのリストです。
       items:
-        $ref: '#/components/schemas/Account'
+        $ref: '#/components/schemas/Staff'
 
     Payload:
       type: object
@@ -1032,8 +1032,8 @@ tags:
     description: 認証API
   - name: clients
     description: クライアントAPI
-  - name: accounts
-    description: アカウントAPI
+  - name: staff
+    description: スタッフAPI
   - name: invitation
     description: 招待API
   - name: gate

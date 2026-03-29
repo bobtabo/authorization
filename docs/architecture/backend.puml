@@ -1,6 +1,6 @@
 @startuml
 ' docs/ui-flow 準拠 + コンポーネントに色（ステレオタイプ）
-' 主フローは上→下。各層内は左→右（Auth→Client→Account）で視線は左上→右下に近い
+' 主フローは上→下。各層内は左→右（Auth→Client→Staff）で視線は左上→右下に近い
 skinparam shadowing true
 skinparam roundcorner 12
 skinparam Padding 10
@@ -63,17 +63,17 @@ skinparam folder {
 package "1. Presentation Layer" #E0E7FF {
     [Auth Controller] <<Controller>>
     [Client Controller] <<Controller>>
-    [Account Controller] <<Controller>>
+    [Staff Controller] <<Controller>>
     [Auth Controller] -[hidden]right- [Client Controller]
-    [Client Controller] -[hidden]right- [Account Controller]
+    [Client Controller] -[hidden]right- [Staff Controller]
 }
 
 package "2. Application Layer" #CFFAFE {
     [Auth Service] <<Service>>
     [Client Service] <<Service>>
-    [Account Service] <<Service>>
+    [Staff Service] <<Service>>
     [Auth Service] -[hidden]right- [Client Service]
-    [Client Service] -[hidden]right- [Account Service]
+    [Client Service] -[hidden]right- [Staff Service]
 }
 
 package "3. Domain Layer" #FFFBEB {
@@ -84,12 +84,12 @@ package "3. Domain Layer" #FFFBEB {
         [Client Entity] <<Entity>>
         interface "Client Repository" <<Repository>>
     }
-    folder "Account Domain" {
-        [Account Entity] <<Entity>>
-        interface "Account Repository" <<Repository>>
+    folder "Staff Domain" {
+        [Staff Entity] <<Entity>>
+        interface "Staff Repository" <<Repository>>
     }
     "Auth Domain" -[hidden]right- "Client Domain"
-    "Client Domain" -[hidden]right- "Account Domain"
+    "Client Domain" -[hidden]right- "Staff Domain"
 }
 
 package "4. Infrastructure Layer" #F1F5F9 {
@@ -100,15 +100,15 @@ package "4. Infrastructure Layer" #F1F5F9 {
 
 [Auth Controller] -down-> [Auth Service]
 [Client Controller] -down-> [Client Service]
-[Account Controller] -down-> [Account Service]
+[Staff Controller] -down-> [Staff Service]
 
 [Auth Service] -down-> "Auth Domain"
 [Client Service] -down-> "Client Domain"
-[Account Service] -down-> "Account Domain"
+[Staff Service] -down-> "Staff Domain"
 
 ' 下向きで「実装」を示す（..|> の上向き矢印を避ける）
 "Client Repository" ..> [Eloquent Implementation] : implements
-"Account Repository" ..> [Eloquent Implementation] : implements
+"Staff Repository" ..> [Eloquent Implementation] : implements
 [Eloquent Implementation] -down-> mysqlRedis
 
 @enduml

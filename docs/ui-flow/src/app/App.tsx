@@ -74,10 +74,10 @@ export default function App() {
               <div className="text-xs font-semibold text-indigo-600 mt-1">クライアント</div>
             </div>
 
-            {/* ヘッダーからアカウントページへの矢印 */}
+            {/* ヘッダーからスタッフページへの矢印 */}
             <div className="absolute -bottom-12 right-1/3 flex flex-col items-center">
               <ArrowDown className="text-cyan-500" size={28} strokeWidth={3} />
-              <div className="text-xs font-semibold text-cyan-600 mt-1">アカウント</div>
+              <div className="text-xs font-semibold text-cyan-600 mt-1">スタッフ</div>
             </div>
           </div>
 
@@ -153,15 +153,15 @@ export default function App() {
                 </div>
               </div>
 
-              {/* アカウントページ */}
+              {/* スタッフページ */}
               <div className="flex flex-col items-center">
                 <div className="bg-white border-4 border-cyan-500 rounded-lg p-6 w-80 shadow-lg">
                   <div className="text-center mb-3">
-                    <div className="text-lg font-bold text-cyan-900">アカウントページ</div>
+                    <div className="text-lg font-bold text-cyan-900">スタッフページ</div>
                   </div>
                   <img
-                    src={flowImages.accountList}
-                    alt="アカウント一覧画面"
+                    src={flowImages.staffList}
+                    alt="スタッフ一覧画面"
                     className="w-full h-auto rounded"
                   />
                 </div>
