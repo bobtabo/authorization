@@ -9,13 +9,18 @@ namespace Database\Seeders;
 use App\Support\Database\Seeder;
 
 /**
- * データベースSeederクラスです。
+ * 招待Seederクラスです。
  *
  * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
  * @package Database\Seeders;
  */
-class DatabaseSeeder extends Seeder
+class InvitationSeeder extends Seeder
 {
+    /**
+     * {@inheritdoc}
+     */
+    protected ?string $target = 'campaign_options';
+
     /**
      * {@inheritdoc}
      */

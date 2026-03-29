@@ -47,6 +47,7 @@ abstract class AbstractEntity implements Entity
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function assignModel(Model $model): Entity
     {
         $attributes = $model->getAttributes();
@@ -56,6 +57,7 @@ abstract class AbstractEntity implements Entity
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function attributes(): array
     {
         $result = [];
@@ -76,7 +78,9 @@ abstract class AbstractEntity implements Entity
     }
 
     /**
-     * {@inheritdoc}
+     * スネーク属性を取得します。
+     *
+     * @return array<string, mixed> 属性の配列
      */
     public function attributesBySnake(): array
     {
@@ -99,6 +103,7 @@ abstract class AbstractEntity implements Entity
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function assignCreatedMember(int $accountId): Entity
     {
         return $this->assignCreated($accountId);
@@ -107,6 +112,7 @@ abstract class AbstractEntity implements Entity
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function assignCreatedStaff(int $accountId): Entity
     {
         return $this->assignCreated($accountId);
@@ -115,6 +121,7 @@ abstract class AbstractEntity implements Entity
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function assignCreatedSystem(): Entity
     {
         return $this->assignCreated(0);
@@ -123,6 +130,7 @@ abstract class AbstractEntity implements Entity
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function assignCreated(int $accountId): Entity
     {
         $now = Carbon::now();

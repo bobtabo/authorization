@@ -29,7 +29,11 @@ use ReflectionClass;
  */
 abstract class AbstractRepository
 {
-    use EnumValue, OptionBuilder, CommonColumns, Bulk, QueryLog;
+    use Bulk;
+    use CommonColumns;
+    use EnumValue;
+    use OptionBuilder;
+    use QueryLog;
 
     /**
      * 登録／更新します。

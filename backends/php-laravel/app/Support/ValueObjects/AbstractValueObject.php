@@ -21,7 +21,9 @@ use App\Support\ValueObject;
  */
 abstract class AbstractValueObject implements ValueObject
 {
-    use Assign, Attribute, Initialize;
+    use Assign;
+    use Attribute;
+    use Initialize;
 
     protected ?int $version = null;
 

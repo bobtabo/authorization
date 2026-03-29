@@ -6,7 +6,7 @@
  */
 namespace App\Support\Repositories\Cache;
 
-use Sii\Selloop\Core\Models\AppModel;
+use App\Support\Models\AppModel;
 
 /**
  * キャッシュキーを管理するクラスです。

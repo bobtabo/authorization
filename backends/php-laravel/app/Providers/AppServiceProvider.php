@@ -37,8 +37,6 @@ use Illuminate\Support\ServiceProvider;
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * アプリケーションのバインディングを登録します。
-     *
      * {@inheritdoc}
      */
     #[\Override]
@@ -63,9 +61,9 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * アプリケーション起動後の処理を行います。
+     * 全アプリケーションサービスの初期起動処理を行います。
      *
-     * {@inheritdoc}
+     * @return void
      */
     public function boot(): void
     {

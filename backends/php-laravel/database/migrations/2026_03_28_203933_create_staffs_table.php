@@ -29,15 +29,14 @@ return new class extends Migration
             $table->string('provider_id', 255)->comment('連携アカウントID');
             $table->text('avater')->nullable()->comment('アバターURL');
             $table->integer('role')->unsigned()->comment('権限');
-            $table->unsignedTinyInteger('status')->default(1)->comment('状態（StaffStatus）');
-            $table->string('last_login_at')->comment('最終ログイン日時');
-            $table->string('created_at')->useCurrent()->comment('登録日時');
+            $table->timestamp('last_login_at')->comment('最終ログイン日時');
+            $table->timestamp('created_at')->useCurrent()->comment('登録日時');
             $table->integer('created_by')->unsigned()->comment('登録者ID');
-            $table->string('updated_at')->useCurrent()->comment('更新日時');
+            $table->timestamp('updated_at')->useCurrent()->comment('更新日時');
             $table->integer('updated_by')->unsigned()->comment('更新者ID');
-            $table->string('deleted_at')->nullable()->comment('削除日時');
+            $table->timestamp('deleted_at')->nullable()->comment('削除日時');
             $table->integer('deleted_by')->unsigned()->nullable()->comment('削除者ID');
-            $table->integer('version')->unsigned()->comment('バージョン');
+            $table->integer('version')->unsigned()->default(1)->comment('バージョン');
         });
     }
 

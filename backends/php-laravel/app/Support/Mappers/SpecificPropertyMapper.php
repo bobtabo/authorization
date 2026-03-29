@@ -43,12 +43,9 @@ class SpecificPropertyMapper extends DefaultMapper
     }
 
     /**
-     * 指定プロパティのみをマッピングする設定を返します。
-     *
      * {@inheritdoc}
-     *
-     * @return AutoMapperConfig マッパー設定
      */
+    #[\Override]
     public function getConfig(): AutoMapperConfig
     {
         $this->config = $this->getDefaultConfig();
