@@ -741,7 +741,7 @@ components:
 
     StaffStatusOption:
       type: object
-      description: スタッフ状態の1選択肢（連想配列）
+      description: 状態の1選択肢（連想配列）
       required:
         - value
         - label
@@ -759,7 +759,7 @@ components:
     StaffStatus:
       type: object
       description: |
-        スタッフ状態。現在値に加え、取り得る選択肢を choices で返す（UI のプルダウン等に利用）。
+        状態。現在値に加え、取り得る選択肢を choices で返す（UI のプルダウン等に利用）。
       required:
         - value
         - label

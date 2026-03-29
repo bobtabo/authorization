@@ -17,26 +17,26 @@ import {
 import { ConsoleHeader } from "@/components/console-header";
 import { UserAvatar } from "@/components/user-avatar";
 
-type AccountActive = "有効" | "無効";
-type AccountRole = "管理者" | "メンバー";
+type StaffActive = "有効" | "無効";
+type StaffRole = "管理者" | "メンバー";
 
-interface AccountRow {
+interface StaffRow {
   id: number;
-  accountName: string;
+  name: string;
   email: string;
-  active: AccountActive;
-  role: AccountRole;
+  active: StaffActive;
+  role: StaffRole;
   createdAt: string;
   updatedAt: string;
 }
 
 type SortKey = keyof Pick<
-  AccountRow,
-  "accountName" | "email" | "role" | "active" | "createdAt" | "updatedAt"
+  StaffRow,
+  "name" | "email" | "role" | "active" | "createdAt" | "updatedAt"
 >;
 type SortOrder = "asc" | "desc";
 
-function getRoleBadgeClass(role: AccountRole): string {
+function getRoleBadgeClass(role: StaffRole): string {
   switch (role) {
     case "管理者":
       return "bg-violet-100 text-violet-800 border border-violet-200";
@@ -45,7 +45,7 @@ function getRoleBadgeClass(role: AccountRole): string {
   }
 }
 
-function getActiveBadgeClass(active: AccountActive): string {
+function getActiveBadgeClass(active: StaffActive): string {
   return active === "有効"
     ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
     : // 無効ON: 未選択のグレーと差がつくよう少し濃く
@@ -59,8 +59,8 @@ function RoleSegmentSwitch({
   onChange,
   ariaLabel,
 }: {
-  role: AccountRole;
-  onChange: (r: AccountRole) => void;
+  role: StaffRole;
+  onChange: (r: StaffRole) => void;
   ariaLabel: string;
 }): React.JSX.Element {
   return (
@@ -100,8 +100,8 @@ function ActiveSegmentSwitch({
   onChange,
   ariaLabel,
 }: {
-  active: AccountActive;
-  onChange: (a: AccountActive) => void;
+  active: StaffActive;
+  onChange: (a: StaffActive) => void;
   ariaLabel: string;
 }): React.JSX.Element {
   return (
@@ -136,8 +136,8 @@ function ActiveSegmentSwitch({
   );
 }
 
-export default function AccountsPage(): React.JSX.Element {
-  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+export default function StaffPage(): React.JSX.Element {
+  const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [query, setQuery] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -145,15 +145,15 @@ export default function AccountsPage(): React.JSX.Element {
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(5);
-  const [selectedActiveFilters, setSelectedActiveFilters] = useState<AccountActive[]>([]);
-  const [selectedRoleFilters, setSelectedRoleFilters] = useState<AccountRole[]>([]);
+  const [selectedActiveFilters, setSelectedActiveFilters] = useState<StaffActive[]>([]);
+  const [selectedRoleFilters, setSelectedRoleFilters] = useState<StaffRole[]>([]);
 
   useEffect(() => {
     setTimeout(() => {
-      setAccounts([
+      setStaff([
         {
           id: 1,
-          accountName: "山田 太郎",
+          name: "山田 太郎",
           email: "yamada@example.com",
           active: "有効",
           role: "管理者",
@@ -162,7 +162,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 2,
-          accountName: "佐藤 花子",
+          name: "佐藤 花子",
           email: "sato@example.com",
           active: "有効",
           role: "メンバー",
@@ -171,7 +171,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 3,
-          accountName: "鈴木 一郎",
+          name: "鈴木 一郎",
           email: "suzuki@example.com",
           active: "無効",
           role: "メンバー",
@@ -180,7 +180,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 4,
-          accountName: "田中 美咲",
+          name: "田中 美咲",
           email: "tanaka@example.com",
           active: "有効",
           role: "管理者",
@@ -189,7 +189,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 5,
-          accountName: "伊藤 健",
+          name: "伊藤 健",
           email: "ito@example.com",
           active: "有効",
           role: "メンバー",
@@ -198,7 +198,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 6,
-          accountName: "渡辺 直子",
+          name: "渡辺 直子",
           email: "watanabe@example.com",
           active: "無効",
           role: "管理者",
@@ -207,7 +207,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 7,
-          accountName: "中村 翔",
+          name: "中村 翔",
           email: "nakamura@example.com",
           active: "有効",
           role: "メンバー",
@@ -216,7 +216,7 @@ export default function AccountsPage(): React.JSX.Element {
         },
         {
           id: 8,
-          accountName: "小林 誠",
+          name: "小林 誠",
           email: "kobayashi@example.com",
           active: "有効",
           role: "メンバー",
@@ -228,12 +228,12 @@ export default function AccountsPage(): React.JSX.Element {
     }, 800);
   }, []);
 
-  const setAccountActive = (id: number, active: AccountActive) => {
-    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, active } : a)));
+  const setStaffRowActive = (id: number, active: StaffActive) => {
+    setStaff((prev) => prev.map((a) => (a.id === id ? { ...a, active } : a)));
   };
 
-  const setAccountRole = (id: number, role: AccountRole) => {
-    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, role } : a)));
+  const setStaffRowRole = (id: number, role: StaffRole) => {
+    setStaff((prev) => prev.map((a) => (a.id === id ? { ...a, role } : a)));
   };
 
   const handleSort = (key: SortKey) => {
@@ -245,29 +245,29 @@ export default function AccountsPage(): React.JSX.Element {
     }
   };
 
-  const toggleActiveFilter = (value: AccountActive) => {
+  const toggleActiveFilter = (value: StaffActive) => {
     setSelectedActiveFilters((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
     setCurrentPage(1);
   };
 
-  const toggleRoleFilter = (value: AccountRole) => {
+  const toggleRoleFilter = (value: StaffRole) => {
     setSelectedRoleFilters((prev) =>
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
     setCurrentPage(1);
   };
 
-  const allActiveFilters: AccountActive[] = ["有効", "無効"];
-  const allRoleFilters: AccountRole[] = ["管理者", "メンバー"];
+  const allActiveFilters: StaffActive[] = ["有効", "無効"];
+  const allRoleFilters: StaffRole[] = ["管理者", "メンバー"];
 
-  const sortedAccounts = useMemo<AccountRow[]>(() => {
+  const sortedStaff = useMemo<StaffRow[]>(() => {
     const q = query.trim().toLowerCase();
-    const filtered = accounts.filter((a) => {
+    const filtered = staff.filter((a) => {
       const matchedQuery =
         q === "" ||
-        a.accountName.toLowerCase().includes(q) ||
+        a.name.toLowerCase().includes(q) ||
         a.email.toLowerCase().includes(q);
       const matchedActive =
         selectedActiveFilters.length === 0 || selectedActiveFilters.includes(a.active);
@@ -276,7 +276,7 @@ export default function AccountsPage(): React.JSX.Element {
       return matchedQuery && matchedActive && matchedRole;
     });
 
-    const activeRank = (x: AccountActive): number => (x === "有効" ? 0 : 1);
+    const activeRank = (x: StaffActive): number => (x === "有効" ? 0 : 1);
 
     return [...filtered].sort((a, b) => {
       if (sortKey === "active") {
@@ -292,12 +292,12 @@ export default function AccountsPage(): React.JSX.Element {
       if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-  }, [accounts, query, selectedActiveFilters, selectedRoleFilters, sortKey, sortOrder]);
+  }, [staff, query, selectedActiveFilters, selectedRoleFilters, sortKey, sortOrder]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedAccounts.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(sortedStaff.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
-  const paginatedAccounts = sortedAccounts.slice(startIndex, startIndex + pageSize);
+  const paginatedStaff = sortedStaff.slice(startIndex, startIndex + pageSize);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -326,7 +326,7 @@ export default function AccountsPage(): React.JSX.Element {
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
               <Users size={24} />
-              アカウント一覧
+              スタッフ一覧
             </h1>
           </div>
 
@@ -395,7 +395,7 @@ export default function AccountsPage(): React.JSX.Element {
 
                   <fieldset className="w-fit max-w-full shrink-0 rounded-lg border border-gray-200 bg-gray-50/80 px-2.5 py-2">
                     <legend className="px-0.5 text-xs font-semibold text-gray-600 whitespace-nowrap">
-                      アカウント状態
+                      状態
                     </legend>
                     <div className="mt-0.5 flex flex-wrap gap-1.5">
                       <label className="cursor-pointer">
@@ -465,12 +465,12 @@ export default function AccountsPage(): React.JSX.Element {
                     <thead className="bg-indigo-50 text-indigo-700 uppercase tracking-wide text-xs border-b border-indigo-100">
                       <tr>
                         <th
-                          onClick={() => handleSort("accountName")}
+                          onClick={() => handleSort("name")}
                           className="px-6 py-3 font-medium cursor-pointer select-none"
                         >
                           <div className="flex items-center gap-1">
                             名前
-                            {getSortIcon("accountName")}
+                            {getSortIcon("name")}
                           </div>
                         </th>
                         <th
@@ -514,21 +514,21 @@ export default function AccountsPage(): React.JSX.Element {
                           className="px-6 py-3 text-right font-medium cursor-pointer select-none normal-case"
                         >
                           <div className="flex items-center justify-end gap-1">
-                            アカウント状態
+                            状態
                             {getSortIcon("active")}
                           </div>
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedAccounts.length === 0 ? (
+                      {paginatedStaff.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                            アカウントが見つかりません
+                            スタッフが見つかりません
                           </td>
                         </tr>
                       ) : (
-                        paginatedAccounts.map((row) => (
+                        paginatedStaff.map((row) => (
                           <motion.tr
                             key={row.id}
                             initial={{ opacity: 0 }}
@@ -537,8 +537,8 @@ export default function AccountsPage(): React.JSX.Element {
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">
                               <div className="flex min-h-[1.75rem] items-center gap-2.5 min-w-0">
-                                <UserAvatar name={row.accountName} />
-                                <span className="truncate leading-tight">{row.accountName}</span>
+                                <UserAvatar name={row.name} />
+                                <span className="truncate leading-tight">{row.name}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-gray-600 break-all max-w-[14rem]">
@@ -548,8 +548,8 @@ export default function AccountsPage(): React.JSX.Element {
                               <div className="flex min-h-[1.75rem] items-center">
                                 <RoleSegmentSwitch
                                   role={row.role}
-                                  onChange={(r) => setAccountRole(row.id, r)}
-                                  ariaLabel={`${row.accountName}の権限`}
+                                  onChange={(r) => setStaffRowRole(row.id, r)}
+                                  ariaLabel={`${row.name}の権限`}
                                 />
                               </div>
                             </td>
@@ -563,8 +563,8 @@ export default function AccountsPage(): React.JSX.Element {
                               <div className="flex min-h-[1.75rem] items-center justify-end">
                                 <ActiveSegmentSwitch
                                   active={row.active}
-                                  onChange={(a) => setAccountActive(row.id, a)}
-                                  ariaLabel={`${row.accountName}のアカウント状態`}
+                                  onChange={(a) => setStaffRowActive(row.id, a)}
+                                  ariaLabel={`${row.name}の状態`}
                                 />
                               </div>
                             </td>
@@ -577,8 +577,8 @@ export default function AccountsPage(): React.JSX.Element {
 
                 <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
                   <div className="text-sm text-gray-600">
-                    全 {sortedAccounts.length} 件中 {startIndex + 1} -{" "}
-                    {Math.min(startIndex + pageSize, sortedAccounts.length)} 件表示
+                    全 {sortedStaff.length} 件中 {startIndex + 1} -{" "}
+                    {Math.min(startIndex + pageSize, sortedStaff.length)} 件表示
                   </div>
 
                   <div className="flex items-center gap-2 text-gray-700">

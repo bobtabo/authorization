@@ -337,8 +337,8 @@ export function ConsoleHeader(): React.JSX.Element {
           <NavLink to="/clients" className={navTabClass} end={false}>
             クライアント
           </NavLink>
-          <NavLink to="/accounts" className={navTabClass} end>
-            アカウント
+          <NavLink to="/staff" className={navTabClass} end>
+            スタッフ
           </NavLink>
         </nav>
       </div>
