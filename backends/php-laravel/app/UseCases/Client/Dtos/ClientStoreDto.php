@@ -4,20 +4,18 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Support\Dtos\Client;
+namespace App\UseCases\Client\Dtos;
 
 use App\Support\Dtos\AbstractDto;
 
 /**
- * クライアント更新の入力 DTO です。
+ * クライアント登録の入力 DTO です。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Support\Dtos\Client
+ * @package App\UseCases\Client\Dtos
  */
-class ClientUpdateDto extends AbstractDto
+class ClientStoreDto extends AbstractDto
 {
-    public ?int $id = null;
-
     public ?string $name = null;
 
     public ?string $identifier = null;
@@ -35,8 +33,6 @@ class ClientUpdateDto extends AbstractDto
     public ?string $tel = null;
 
     public ?string $email = null;
-
-    public ?int $status = null;
 
     public int $actorId = 0;
 }

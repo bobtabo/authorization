@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Support\Dtos\Client;
+namespace App\UseCases\Client\Dtos;
 
 use App\Support\Dtos\AbstractDto;
 
@@ -12,7 +12,7 @@ use App\Support\Dtos\AbstractDto;
  * クライアント詳細取得の入力 DTO です。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Support\Dtos\Client
+ * @package App\UseCases\Client\Dtos
  */
 class ClientShowDto extends AbstractDto
 {
