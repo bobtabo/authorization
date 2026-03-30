@@ -5,12 +5,12 @@
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
 
-use App\Http\Controllers\v1\AuthController;
-use App\Http\Controllers\v1\ClientController;
-use App\Http\Controllers\v1\GateController;
-use App\Http\Controllers\v1\InvitationController;
-use App\Http\Controllers\v1\NotificationController;
-use App\Http\Controllers\v1\StaffController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\GateController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\StaffController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,11 +28,11 @@ Route::prefix('v1')->group(function () {
     Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
     Route::get('auth/logout', [AuthController::class, 'logout']);
 
-    // --- clients（{id} は数値のみ。/clients/store と衝突しないよう store を先に定義）---
+    // --- clients（/clients/store と {id} の衝突を避けるため store を先に定義）---
     Route::get('clients', [ClientController::class, 'index']);
     Route::post('clients/store', [ClientController::class, 'store']);
-    Route::get('clients/{id}', [ClientController::class, 'show'])->whereNumber('id');
     Route::put('clients/{id}/update', [ClientController::class, 'update'])->whereNumber('id');
+    Route::get('clients/{id}', [ClientController::class, 'show'])->whereNumber('id');
     Route::delete('clients/{id}/delete', [ClientController::class, 'destroy'])->whereNumber('id');
 
     // --- staff ---
