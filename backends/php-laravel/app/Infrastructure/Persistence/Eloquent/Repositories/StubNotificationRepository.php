@@ -15,7 +15,7 @@ use app\Support\Repositories\AbstractRepository;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class StubNotificationRepository extends AbstractRepository implements NotificationRepositoryInterface
+class StubNotificationRepository extends AbstractRepository implements NotificationRepositoryInterface
 {
     /**
      * {@inheritdoc}

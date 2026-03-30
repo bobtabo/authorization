@@ -14,7 +14,7 @@ use App\Domain\Gate\JwtIssuerInterface;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate
  */
-final class StubJwtIssuer implements JwtIssuerInterface
+class StubJwtIssuer implements JwtIssuerInterface
 {
     /**
      * {@inheritdoc}

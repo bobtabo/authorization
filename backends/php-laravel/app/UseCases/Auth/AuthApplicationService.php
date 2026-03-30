@@ -8,7 +8,7 @@ namespace App\UseCases\Auth;
 
 use App\Domain\Auth\Entities\Auth;
 use App\Domain\Auth\Repositories\AuthUserRepositoryInterface;
-use App\UseCases\Common\AbstractService;
+use App\Support\Services\AbstractService;
 use Illuminate\Database\QueryException;
 
 /**
@@ -17,7 +17,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Auth
  */
-final class AuthApplicationService extends AbstractService
+class AuthApplicationService extends AbstractService
 {
     /**
      * @param  AuthUserRepositoryInterface  $users  認証ユーザーRepository

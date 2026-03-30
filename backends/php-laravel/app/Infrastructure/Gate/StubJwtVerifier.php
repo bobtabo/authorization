@@ -14,7 +14,7 @@ use App\Domain\Gate\JwtVerifierInterface;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate
  */
-final class StubJwtVerifier implements JwtVerifierInterface
+class StubJwtVerifier implements JwtVerifierInterface
 {
     /**
      * {@inheritdoc}

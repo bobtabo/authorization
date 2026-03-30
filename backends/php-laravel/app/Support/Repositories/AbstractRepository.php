@@ -100,7 +100,6 @@ abstract class AbstractRepository
 
         $models = $query->get();
         foreach ($models as $model) {
-            $model->deleted_type = $deletedType->value;
             $model->deleted_id = $deletedId;
             $model->delete();
         }
@@ -137,7 +136,7 @@ abstract class AbstractRepository
     /**
      * 全件リストを取得します。
      *
-     * @param \Sii\Selloop\Core\Repositories\Conditions\Option|null $option 検索オプション
+     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
      * @return \Illuminate\Support\Collection エンティティのコレクション
      */
     public function all(?Option $option = null): Collection
@@ -161,7 +160,7 @@ abstract class AbstractRepository
      * 指定リレーションを含んだ全件リストを取得します。
      *
      * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @param \Sii\Selloop\Core\Repositories\Conditions\Option|null $option 検索オプション
+     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
      * @return \Illuminate\Support\Collection エンティティのコレクション
      */
     public function allWithRelation(array $relations, ?Option $option = null): Collection
@@ -195,7 +194,7 @@ abstract class AbstractRepository
      *
      * @param int $id プライマリキー値
      * @param \Illuminate\Contracts\Database\Query\Builder|null $query クエリー
-     * @return \Sii\Selloop\Core\Entities\Entity|null エンティティ
+     * @return \App\Support\Entity|null エンティティ
      */
     public function findByPk(int $id, ?Builder $query = null): ?Entity
     {
@@ -256,7 +255,7 @@ abstract class AbstractRepository
      *
      * @param array<string, mixed> $map カラム=>値の連想配列
      * @param \Illuminate\Contracts\Database\Query\Builder|null $query クエリー
-     * @param \Sii\Selloop\Core\Repositories\Conditions\Option|null $option 検索オプション
+     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
      * @return \Illuminate\Support\Collection エンティティのコレクション
      */
     public function findByMap(array $map, ?Builder $query = null, ?Option $option = null): Collection
@@ -287,7 +286,7 @@ abstract class AbstractRepository
      * @param int $id プライマリキー値
      * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
      * @param \Illuminate\Contracts\Database\Eloquent\Builder|null $query クエリー
-     * @return \Sii\Selloop\Core\Entities\Entity|null エンティティ
+     * @return \App\Support\Entity|null エンティティ
      */
     public function findByPkWithRelation(int $id, array $relations, ?Builder $query = null): ?Entity
     {
@@ -305,7 +304,7 @@ abstract class AbstractRepository
      * @param array<string, mixed> $map カラム=>値の連想配列
      * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
      * @param \Illuminate\Contracts\Database\Eloquent\Builder|null $query クエリー
-     * @param \Sii\Selloop\Core\Repositories\Conditions\Option|null $option 検索オプション
+     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
      * @return \Illuminate\Support\Collection エンティティのコレクション
      */
     public function findByMapWithRelation(
@@ -400,7 +399,7 @@ abstract class AbstractRepository
     /**
      * 対象モデルに $guarded を含むデータ設定します。
      *
-     * @param \Sii\Selloop\Core\Entities\Entity $entity エンティティ
+     * @param \App\Support\Entity $entity エンティティ
      * @param AppModel|null $model 対象モデル
      * @return AppModel データ設定したモデル
      */
@@ -420,9 +419,9 @@ abstract class AbstractRepository
     /**
      * 対象エンティティにリレーションを設定します。
      *
-     * @param \Sii\Selloop\Core\Entities\Entity $entity 対象エンティティ
+     * @param \App\Support\Entity $entity 対象エンティティ
      * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @return \Sii\Selloop\Core\Entities\Entity リレーション設定したエンティティ
+     * @return \App\Support\Entity リレーション設定したエンティティ
      */
     protected function assignWithRelation(Entity $entity, array $relations): Entity
     {
@@ -462,7 +461,7 @@ abstract class AbstractRepository
     /**
      * エンティティを取得します。
      *
-     * @return \Sii\Selloop\Core\Entities\Entity エンティティ
+     * @return \App\Support\Entity エンティティ
      */
     abstract protected function getEntity(): Entity;
 }

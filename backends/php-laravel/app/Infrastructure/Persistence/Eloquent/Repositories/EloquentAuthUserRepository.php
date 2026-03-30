@@ -18,7 +18,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class EloquentAuthUserRepository extends AbstractRepository implements AuthUserRepositoryInterface
+class EloquentAuthUserRepository extends AbstractRepository implements AuthUserRepositoryInterface
 {
     /**
      * {@inheritdoc}

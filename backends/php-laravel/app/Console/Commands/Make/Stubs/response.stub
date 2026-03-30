@@ -6,13 +6,15 @@
  */
 namespace App\Http\Responses;
 
+use App\Support\Http\Responses\AbstractResponse;
+
 /**
  * Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses
  */
-class DummyClass
+class DummyClass extends AbstractResponse
 {
     public function __construct()
     {

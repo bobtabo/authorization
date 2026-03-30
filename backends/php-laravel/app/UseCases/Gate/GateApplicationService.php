@@ -8,7 +8,7 @@ namespace App\UseCases\Gate;
 
 use App\Domain\Gate\JwtIssuerInterface;
 use App\Domain\Gate\JwtVerifierInterface;
-use App\UseCases\Common\AbstractService;
+use App\Support\Services\AbstractService;
 
 /**
  * JWT の発行・検証のユースケースを提供するApplicationServiceクラスです。
@@ -16,7 +16,7 @@ use App\UseCases\Common\AbstractService;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Gate
  */
-final class GateApplicationService extends AbstractService
+class GateApplicationService extends AbstractService
 {
     /**
      * @param  JwtIssuerInterface  $issuer  JWT 発行ポート

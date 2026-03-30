@@ -6,30 +6,15 @@
  */
 namespace App\Support\Services;
 
-use Illuminate\Foundation\Application;
-
 /**
- * 基底Serviceクラスです。
+ * アプリケーションサービス（ユースケース）の共通基底です。
+ *
+ * 現状はマーカー用の空実装です。将来ここに共通処理を足す可能性があります。
+ * 子クラスで {@see \Illuminate\Foundation\Application} をコンストラクタに渡す必要はありません。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Services
  */
 abstract class AbstractService
 {
-    /**
-     * アプリケーション
-     *
-     * @var \Illuminate\Foundation\Application
-     */
-    protected $app = null;
-
-    /**
-     * コンストラクタ
-     *
-     * @param Application $app アプリケーション
-     */
-    public function __construct(Application $app)
-    {
-        $this->app = $app;
-    }
 }

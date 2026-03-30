@@ -21,7 +21,7 @@ use Illuminate\Database\QueryException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence\Eloquent\Repositories
  */
-final class EloquentStaffRepository extends AbstractRepository implements StaffRepositoryInterface
+class EloquentStaffRepository extends AbstractRepository implements StaffRepositoryInterface
 {
     /**
      * @param  Model  $model  スタッフ Eloquent モデル

@@ -8,19 +8,19 @@ info:
     email: satoshi.nagashiba@gmail.com
 
 servers:
-  - url: https://apis.authorization.com/v1
+  - url: https://apis.authorization.com
     description: 本番環境
-  - url: https://apis-stg.authorization.com/v1
+  - url: https://apis-stg.authorization.com
     description: ステージング環境
-  - url: https://apis-dev.authorization.com/v1
+  - url: https://apis-dev.authorization.com
     description: 開発環境
-  - url: https://apis.authorization-go.local/v1
+  - url: https://apis.authorization-go.local
     description: ローカルGo環境
-  - url: https://apis.authorization-php.local/v1
+  - url: https://apis.authorization-php.local
     description: ローカルPHP環境
-  - url: https://apis.authorization-python.local/v1
+  - url: https://apis.authorization-python.local
     description: ローカルPython環境
-  - url: https://apis.authorization-ts.local/v1
+  - url: https://apis.authorization-ts.local
     description: ローカルTypeScript環境
 
 paths:
@@ -191,7 +191,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientCreate'
+              $ref: '#/components/schemas/ClientUpdate'
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -645,6 +645,33 @@ components:
         email:
           type: string
           example: "nagashibas@sii-japan.co.jp"
+
+    ClientUpdate:
+      type: object
+      description: クライアント更新情報（対象 ID はパス /clients/{id}/update で指定。サーバではルートとボディをマージします）。
+      properties:
+        name:
+          type: string
+        identifier:
+          type: string
+        post_code:
+          type: string
+        pref:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+        building:
+          type: string
+          nullable: true
+        tel:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: integer
 
     Client:
       type: object

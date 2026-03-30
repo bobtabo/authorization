@@ -21,7 +21,7 @@ use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentStaffRepository
 use App\Infrastructure\Persistence\Eloquent\Repositories\StubInvitationRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\StubNotificationRepository;
 use App\UseCases\Auth\AuthApplicationService;
-use App\UseCases\Client\ClientApplicationService;
+use App\UseCases\Client\ClientService;
 use App\UseCases\Gate\GateApplicationService;
 use App\UseCases\Invitation\InvitationApplicationService;
 use App\UseCases\Notification\NotificationApplicationService;
@@ -53,7 +53,7 @@ class AppServiceProvider extends ServiceProvider
 
         // アプリケーションサービス（ユースケース）
         $this->app->singleton(AuthApplicationService::class);
-        $this->app->singleton(ClientApplicationService::class);
+        $this->app->singleton(ClientService::class);
         $this->app->singleton(StaffApplicationService::class);
         $this->app->singleton(InvitationApplicationService::class);
         $this->app->singleton(NotificationApplicationService::class);

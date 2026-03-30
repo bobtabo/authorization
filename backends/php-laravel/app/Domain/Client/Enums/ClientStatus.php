@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Client\Enums;
 
-use app\Support\Enums\Values;
+use App\Support\Enums\Values;
 
 /**
  * クライアントの状態を表す列挙型です。

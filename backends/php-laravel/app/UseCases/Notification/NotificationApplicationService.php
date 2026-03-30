@@ -8,7 +8,7 @@ namespace App\UseCases\Notification;
 
 use App\Domain\Notification\Entities\Notification;
 use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
-use App\UseCases\Common\AbstractService;
+use App\Support\Services\AbstractService;
 
 /**
  * 通知一覧・件数取得のユースケースを提供するApplicationServiceクラスです。
@@ -16,7 +16,7 @@ use App\UseCases\Common\AbstractService;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Notification
  */
-final class NotificationApplicationService extends AbstractService
+class NotificationApplicationService extends AbstractService
 {
     /**
      * @param  NotificationRepositoryInterface  $notifications  通知Repository

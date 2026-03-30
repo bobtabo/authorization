@@ -23,6 +23,14 @@ abstract class AbstractDto implements Dto
     use Attribute;
     use Initialize;
 
+    /**
+     * @var int|null 処理実行者ID
+     */
+    public ?int $executorId = null;
+
+    /**
+     * @var int|null バージョン
+     */
     public ?int $version = null;
 
     /**

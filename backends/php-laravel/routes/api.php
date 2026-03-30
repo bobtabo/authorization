@@ -5,12 +5,12 @@
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\GateController;
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\StaffController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\GateController;
+use App\Http\Controllers\Api\InvitationController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\StaffController;
 use Illuminate\Support\Facades\Route;
 
 /*
