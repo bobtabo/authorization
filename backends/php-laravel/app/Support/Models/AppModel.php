@@ -75,8 +75,7 @@ abstract class AppModel extends Model
         }
 
         //削除者を更新します
-        $columns['deleted_type'] = $this->deleted_type;
-        $columns['deleted_id'] = $this->deleted_id;
+        $columns['deleted_by'] = $this->deleted_id;
 
         $query->update($columns);
 

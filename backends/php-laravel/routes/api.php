@@ -35,10 +35,10 @@ Route::prefix('v1')->group(function () {
     Route::get('clients/{id}', [ClientController::class, 'show'])->whereNumber('id');
     Route::delete('clients/{id}/delete', [ClientController::class, 'destroy'])->whereNumber('id');
 
-    // --- staff ---
-    Route::get('staff', [StaffController::class, 'index']);
-    Route::patch('staff/{id}/updateRole', [StaffController::class, 'updateRole'])->whereNumber('id');
-    Route::delete('staff/{id}/delete', [StaffController::class, 'destroy'])->whereNumber('id');
+    // --- staffs ---
+    Route::get('staffs', [StaffController::class, 'index']);
+    Route::patch('staffs/{id}/updateRole', [StaffController::class, 'updateRole'])->whereNumber('id');
+    Route::delete('staffs/{id}/delete', [StaffController::class, 'destroy'])->whereNumber('id');
 
     // --- invitation（/invitation/issue を先に）---
     Route::get('invitation/issue', [InvitationController::class, 'issue']);

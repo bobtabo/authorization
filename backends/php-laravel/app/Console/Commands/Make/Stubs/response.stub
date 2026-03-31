@@ -7,6 +7,7 @@
 namespace App\Http\Responses;
 
 use App\Support\Http\Responses\AbstractResponse;
+use App\Support\Traits\Getter;
 
 /**
  * Responseクラスです。
@@ -16,7 +17,5 @@ use App\Support\Http\Responses\AbstractResponse;
  */
 class DummyClass extends AbstractResponse
 {
-    public function __construct()
-    {
-    }
+    use Getter;
 }

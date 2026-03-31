@@ -8,6 +8,7 @@ namespace App\Support\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Jenssegers\Agent\Agent;
 use App\Support\Exceptions\ValidationException;
 
@@ -73,6 +74,10 @@ class AppRequest extends FormRequest
             'browser' => $agent->browser(),
             'user_agent' => $agent->getUserAgent(),
         ];
+
+        if (!Arr::has($result, 'id') && !empty($this->route('id'))) {
+            $result['id'] = $this->route('id');
+        }
 
         return $result;
     }

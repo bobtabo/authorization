@@ -13,7 +13,7 @@ use UnitEnum;
  * Enum値Traitです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package Sii\Selloop\Core\Enums\Traits
+ * @package App\Support\Enums
  */
 trait Values
 {
