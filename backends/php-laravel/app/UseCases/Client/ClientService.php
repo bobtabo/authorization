@@ -8,12 +8,10 @@ namespace App\UseCases\Client;
 
 use App\Domain\Client\Condition\ClientCondition;
 use App\Domain\Client\Entities\Client;
-use App\Domain\Client\Mappers\ClientApiMapper;
-use App\Domain\Client\Repositories\ClientRepositoryInterface;
+use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Client\ValueObjects\ClientDetailVo;
 use App\Domain\Client\ValueObjects\ClientListVo;
 use App\Domain\Client\ValueObjects\ClientMutationVo;
-use App\Domain\Client\ValueObjects\ClientRemoveVo;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Client\Dtos\ClientDto;
@@ -27,23 +25,27 @@ use App\UseCases\Client\Dtos\ClientDto;
 class ClientService extends AbstractService
 {
     public function __construct(
-        private readonly ClientRepositoryInterface $clients,
+        private readonly ClientRepository $clients,
     ) {}
 
     /**
      * クライアント一覧を取得します。
+     *
+     * @param ClientDto $dto
+     * @return ClientListVo
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
      */
-    public function index(ClientDto $dto): ClientListVo
+    public function getClients(ClientDto $dto): ClientListVo
     {
         /** @var ClientCondition $condition */
         $condition = SimpleMapper::mapSpecific($dto, ClientCondition::class, [
             'keyword' => 'keyword',
             'startFrom' => 'startFrom',
             'startTo' => 'startTo',
+            'statuses' => 'statuses',
         ]);
-        $condition->statuses = $dto->statuses ?? [];
 
-        $list = $this->clients->searchByCondition($condition);
+        $list = $this->clients->findByCondition($condition);
 
         $result = new ClientListVo;
         $result->assignClients($list);
@@ -53,6 +55,10 @@ class ClientService extends AbstractService
 
     /**
      * クライアント詳細を取得します。
+     *
+     * @param ClientDto $dto
+     * @return ClientDetailVo
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
      */
     public function show(ClientDto $dto): ClientDetailVo
     {
@@ -66,126 +72,49 @@ class ClientService extends AbstractService
             return $vo;
         }
 
-        $vo->found = true;
-        $vo->client = ClientApiMapper::toResponseArray($entity);
+        $vo->assign($entity->attributes());
 
-        return $vo;
+        return $vo->assign($entity->attributes());
     }
 
+    /**
+     *
+     * @param ClientDto $dto
+     * @return ClientMutationVo
+     */
     public function store(ClientDto $dto): ClientMutationVo
     {
         $entity = new Client;
-        $entity->assign($this->storePayloadToEntity($dto));
+        $entity->assign($dto->attributes());
 
-        $saved = $this->clients->persist($entity, $dto->executorId);
+        $saved = $this->clients->save($entity, $dto->executorId);
 
-        $vo = new ClientMutationVo;
-        $vo->message = 'SUCCESS';
-        $vo->client = ClientApiMapper::toResponseArray($saved);
-
-        return $vo;
+        return (new ClientMutationVo)->assign($saved->attributes());
     }
 
+    /**
+     * @param ClientDto $dto
+     * @return ClientMutationVo
+     */
     public function update(ClientDto $dto): ClientMutationVo
     {
-        $vo = new ClientMutationVo;
-        $vo->ok = false;
-        if ($dto->id === null) {
-            return $vo;
-        }
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $existing = $this->clients->findById($dto->id);
-        if ($existing === null) {
-            return $vo;
-        }
+        $entity = $this->clients->findById($condition);
+        $entity->assign($dto->attributes());
 
-        $patch = $this->updatePayloadToEntity($dto);
-        if ($patch !== []) {
-            $existing->assign($patch);
-        }
+        $saved = $this->clients->save($entity, $dto->executorId);
 
-        $saved = $this->clients->persist($existing, $dto->executorId);
-        $vo->ok = true;
-        $vo->message = 'SUCCESS';
-        $vo->client = ClientApiMapper::toResponseArray($saved);
-
-        return $vo;
-    }
-
-    public function destroy(ClientDto $dto): ClientRemoveVo
-    {
-        $vo = new ClientRemoveVo;
-        if ($dto->id === null) {
-            return $vo;
-        }
-
-        $ok = $this->clients->softDelete($dto->id, $dto->executorId);
-        $vo->ok = $ok;
-        $vo->message = 'SUCCESS';
-
-        return $vo;
+        return (new ClientMutationVo)->assign($saved->attributes());
     }
 
     /**
-     * @return array<string, mixed>
+     *
+     * @param ClientDto $dto
+     * @return void
      */
-    private function storePayloadToEntity(ClientDto $dto): array
+    public function destroy(ClientDto $dto): void
     {
-        $map = [
-            'name' => 'name',
-            'identifier' => 'identifer',
-            'post_code' => 'postCode',
-            'pref' => 'pref',
-            'city' => 'city',
-            'address' => 'address',
-            'building' => 'building',
-            'tel' => 'tel',
-            'email' => 'email',
-        ];
-        $attrs = $dto->attributes();
-        unset($attrs['executorId'], $attrs['id'], $attrs['keyword'], $attrs['startFrom'], $attrs['startTo'], $attrs['statuses'], $attrs['status'], $attrs['version']);
-        $out = [];
-        foreach ($map as $requestKey => $prop) {
-            if (! array_key_exists($requestKey, $attrs)) {
-                continue;
-            }
-            $out[$prop] = $attrs[$requestKey];
-        }
-
-        return $out;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function updatePayloadToEntity(ClientDto $dto): array
-    {
-        $map = [
-            'name' => 'name',
-            'identifier' => 'identifer',
-            'post_code' => 'postCode',
-            'pref' => 'pref',
-            'city' => 'city',
-            'address' => 'address',
-            'building' => 'building',
-            'tel' => 'tel',
-            'email' => 'email',
-            'status' => 'status',
-        ];
-        $attrs = $dto->attributes();
-        unset($attrs['executorId'], $attrs['id'], $attrs['keyword'], $attrs['startFrom'], $attrs['startTo'], $attrs['statuses'], $attrs['version']);
-        $out = [];
-        foreach ($map as $requestKey => $prop) {
-            if (! array_key_exists($requestKey, $attrs)) {
-                continue;
-            }
-            $value = $attrs[$requestKey];
-            if ($requestKey === 'status' && $value === null) {
-                continue;
-            }
-            $out[$prop] = $value;
-        }
-
-        return $out;
+        $this->clients->delete($dto->id, $dto->executorId);
     }
 }
