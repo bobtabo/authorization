@@ -7,6 +7,7 @@
 namespace App\Http\Responses\Client;
 
 use App\Support\Http\Responses\AbstractResponse;
+use App\Support\Traits\Getter;
 
 /**
  * クライアント削除の HTTP レスポンス用オブジェクトです。
@@ -16,5 +17,7 @@ use App\Support\Http\Responses\AbstractResponse;
  */
 class ClientDestroyResponse extends AbstractResponse
 {
+    use Getter;
+
     public string $message = 'SUCCESS';
 }

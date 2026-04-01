@@ -7,44 +7,64 @@
 namespace App\Http\Responses\Client;
 
 use App\Support\Http\Responses\AbstractResponse;
+use App\Support\Traits\Getter;
+use Carbon\Carbon;
 
 /**
- * クライアント詳細の HTTP レスポンス用オブジェクトです（最終 JSON で項目を絞れます）。
+ * クライアント詳細の HTTP レスポンス用オブジェクトです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Client
  */
 class ClientShowResponse extends AbstractResponse
 {
-    public ?int $id = null;
+    use Getter;
 
-    public ?string $name = null;
+    private ?int $id = null;
+    private ?string $name = null;
+    private ?string $identifier = null;
+    private ?string $post_code = null;
+    private ?string $pref = null;
+    private ?string $city = null;
+    private ?string $address = null;
+    private ?string $building = null;
+    private ?string $tel = null;
+    private ?string $email = null;
+    private ?int $status = null;
+    private ?Carbon $startAtCarbon = null;
+    private ?Carbon $stopAtCarbon = null;
+    private ?Carbon $createdAtCarbon = null;
+    private ?Carbon $updatedAtCarbon = null;
+    private ?string $startAt = null;
+    private ?string $stopAt = null;
+    private ?string $createdAt = null;
+    private ?string $updatedAt = null;
 
-    public ?string $identifier = null;
+    /**
+     * @inheritdoc}
+     */
+    #[\Override]
+    public function attributes(): array
+    {
+        $this->startAt = empty($this->startAtCarbon) ? '' : $this->startAtCarbon->toIso8601String();
+        $this->stopAt = empty($this->stopAtCarbon) ? '' : $this->stopAtCarbon->toIso8601String();
+        $this->createdAt = empty($this->createdAtCarbon) ? '' : $this->createdAtCarbon->toIso8601String();
+        $this->updatedAt = empty($this->updatedAtCarbon) ? '' : $this->updatedAtCarbon->toIso8601String();
 
-    public mixed $post_code = null;
+        return parent::attributes();
+    }
 
-    public mixed $pref = null;
-
-    public mixed $city = null;
-
-    public mixed $address = null;
-
-    public mixed $building = null;
-
-    public mixed $tel = null;
-
-    public mixed $email = null;
-
-    public mixed $status = null;
-
-    public mixed $start_at = null;
-
-    public mixed $stop_at = null;
-
-    public mixed $created_at = null;
-
-    public mixed $updated_at = null;
-
-    public mixed $version = null;
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    protected function getExcludeKeys(): array
+    {
+        return [
+            'startAtCarbon',
+            'stopAtCarbon',
+            'createdAtCarbon',
+            'updatedAtCarbon',
+        ];
+    }
 }

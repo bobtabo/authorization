@@ -1,15 +1,15 @@
 <?php
 /**
- * This is a program developed by Strategic Insights, Inc.
+ * This is a program developed by BobTabo.
  *
- * Copyright (c) Strategic Insights, Inc. All Rights Reserved.
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
 namespace App\Support\Models;
 
 /**
  * 基底マスタModelクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Models
  */
 class AppMasterModel extends AppModel

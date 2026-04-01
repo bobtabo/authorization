@@ -1,8 +1,8 @@
 <?php
 /**
- * This is a program developed by Strategic Insights, Inc.
+ * This is a program developed by BobTabo.
  *
- * Copyright (c) Strategic Insights, Inc. All Rights Reserved.
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
 namespace App\Support\Models;
 
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * 基底Modelクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Models
  */
 abstract class AppModel extends Model

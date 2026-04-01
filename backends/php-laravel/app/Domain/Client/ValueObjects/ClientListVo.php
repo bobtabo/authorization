@@ -7,35 +7,70 @@
 namespace App\Domain\Client\ValueObjects;
 
 use App\Domain\Client\Entities\Client;
-use App\Domain\Client\Mappers\ClientApiMapper;
-use App\Support\Dtos\AbstractDto;
+use App\Support\Traits\Getter;
+use App\Support\ValueObjects\AbstractValueObject;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
- * クライアント一覧の結果 ValueObject です（API 行の配列を保持します）。
+ * クライアント一覧の結果 ValueObject です。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\ValueObjects
+ *
+ * @method Collection getClients()
  */
-class ClientListVo extends AbstractDto
+class ClientListVo extends AbstractValueObject
 {
-    /**
-     * @var list<array<string, mixed>>
-     */
-    public array $items = [];
+    use Getter;
+
+    private Collection $clients;
 
     /**
-     * Entity コレクションを API 行へ変換して items に設定します。
+     * クライアント Entity のリストを一覧行に設定します。
      *
-     * @param  list<Client>  $clients
-     * @return $this
+     * @param  iterable<int, Client>  $list  Entity の配列または Collection
      */
-    public function assignClients(array $clients): self
+    public function assignClients(iterable $list): void
     {
-        $this->items = array_map(
-            static fn (Client $c): array => ClientApiMapper::toResponseArray($c),
-            $clients,
-        );
+        foreach ($list as $entity) {
+            $this->clients->add(
+                new class($entity) {
+                    private ?int $id = null;
+                    private ?string $name = null;
+                    private ?string $identifier = null;
+                    private ?string $postCode = null;
+                    private ?string $pref = null;
+                    private ?string $city = null;
+                    private ?string $address = null;
+                    private ?string $building = null;
+                    private ?string $tel = null;
+                    private ?string $email = null;
+                    private ?int $status = null;
+                    private ?Carbon $startAt = null;
+                    private ?Carbon $stopAt = null;
+                    private ?Carbon $createdAt = null;
+                    private ?Carbon $updatedAt = null;
 
-        return $this;
+                    public function __construct(Client $entity)
+                    {
+                        $this->id = $entity->id;
+                        $this->name = $entity->name;
+                        $this->identifier = $entity->identifer;
+                        $this->pref = $entity->pref;
+                        $this->city = $entity->city;
+                        $this->address = $entity->address;
+                        $this->building = $entity->building;
+                        $this->tel = $entity->tel;
+                        $this->email = $entity->email;
+                        $this->status = $entity->status;
+                        $this->startAt = $entity->startAt;
+                        $this->stopAt = $entity->stopAt;
+                        $this->createdAt = $entity->createdAt;
+                        $this->updatedAt = $entity->updatedAt;
+                    }
+                }
+            );
+        }
     }
 }

@@ -7,6 +7,8 @@
 namespace App\Http\Responses\Client;
 
 use App\Support\Http\Responses\AbstractResponse;
+use App\Support\Traits\Getter;
+use Carbon\Carbon;
 
 /**
  * クライアント一覧の HTTP レスポンス用オブジェクトです（JSON ルートが配列になるよう attributes を調整します）。
@@ -16,6 +18,8 @@ use App\Support\Http\Responses\AbstractResponse;
  */
 class ClientIndexResponse extends AbstractResponse
 {
+    use Getter;
+
     /**
      * @var list<array<string, mixed>>
      */
@@ -24,13 +28,35 @@ class ClientIndexResponse extends AbstractResponse
     /**
      * {@inheritdoc}
      *
-     * 一覧 API は JSON 配列をルートに返すため、行のリストのみを返します。
+     * 一覧 API は JSON 配列をルートに返すため、行ごとに TIMESTAMP を文字列へ正規化したリストを返します。
      *
      * @return list<array<string, mixed>>
      */
     #[\Override]
     public function attributes(): array
     {
-        return $this->items;
+        return array_map(
+            static fn (array $row): array => self::normalizeRowTimestampsForJson($row),
+            $this->items,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $row  ValueObject 行の attributes
+     * @return array<string, mixed>
+     */
+    private static function normalizeRowTimestampsForJson(array $row): array
+    {
+        foreach (['start_at', 'stop_at', 'created_at', 'updated_at'] as $key) {
+            if (! array_key_exists($key, $row)) {
+                continue;
+            }
+            $v = $row[$key];
+            if ($v instanceof Carbon) {
+                $row[$key] = $v->toIso8601String();
+            }
+        }
+
+        return $row;
     }
 }
