@@ -40,10 +40,9 @@ interface ClientRepository
      * {@see \App\Support\Repositories\AbstractRepository::save} とは別シグネチャのため persist とします。
      *
      * @param  Client  $entity  永続化するエンティティ（id 未設定で新規）
-     * @param  int|null  $executorId  登録／更新実行者ID（未ログイン等は null。永続化層で必要なら 0 に正規化）
      * @return Client 保存後のエンティティ
      */
-    public function save(Client $entity): Client;
+    public function persist(Client $entity): Client;
 
     /**
      * クライアントを論理削除します。

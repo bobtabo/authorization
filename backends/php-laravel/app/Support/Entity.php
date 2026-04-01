@@ -44,22 +44,6 @@ interface Entity
     /**
      * 作成者を設定します。
      *
-     * @param int $accountId アカウントID
-     * @return Entity エンティティ
-     */
-    public function assignCreatedMember(int $accountId): Entity;
-
-    /**
-     * 作成者を設定します。
-     *
-     * @param int $accountId アカウントID
-     * @return Entity エンティティ
-     */
-    public function assignCreatedStaff(int $accountId): Entity;
-
-    /**
-     * 作成者を設定します。
-     *
      * @return Entity エンティティ
      */
     public function assignCreatedSystem(): Entity;
@@ -67,26 +51,10 @@ interface Entity
     /**
      * 作成者を設定します。
      *
-       * @param int $accountId アカウントID
+       * @param int $executorId 処理実行者ID
      * @return Entity エンティティ
      */
-    public function assignCreated(int $accountId): Entity;
-
-    /**
-     * 更新者を設定します。
-     *
-     * @param int $accountId アカウントID
-     * @return Entity エンティティ
-     */
-    public function assignUpdatedMember(int $accountId): Entity;
-
-    /**
-     * 更新者を設定します。
-     *
-     * @param int $accountId アカウントID
-     * @return Entity エンティティ
-     */
-    public function assignUpdatedStaff(int $accountId): Entity;
+    public function assignCreated(int $executorId): Entity;
 
     /**
      * 更新者を設定します。
@@ -98,26 +66,10 @@ interface Entity
     /**
      * 更新者を設定します。
      *
-     * @param int $accountId アカウントID
+     * @param int $executorId 処理実行者ID
      * @return Entity エンティティ
      */
-    public function assignUpdated(int $accountId): Entity;
-
-    /**
-     * 削除者を設定します。
-     *
-     * @param int $accountId アカウントID
-     * @return Entity エンティティ
-     */
-    public function assignDeletedMember(int $accountId): Entity;
-
-    /**
-     * 削除者を設定します。
-     *
-     * @param int $accountId アカウントID
-     * @return Entity エンティティ
-     */
-    public function assignDeletedStaff(int $accountId): Entity;
+    public function assignUpdated(int $executorId): Entity;
 
     /**
      * 削除者を設定します。
@@ -129,8 +81,8 @@ interface Entity
     /**
      * 削除者を設定します。
      *
-     * @param int $accountId アカウントID
+     * @param int $executorId 処理実行者ID
      * @return Entity エンティティ
      */
-    public function assignDeleted(int $accountId): Entity;
+    public function assignDeleted(int $executorId): Entity;
 }

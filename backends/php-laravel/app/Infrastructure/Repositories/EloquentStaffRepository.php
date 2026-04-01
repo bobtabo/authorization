@@ -6,37 +6,40 @@
  */
 namespace App\Infrastructure\Repositories;
 
-use App\Domain\Client\Condition\ClientCondition;
-use App\Domain\Client\Entities\Client as Entity;
-use App\Domain\Client\Repositories\ClientRepository;
-use App\Infrastructure\Models\Client as Model;
-use App\Support\Repositories\AbstractRepository;
+use App\Domain\Staff\Condition\StaffCondition;
+use App\Domain\Staff\Entities\Staff as Entity;
+use App\Domain\Staff\Repositories\StaffRepository;
+use App\Infrastructure\Models\Staff as Model;
+use app\Support\Repositories\AbstractRepository;
 use Illuminate\Support\Collection;
 
 /**
- * Eloquent によりクライアントを永続化するRepositoryクラスです。
+ * Eloquent によりスタッフを読み書きするRepositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentClientRepository extends AbstractRepository implements ClientRepository
+class EloquentStaffRepository extends AbstractRepository implements StaffRepository
 {
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function findByCondition(ClientCondition $condition): Collection
+    public function findByCondition(StaffCondition $condition): Collection
     {
         $query = Model::withTrashed()->newQuery()
-            ->select('clients.*');
+            ->select('staffs.*');
 
         if (!empty($condition->keyword)) {
             $keyword = str($condition->keyword)->trim()->replace(' ', '')->value();
-            $query->whereLike('clients.name', "%{$keyword}%");
+            $query->where(function ($subQuery) use ($keyword) {
+                $subQuery->whereLike('staffs.name', "%{$keyword}%")
+                    ->orWhereLike('staffs.email', "%{$keyword}%");
+            });
         }
 
-        if (!empty($condition->startFrom) && !empty($condition->startTo)) {
-            $query->whereBetween('matters.start_at', [ $condition->startFrom, $condition->startTo ]);
+        if (!empty($condition->roles)) {
+            $query->whereIn('clients.role', $condition->roles);
         }
 
         if (!empty($condition->statuses)) {
@@ -50,10 +53,26 @@ class EloquentClientRepository extends AbstractRepository implements ClientRepos
      * {@inheritdoc}
      */
     #[\Override]
-    public function findById(ClientCondition $condition): ?Entity
+    public function findById(StaffCondition $condition): ?Entity
     {
         /** @var Entity $result */
         $result = $this->findByPk($condition->id);
+        return $result;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function findByProvider(StaffCondition $condition): ?Entity
+    {
+        $query = Model::withTrashed()->newQuery()
+            ->select('staffs.*')
+            ->where('staffs.provider', $condition->provider)
+            ->where('staffs.provider_id', $condition->providerId);
+
+        /** @var Entity|null $result */
+        $result = $this->findByQuery($query)->first();
         return $result;
     }
 

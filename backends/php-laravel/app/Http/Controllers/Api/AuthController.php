@@ -7,8 +7,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Support\Http\Requests\AppRequest;
+use App\UseCases\Auth\AuthService;
+use App\UseCases\Auth\Dtos\AuthUserDto;
+use app\UseCases\Auth\Dtos\SocialDto;
+use App\UseCases\Invitation\Dtos\InvitationDto;
+use App\UseCases\Invitation\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
 
 /**
  * 認証Controllerクラスです。
@@ -19,35 +27,102 @@ use Illuminate\Http\Request;
 class AuthController extends Controller
 {
     /**
-     * ログイン情報を返します（未実装スタブ）。
+     * ログイン情報を返します（セッション／トークンで認証済みのユーザー）。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  AuthService  $auth  認証ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function login(Request $request): JsonResponse
+    public function login(AppRequest $request, AuthService $auth): JsonResponse
     {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => '認証されていません。'], 401);
+        }
+
+        $dto = new AuthUserDto;
+        $dto->id = (int) $userId;
+        $vo = $auth->findUser($dto);
+        if (! $vo->found) {
+            return response()->json(['message' => 'ユーザーが存在しません。'], 404);
+        }
+
         return response()->json([
-            'message' => 'TODO: ログイン情報の取得を実装',
+            'id' => $vo->id,
+            'name' => $vo->name,
+            'email' => $vo->email,
         ]);
     }
 
     /**
-     * 招待トークンを検証しログイン情報を返します（未実装スタブ）。
+     * 招待トークンを検証し、招待情報を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
-     * @param  string  $token  招待トークン
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  InvitationService  $invitations  招待ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function invitation(Request $request, string $token): JsonResponse
+    public function invitation(AppRequest $request, InvitationService $invitations): JsonResponse
     {
+        $dto = new InvitationDto;
+        $dto->assign($request->input());
+        $dto->token = $request->route('token');
+        $vo = $invitations->findByToken($dto);
+        if (!$vo->isFound()) {
+            return response()->json(['message' => '招待が無効です。'], 404);
+        }
+
         return response()->json([
-            'message' => 'TODO: 招待トークン検証とログイン情報',
-            'token' => $token,
+            'url' => $vo->url,
+            'token' => $vo->token,
         ]);
     }
 
     /**
-     * Google OAuth リダイレクト用の応答を返します（未実装スタブ）。
+     * Googleへリダイレクトします。
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    public function redirectToGoogle() {
+        return Socialite::driver('google')->redirect();
+    }
+
+    /**
+     * Googleからのコールバックを処理します。
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
+    public function handleGoogleCallback() {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+
+            $dto = new SocialDto;
+            $dto->assign([
+                'id' => $googleUser->id,
+                'nickname' => $googleUser->nickname,
+                'name' => $googleUser->name,
+                'email' => $googleUser->email,
+                'avatar' => $googleUser->avatar,
+            ]);
+
+            // ユーザーを探す、なければ作る（FirstOrCreate）
+            $user = User::updateOrCreate([
+                'google_id' => $googleUser->id,
+            ], [
+                'name' => $googleUser->name,
+                'email' => $googleUser->email,
+                // パスワードは適当なランダム文字列か、null許容にする
+            ]);
+
+            Auth::login($user);
+
+            return redirect('/dashboard');
+        } catch (\Exception $e) {
+            return redirect('/login')->with('error', 'Google認証に失敗しました');
+        }
+    }
+
+    /**
+     * Google OAuth リダイレクト用の応答を返します（疎通用スタブ）。
      *
      * @param  Request  $request  HTTP リクエスト
      * @return JsonResponse JSON レスポンス
@@ -55,20 +130,23 @@ class AuthController extends Controller
     public function googleRedirect(Request $request): JsonResponse
     {
         return response()->json([
-            'message' => 'TODO: Google OAuth リダイレクト',
+            'message' => 'Google OAuth リダイレクトは未接続です。',
+            'authorization_url' => null,
         ]);
     }
 
     /**
-     * ログアウト処理の応答を返します（未実装スタブ）。
+     * ログアウト処理の応答を返します。
      *
      * @param  Request  $request  HTTP リクエスト
      * @return JsonResponse JSON レスポンス
      */
     public function logout(Request $request): JsonResponse
     {
+        Auth::logout();
+
         return response()->json([
-            'message' => 'TODO: ログアウト処理',
+            'message' => 'SUCCESS',
         ]);
     }
 }

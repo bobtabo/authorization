@@ -104,24 +104,6 @@ abstract class AbstractEntity implements Entity
      * {@inheritdoc}
      */
     #[\Override]
-    public function assignCreatedMember(int $accountId): Entity
-    {
-        return $this->assignCreated($accountId);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function assignCreatedStaff(int $accountId): Entity
-    {
-        return $this->assignCreated($accountId);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
     public function assignCreatedSystem(): Entity
     {
         return $this->assignCreated(0);
@@ -131,33 +113,15 @@ abstract class AbstractEntity implements Entity
      * {@inheritdoc}
      */
     #[\Override]
-    public function assignCreated(int $accountId): Entity
+    public function assignCreated(int $executorId): Entity
     {
         $now = Carbon::now();
         $this->createdAt = $now;
-        $this->createdId = $accountId;
+        $this->createdBy = $executorId;
         $this->updatedAt = $now;
-        $this->updatedId = $accountId;
+        $this->updatedBy = $executorId;
         $this->version = 1;
         return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function assignUpdatedMember(int $accountId): Entity
-    {
-        return $this->assignUpdated($accountId);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function assignUpdatedStaff(int $accountId): Entity
-    {
-        return $this->assignUpdated($accountId);
     }
 
     /**
@@ -173,29 +137,11 @@ abstract class AbstractEntity implements Entity
      * {@inheritdoc}
      */
     #[\Override]
-    public function assignUpdated(int $accountId): Entity
+    public function assignUpdated(int $executorId): Entity
     {
         $this->updatedAt = Carbon::now();
-        $this->updatedId = $accountId;
+        $this->updatedBy = $executorId;
         return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function assignDeletedMember(int $accountId): Entity
-    {
-        return $this->assignDeleted($accountId);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function assignDeletedStaff(int $accountId): Entity
-    {
-        return $this->assignDeleted($accountId);
     }
 
     /**
@@ -211,10 +157,10 @@ abstract class AbstractEntity implements Entity
      * {@inheritdoc}
      */
     #[\Override]
-    public function assignDeleted(int $accountId): Entity
+    public function assignDeleted(int $executorId): Entity
     {
         $this->deletedAt = Carbon::now();
-        $this->deletedId = $accountId;
+        $this->deletedBy = $executorId;
         return $this;
     }
 

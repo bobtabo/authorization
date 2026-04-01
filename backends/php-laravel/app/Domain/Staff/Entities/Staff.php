@@ -6,7 +6,9 @@
  */
 namespace App\Domain\Staff\Entities;
 
+use App\Domain\Staff\Enums\Provider;
 use App\Domain\Staff\Enums\StaffRole;
+use App\Domain\Staff\Enums\StaffStatus;
 use App\Support\Entities\AbstractEntity;
 use Carbon\Carbon;
 
@@ -21,9 +23,10 @@ class Staff extends AbstractEntity
     public ?int $id = null;
     public ?string $name = null;
     public ?string $email = null;
-    public ?int $provider = null;
+    public ?Provider $provider = null;
     public ?string $providerId = null;
     public ?string $avater = null;
     public ?StaffRole $role = null;
+    public ?StaffStatus $status = null;
     public ?Carbon $lastLoginAt = null;
 }

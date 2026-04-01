@@ -11,7 +11,7 @@ use App\Domain\Gate\JwtIssuerInterface;
 use App\Domain\Gate\JwtVerifierInterface;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
 use App\Domain\Notification\Repositories\NotificationRepository;
-use App\Domain\Staff\Repositories\StaffRepositoryInterface;
+use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Gate\StubJwtIssuer;
 use App\Infrastructure\Gate\StubJwtVerifier;
 use App\Infrastructure\Repositories\CacheNotificationRepository;
@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Domain ポート → Infrastructure 実装（DIP）
         $this->app->bind(ClientRepository::class, EloquentClientRepository::class);
-        $this->app->bind(StaffRepositoryInterface::class, EloquentStaffRepository::class);
+        $this->app->bind(StaffRepository::class, EloquentStaffRepository::class);
         $this->app->bind(InvitationRepositoryInterface::class, EloquentInvitationRepository::class);
         $this->app->bind(NotificationRepository::class, CacheNotificationRepository::class);
         $this->app->bind(JwtIssuerInterface::class, StubJwtIssuer::class);

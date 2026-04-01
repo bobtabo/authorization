@@ -25,7 +25,7 @@ use App\UseCases\Client\Dtos\ClientDto;
 class ClientService extends AbstractService
 {
     public function __construct(
-        private readonly ClientRepository $clients,
+        private readonly ClientRepository $clientRepository,
     ) {}
 
     /**
@@ -45,7 +45,7 @@ class ClientService extends AbstractService
             'statuses' => 'statuses',
         ]);
 
-        $list = $this->clients->findByCondition($condition);
+        $list = $this->clientRepository->findByCondition($condition);
 
         $result = new ClientListVo;
         $result->assignClients($list);
@@ -65,7 +65,7 @@ class ClientService extends AbstractService
         /** @var ClientCondition $condition */
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clients->findByCondition($condition);
+        $entity = $this->clientRepository->findByCondition($condition);
 
         $vo = new ClientDetailVo;
         if ($entity === null) {
@@ -87,7 +87,7 @@ class ClientService extends AbstractService
         $entity = new Client;
         $entity->assign($dto->attributes());
 
-        $saved = $this->clients->save($entity, $dto->executorId);
+        $saved = $this->clientRepository->save($entity, $dto->executorId);
 
         return (new ClientMutationVo)->assign($saved->attributes());
     }
@@ -100,10 +100,10 @@ class ClientService extends AbstractService
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clients->findById($condition);
+        $entity = $this->clientRepository->findById($condition);
         $entity->assign($dto->attributes());
 
-        $saved = $this->clients->save($entity, $dto->executorId);
+        $saved = $this->clientRepository->save($entity, $dto->executorId);
 
         return (new ClientMutationVo)->assign($saved->attributes());
     }
@@ -115,6 +115,6 @@ class ClientService extends AbstractService
      */
     public function destroy(ClientDto $dto): void
     {
-        $this->clients->delete($dto->id, $dto->executorId);
+        $this->clientRepository->delete($dto->id, $dto->executorId);
     }
 }
