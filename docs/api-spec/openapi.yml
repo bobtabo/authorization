@@ -103,7 +103,7 @@ paths:
           schema:
             type: string
             format: date
-        - name: status
+        - name: statuses
           in: query
           required: false
           description: 状態（複数指定可）
@@ -235,7 +235,7 @@ paths:
         '404':
           description: ユーザーが存在しない場合のエラー
 
-  /staff:
+  /staffs:
     get:
       summary: スタッフ一覧
       tags:
@@ -247,7 +247,7 @@ paths:
           description: キーワード
           schema:
             type: string
-        - name: role
+        - name: roles
           in: query
           required: false
           description: 権限（複数指定可）
@@ -257,7 +257,7 @@ paths:
               type: integer
           style: form
           explode: true
-        - name: status
+        - name: statuses
           in: query
           required: false
           description: 状態（複数指定可）
@@ -277,7 +277,7 @@ paths:
         '404':
           description: ユーザーが存在しない場合のエラー
 
-  /staff/{id}/updateRole:
+  /staffs/{id}/updateRole:
     patch:
       summary: 権限を更新します
       tags:
@@ -321,7 +321,7 @@ paths:
         '500':
           description: サーバーエラー
 
-  /staff/{id}/delete:
+  /staffs/{id}/delete:
     delete:
       summary: スタッフを削除
       tags:

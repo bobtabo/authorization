@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   Settings,
   Link2,
-  StickyNote,
 } from "lucide-react";
 import { InvitationUrlModal } from "@/components/invitation-url-modal";
 import { UserAvatar } from "@/components/user-avatar";
@@ -167,14 +166,6 @@ export function ConsoleHeader(): React.JSX.Element {
                     <Link2 size={15} aria-hidden />
                     <span>招待URL</span>
                   </button>
-                  <Link
-                    to="/settings/notion"
-                    onClick={() => setSettingsMenuOpen(false)}
-                    className="flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <StickyNote size={15} aria-hidden />
-                    <span>Notion 連携</span>
-                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -337,7 +328,7 @@ export function ConsoleHeader(): React.JSX.Element {
           <NavLink to="/clients" className={navTabClass} end={false}>
             クライアント
           </NavLink>
-          <NavLink to="/staff" className={navTabClass} end>
+          <NavLink to="/staffs" className={navTabClass} end>
             スタッフ
           </NavLink>
         </nav>
