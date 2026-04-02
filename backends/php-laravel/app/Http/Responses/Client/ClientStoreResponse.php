@@ -16,7 +16,7 @@ use Carbon\Carbon;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Client
  */
-class ClientMutationResponse extends AbstractResponse
+class ClientStoreResponse extends AbstractResponse
 {
     use Getter;
 

@@ -11,7 +11,7 @@ use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Client\ValueObjects\ClientDetailVo;
 use App\Domain\Client\ValueObjects\ClientListVo;
-use App\Domain\Client\ValueObjects\ClientMutationVo;
+use App\Domain\Client\ValueObjects\ClientStoreVo;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Client\Dtos\ClientDto;
@@ -31,9 +31,9 @@ class ClientService extends AbstractService
     /**
      * クライアント一覧を取得します。
      *
-     * @param ClientDto $dto
+     * @param ClientDto $dto クライアントDTO
      * @return ClientListVo
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function getClients(ClientDto $dto): ClientListVo
     {
@@ -56,9 +56,9 @@ class ClientService extends AbstractService
     /**
      * クライアント詳細を取得します。
      *
-     * @param ClientDto $dto
-     * @return ClientDetailVo
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
+     * @param ClientDto $dto クライアントDTO
+     * @return ClientDetailVo クライアント詳細ValueObject
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function show(ClientDto $dto): ClientDetailVo
     {
@@ -78,25 +78,37 @@ class ClientService extends AbstractService
     }
 
     /**
+     * クライアントを登録します。
      *
-     * @param ClientDto $dto
-     * @return ClientMutationVo
+     * @param ClientDto $dto クライアントDTO
+     * @return ClientStoreVo クライアント登録ValueObject
      */
-    public function store(ClientDto $dto): ClientMutationVo
+    public function store(ClientDto $dto): ClientStoreVo
     {
         $entity = new Client;
         $entity->assign($dto->attributes());
 
+        // TODO 識別子、キーペア、フィンガープリント、トークンの作成
+        $token = null;
         $saved = $this->clientRepository->save($entity, $dto->executorId);
 
-        return (new ClientMutationVo)->assign($saved->attributes());
+        $configs = config('authorization.app.mail');
+        return (new ClientStoreVo)->assign([
+            'from' => $configs['from'],
+            'to' => $saved->email,
+            'subject' => get_mail_subject($configs['subject']['prefix'] . $configs['subject']['access_token']),
+            'template' => $configs['template']['login'],
+            'accessToken' => $token,
+        ]);
     }
 
     /**
-     * @param ClientDto $dto
-     * @return ClientMutationVo
+     * クライアントを更新します。
+     *
+     * @param ClientDto $dto クライアントDTO
+     * @return ClientStoreVo クライアント登録ValueObject
      */
-    public function update(ClientDto $dto): ClientMutationVo
+    public function update(ClientDto $dto): ClientStoreVo
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
@@ -105,12 +117,13 @@ class ClientService extends AbstractService
 
         $saved = $this->clientRepository->save($entity, $dto->executorId);
 
-        return (new ClientMutationVo)->assign($saved->attributes());
+        return (new ClientStoreVo)->assign($saved->attributes());
     }
 
     /**
+     * クライアントを削除します。
      *
-     * @param ClientDto $dto
+     * @param ClientDto $dto クライアントDTO
      * @return void
      */
     public function destroy(ClientDto $dto): void

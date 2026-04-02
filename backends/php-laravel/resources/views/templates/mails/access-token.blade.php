@@ -61,7 +61,7 @@
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;">
                                 <tr>
                                     <td style="padding:16px 18px;word-break:break-all;">
-                                        <code style="font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:13px;line-height:1.6;color:#111827;">{{ $token }}</code>
+                                        <code style="font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:13px;line-height:1.6;color:#111827;">{{ $accessToken }}</code>
                                     </td>
                                 </tr>
                             </table>

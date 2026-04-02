@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Client\ValueObjects;
 
-use App\Support\ValueObjects\AbstractValueObject;
+use App\Support\Mails\MailSend;
 use Carbon\Carbon;
 
 /**
@@ -25,13 +25,14 @@ use Carbon\Carbon;
  * @method string|null getBuilding()
  * @method string|null getTel()
  * @method string|null getEmail()
+ * @method string|null getAccessToken()
  * @method int|null getStatus()
  * @method Carbon|null getStartAt()
  * @method Carbon|null getStopAt()
  * @method Carbon|null getCreatedAt()
  * @method Carbon|null getUpdatedAt()
  */
-class ClientMutationVo extends AbstractValueObject
+class ClientStoreVo extends MailSend
 {
     private ?int $id = null;
     private ?string $name = null;
@@ -43,6 +44,7 @@ class ClientMutationVo extends AbstractValueObject
     private ?string $building = null;
     private ?string $tel = null;
     private ?string $email = null;
+    private ?string $accessToken = null;
     private ?int $status = null;
     private ?Carbon $startAt = null;
     private ?Carbon $stopAt = null;

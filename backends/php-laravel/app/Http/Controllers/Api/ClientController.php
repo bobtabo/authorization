@@ -11,13 +11,15 @@ use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Responses\Client\ClientDestroyResponse;
 use App\Http\Responses\Client\ClientIndexResponse;
-use App\Http\Responses\Client\ClientMutationResponse;
 use App\Http\Responses\Client\ClientShowResponse;
+use App\Http\Responses\Client\ClientStoreResponse;
 use App\Support\Http\Requests\AppRequest;
+use App\Support\Mails\DefaultMail;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Client\Dtos\ClientDto;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * クライアントControllerクラスです。
@@ -85,10 +87,15 @@ class ClientController extends Controller
         $dto->assign($request->input());
         $dto->executorId = $this->executorId();
 
-        $value = $service->store($dto);
+        $value = DB::transaction(function () use ($service, $dto) {
+            return $service->store($dto);
+        });
 
-        $response = new ClientMutationResponse;
+        $response = new ClientStoreResponse;
         $response->assign($value->attributes());
+
+        //アクセストークンをメール送信します
+        send_mail($value->getEmail(), new DefaultMail($value));
 
         return response()->json($response->attributes(), 201);
     }
@@ -108,7 +115,7 @@ class ClientController extends Controller
 
         $value = $service->update($dto);
 
-        $response = new ClientMutationResponse;
+        $response = new ClientStoreResponse;
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
