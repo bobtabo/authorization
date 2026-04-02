@@ -71,13 +71,20 @@ jobs:
       # .env ファイルを動的に生成
       - name: Generate .env
         run: |
-          cp .env.example .env
+          cp .env.testing .env
           sed -i 's/DB_HOST=.*/DB_HOST=${{ inputs.db_host }}/' .env
           sed -i 's/DB_DATABASE=.*/DB_DATABASE=${{ inputs.db_name }}/' .env
           sed -i 's/DB_USERNAME=.*/DB_USERNAME=${{ inputs.db_user }}/' .env
           sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=${{ inputs.db_password }}/' .env
           sed -i 's/REDIS_HOST=.*/REDIS_HOST=${{ inputs.redis_host }}/' .env
           sed -i 's/REDIS_PORT=.*/REDIS_PORT=${{ inputs.redis_port }}/' .env
+        working-directory: backends/php-laravel
+
+      # 環境準備スクリプトを実行
+      - name: Prepare environment
+        run: |
+          find ./bin -type f -exec chmod 755 {} +
+          bin/clear-laravel-local.sh
         working-directory: backends/php-laravel
 
       # データベースマイグレーションを実行
