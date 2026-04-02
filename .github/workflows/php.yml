@@ -37,6 +37,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ inputs.db_password }}
           MYSQL_DATABASE: ${{ inputs.db_name }}
+          MYSQL_USER: ${{ inputs.db_user }}
+          MYSQL_PASSWORD: ${{ inputs.db_password }}
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
