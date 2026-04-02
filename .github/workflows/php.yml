@@ -18,6 +18,9 @@ on:
       db_password:
         required: true
         type: string
+      db_host:
+        required: true
+        type: string
       redis_host:
         required: true
         type: string
@@ -37,8 +40,9 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ${{ inputs.db_password }}
           MYSQL_DATABASE: ${{ inputs.db_name }}
-          MYSQL_USER: ${{ inputs.db_user }}
-          MYSQL_PASSWORD: ${{ inputs.db_password }}
+          ${{ if inputs.db_user != 'root' }}:
+            MYSQL_USER: ${{ inputs.db_user }}
+            MYSQL_PASSWORD: ${{ inputs.db_password }}
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -57,7 +61,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.4'
           extensions: pdo, pdo_mysql
 
       # Composer 依存関係をインストール
@@ -65,9 +69,16 @@ jobs:
         run: composer install
         working-directory: backends/php-laravel
 
-      # .env ファイルを環境別で生成（.env.{env_name} を .env にコピー）
+      # .env ファイルを動的に生成
       - name: Generate .env
-        run: cp .env.${{ inputs.env_name }} .env
+        run: |
+          cp .env.example .env
+          sed -i 's/DB_HOST=.*/DB_HOST=${{ inputs.db_host }}/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=${{ inputs.db_name }}/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=${{ inputs.db_user }}/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=${{ inputs.db_password }}/' .env
+          sed -i 's/REDIS_HOST=.*/REDIS_HOST=${{ inputs.redis_host }}/' .env
+          sed -i 's/REDIS_PORT=.*/REDIS_PORT=${{ inputs.redis_port }}/' .env
         working-directory: backends/php-laravel
 
       # データベースマイグレーションを実行
