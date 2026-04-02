@@ -31,7 +31,7 @@ class RedisCache
             return;
         }
 
-        Cache::setPrefix(config('sii.app.cache_prefix'));
+        Cache::setPrefix(config('authorization.app.cache_prefix'));
         Cache::tags($cacheKey->tag)->put($cacheKey->key, $value, $second);
     }
 
@@ -43,7 +43,7 @@ class RedisCache
      */
     public static function get(CacheKey $cacheKey): mixed
     {
-        Cache::setPrefix(config('sii.app.cache_prefix'));
+        Cache::setPrefix(config('authorization.app.cache_prefix'));
         return Cache::tags($cacheKey->tag)->get($cacheKey->key);
     }
 
@@ -56,7 +56,7 @@ class RedisCache
      */
     public static function delete(CacheKey $cacheKey): void
     {
-        Cache::setPrefix(config('sii.app.cache_prefix'));
+        Cache::setPrefix(config('authorization.app.cache_prefix'));
         Cache::tags($cacheKey->tag)->delete($cacheKey->key);
     }
 
@@ -68,7 +68,7 @@ class RedisCache
      */
     public static function flush(CacheKey $cacheKey): void
     {
-        Cache::setPrefix(config('sii.app.cache_prefix'));
+        Cache::setPrefix(config('authorization.app.cache_prefix'));
         foreach ($cacheKey->tag as $key) {
             Cache::deleteMultiple(static::keys($key));
         }
@@ -83,7 +83,7 @@ class RedisCache
      */
     public static function getByKey(string $key): mixed
     {
-        Cache::setPrefix(config('sii.app.cache_prefix'));
+        Cache::setPrefix(config('authorization.app.cache_prefix'));
         return Cache::get($key);
     }
 
@@ -95,7 +95,7 @@ class RedisCache
      */
     private static function keys(string $key): array
     {
-        $prefix = 'selloop_' . config('sii.app.cache_prefix') . ':';
+        $prefix = 'selloop_' . config('authorization.app.cache_prefix') . ':';
         $keys = Redis::keys('*' . $key . '*');
         if (empty($keys)) {
             return [];
