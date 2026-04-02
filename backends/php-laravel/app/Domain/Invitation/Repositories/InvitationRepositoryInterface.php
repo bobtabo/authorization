@@ -29,4 +29,12 @@ interface InvitationRepositoryInterface
      * @return Invitation 発行された招待
      */
     public function issue(): Invitation;
+
+    /**
+     * トークンから招待情報を解決します（未登録・不正なら null）。
+     *
+     * @param  string  $token  招待トークン
+     * @return Invitation|null 該当がなければ null
+     */
+    public function findByToken(string $token): ?Invitation;
 }

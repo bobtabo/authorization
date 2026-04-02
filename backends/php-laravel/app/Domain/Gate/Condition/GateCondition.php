@@ -11,7 +11,7 @@ use App\Support\Repositories\Conditions\AbstractCondition;
 /**
  * 認可Conditionクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Gate\Condition
  */
 class GateCondition extends AbstractCondition

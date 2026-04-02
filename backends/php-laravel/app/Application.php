@@ -11,8 +11,8 @@ use Illuminate\Foundation\Application as BaseApplication;
 /**
  * 拡張Applicationクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
- * @package Sii\Selloop\Core
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App
  */
 class Application extends BaseApplication
 {

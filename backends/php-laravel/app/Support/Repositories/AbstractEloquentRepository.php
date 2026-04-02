@@ -16,7 +16,7 @@ use App\Support\Repositories\Traits\Bulk;
 use App\Support\Repositories\Traits\CommonColumns;
 use App\Support\Repositories\Traits\OptionBuilder;
 use App\Support\Repositories\Traits\QueryLog;
-use App\Traits\EnumValue;
+use App\Support\Traits\EnumValue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use ReflectionClass;
@@ -27,7 +27,7 @@ use ReflectionClass;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Repositories
  */
-abstract class AbstractRepository
+abstract class AbstractEloquentRepository
 {
     use Bulk;
     use CommonColumns;

@@ -11,7 +11,7 @@ use App\Support\Database\Seeder;
 /**
  * 招待Seederクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Seeders;
  */
 class InvitationSeeder extends Seeder

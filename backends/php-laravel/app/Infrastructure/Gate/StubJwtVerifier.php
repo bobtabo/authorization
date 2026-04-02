@@ -13,6 +13,7 @@ use App\Domain\Gate\JwtVerifierInterface;
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate
+ * @deprecated 削除？
  */
 class StubJwtVerifier implements JwtVerifierInterface
 {

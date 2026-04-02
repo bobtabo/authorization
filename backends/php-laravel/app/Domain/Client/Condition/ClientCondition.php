@@ -13,7 +13,7 @@ use Carbon\Carbon;
 /**
  * クライアントConditionクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\Condition
  */
 class ClientCondition extends AbstractCondition

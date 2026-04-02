@@ -7,6 +7,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\UseCases\Invitation\Dtos\InvitationDto;
+use App\UseCases\Invitation\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,30 +21,39 @@ use Illuminate\Http\Request;
 class InvitationController extends Controller
 {
     /**
-     * 招待 URL を取得する応答を返します（未実装スタブ）。
+     * 現在の招待 URL を返します。
      *
      * @param  Request  $request  HTTP リクエスト
+     * @param  InvitationService  $invitations  招待ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, InvitationService $invitations): JsonResponse
     {
+        $vo = $invitations->current(new InvitationDto);
+        if (! $vo->found) {
+            return response()->json(['message' => '招待情報がありません。'], 404);
+        }
+
         return response()->json([
-            'url' => '',
-            'message' => 'TODO: 招待URL取得',
+            'url' => $vo->url,
+            'token' => $vo->token,
         ]);
     }
 
     /**
-     * 招待 URL を発行する応答を返します（未実装スタブ）。
+     * 招待 URL を発行します。
      *
      * @param  Request  $request  HTTP リクエスト
+     * @param  InvitationService  $invitations  招待ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function issue(Request $request): JsonResponse
+    public function issue(Request $request, InvitationService $invitations): JsonResponse
     {
+        $vo = $invitations->issue(new InvitationDto);
+
         return response()->json([
-            'url' => '/auth/invitation/',
-            'message' => 'TODO: 招待URL発行',
+            'url' => $vo->url,
+            'token' => $vo->token,
         ]);
     }
 }

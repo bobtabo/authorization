@@ -45,7 +45,7 @@ interface StaffRepository
     /**
      * スタッフを新規登録または更新して永続化します。
      *
-     * {@see \App\Support\Repositories\AbstractRepository::save} とは別シグネチャのため persist とします。
+     * {@see \App\Support\Repositories\AbstractEloquentRepository::save} とは別シグネチャのため persist とします。
      *
      * @param  Entity  $entity  永続化するエンティティ（id 未設定で新規）
      * @return Entity 保存後のエンティティ

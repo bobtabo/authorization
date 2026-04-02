@@ -11,7 +11,7 @@ use App\Support\Repositories\Conditions\AbstractCondition;
 /**
  * 招待Conditionクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Invitation\Condition
  */
 class InvitationCondition extends AbstractCondition

@@ -11,7 +11,7 @@ use App\Support\Database\Seeder;
 /**
  * スタッフSeederクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Seeders;
  */
 class StaffSeeder extends Seeder

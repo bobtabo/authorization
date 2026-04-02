@@ -17,5 +17,11 @@ use App\Support\Entities\AbstractEntity;
 class Invitation extends AbstractEntity
 {
     public ?int $id = null;
+
     public ?string $token = null;
+
+    /**
+     * 招待用の完全 URL またはパス（API 応答用）。
+     */
+    public ?string $url = null;
 }

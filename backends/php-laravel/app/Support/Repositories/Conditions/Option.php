@@ -1,8 +1,8 @@
 <?php
 /**
- * This is a program developed by Strategic Insights, Inc.
+ * This is a program developed by BobTabo.
  *
- * Copyright (c) Strategic Insights, Inc. All Rights Reserved.
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
 namespace App\Support\Repositories\Conditions;
 

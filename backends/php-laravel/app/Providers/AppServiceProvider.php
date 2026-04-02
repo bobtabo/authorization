@@ -15,9 +15,9 @@ use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Gate\StubJwtIssuer;
 use App\Infrastructure\Gate\StubJwtVerifier;
 use App\Infrastructure\Repositories\CacheNotificationRepository;
-use App\Infrastructure\Repositories\EloquentClientRepository;
-use App\Infrastructure\Repositories\EloquentInvitationRepository;
-use App\Infrastructure\Repositories\EloquentStaffRepository;
+use App\Infrastructure\Repositories\EloquentClientEloquentRepository;
+use App\Infrastructure\Repositories\EloquentInvitationEloquentRepository;
+use App\Infrastructure\Repositories\EloquentStaffEloquentRepository;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Gate\GateService;
@@ -41,9 +41,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Domain ポート → Infrastructure 実装（DIP）
-        $this->app->bind(ClientRepository::class, EloquentClientRepository::class);
-        $this->app->bind(StaffRepository::class, EloquentStaffRepository::class);
-        $this->app->bind(InvitationRepositoryInterface::class, EloquentInvitationRepository::class);
+        $this->app->bind(ClientRepository::class, EloquentClientEloquentRepository::class);
+        $this->app->bind(StaffRepository::class, EloquentStaffEloquentRepository::class);
+        $this->app->bind(InvitationRepositoryInterface::class, EloquentInvitationEloquentRepository::class);
         $this->app->bind(NotificationRepository::class, CacheNotificationRepository::class);
         $this->app->bind(JwtIssuerInterface::class, StubJwtIssuer::class);
         $this->app->bind(JwtVerifierInterface::class, StubJwtVerifier::class);

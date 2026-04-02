@@ -15,7 +15,7 @@ use Carbon\Carbon;
 /**
  * スタッフConditionクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Staff\Condition
  */
 class StaffCondition extends AbstractCondition

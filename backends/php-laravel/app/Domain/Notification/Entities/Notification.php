@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Notification\Entities;
 
-use app\Support\Entities\AbstractEntity;
+use App\Support\Entities\AbstractEntity;
 
 /**
  * 通知Entityクラスです。
@@ -16,5 +16,6 @@ use app\Support\Entities\AbstractEntity;
  */
 class Notification extends AbstractEntity
 {
-
+    public ?int $id = null;
+    public ?string $token = null;
 }
