@@ -16,7 +16,7 @@ jobs:
     uses: ./.github/workflows/php.yml
     with:
       env_name: 'testing'
-      db_name: 'authorization'
+      db_name: 'authorization_test'
       db_user: 'develop'
       db_password: 'docker#DOCKER1234'
       db_host: 'mysql'
