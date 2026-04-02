@@ -56,11 +56,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # PHP 8.4 をセットアップし、pdo_mysql拡張を有効化
+      # PHP 8.5 をセットアップし、pdo_mysql拡張を有効化
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.5'
           extensions: pdo, pdo_mysql
 
       # Composer 依存関係をインストール
