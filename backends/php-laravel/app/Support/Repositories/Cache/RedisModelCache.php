@@ -87,7 +87,7 @@ class RedisModelCache
     private static function isCached(CacheKey $cacheKey): bool
     {
         if (is_null(static::$queryCache)) {
-            static::$queryCache = config('sii.app.query_cache');
+            static::$queryCache = config('authorization.app.query_cache');
         }
 
         if (static::$queryCache) {
