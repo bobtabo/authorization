@@ -1,25 +1,27 @@
 <?php
-
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use App\Support\Database\Seeder;
 
+/**
+ * データベースSeederクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package Database\Seeders;
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Seed the application's database.
+     * {@inheritdoc}
      */
-    public function run(): void
+    #[\Override]
+    public function run()
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        parent::run();
     }
 }

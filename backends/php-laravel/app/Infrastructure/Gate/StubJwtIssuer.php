@@ -13,11 +13,15 @@ use App\Domain\Gate\JwtIssuerInterface;
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate
+ * @deprecated 削除？
  */
-final class StubJwtIssuer implements JwtIssuerInterface
+class StubJwtIssuer implements JwtIssuerInterface
 {
     /**
      * {@inheritdoc}
+     *
+     * @param  string  $memberId  クライアント会員ID（スタブでは未使用）
+     * @return array{message: string} 成功メッセージのみ
      */
     #[\Override]
     public function issueForMember(string $memberId): array

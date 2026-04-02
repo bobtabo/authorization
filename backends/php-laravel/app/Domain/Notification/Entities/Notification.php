@@ -6,17 +6,16 @@
  */
 namespace App\Domain\Notification\Entities;
 
+use App\Support\Entities\AbstractEntity;
+
 /**
- * 通知1件の状態を表すEntityクラスです。
+ * 通知Entityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Notification\Entities
  */
-final readonly class Notification
+class Notification extends AbstractEntity
 {
-    public function __construct(
-        public string $id,
-        public string $title,
-        public ?\DateTimeImmutable $readAt,
-    ) {}
+    public ?int $id = null;
+    public ?string $token = null;
 }

@@ -6,10 +6,15 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.5",
+        "firebase/php-jwt": "*",
+        "jenssegers/agent": "^2.6",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^3.0"
+        "laravel/socialite": "^5.26",
+        "laravel/tinker": "^3.0",
+        "mark-gerarts/auto-mapper-plus": "^1.5",
+        "mavinoo/laravel-batch": "^2.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

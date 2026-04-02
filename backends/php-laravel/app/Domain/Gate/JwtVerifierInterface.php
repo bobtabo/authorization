@@ -15,7 +15,11 @@ namespace App\Domain\Gate;
 interface JwtVerifierInterface
 {
     /**
-     * @return array<string, mixed>
+     * クライアント識別子とトークンで JWT を検証します。
+     *
+     * @param  string  $identifier  クライアント識別名
+     * @param  string  $token  JWT 文字列
+     * @return array<string, mixed> 検証結果（Payload 相当）
      */
     public function verify(string $identifier, string $token): array;
 }

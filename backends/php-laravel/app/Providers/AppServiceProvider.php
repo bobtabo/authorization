@@ -6,26 +6,24 @@
  */
 namespace App\Providers;
 
-use App\Domain\Account\Repositories\AccountRepositoryInterface;
-use App\Domain\Auth\Repositories\AuthUserRepositoryInterface;
-use App\Domain\Client\Repositories\ClientRepositoryInterface;
+use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Gate\JwtIssuerInterface;
 use App\Domain\Gate\JwtVerifierInterface;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
-use App\Domain\Notification\Repositories\NotificationRepositoryInterface;
+use App\Domain\Notification\Repositories\NotificationRepository;
+use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Gate\StubJwtIssuer;
 use App\Infrastructure\Gate\StubJwtVerifier;
-use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentAccountRepository;
-use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentAuthUserRepository;
-use App\Infrastructure\Persistence\Eloquent\Repositories\EloquentClientRepository;
-use App\Infrastructure\Persistence\Eloquent\Repositories\StubInvitationRepository;
-use App\Infrastructure\Persistence\Eloquent\Repositories\StubNotificationRepository;
-use App\UseCases\Account\AccountApplicationService;
-use App\UseCases\Auth\AuthApplicationService;
-use App\UseCases\Client\ClientApplicationService;
-use App\UseCases\Gate\GateApplicationService;
-use App\UseCases\Invitation\InvitationApplicationService;
-use App\UseCases\Notification\NotificationApplicationService;
+use App\Infrastructure\Repositories\CacheNotificationRepository;
+use App\Infrastructure\Repositories\EloquentClientEloquentRepository;
+use App\Infrastructure\Repositories\EloquentInvitationEloquentRepository;
+use App\Infrastructure\Repositories\EloquentStaffEloquentRepository;
+use App\UseCases\Auth\AuthService;
+use App\UseCases\Client\ClientService;
+use App\UseCases\Gate\GateService;
+use App\UseCases\Invitation\InvitationService;
+use App\UseCases\Notification\NotificationService;
+use App\UseCases\Staff\StaffService;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -43,27 +41,27 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Domain ポート → Infrastructure 実装（DIP）
-        $this->app->bind(AuthUserRepositoryInterface::class, EloquentAuthUserRepository::class);
-        $this->app->bind(ClientRepositoryInterface::class, EloquentClientRepository::class);
-        $this->app->bind(AccountRepositoryInterface::class, EloquentAccountRepository::class);
-        $this->app->bind(InvitationRepositoryInterface::class, StubInvitationRepository::class);
-        $this->app->bind(NotificationRepositoryInterface::class, StubNotificationRepository::class);
+        $this->app->bind(ClientRepository::class, EloquentClientEloquentRepository::class);
+        $this->app->bind(StaffRepository::class, EloquentStaffEloquentRepository::class);
+        $this->app->bind(InvitationRepositoryInterface::class, EloquentInvitationEloquentRepository::class);
+        $this->app->bind(NotificationRepository::class, CacheNotificationRepository::class);
         $this->app->bind(JwtIssuerInterface::class, StubJwtIssuer::class);
         $this->app->bind(JwtVerifierInterface::class, StubJwtVerifier::class);
 
         // アプリケーションサービス（ユースケース）
-        $this->app->singleton(AuthApplicationService::class);
-        $this->app->singleton(ClientApplicationService::class);
-        $this->app->singleton(AccountApplicationService::class);
-        $this->app->singleton(InvitationApplicationService::class);
-        $this->app->singleton(NotificationApplicationService::class);
-        $this->app->singleton(GateApplicationService::class);
+        $this->app->singleton(AuthService::class);
+        $this->app->singleton(ClientService::class);
+        $this->app->singleton(StaffService::class);
+        $this->app->singleton(InvitationService::class);
+        $this->app->singleton(NotificationService::class);
+        $this->app->singleton(GateService::class);
     }
 
     /**
-     * {@inheritdoc}
+     * 全アプリケーションサービスの初期起動処理を行います。
+     *
+     * @return void
      */
-    #[\Override]
     public function boot(): void
     {
         //

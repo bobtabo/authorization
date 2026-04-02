@@ -6,7 +6,8 @@
  */
 namespace App\Domains\ValueObjects;
 
-use Sii\Selloop\Core\ValueObjects\AbstractValueObject;
+use App\Support\Traits\Getter;
+use App\Support\ValueObjects\AbstractValueObject;
 
 /**
  * ValueObjectクラスです。
@@ -16,7 +17,5 @@ use Sii\Selloop\Core\ValueObjects\AbstractValueObject;
  */
 class DummyClass extends AbstractValueObject
 {
-    public function __construct()
-    {
-    }
+    use Getter;
 }

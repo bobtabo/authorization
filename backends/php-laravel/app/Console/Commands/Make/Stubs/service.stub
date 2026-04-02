@@ -6,8 +6,7 @@
  */
 namespace App\Domains\Services;
 
-use Illuminate\Foundation\Application;
-use Sii\Selloop\Core\Services\AbstractService;
+use App\Support\Services\AbstractService;
 
 /**
  * Serviceクラスです。
@@ -17,13 +16,4 @@ use Sii\Selloop\Core\Services\AbstractService;
  */
 class DummyClass extends AbstractService
 {
-    /**
-     * コンストラクタ
-     *
-     * @param Application $app アプリケーション
-     */
-    public function __construct(Application $app)
-    {
-        parent::__construct($app);
-    }
 }

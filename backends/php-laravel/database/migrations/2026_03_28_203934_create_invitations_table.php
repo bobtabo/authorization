@@ -24,13 +24,13 @@ return new class extends Migration
         Schema::create('invitations', function (Blueprint $table) {
             $table->increments('id');
             $table->text('token')->comment('トークン');
-            $table->string('created_at')->useCurrent()->comment('登録日時');
+            $table->timestamp('created_at')->useCurrent()->comment('登録日時');
             $table->integer('created_by')->unsigned()->comment('登録者ID');
-            $table->string('updated_at')->useCurrent()->comment('更新日時');
+            $table->timestamp('updated_at')->useCurrent()->comment('更新日時');
             $table->integer('updated_by')->unsigned()->comment('更新者ID');
-            $table->string('deleted_at')->nullable()->comment('削除日時');
+            $table->timestamp('deleted_at')->nullable()->comment('削除日時');
             $table->integer('deleted_by')->unsigned()->nullable()->comment('削除者ID');
-            $table->integer('version')->unsigned()->comment('バージョン');
+            $table->integer('version')->unsigned()->default(1)->comment('バージョン');
         });
     }
 

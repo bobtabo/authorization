@@ -6,6 +6,7 @@
  */
 namespace Database\Factories;
 
+use App\Infrastructure\Persistence\Eloquent\Models\Client as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,10 +20,14 @@ class ClientFactory extends Factory
     /**
      * @var string モデル
      */
-    protected $model = Client::class;
+    protected $model = Model::class;
 
     /**
+     * モデル生成用のデフォルト属性を返します。
+     *
      * {@inheritdoc}
+     *
+     * @return array<string, mixed> 属性の連想配列
      */
     #[\Override]
     public function definition(): array

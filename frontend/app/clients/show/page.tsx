@@ -6,16 +6,16 @@ import { Building2, ArrowLeft, X, Trash2, Play, Square } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
 
-/** モック: 詳細取得想定の初期データ（必須系は入力済み） */
+/** モック: 詳細取得想定の初期データ（架空の会社・住所・メール） */
 const DEFAULT_DETAIL = {
-  clientName: "株式会社ストラテジックインサイト",
-  postalCode: "1070061",
-  prefecture: "東京都",
-  city: "港区北青山",
-  street: "二丁目5番8号",
-  building: "青山OMスクエア",
-  tel: "0312345678",
-  email: "contact@sii-japan.co.jp",
+  clientName: "株式会社モックデータ商事",
+  postalCode: "0000000",
+  prefecture: "架空県",
+  city: "架空市中央区みなみ町",
+  street: "仮想1丁目2番3号",
+  building: "サンプルプラザ東館5F",
+  tel: "09000000000",
+  email: "contact@example.com",
   status: "準備中" as const,
   startedAt: "—",
   stoppedAt: "—",

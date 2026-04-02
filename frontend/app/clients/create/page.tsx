@@ -120,7 +120,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                   type="text"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value.slice(0, 255))}
-                  placeholder="株式会社ストラテジックインサイト"
+                  placeholder="株式会社モックデータ商事"
                   required
                   maxLength={255}
                   className={inputClass}
@@ -144,7 +144,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                     autoComplete="postal-code"
                     value={postalCode}
                     onChange={handlePostalChange}
-                    placeholder="1070061"
+                    placeholder="0000000"
                     required
                     maxLength={7}
                     className={inputClass}
@@ -159,7 +159,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                     type="text"
                     readOnly
                     value={prefecture}
-                    placeholder="郵便番号から自動入力されます"
+                    placeholder="郵便番号で自動入力"
                     className={`${readOnlyFieldClass} w-full`}
                     aria-readonly="true"
                   />
@@ -201,7 +201,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value.slice(0, 255))}
-                      placeholder="港区北青山"
+                      placeholder="架空市中央区みなみ町"
                       required
                       maxLength={255}
                       className={inputClass}
@@ -225,7 +225,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                   type="text"
                   value={street}
                   onChange={(e) => setStreet(e.target.value.slice(0, 255))}
-                  placeholder="二丁目5番8号"
+                  placeholder="仮想1丁目2番3号"
                   required
                   maxLength={255}
                   className={inputClass}
@@ -240,7 +240,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                   type="text"
                   value={building}
                   onChange={(e) => setBuilding(e.target.value.slice(0, 255))}
-                  placeholder="青山OMスクエア"
+                  placeholder="サンプルプラザ東館"
                   maxLength={255}
                   className={inputClass}
                 />
@@ -258,7 +258,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                     autoComplete="tel"
                     value={tel}
                     onChange={handleTelChange}
-                    placeholder="0312345678"
+                    placeholder="09000000000"
                     required
                     maxLength={255}
                     className={inputClass}
@@ -275,7 +275,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value.slice(0, 255))}
-                    placeholder="example@company.co.jp"
+                    placeholder="contact@example.com"
                     required
                     maxLength={255}
                     className={inputClass}
