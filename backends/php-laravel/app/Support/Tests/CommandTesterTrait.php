@@ -27,14 +27,12 @@ trait CommandTesterTrait
      */
     protected function getCommandTester(Command $command, string $signature)
     {
-        /** @var \Illuminate\Foundation\Console\Kernel $kernel */
         $kernel = $this->app->make(Kernel::class);
-        $symfonyApp = $kernel->getArtisan();
+        $kernel->bootstrap();
 
+        $symfonyApp = $this->app->make(\Illuminate\Console\Application::class);
         $command->setLaravel($this->app);
-
         $symfonyApp->add($command);
-
         $target = $symfonyApp->find($signature);
 
         return new CommandTester($target);
