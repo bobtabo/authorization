@@ -1,32 +1,13 @@
-# PHP CI 共通テンプレート
-# Reusable Workflowとして、環境別のCIを実行する
-name: PHP CI Template
+# PHP CI ワークフロー
+# developブランチのbackends/php-laravel/**変更時にCIを実行
+name: PHP CI
 
-# workflow_call で呼び出され、inputs を受け取る
 on:
-  workflow_call:
-    inputs:
-      env_name:
-        required: true
-        type: string
-      db_name:
-        required: true
-        type: string
-      db_user:
-        required: true
-        type: string
-      db_password:
-        required: true
-        type: string
-      db_host:
-        required: true
-        type: string
-      redis_host:
-        required: true
-        type: string
-      redis_port:
-        required: true
-        type: string
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/php-laravel/**'
 
 jobs:
   test:
@@ -40,10 +21,10 @@ jobs:
         ports:
           - 3306:3306
         env:
-          MYSQL_ROOT_PASSWORD: ${{ inputs.db_password }}
-          MYSQL_DATABASE: ${{ inputs.db_name }}
-          MYSQL_USER: ${{ inputs.db_user != 'root' && inputs.db_user || '' }}
-          MYSQL_PASSWORD: ${{ inputs.db_user != 'root' && inputs.db_password || '' }}
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
         options: --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
@@ -52,7 +33,7 @@ jobs:
       redis:
         image: redis:latest
         ports:
-          - ${{ inputs.redis_port }}:6379
+          - 6379:6379
         options: --health-cmd="redis-cli ping"
           --health-interval=10s
           --health-timeout=5s
