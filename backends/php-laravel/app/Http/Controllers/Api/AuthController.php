@@ -79,7 +79,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function redirectToGoogle(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    public function googleRedirect(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->redirect();
     }
@@ -90,7 +90,7 @@ class AuthController extends Controller
      * @param  AuthService  $auth  認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function handleGoogleCallback(AuthService $auth): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+    public function googleCallback(AuthService $auth): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
     {
         try {
             $googleUser = Socialite::driver('google')->user();
@@ -110,20 +110,6 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return redirect('/login')->with('error', 'Google認証に失敗しました');
         }
-    }
-
-    /**
-     * Google OAuth リダイレクト用の応答を返します（疎通用スタブ）。
-     *
-     * @param  Request  $request  HTTP リクエスト
-     * @return JsonResponse JSON レスポンス
-     */
-    public function googleRedirect(Request $request): JsonResponse
-    {
-        return response()->json([
-            'message' => 'Google OAuth リダイレクトは未接続です。',
-            'authorization_url' => null,
-        ]);
     }
 
     /**

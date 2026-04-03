@@ -14,13 +14,13 @@ servers:
     description: ステージング環境
   - url: https://apis-dev.authorization.com
     description: 開発環境
-  - url: https://apis.authorization-go.local
+  - url: https://apis.authorization-go.dev
     description: ローカルGo環境
-  - url: https://apis.authorization-php.local
+  - url: https://apis.authorization-php.dev
     description: ローカルPHP環境
-  - url: https://apis.authorization-python.local
+  - url: https://apis.authorization-python.dev
     description: ローカルPython環境
-  - url: https://apis.authorization-ts.local
+  - url: https://apis.authorization-ts.dev
     description: ローカルTypeScript環境
 
 paths:
@@ -57,7 +57,18 @@ paths:
 
   /auth/google/redirect:
     get:
-      summary: Googleログインします
+      summary: Googleログインページへリダイレクトします
+      tags:
+        - auth
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+        '500':
+          description: Googleログインに失敗した場合のエラー
+
+  /auth/google/callback:
+    get:
+      summary: Googleログインからのコールバックを受け取ります
       tags:
         - auth
       responses:

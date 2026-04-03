@@ -26,6 +26,7 @@ Route::prefix('v1')->group(function () {
     Route::get('auth/login', [AuthController::class, 'login']);
     Route::get('auth/invitation/{token}', [AuthController::class, 'invitation']);
     Route::get('auth/google/redirect', [AuthController::class, 'googleRedirect']);
+    Route::get('auth/google/callback', [AuthController::class, 'googleCallback']);
     Route::get('auth/logout', [AuthController::class, 'logout']);
 
     // --- clients（/clients/store と {id} の衝突を避けるため store を先に定義）---
