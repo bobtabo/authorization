@@ -9,6 +9,7 @@ namespace App\UseCases\Auth;
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Enums\Provider;
+use App\Domain\Staff\Enums\StaffRole;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Domain\Staff\ValueObjects\StaffVo;
 use App\Support\Mappers\SimpleMapper;
@@ -62,18 +63,16 @@ class AuthService extends AbstractService
     public function login(SocialDto $dto): StaffVo
     {
         /** @var StaffCondition $condition */
-        $condition = SimpleMapper::mapSpecific($dto, StaffCondition::class, [
-            'provider' => Provider::Google,
-            'provider_id' => $dto->id,
-        ]);
-
+        $condition = SimpleMapper::map($dto, StaffCondition::class);
         $entity = $this->staffRepository->findByProvider($condition);
 
         $vo = new StaffVo;
         if (empty($entity)) {
             $newEntity = new Staff;
             $newEntity->assign($dto->attributes());
-            $newEntity->assignCreated($dto->executorId ?? 0);
+            $newEntity->role = StaffRole::Member;
+            $newEntity->lastLoginAt = now();
+            $newEntity->assignCreated(0);
             $saved = $this->staffRepository->persist($newEntity);
             $vo->assign($saved->attributes());
         } else {

@@ -56,17 +56,17 @@ interface StaffRepository
      *
      * @param  int  $id  スタッフID
      * @param  StaffRole  $role  更新する権限
-     * @param  int|null  $executorId  処理実行者ID
+     * @param  int  $executorId  処理実行者ID
      * @return bool 対象が存在して更新できた場合 true
      */
-    public function updateRole(int $id, StaffRole $role, ?int $executorId): bool;
+    public function updateRole(int $id, StaffRole $role, int $executorId): bool;
 
     /**
      * スタッフを論理削除します。
      *
      * @param  int  $id  スタッフID
-     * @param  int|null  $executorId  処理実行者ID
+     * @param  int  $executorId  処理実行者ID
      * @return bool 対象が存在して削除できた場合 true
      */
-    public function deleteById(int $id, ?int $executorId): bool;
+    public function deleteById(int $id, int $executorId): bool;
 }

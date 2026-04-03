@@ -6,6 +6,7 @@
  */
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Staff\Enums\Provider;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\Auth\AuthInvitationResponse;
 use App\Http\Responses\Auth\AuthLoginResponse;
@@ -17,6 +18,8 @@ use App\UseCases\Invitation\Dtos\InvitationDto;
 use App\UseCases\Invitation\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -81,7 +84,7 @@ class AuthController extends Controller
      */
     public function googleRedirect(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     /**
@@ -90,25 +93,29 @@ class AuthController extends Controller
      * @param  AuthService  $auth  認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $auth): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+    public function googleCallback(AuthService $service): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
 
             $dto = new SocialDto;
             $dto->assign([
-                'id' => $googleUser->id,
-                'nickname' => $googleUser->nickname,
-                'name' => $googleUser->name,
-                'email' => $googleUser->email,
-                'avatar' => $googleUser->avatar,
+                'provider' => Provider::Google,
+                'providerId' => $googleUser->getId(),
+                'nickname' => $googleUser->getNickname(),
+                'name' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
+                'avatar' => $googleUser->getAvatar(),
             ]);
 
-            $auth->login($dto);
+            DB::transaction(function () use ($service, $dto) {
+                $service->login($dto);
+            });
 
-            return redirect('/dashboard');
+            return redirect(config('authorization.app.frontend_url') . '/clients');
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Google認証に失敗しました');
+            \Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
+            return redirect(config('authorization.app.frontend_url') . '/login');
         }
     }
 

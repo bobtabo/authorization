@@ -4,6 +4,8 @@
  */
 
 return [
+    //フロントエンドURL
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
     //キャッシュPrefix
     'cache_prefix' => env('CACHE_PREFIX'),
     //クエリーキャッシュ

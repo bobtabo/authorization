@@ -20,6 +20,11 @@ class Staff extends AppMasterModel
     /**
      * {@inheritdoc}
      */
+    protected $table = 'staffs';
+
+    /**
+     * {@inheritdoc}
+     */
     protected $casts = [
         'last_login_at' => 'datetime',
         'created_at' => 'datetime',

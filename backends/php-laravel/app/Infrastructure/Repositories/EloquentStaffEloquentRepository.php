@@ -8,9 +8,10 @@ namespace App\Infrastructure\Repositories;
 
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff as Entity;
+use App\Domain\Staff\Enums\StaffRole;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Models\Staff as Model;
-use app\Support\Repositories\AbstractEloquentRepository;
+use App\Support\Repositories\AbstractEloquentRepository;
 use Illuminate\Support\Collection;
 
 /**
@@ -85,6 +86,16 @@ class EloquentStaffEloquentRepository extends AbstractEloquentRepository impleme
         /** @var Entity $result */
         $result = $this->save($entity);
         return $result;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function updateRole(int $id, StaffRole $role, int $executorId): bool
+    {
+        // TODO: Implement updateRole() method.
+        return true;
     }
 
     /**
