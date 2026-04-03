@@ -10,15 +10,16 @@ use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * 通知一覧Responseクラスです。
+ * 通知件数集計Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Notification
  */
-class IndexResponse extends AbstractResponse
+class CountsResponse extends AbstractResponse
 {
     use Getter;
 
-    private array $items = [];
-    private ?string $next_cursor = null;
+    private int $unread = 0;
+    private int $total = 0;
+    private array $counts = [];
 }

@@ -7,15 +7,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\Auth\AuthInvitationResponse;
+use App\Http\Responses\Auth\AuthLoginResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
-use app\UseCases\Auth\Dtos\SocialDto;
+use App\UseCases\Auth\Dtos\SocialDto;
 use App\UseCases\Invitation\Dtos\InvitationDto;
 use App\UseCases\Invitation\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -35,23 +36,18 @@ class AuthController extends Controller
      */
     public function login(AppRequest $request, AuthService $auth): JsonResponse
     {
-        $userId = Auth::id();
-        if ($userId === null) {
-            return response()->json(['message' => '認証されていません。'], 401);
-        }
-
         $dto = new AuthUserDto;
-        $dto->id = (int) $userId;
+        $dto->assign($request->input());
+
         $vo = $auth->findUser($dto);
-        if (! $vo->found) {
+        if (empty($vo->getId())) {
             return response()->json(['message' => 'ユーザーが存在しません。'], 404);
         }
 
-        return response()->json([
-            'id' => $vo->id,
-            'name' => $vo->name,
-            'email' => $vo->email,
-        ]);
+        $response = new AuthLoginResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
@@ -66,32 +62,36 @@ class AuthController extends Controller
         $dto = new InvitationDto;
         $dto->assign($request->input());
         $dto->token = $request->route('token');
+
         $vo = $invitations->findByToken($dto);
-        if (!$vo->isFound()) {
+        if (! $vo->isFound()) {
             return response()->json(['message' => '招待が無効です。'], 404);
         }
 
-        return response()->json([
-            'url' => $vo->url,
-            'token' => $vo->token,
-        ]);
+        $response = new AuthInvitationResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
-     * Googleへリダイレクトします。
+     * Google へリダイレクトします。
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function redirectToGoogle() {
+    public function redirectToGoogle(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    {
         return Socialite::driver('google')->redirect();
     }
 
     /**
-     * Googleからのコールバックを処理します。
+     * Google からのコールバックを処理します。
      *
+     * @param  AuthService  $auth  認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function handleGoogleCallback() {
+    public function handleGoogleCallback(AuthService $auth): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+    {
         try {
             $googleUser = Socialite::driver('google')->user();
 
@@ -104,16 +104,7 @@ class AuthController extends Controller
                 'avatar' => $googleUser->avatar,
             ]);
 
-            // ユーザーを探す、なければ作る（FirstOrCreate）
-            $user = User::updateOrCreate([
-                'google_id' => $googleUser->id,
-            ], [
-                'name' => $googleUser->name,
-                'email' => $googleUser->email,
-                // パスワードは適当なランダム文字列か、null許容にする
-            ]);
-
-            Auth::login($user);
+            $auth->login($dto);
 
             return redirect('/dashboard');
         } catch (\Exception $e) {
@@ -143,8 +134,6 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        Auth::logout();
-
         return response()->json([
             'message' => 'SUCCESS',
         ]);

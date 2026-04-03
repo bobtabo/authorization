@@ -37,8 +37,7 @@ class StaffListVo extends AbstractValueObject
         $this->items = collect();
         foreach ($list as $entity) {
             $row = new StaffResourceVo;
-            $row->found = true;
-            $row->assign(StaffApiMapper::toListItem($entity));
+            $row->assign(array_merge(['found' => true], StaffApiMapper::toListItem($entity)));
             $this->items->push($row);
         }
     }

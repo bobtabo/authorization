@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace app\Domain\Notification\Condition;
+namespace App\Domain\Notification\Condition;
 
 use App\Support\Repositories\Conditions\AbstractCondition;
 
@@ -12,7 +12,7 @@ use App\Support\Repositories\Conditions\AbstractCondition;
  * 通知Conditionクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domain\Invitation\Condition
+ * @package App\Domain\Notification\Condition
  */
 class NotificationCondition extends AbstractCondition
 {

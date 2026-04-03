@@ -4,21 +4,21 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Http\Responses\Notification;
+namespace App\Http\Responses\Staff;
 
 use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * 通知一覧Responseクラスです。
+ * スタッフ権限更新Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Http\Responses\Notification
+ * @package App\Http\Responses\Staff
  */
-class IndexResponse extends AbstractResponse
+class StaffUpdateRoleResponse extends AbstractResponse
 {
     use Getter;
 
-    private array $items = [];
-    private ?string $next_cursor = null;
+    private string $message = '';
+    private ?int $id = null;
 }

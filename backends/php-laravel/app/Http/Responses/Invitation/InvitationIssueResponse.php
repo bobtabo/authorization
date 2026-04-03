@@ -4,21 +4,21 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Http\Responses\Notification;
+namespace App\Http\Responses\Invitation;
 
 use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * 通知一覧Responseクラスです。
+ * 招待URL発行Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Http\Responses\Notification
+ * @package App\Http\Responses\Invitation
  */
-class IndexResponse extends AbstractResponse
+class InvitationIssueResponse extends AbstractResponse
 {
     use Getter;
 
-    private array $items = [];
-    private ?string $next_cursor = null;
+    private ?string $url = null;
+    private ?string $token = null;
 }

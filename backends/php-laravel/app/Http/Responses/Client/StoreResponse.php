@@ -11,12 +11,12 @@ use App\Support\Traits\Getter;
 use Carbon\Carbon;
 
 /**
- * クライアント詳細の HTTP レスポンス用オブジェクトです。
+ * クライアント登録・更新Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Client
  */
-class ClientShowResponse extends AbstractResponse
+class StoreResponse extends AbstractResponse
 {
     use Getter;
 
@@ -39,9 +39,11 @@ class ClientShowResponse extends AbstractResponse
     private ?string $stopAt = null;
     private ?string $createdAt = null;
     private ?string $updatedAt = null;
+    private bool $ok = true;
+    private string $message = 'SUCCESS';
 
     /**
-     * @inheritdoc}
+     * {@inheritdoc}
      */
     #[\Override]
     public function attributes(): array

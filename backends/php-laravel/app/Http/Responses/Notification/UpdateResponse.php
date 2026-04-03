@@ -10,15 +10,15 @@ use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * 通知一覧Responseクラスです。
+ * 単一通知更新Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Notification
  */
-class IndexResponse extends AbstractResponse
+class UpdateResponse extends AbstractResponse
 {
     use Getter;
 
-    private array $items = [];
-    private ?string $next_cursor = null;
+    private string $message = '';
+    private string $id = '';
 }

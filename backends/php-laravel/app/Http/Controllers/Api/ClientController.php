@@ -9,10 +9,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
-use App\Http\Responses\Client\ClientDestroyResponse;
-use App\Http\Responses\Client\ClientIndexResponse;
-use App\Http\Responses\Client\ClientShowResponse;
-use App\Http\Responses\Client\ClientStoreResponse;
+use App\Http\Responses\Client\DestroyResponse;
+use App\Http\Responses\Client\IndexResponse;
+use App\Http\Responses\Client\ShowResponse;
+use App\Http\Responses\Client\StoreResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\Support\Mails\DefaultMail;
 use App\UseCases\Client\ClientService;
@@ -43,7 +43,7 @@ class ClientController extends Controller
 
         $value = $service->getClients($dto);
 
-        $response = new ClientIndexResponse;
+        $response = new IndexResponse;
         $response->assign($value->attributes());
 
         return response()->json($response->attributes());
@@ -63,7 +63,7 @@ class ClientController extends Controller
 
         $value = $service->show($dto);
 
-        $response = new ClientShowResponse;
+        $response = new ShowResponse;
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
@@ -91,7 +91,7 @@ class ClientController extends Controller
             return $service->store($dto);
         });
 
-        $response = new ClientStoreResponse;
+        $response = new StoreResponse;
         $response->assign($value->attributes());
 
         //アクセストークンをメール送信します
@@ -115,7 +115,7 @@ class ClientController extends Controller
 
         $value = $service->update($dto);
 
-        $response = new ClientStoreResponse;
+        $response = new StoreResponse;
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
@@ -141,10 +141,9 @@ class ClientController extends Controller
         $dto->id = $id;
         $dto->executorId = $this->executorId();
 
-        $value = $service->destroy($dto);
+        $service->destroy($dto);
 
-        $response = new ClientDestroyResponse;
-        $response->assign($value->attributes());
+        $response = new DestroyResponse;
 
         return response()->json($response->attributes());
     }

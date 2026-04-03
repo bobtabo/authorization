@@ -11,12 +11,12 @@ use App\Support\Traits\Getter;
 use Carbon\Carbon;
 
 /**
- * クライアント一覧の HTTP レスポンス用オブジェクトです（JSON ルートが配列になるよう attributes を調整します）。
+ * クライアント一覧Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Client
  */
-class ClientIndexResponse extends AbstractResponse
+class IndexResponse extends AbstractResponse
 {
     use Getter;
 

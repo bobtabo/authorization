@@ -4,21 +4,22 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Http\Responses\Notification;
+namespace App\Http\Responses\Auth;
 
 use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * 通知一覧Responseクラスです。
+ * ログインResponseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Http\Responses\Notification
+ * @package App\Http\Responses\Auth
  */
-class IndexResponse extends AbstractResponse
+class AuthLoginResponse extends AbstractResponse
 {
     use Getter;
 
-    private array $items = [];
-    private ?string $next_cursor = null;
+    private ?int $id = null;
+    private ?string $name = null;
+    private ?string $email = null;
 }

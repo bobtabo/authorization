@@ -7,11 +7,13 @@
 namespace App\UseCases\Auth;
 
 use App\Domain\Staff\Condition\StaffCondition;
+use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Enums\Provider;
 use App\Domain\Staff\Repositories\StaffRepository;
-use app\Domain\Staff\ValueObjects\StaffVo;
+use App\Domain\Staff\ValueObjects\StaffVo;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
+use App\UseCases\Auth\Dtos\AuthUserDto;
 use App\UseCases\Auth\Dtos\SocialDto;
 
 /**
@@ -27,9 +29,33 @@ class AuthService extends AbstractService
     ) {}
 
     /**
-     * 認証処理を行います。
+     * ID でスタッフ（ログインユーザー）を取得します。
      *
-     * @param SocialDto $dto ソーシャルDTO
+     * @param  AuthUserDto  $dto  認証ユーザーDTO
+     * @return StaffVo スタッフValueObject（found = false のとき未存在）
+     */
+    public function findUser(AuthUserDto $dto): StaffVo
+    {
+        $vo = new StaffVo;
+        if (empty($dto->id)) {
+            return $vo;
+        }
+
+        $condition = new StaffCondition;
+        $condition->id = $dto->id;
+
+        $entity = $this->staffRepository->findById($condition);
+        if (empty($entity)) {
+            return $vo;
+        }
+
+        return $vo->assign($entity->attributes());
+    }
+
+    /**
+     * ソーシャル認証でログインします（未登録の場合は新規作成します）。
+     *
+     * @param  SocialDto  $dto  ソーシャルDTO
      * @return StaffVo スタッフValueObject
      * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
      */
@@ -43,10 +69,12 @@ class AuthService extends AbstractService
 
         $entity = $this->staffRepository->findByProvider($condition);
 
-        $vo =new StaffVo();
+        $vo = new StaffVo;
         if (empty($entity)) {
-            $entity->assignCreated($dto->executorId);
-            $saved = $this->staffRepository->persist($entity);
+            $newEntity = new Staff;
+            $newEntity->assign($dto->attributes());
+            $newEntity->assignCreated($dto->executorId ?? 0);
+            $saved = $this->staffRepository->persist($newEntity);
             $vo->assign($saved->attributes());
         } else {
             $vo->assign($entity->attributes());

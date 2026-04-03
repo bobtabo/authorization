@@ -4,20 +4,20 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace App\Http\Responses\Client;
+namespace App\Http\Responses\Gate;
 
 use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * クライアント削除の HTTP レスポンス用オブジェクトです。
+ * JWT発行Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Http\Responses\Client
+ * @package App\Http\Responses\Gate
  */
-class ClientDestroyResponse extends AbstractResponse
+class GateIssueResponse extends AbstractResponse
 {
     use Getter;
 
-    public string $message = 'SUCCESS';
+    private string $message = '';
 }

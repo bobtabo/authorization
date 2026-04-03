@@ -6,7 +6,7 @@
  */
 namespace App\Domain\Staff\Enums;
 
-use app\Support\Enums\Values;
+use App\Support\Enums\Values;
 
 /**
  * スタッフ権限を表す列挙型です。

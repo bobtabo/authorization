@@ -14,20 +14,22 @@ use App\Support\ValueObjects\AbstractValueObject;
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Staff\ValueObjects
+ *
+ * @method bool isFound()
+ * @method int|null getId()
+ * @method string|null getName()
+ * @method string|null getEmail()
+ * @method int|null getRole()
+ * @method int|null getStatus()
  */
 class StaffResourceVo extends AbstractValueObject
 {
     use Getter;
 
-    public bool $found = false;
-
-    public ?int $id = null;
-
-    public ?string $name = null;
-
-    public ?string $email = null;
-
-    public ?int $role = null;
-
-    public ?int $status = null;
+    private bool $found = false;
+    private ?int $id = null;
+    private ?string $name = null;
+    private ?string $email = null;
+    private ?int $role = null;
+    private ?int $status = null;
 }

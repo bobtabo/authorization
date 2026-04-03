@@ -7,10 +7,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\Invitation\InvitationIndexResponse;
+use App\Http\Responses\Invitation\InvitationIssueResponse;
+use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Invitation\Dtos\InvitationDto;
 use App\UseCases\Invitation\InvitationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * 招待Controllerクラスです。
@@ -23,37 +25,37 @@ class InvitationController extends Controller
     /**
      * 現在の招待 URL を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  InvitationService  $invitations  招待ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function index(Request $request, InvitationService $invitations): JsonResponse
+    public function index(AppRequest $request, InvitationService $invitations): JsonResponse
     {
         $vo = $invitations->current(new InvitationDto);
-        if (! $vo->found) {
+        if (! $vo->isFound()) {
             return response()->json(['message' => '招待情報がありません。'], 404);
         }
 
-        return response()->json([
-            'url' => $vo->url,
-            'token' => $vo->token,
-        ]);
+        $response = new InvitationIndexResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * 招待 URL を発行します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  InvitationService  $invitations  招待ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function issue(Request $request, InvitationService $invitations): JsonResponse
+    public function issue(AppRequest $request, InvitationService $invitations): JsonResponse
     {
         $vo = $invitations->issue(new InvitationDto);
 
-        return response()->json([
-            'url' => $vo->url,
-            'token' => $vo->token,
-        ]);
+        $response = new InvitationIssueResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 }

@@ -31,8 +31,8 @@ class ClientService extends AbstractService
     /**
      * クライアント一覧を取得します。
      *
-     * @param ClientDto $dto クライアントDTO
-     * @return ClientListVo
+     * @param  ClientDto  $dto  クライアントDTO
+     * @return ClientListVo クライアント一覧ValueObject
      * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function getClients(ClientDto $dto): ClientListVo
@@ -56,7 +56,7 @@ class ClientService extends AbstractService
     /**
      * クライアント詳細を取得します。
      *
-     * @param ClientDto $dto クライアントDTO
+     * @param  ClientDto  $dto  クライアントDTO
      * @return ClientDetailVo クライアント詳細ValueObject
      * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
@@ -65,14 +65,12 @@ class ClientService extends AbstractService
         /** @var ClientCondition $condition */
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clientRepository->findByCondition($condition);
+        $entity = $this->clientRepository->findById($condition);
 
         $vo = new ClientDetailVo;
         if ($entity === null) {
             return $vo;
         }
-
-        $vo->assign($entity->attributes());
 
         return $vo->assign($entity->attributes());
     }
@@ -80,17 +78,18 @@ class ClientService extends AbstractService
     /**
      * クライアントを登録します。
      *
-     * @param ClientDto $dto クライアントDTO
+     * @param  ClientDto  $dto  クライアントDTO
      * @return ClientStoreVo クライアント登録ValueObject
      */
     public function store(ClientDto $dto): ClientStoreVo
     {
         $entity = new Client;
         $entity->assign($dto->attributes());
+        $entity->assignCreated($dto->executorId ?? 0);
 
         // TODO 識別子、キーペア、フィンガープリント、トークンの作成
         $token = null;
-        $saved = $this->clientRepository->save($entity, $dto->executorId);
+        $saved = $this->clientRepository->persist($entity);
 
         $configs = config('authorization.app.mail');
         return (new ClientStoreVo)->assign([
@@ -105,8 +104,8 @@ class ClientService extends AbstractService
     /**
      * クライアントを更新します。
      *
-     * @param ClientDto $dto クライアントDTO
-     * @return ClientStoreVo クライアント登録ValueObject
+     * @param  ClientDto  $dto  クライアントDTO
+     * @return ClientStoreVo クライアント更新ValueObject
      */
     public function update(ClientDto $dto): ClientStoreVo
     {
@@ -114,20 +113,21 @@ class ClientService extends AbstractService
 
         $entity = $this->clientRepository->findById($condition);
         $entity->assign($dto->attributes());
+        $entity->assignUpdated($dto->executorId ?? 0);
 
-        $saved = $this->clientRepository->save($entity, $dto->executorId);
+        $saved = $this->clientRepository->persist($entity);
 
         return (new ClientStoreVo)->assign($saved->attributes());
     }
 
     /**
-     * クライアントを削除します。
+     * クライアントを論理削除します。
      *
-     * @param ClientDto $dto クライアントDTO
+     * @param  ClientDto  $dto  クライアントDTO
      * @return void
      */
     public function destroy(ClientDto $dto): void
     {
-        $this->clientRepository->delete($dto->id, $dto->executorId);
+        $this->clientRepository->deleteById($dto->id, $dto->executorId ?? 0);
     }
 }

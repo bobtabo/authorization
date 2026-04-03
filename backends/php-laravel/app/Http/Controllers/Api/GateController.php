@@ -7,11 +7,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\Gate\GateIssueResponse;
+use App\Http\Responses\Gate\GateVerifyResponse;
+use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Gate\Dtos\GateIssueDto;
 use App\UseCases\Gate\Dtos\GateVerifyDto;
 use App\UseCases\Gate\GateService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * 認可Controllerクラスです。
@@ -24,11 +26,11 @@ class GateController extends Controller
     /**
      * クライアント会員向け JWT を発行する応答を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  GateService  $gate  ゲートユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function issue(Request $request, GateService $gate): JsonResponse
+    public function issue(AppRequest $request, GateService $gate): JsonResponse
     {
         $member = $request->query('member');
         if (! is_string($member) || $member === '') {
@@ -38,18 +40,23 @@ class GateController extends Controller
         $dto = new GateIssueDto;
         $dto->memberId = $member;
 
-        return response()->json($gate->issueToken($dto)->attributes());
+        $vo = $gate->issueToken($dto);
+
+        $response = new GateIssueResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * JWT を検証し Payload 相当の応答を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  GateService  $gate  ゲートユースケース
      * @param  string  $identifier  クライアント識別名
      * @return JsonResponse JSON レスポンス
      */
-    public function verify(Request $request, GateService $gate, string $identifier): JsonResponse
+    public function verify(AppRequest $request, GateService $gate, string $identifier): JsonResponse
     {
         $token = $request->query('token');
         if (! is_string($token) || $token === '') {
@@ -60,6 +67,11 @@ class GateController extends Controller
         $dto->identifier = $identifier;
         $dto->token = $token;
 
-        return response()->json($gate->verify($dto)->attributes());
+        $vo = $gate->verify($dto);
+
+        $response = new GateVerifyResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 }

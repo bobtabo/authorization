@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
-namespace app\Domain\Staff\ValueObjects;
+namespace App\Domain\Staff\ValueObjects;
 
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
@@ -25,9 +25,9 @@ class StaffVo extends AbstractValueObject
 {
     use Getter;
 
-    public ?int $id = null;
-    public ?string $name = null;
-    public ?string $email = null;
-    public ?int $role = null;
-    public ?int $status = null;
+    private ?int $id = null;
+    private ?string $name = null;
+    private ?string $email = null;
+    private ?int $role = null;
+    private ?int $status = null;
 }
