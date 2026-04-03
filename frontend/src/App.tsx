@@ -1,5 +1,4 @@
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
-import HomePage from "@/app/page";
+import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "@/app/login/page";
 import RegisterPage from "@/app/register/page";
 import StaffPage from "@/app/staffs/page";
@@ -12,7 +11,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/staffs" element={<StaffPage />} />

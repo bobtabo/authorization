@@ -39,16 +39,12 @@ class StaffControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        /*
         $params = $this->getRequestParams('Staff/index.json');
-        $response = $this->get('/api/v1/staffs', $params);
+        $response = $this->get('/api/staffs', $params);
         $data = $this->getResponseData('Staff/index.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -58,17 +54,13 @@ class StaffControllerTest extends TestCase
      */
     public function testUpdateRole(): void
     {
-        /*
         $params = $this->getRequestParams('Staff/updateRole.json');
         $id = 1;
-        $response = $this->patch("/api/v1/staffs/{$id}/updateRole", $params);
+        $response = $this->patch("/api/staffs/{$id}/updateRole", $params);
         $data = $this->getResponseData('Staff/updateRole.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -78,16 +70,12 @@ class StaffControllerTest extends TestCase
      */
     public function testDestroy(): void
     {
-        /*
         $params = $this->getRequestParams('Staff/destroy.json');
         $id = $params['id'];
-        $response = $this->delete("/api/v1/staffs/{$id}/delete");
+        $response = $this->delete("/api/staffs/{$id}/delete");
         $data = $this->getResponseData('Staff/destroy.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 }

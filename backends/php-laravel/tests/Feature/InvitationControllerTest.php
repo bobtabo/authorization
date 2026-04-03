@@ -39,15 +39,11 @@ class InvitationControllerTest extends TestCase
      */
     public function testIssue(): void
     {
-        /*
-        $response = $this->get('/api/v1/invitation/issue');
+        $response = $this->get('/api/invitation/issue');
         $data = $this->getResponseData('Invitation/issue.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -57,14 +53,10 @@ class InvitationControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        /*
-        $response = $this->get('/api/v1/invitation');
+        $response = $this->get('/api/invitation');
         $data = $this->getResponseData('Invitation/index.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 }

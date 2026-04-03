@@ -39,16 +39,12 @@ class ClientControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        /*
         $params = $this->getRequestParams('Client/index.json');
-        $response = $this->get('/api/v1/clients', $params);
+        $response = $this->get('/api/clients', $params);
         $data = $this->getResponseData('Client/index.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -58,17 +54,13 @@ class ClientControllerTest extends TestCase
      */
     public function testShow(): void
     {
-        /*
         $params = $this->getRequestParams('Client/show.json');
         $id = $params['id'];
-        $response = $this->get("/api/v1/clients/{$id}");
+        $response = $this->get("/api/clients/{$id}");
         $data = $this->getResponseData('Client/show.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -78,16 +70,12 @@ class ClientControllerTest extends TestCase
      */
     public function testStore(): void
     {
-        /*
         $params = $this->getRequestParams('Client/store.json');
-        $response = $this->post('/api/v1/clients/store', $params);
+        $response = $this->post('/api/clients/store', $params);
         $data = $this->getResponseData('Client/store.json');
         $response
             ->assertStatus(201)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -97,17 +85,13 @@ class ClientControllerTest extends TestCase
      */
     public function testUpdate(): void
     {
-        /*
         $params = $this->getRequestParams('Client/update.json');
         $id = $params['id'];
-        $response = $this->put("/api/v1/clients/{$id}/update", $params);
+        $response = $this->put("/api/clients/{$id}/update", $params);
         $data = $this->getResponseData('Client/update.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -117,16 +101,12 @@ class ClientControllerTest extends TestCase
      */
     public function testDestroy(): void
     {
-        /*
         $params = $this->getRequestParams('Client/destroy.json');
         $id = $params['id'];
-        $response = $this->delete("/api/v1/clients/{$id}/delete");
+        $response = $this->delete("/api/clients/{$id}/delete");
         $data = $this->getResponseData('Client/destroy.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 }

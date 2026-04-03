@@ -39,16 +39,12 @@ class GateControllerTest extends TestCase
      */
     public function testIssue(): void
     {
-        /*
         $params = $this->getRequestParams('Gate/issue.json');
-        $response = $this->get('/api/v1/gate/issue', $params);
+        $response = $this->get('/api/gate/issue', $params);
         $data = $this->getResponseData('Gate/issue.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -58,16 +54,12 @@ class GateControllerTest extends TestCase
      */
     public function testVerify(): void
     {
-        /*
         $params = $this->getRequestParams('Gate/verify.json');
         $identifier = 'test-client';
-        $response = $this->get("/api/v1/gate/client/{$identifier}/verify", $params);
+        $response = $this->get("/api/gate/client/{$identifier}/verify", $params);
         $data = $this->getResponseData('Gate/verify.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 }

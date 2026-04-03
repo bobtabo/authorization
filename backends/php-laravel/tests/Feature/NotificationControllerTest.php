@@ -39,15 +39,11 @@ class NotificationControllerTest extends TestCase
      */
     public function testCounts(): void
     {
-        /*
-        $response = $this->get('/api/v1/notifications/counts');
+        $response = $this->get('/api/notifications/counts');
         $data = $this->getResponseData('Notification/counts.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -57,16 +53,12 @@ class NotificationControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        /*
         $params = $this->getRequestParams('Notification/index.json');
-        $response = $this->get('/api/v1/notifications', $params);
+        $response = $this->get('/api/notifications', $params);
         $data = $this->getResponseData('Notification/index.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -76,16 +68,12 @@ class NotificationControllerTest extends TestCase
      */
     public function testStore(): void
     {
-        /*
         $params = $this->getRequestParams('Notification/store.json');
-        $response = $this->post('/api/v1/notifications', $params);
+        $response = $this->post('/api/notifications', $params);
         $data = $this->getResponseData('Notification/store.json');
         $response
             ->assertStatus(202)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -95,16 +83,12 @@ class NotificationControllerTest extends TestCase
      */
     public function testBulkPatch(): void
     {
-        /*
         $params = $this->getRequestParams('Notification/bulkPatch.json');
-        $response = $this->patch('/api/v1/notifications', $params);
+        $response = $this->patch('/api/notifications', $params);
         $data = $this->getResponseData('Notification/bulkPatch.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 
     /**
@@ -114,16 +98,12 @@ class NotificationControllerTest extends TestCase
      */
     public function testUpdate(): void
     {
-        /*
         $params = $this->getRequestParams('Notification/update.json');
         $id = '00000000-0000-0000-0000-000000000001';
-        $response = $this->patch("/api/v1/notifications/{$id}", $params);
+        $response = $this->patch("/api/notifications/{$id}", $params);
         $data = $this->getResponseData('Notification/update.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
-        */
-
-        $this->assertTrue(true);
     }
 }
