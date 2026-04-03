@@ -29,7 +29,7 @@ class ExampleTest extends TestCase
         parent::setUp();
 
         $this->command = $this->getCommandTester(
-            new \App\Console\Commands\ExampleCommand,
+            new \App\Console\Commands\ExampleCommand(),
             'command:example'
         );
     }
