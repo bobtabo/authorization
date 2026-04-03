@@ -7,7 +7,6 @@
 namespace App\Support\Tests;
 
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Console\Kernel;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -27,14 +26,16 @@ trait CommandTesterTrait
      */
     protected function getCommandTester(Command $command, string $signature)
     {
-        $kernel = $this->app->make(Kernel::class);
-        $kernel->bootstrap();
+        \Illuminate\Support\Facades\Artisan::starting(function ($artisan) use ($command) {
+            $artisan->add($command);
+        });
 
-        $symfonyApp = $this->app->make(\Illuminate\Console\Application::class);
-        $command->setLaravel($this->app);
-        $symfonyApp->add($command);
+        $kernel = $this->app->make(\Illuminate\Contracts\Console\Kernel::class);
+
+        $this->artisan('list'); // 魔法の一行：これで内部の Artisan を強制起動
+        $symfonyApp = $this->app->make('artisan');
+
         $target = $symfonyApp->find($signature);
-
         return new CommandTester($target);
     }
 }
