@@ -7,7 +7,7 @@
 namespace App\Support\Tests;
 
 use Illuminate\Console\Command;
-use Symfony\Component\Console\Application;
+use Illuminate\Contracts\Console\Kernel;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -27,13 +27,16 @@ trait CommandTesterTrait
      */
     protected function getCommandTester(Command $command, string $signature)
     {
-        $target = $command;
-        $target->setLaravel($this->app);
+        /** @var \Illuminate\Foundation\Console\Kernel $kernel */
+        $kernel = $this->app->make(Kernel::class);
+        $symfonyApp = $kernel->getArtisan();
 
-        $app = new Application();
-        $app->add($target);
+        $command->setLaravel($this->app);
 
-        $command = $app->find($signature);
-        return new CommandTester($command);
+        $symfonyApp->add($command);
+
+        $target = $symfonyApp->find($signature);
+
+        return new CommandTester($target);
     }
 }
