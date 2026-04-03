@@ -36,21 +36,27 @@ jobs:
     # サービスコンテナ: MySQLとRedisをテスト用に起動
     services:
       mysql:
-        image: mysql:8
+        image: mysql:8.0
+        ports:
+          - 3306:3306
         env:
           MYSQL_ROOT_PASSWORD: ${{ inputs.db_password }}
           MYSQL_DATABASE: ${{ inputs.db_name }}
           MYSQL_USER: ${{ inputs.db_user != 'root' && inputs.db_user || '' }}
           MYSQL_PASSWORD: ${{ inputs.db_user != 'root' && inputs.db_password || '' }}
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
       redis:
         image: redis:latest
         ports:
           - ${{ inputs.redis_port }}:6379
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     # CI実行ステップ
     steps:
