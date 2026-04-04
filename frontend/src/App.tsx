@@ -1,5 +1,7 @@
-import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { ErrorPage } from "@/components/error-page";
 import LoginPage from "@/app/login/page";
+import ErrorRoutePage from "@/app/error/page";
 import RegisterPage from "@/app/register/page";
 import StaffPage from "@/app/staffs/page";
 import ClientsPage from "@/app/clients/page";
@@ -20,17 +22,8 @@ export default function App() {
         <Route path="/clients/show" element={<ClientsShowPage />} />
         <Route path="/clients" element={<ClientsPage />} />
         <Route path="/invitation/:token" element={<InvitationTokenPage />} />
-        <Route
-          path="*"
-          element={
-            <main style={{ fontFamily: "system-ui, sans-serif", padding: 24 }}>
-              <p>ページが見つかりません。</p>
-              <p>
-                <Link to="/">トップへ</Link>
-              </p>
-            </main>
-          }
-        />
+        <Route path="/error" element={<ErrorRoutePage />} />
+        <Route path="*" element={<ErrorPage statusCode={404} />} />
       </Routes>
     </BrowserRouter>
   );
