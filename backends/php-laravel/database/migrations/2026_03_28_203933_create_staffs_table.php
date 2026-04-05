@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('email', 255)->comment('メールアドレス');
             $table->integer('provider')->comment('連携アカウント種類');
             $table->string('provider_id', 255)->comment('連携アカウントID');
-            $table->text('avater')->nullable()->comment('アバターURL');
+            $table->text('avatar')->nullable()->comment('アバターURL');
             $table->integer('role')->unsigned()->comment('権限');
             $table->timestamp('last_login_at')->comment('最終ログイン日時');
             $table->timestamp('created_at')->useCurrent()->comment('登録日時');
