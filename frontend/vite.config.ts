@@ -7,7 +7,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const proxyTarget = env.VITE_API_PROXY_TARGET || "http://localhost:8080";
+
+  // Lambda ローカルサーバー経由でバックエンドへ転送する。
+  // パスプレフィックス（/function/php 等）は Lambda 側でルーティングするため rewrite しない。
+  const lambdaTarget = env.VITE_LAMBDA_PROXY_TARGET || "http://localhost:9000";
+
+  const proxyEntries: Record<string, object> = {
+    "/function": {
+      target: lambdaTarget,
+      changeOrigin: true,
+      secure: false,
+    },
+  };
 
   return {
     envPrefix: ["VITE_", "POSTCODE_"],
@@ -18,21 +29,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      proxy: {
-        // 開発: フロントは VITE_API_URL=/function/api とし、ここで /function を外して Laravel の /api/... へ中継（例: http://localhost:8080/api/auth/login）
-        "/function": {
-          target: proxyTarget,
-          changeOrigin: true,
-          secure: false,
-          rewrite: (path) => path.replace(/^\/function/, "") || "/",
-        },
-        // 互換: baseURL を /api のみにした場合もそのまま転送
-        "/api": {
-          target: proxyTarget,
-          changeOrigin: true,
-          secure: false,
-        },
-      },
+      proxy: proxyEntries,
     },
   };
 });

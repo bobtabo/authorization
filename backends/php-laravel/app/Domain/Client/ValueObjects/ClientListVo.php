@@ -11,6 +11,8 @@ use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use ReflectionClass;
 
 /**
  * クライアント一覧の結果 ValueObject です。
@@ -25,6 +27,25 @@ class ClientListVo extends AbstractValueObject
     use Getter;
 
     private Collection $clients;
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function attributes(): array
+    {
+        $items = [];
+        foreach ($this->clients as $row) {
+            $ref = new ReflectionClass($row);
+            $item = [];
+            foreach ($ref->getProperties() as $prop) {
+                $prop->setAccessible(true);
+                $item[Str::snake($prop->getName())] = $prop->getValue($row);
+            }
+            $items[] = $item;
+        }
+        return ['items' => $items];
+    }
 
     /**
      * クライアント Entity のリストを一覧行に設定します。
@@ -63,7 +84,7 @@ class ClientListVo extends AbstractValueObject
                         $this->building = $entity->building;
                         $this->tel = $entity->tel;
                         $this->email = $entity->email;
-                        $this->status = $entity->status;
+                        $this->status = $entity->status?->value;
                         $this->startAt = $entity->startAt;
                         $this->stopAt = $entity->stopAt;
                         $this->createdAt = $entity->createdAt;

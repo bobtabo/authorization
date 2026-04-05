@@ -1,5 +1,10 @@
 import { apiGet } from "./http";
 
+/** GET /auth/me */
+export async function getAuthMe(): Promise<unknown> {
+  return apiGet("/auth/me");
+}
+
 /** GET /auth/login */
 export async function getAuthLogin(): Promise<unknown> {
   return apiGet("/auth/login");

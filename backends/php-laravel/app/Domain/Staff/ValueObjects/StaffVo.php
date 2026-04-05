@@ -18,6 +18,7 @@ use App\Support\ValueObjects\AbstractValueObject;
  * @method int|null getId()
  * @method string|null getName()
  * @method string|null getEmail()
+ * @method string|null getAvatar()
  * @method int|null getRole()
  * @method int|null getStatus()
  */
@@ -28,6 +29,7 @@ class StaffVo extends AbstractValueObject
     private ?int $id = null;
     private ?string $name = null;
     private ?string $email = null;
+    private ?string $avatar = null;
     private ?int $role = null;
     private ?int $status = null;
 }

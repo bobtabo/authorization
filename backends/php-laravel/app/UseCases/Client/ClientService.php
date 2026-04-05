@@ -38,6 +38,7 @@ class ClientService extends AbstractService
     public function getClients(ClientDto $dto): ClientListVo
     {
         /** @var ClientCondition $condition */
+        $dto->statuses = $dto->statuses ?? [];
         $condition = SimpleMapper::mapSpecific($dto, ClientCondition::class, [
             'keyword' => 'keyword',
             'startFrom' => 'startFrom',

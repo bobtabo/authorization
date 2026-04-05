@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/aws/aws-lambda-go/events"
 )
@@ -28,7 +29,14 @@ func main() {
 
 	invoker := &lambdaInvoker{url: lambdaInvokeURL}
 
+	// Lambda RIE はシングルスレッドで同時リクエストを処理できないため、
+	// ミューテックスでシリアライズする（本番は API Gateway が並列 Lambda を起動する）。
+	var mu sync.Mutex
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+
 		body, _ := io.ReadAll(r.Body)
 
 		// HTTP リクエスト → APIGatewayV2HTTPRequest に変換する（API Gateway 相当）

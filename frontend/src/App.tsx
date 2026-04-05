@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { UserProvider } from "@/lib/user-context";
 import { ErrorPage } from "@/components/error-page";
 import LoginPage from "@/app/login/page";
 import ErrorRoutePage from "@/app/error/page";
@@ -11,6 +12,7 @@ import ClientsShowPage from "@/app/clients/show/page";
 import InvitationTokenPage from "@/app/invitation/[token]/page";
 export default function App() {
   return (
+    <UserProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -26,5 +28,6 @@ export default function App() {
         <Route path="*" element={<ErrorPage statusCode={404} />} />
       </Routes>
     </BrowserRouter>
+    </UserProvider>
   );
 }

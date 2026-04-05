@@ -41,7 +41,7 @@ export default function LoginPage(): React.JSX.Element {
                   navigate("/clients");
                   return;
                 }
-                window.location.href = "/function/auth/google/redirect";
+                window.location.href = "/function/php/auth/google/redirect";
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#d0d7de] bg-white px-3 py-2.5 text-sm font-medium text-[#24292f] shadow-sm transition hover:bg-gray-50 hover:border-[#b6bcc3] active:bg-gray-100"
             >

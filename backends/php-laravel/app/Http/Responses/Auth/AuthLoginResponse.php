@@ -22,4 +22,5 @@ class AuthLoginResponse extends AbstractResponse
     private ?int $id = null;
     private ?string $name = null;
     private ?string $email = null;
+    private ?string $avatar = null;
 }

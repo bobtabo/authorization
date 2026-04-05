@@ -21,12 +21,21 @@ import {
 } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
+import { getClients } from "@/src/api/clients";
+import { formatTimestamp } from "@/lib/format-datetime";
 
 // =========================
 // Types
 // =========================
 
 type Status = "準備中" | "利用中" | "停止中" | "アーカイブ";
+
+const STATUS_MAP: Record<number, Status> = {
+  0: "準備中",
+  1: "利用中",
+  2: "停止中",
+  3: "アーカイブ",
+};
 
 interface ClientType {
   id: number;
@@ -60,19 +69,18 @@ export default function ClientsPage(): React.JSX.Element {
   const [startedToDate, setStartedToDate] = useState<string>("");
 
   useEffect(() => {
-    setTimeout(() => {
-      setClients([
-        { id: 1, companyName: "株式会社ABC", status: "利用中", startedAt: "2026-01-20 10:00", stoppedAt: null, createdAt: "2026-01-15 09:30", updatedAt: "2026-01-20 10:00" },
-        { id: 2, companyName: "DEF株式会社", status: "準備中", startedAt: null, stoppedAt: null, createdAt: "2026-01-20 14:00", updatedAt: "2026-01-20 14:00" },
-        { id: 3, companyName: "GHI産業", status: "利用中", startedAt: "2026-02-05 09:00", stoppedAt: null, createdAt: "2026-02-01 11:00", updatedAt: "2026-02-05 09:00" },
-        { id: 4, companyName: "JKLホールディングス", status: "停止中", startedAt: "2026-02-10 08:00", stoppedAt: "2026-03-01 18:00", createdAt: "2026-02-05 15:30", updatedAt: "2026-03-01 18:00" },
-        { id: 5, companyName: "MNO商事", status: "利用中", startedAt: "2026-02-15 10:00", stoppedAt: null, createdAt: "2026-02-10 09:00", updatedAt: "2026-02-15 10:00" },
-        { id: 6, companyName: "PQRシステム", status: "アーカイブ", startedAt: null, stoppedAt: null, createdAt: "2026-02-15 13:00", updatedAt: "2026-02-20 16:00" },
-        { id: 7, companyName: "STUテクノロジー", status: "利用中", startedAt: "2026-02-25 09:00", stoppedAt: null, createdAt: "2026-02-20 10:30", updatedAt: "2026-02-25 09:00" },
-        { id: 8, companyName: "VWXコンサルティング", status: "準備中", startedAt: null, stoppedAt: null, createdAt: "2026-03-01 08:00", updatedAt: "2026-03-01 08:00" },
-      ]);
-      setLoading(false);
-    }, 800);
+    getClients().then((res) => {
+      const rows = res as Array<Record<string, unknown>>;
+      setClients(rows.map((row) => ({
+        id: row.id as number,
+        companyName: row.name as string,
+        status: STATUS_MAP[row.status as number] ?? "準備中",
+        startedAt: row.start_at as string | null,
+        stoppedAt: row.stop_at as string | null,
+        createdAt: row.created_at as string,
+        updatedAt: row.updated_at as string,
+      })));
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleSort = (key: SortKey) => {
@@ -391,7 +399,7 @@ export default function ClientsPage(): React.JSX.Element {
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">
                               <a
-                                href="/clients/show"
+                                href={`/clients/show?id=${client.id}`}
                                 className="group relative inline-flex max-w-full min-w-0 items-center gap-2"
                                 aria-label={`${client.companyName}の詳細を表示`}
                               >
@@ -422,20 +430,20 @@ export default function ClientsPage(): React.JSX.Element {
                               </span>
                             </td>
                             <td className="px-6 py-4 text-gray-600">
-                              {client.startedAt || "-"}
+                              {formatTimestamp(client.startedAt)}
                             </td>
                             <td className="px-6 py-4 text-gray-600">
-                              {client.stoppedAt || "-"}
+                              {formatTimestamp(client.stoppedAt)}
                             </td>
                             <td className="px-6 py-4 text-gray-600">
-                              {client.createdAt}
+                              {formatTimestamp(client.createdAt)}
                             </td>
                             <td className="px-6 py-4 text-gray-600">
-                              {client.updatedAt}
+                              {formatTimestamp(client.updatedAt)}
                             </td>
                             <td className="px-6 py-4 text-right">
                               <a
-                                href="/clients/edit"
+                                href={`/clients/edit?id=${client.id}`}
                                 className="group relative inline-flex p-1 text-gray-500 transition-colors hover:text-indigo-600"
                                 aria-label="編集します"
                               >
