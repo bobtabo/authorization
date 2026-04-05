@@ -16,6 +16,7 @@ use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
 use App\UseCases\Auth\Dtos\SocialDto;
+use Carbon\Carbon;
 
 /**
  * 認証Serviceクラスです。
@@ -71,13 +72,16 @@ class AuthService extends AbstractService
             $newEntity = new Staff;
             $newEntity->assign($dto->attributes());
             $newEntity->role = StaffRole::Member;
-            $newEntity->lastLoginAt = now();
+            $newEntity->lastLoginAt = Carbon::now();
             $newEntity->assignCreated(0);
             $saved = $this->staffRepository->persist($newEntity);
-            $vo->assign($saved->attributes());
         } else {
-            $vo->assign($entity->attributes());
+            $entity->avatar = $dto->avatar;
+            $entity->lastLoginAt = Carbon::now();
+            $entity->assignUpdated($entity->id);
+            $saved = $this->staffRepository->persist($entity);
         }
+        $vo->assign($saved->attributes());
 
         return $vo;
     }

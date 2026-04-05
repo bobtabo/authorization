@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { InvitationUrlModal } from "@/components/invitation-url-modal";
 import { UserAvatar } from "@/components/user-avatar";
-import { SESSION_USER_DISPLAY_NAME } from "@/lib/session-user";
+import { useUser } from "@/lib/user-context";
 
 interface NotificationItem {
   id: number;
@@ -22,6 +22,8 @@ interface NotificationItem {
 }
 
 export function ConsoleHeader(): React.JSX.Element {
+  const { user } = useUser();
+  const displayName = user?.name ?? "";
   const [accountMenuOpen, setAccountMenuOpen] = useState<boolean>(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState<boolean>(false);
   const [invitationModalOpen, setInvitationModalOpen] = useState<boolean>(false);
@@ -290,8 +292,8 @@ export function ConsoleHeader(): React.JSX.Element {
               }}
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 transition-colors"
             >
-              <UserAvatar name={SESSION_USER_DISPLAY_NAME} />
-              <span className="text-sm text-gray-700">{SESSION_USER_DISPLAY_NAME}</span>
+              <UserAvatar name={displayName} avatarUrl={user?.avatar} />
+              <span className="text-sm text-gray-700">{displayName}</span>
               <ChevronDown
                 size={16}
                 className={`text-gray-500 transition-transform duration-200 ${accountMenuOpen ? "rotate-180" : ""}`}

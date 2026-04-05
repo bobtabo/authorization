@@ -4,20 +4,25 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
 namespace App\Http\Controllers\Api;
 
 use App\Domain\Staff\Enums\Provider;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\Auth\AuthInvitationResponse;
 use App\Http\Responses\Auth\AuthLoginResponse;
+use App\Http\Responses\Auth\AuthMeResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
 use App\UseCases\Auth\Dtos\SocialDto;
 use App\UseCases\Invitation\Dtos\InvitationDto;
 use App\UseCases\Invitation\InvitationService;
+use Exception;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
@@ -33,21 +38,26 @@ class AuthController extends Controller
     /**
      * ログイン情報を返します（セッション／トークンで認証済みのユーザー）。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  AuthService  $auth  認証ユースケース
+     * @param AppRequest $request HTTP リクエスト
+     * @param AuthService $auth 認証ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function login(AppRequest $request, AuthService $auth): JsonResponse
+    public function login(Request $request, AuthService $auth): JsonResponse
     {
-        $dto = new AuthUserDto;
-        $dto->assign($request->input());
+        $staffId = $this->resolveStaffId($request);
+        if ($staffId === null) {
+            return response()->json(['message' => '未認証です。'], 401);
+        }
+
+        $dto = new AuthUserDto();
+        $dto->id = $staffId;
 
         $vo = $auth->findUser($dto);
-        if (empty($vo->getId())) {
+        if ($vo->getId() === null) {
             return response()->json(['message' => 'ユーザーが存在しません。'], 404);
         }
 
-        $response = new AuthLoginResponse;
+        $response = new AuthLoginResponse();
         $response->assign($vo->attributes());
 
         return response()->json($response->attributes());
@@ -56,18 +66,18 @@ class AuthController extends Controller
     /**
      * 招待トークンを検証し、招待情報を返します。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  InvitationService  $invitations  招待ユースケース
+     * @param AppRequest $request HTTP リクエスト
+     * @param InvitationService $invitations 招待ユースケース
      * @return JsonResponse JSON レスポンス
      */
     public function invitation(AppRequest $request, InvitationService $invitations): JsonResponse
     {
-        $dto = new InvitationDto;
+        $dto = new InvitationDto();
         $dto->assign($request->input());
         $dto->token = $request->route('token');
 
         $vo = $invitations->findByToken($dto);
-        if (! $vo->isFound()) {
+        if (!$vo->isFound()) {
             return response()->json(['message' => '招待が無効です。'], 404);
         }
 
@@ -82,7 +92,8 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function googleRedirect(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    public function googleRedirect(
+    ): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->stateless()->redirect();
     }
@@ -90,15 +101,15 @@ class AuthController extends Controller
     /**
      * Google からのコールバックを処理します。
      *
-     * @param  AuthService  $auth  認証ユースケース
+     * @param AuthService $auth 認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $service): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
-    {
+    public function googleCallback(AuthService $service
+    ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
-            $dto = new SocialDto;
+            $dto = new SocialDto();
             $dto->assign([
                 'provider' => Provider::Google,
                 'providerId' => $googleUser->getId(),
@@ -108,27 +119,87 @@ class AuthController extends Controller
                 'avatar' => $googleUser->getAvatar(),
             ]);
 
-            DB::transaction(function () use ($service, $dto) {
-                $service->login($dto);
+            $vo = DB::transaction(function () use ($service, $dto) {
+                return $service->login($dto);
             });
 
-            return redirect(config('authorization.app.frontend_url') . '/clients');
-        } catch (\Exception $e) {
-            \Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect(config('authorization.app.frontend_url') . '/login');
+            $secure = config('app.env') === 'production';
+            return redirect(config('authorization.app.frontend_url') . '/clients')
+                ->cookie('staff_id', (string)$vo->getId(), 60 * 24 * 7, '/', null, $secure, true);
+        } catch (Exception $e) {
+            Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
+            return redirect(config('authorization.app.frontend_url') . '/error?code=500');
         }
+    }
+
+    /**
+     * 自分自身のプロフィールを返します（staff_id クッキーで認証済みのユーザー）。
+     *
+     * @param Request $request HTTP リクエスト
+     * @param AuthService $auth 認証ユースケース
+     * @return JsonResponse JSON レスポンス
+     */
+    public function getMyProfile(Request $request, AuthService $auth): JsonResponse
+    {
+        $staffId = $this->resolveStaffId($request);
+        if ($staffId === null) {
+            return response()->json(['message' => '未認証です。'], 401);
+        }
+
+        $dto = new AuthUserDto();
+        $dto->id = $staffId;
+
+        $vo = $auth->findUser($dto);
+        if ($vo->getId() === null) {
+            return response()->json(['message' => 'ユーザーが存在しません。'], 404);
+        }
+
+        $response = new AuthMeResponse();
+        $response->assign([
+            'staff_id' => $vo->getId(),
+            'name' => $vo->getName(),
+            'avatar' => $vo->getAvatar()
+        ]);
+
+        return response()->json($response->attributes());
     }
 
     /**
      * ログアウト処理の応答を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param Request $request HTTP リクエスト
      * @return JsonResponse JSON レスポンス
      */
     public function logout(Request $request): JsonResponse
     {
-        return response()->json([
-            'message' => 'SUCCESS',
-        ]);
+        return response()->json(['message' => 'SUCCESS'])
+            ->cookie(\Cookie::forget('staff_id'));
+    }
+
+    /**
+     * staff_id クッキーを復号してスタッフIDを返します。
+     * クッキーがない・復号失敗・値が不正な場合は null を返します。
+     *
+     * @param Request $request HTTP リクエスト
+     * @return int|null スタッフID
+     */
+    private function resolveStaffId(Request $request): ?int
+    {
+        $encrypted = $request->cookie('staff_id');
+        if (empty($encrypted)) {
+            return null;
+        }
+
+        try {
+            // EncryptCookies は "{prefix}|{value}" 形式で暗号化するため、| 以降を値として取り出す
+            $decrypted = Crypt::decrypt($encrypted, false);
+            $value = str_contains($decrypted, '|') ?
+                substr($decrypted, strrpos($decrypted, '|') + 1) : $decrypted;
+            $staffId = (int)$value;
+
+            return $staffId > 0 ? $staffId : null;
+        } catch (DecryptException) {
+            return null;
+        }
     }
 }

@@ -7,29 +7,19 @@ import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
 import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
 import { formatCityWard } from "@/lib/postcode-jp";
-
-/** モック: 既存データとして読み込んだ想定の初期値（架空の会社・住所・メール） */
-const DEFAULT_EDIT_VALUES = {
-  clientName: "株式会社モックデータ商事",
-  postalCode: "0000000",
-  prefecture: "架空県",
-  city: "架空市中央区みなみ町",
-  street: "仮想1丁目2番3号",
-  building: "サンプルプラザ東館5F",
-  tel: "09000000000",
-  email: "contact@example.com",
-} as const;
+import { getClient, updateClient } from "@/src/api/clients";
 
 export default function ClientEditPage(): React.JSX.Element {
-  const [clientName, setClientName] = useState<string>(DEFAULT_EDIT_VALUES.clientName);
-  const [postalCode, setPostalCode] = useState<string>(DEFAULT_EDIT_VALUES.postalCode);
-  const [prefecture, setPrefecture] = useState<string>(DEFAULT_EDIT_VALUES.prefecture);
-  const [city, setCity] = useState<string>(DEFAULT_EDIT_VALUES.city);
+  const [clientId, setClientId] = useState<number | null>(null);
+  const [clientName, setClientName] = useState<string>("");
+  const [postalCode, setPostalCode] = useState<string>("");
+  const [prefecture, setPrefecture] = useState<string>("");
+  const [city, setCity] = useState<string>("");
   const [cityChoiceIndex, setCityChoiceIndex] = useState<number>(0);
-  const [street, setStreet] = useState<string>(DEFAULT_EDIT_VALUES.street);
-  const [building, setBuilding] = useState<string>(DEFAULT_EDIT_VALUES.building);
-  const [tel, setTel] = useState<string>(DEFAULT_EDIT_VALUES.tel);
-  const [email, setEmail] = useState<string>(DEFAULT_EDIT_VALUES.email);
+  const [street, setStreet] = useState<string>("");
+  const [building, setBuilding] = useState<string>("");
+  const [tel, setTel] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [saving, setSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
@@ -46,6 +36,23 @@ export default function ClientEditPage(): React.JSX.Element {
 
   const { loading: postcodeLoading, error: postcodeError, rows: postcodeRows } =
     usePostcodeJpLookup(postalCode);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    setClientId(Number(id));
+    getClient(id).then((res) => {
+      const d = res as Record<string, unknown>;
+      setClientName(d.name as string ?? "");
+      setPostalCode(d.post_code as string ?? "");
+      setPrefecture(d.pref as string ?? "");
+      setCity(d.city as string ?? "");
+      setStreet(d.address as string ?? "");
+      setBuilding(d.building as string ?? "");
+      setTel(d.tel as string ?? "");
+      setEmail(d.email as string ?? "");
+    });
+  }, []);
 
   useEffect(() => {
     if (postcodeRows.length === 0) {
@@ -73,15 +80,28 @@ export default function ClientEditPage(): React.JSX.Element {
   };
 
   const handleConfirmUpdate = () => {
+    if (!clientId) return;
     setSaving(true);
     setMessage(null);
 
-    // Draft: replace with API call later.
-    setTimeout(() => {
-      setSaving(false);
+    updateClient(clientId, {
+      id: clientId,
+      name: clientName,
+      post_code: postalCode,
+      pref: prefecture,
+      city,
+      address: street,
+      building,
+      tel,
+      email,
+    }).then(() => {
       setConfirmOpen(false);
-      setMessage("更新しました（モック）");
-    }, 800);
+      window.location.href = `/clients/show?id=${clientId}`;
+    }).catch(() => {
+      setMessage("更新に失敗しました。");
+    }).finally(() => {
+      setSaving(false);
+    });
   };
 
   const fieldBaseClass =

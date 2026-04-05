@@ -7,6 +7,7 @@ import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
 import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
 import { formatCityWard } from "@/lib/postcode-jp";
+import { createClient } from "@/src/api/clients";
 
 export default function ClientCreatePage(): React.JSX.Element {
   const [clientName, setClientName] = useState<string>("");
@@ -65,12 +66,23 @@ export default function ClientCreatePage(): React.JSX.Element {
     setSaving(true);
     setMessage(null);
 
-    // Draft: replace with API call later.
-    setTimeout(() => {
-      setSaving(false);
+    createClient({
+      name: clientName,
+      post_code: postalCode,
+      pref: prefecture,
+      city,
+      address: street,
+      building,
+      tel,
+      email,
+    }).then(() => {
       setConfirmOpen(false);
-      setMessage("登録しました（モック）");
-    }, 800);
+      window.location.href = "/clients";
+    }).catch(() => {
+      setMessage("登録に失敗しました。");
+    }).finally(() => {
+      setSaving(false);
+    });
   };
 
   const fieldBaseClass =

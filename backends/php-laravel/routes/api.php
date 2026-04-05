@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // --- auth ---
+Route::get('auth/me', [AuthController::class, 'getMyProfile']);
 Route::get('auth/login', [AuthController::class, 'login']);
 Route::get('auth/invitation/{token}', [AuthController::class, 'invitation']);
 Route::get('auth/logout', [AuthController::class, 'logout']);

@@ -25,7 +25,7 @@ class StaffCondition extends AbstractCondition
     public ?string $email = null;
     public ?Provider $provider = null;
     public ?string $providerId = null;
-    public ?string $avater = null;
+    public ?string $avatar = null;
     public ?StaffRole $role = null;
     public ?StaffStatus $status = null;
     public ?Carbon $lastLoginAt = null;

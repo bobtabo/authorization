@@ -5,27 +5,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, X, Trash2, Play, Square } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
-
-/** モック: 詳細取得想定の初期データ（架空の会社・住所・メール） */
-const DEFAULT_DETAIL = {
-  clientName: "株式会社モックデータ商事",
-  postalCode: "0000000",
-  prefecture: "架空県",
-  city: "架空市中央区みなみ町",
-  street: "仮想1丁目2番3号",
-  building: "サンプルプラザ東館5F",
-  tel: "09000000000",
-  email: "contact@example.com",
-  status: "準備中" as const,
-  startedAt: "—",
-  stoppedAt: "—",
-  createdAt: "2026-01-15 09:30",
-  updatedAt: "2026-01-20 10:00",
-};
+import { getClient } from "@/src/api/clients";
+import { formatTimestamp } from "@/lib/format-datetime";
 
 type ClientStatus = "準備中" | "利用中" | "停止中" | "アーカイブ";
 
-type ClientDetail = Omit<typeof DEFAULT_DETAIL, "status"> & { status: ClientStatus };
+type ClientDetail = {
+  clientName: string;
+  postalCode: string;
+  prefecture: string;
+  city: string;
+  street: string;
+  building: string;
+  tel: string;
+  email: string;
+  status: ClientStatus;
+  startedAt: string;
+  stoppedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 function formatNowForDetail(): string {
   const d = new Date();
@@ -64,7 +63,7 @@ function DetailRow({
 }
 
 export default function ClientShowPage(): React.JSX.Element {
-  const [detail, setDetail] = useState<ClientDetail>(DEFAULT_DETAIL);
+  const [detail, setDetail] = useState<ClientDetail | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [startOpen, setStartOpen] = useState(false);
@@ -72,6 +71,30 @@ export default function ClientShowPage(): React.JSX.Element {
   const [stopOpen, setStopOpen] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    getClient(id).then((res) => {
+      const d = res as Record<string, unknown>;
+      const STATUS_MAP: Record<number, ClientStatus> = { 0: "準備中", 1: "利用中", 2: "停止中", 3: "アーカイブ" };
+      setDetail({
+        clientName: d.name as string,
+        postalCode: d.post_code as string ?? "",
+        prefecture: d.pref as string ?? "",
+        city: d.city as string ?? "",
+        street: d.address as string ?? "",
+        building: d.building as string ?? "",
+        tel: d.tel as string ?? "",
+        email: d.email as string ?? "",
+        status: STATUS_MAP[d.status as number] ?? "準備中",
+        startedAt: formatTimestamp(d.start_at as string | null),
+        stoppedAt: formatTimestamp(d.stop_at as string | null),
+        createdAt: formatTimestamp(d.created_at as string),
+        updatedAt: formatTimestamp(d.updated_at as string),
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -97,13 +120,13 @@ export default function ClientShowPage(): React.JSX.Element {
       const now = formatNowForDetail();
       setStarting(false);
       setStartOpen(false);
-      setDetail((prev) => ({
+      setDetail((prev) => prev ? {
         ...prev,
         status: "利用中",
         startedAt: now,
         stoppedAt: "—",
         updatedAt: now,
-      }));
+      } : prev);
       setToast("利用を開始しました（モック）");
     }, 600);
   };
@@ -114,12 +137,12 @@ export default function ClientShowPage(): React.JSX.Element {
       const now = formatNowForDetail();
       setStopping(false);
       setStopOpen(false);
-      setDetail((prev) => ({
+      setDetail((prev) => prev ? {
         ...prev,
         status: "停止中",
         stoppedAt: now,
         updatedAt: now,
-      }));
+      } : prev);
       setToast("利用を停止しました（モック）");
     }, 600);
   };
@@ -144,6 +167,11 @@ export default function ClientShowPage(): React.JSX.Element {
             </a>
           </div>
 
+          {!detail ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -231,6 +259,7 @@ export default function ClientShowPage(): React.JSX.Element {
               </div>
             </div>
           </motion.div>
+          )}
         </div>
       </main>
 
@@ -266,7 +295,7 @@ export default function ClientShowPage(): React.JSX.Element {
                 </button>
               </div>
               <p className="text-gray-600 mb-6">
-                「{detail.clientName}」を削除してもよろしいですか？この操作は取り消せません。
+                「{detail?.clientName}」を削除してもよろしいですか？この操作は取り消せません。
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -324,7 +353,7 @@ export default function ClientShowPage(): React.JSX.Element {
                 </button>
               </div>
               <p className="text-gray-600 mb-6">
-                「{detail.clientName}」の利用を開始してもよろしいですか？
+                「{detail?.clientName}」の利用を開始してもよろしいですか？
               </p>
               <div className="flex gap-3 justify-end">
                 <button
@@ -382,7 +411,7 @@ export default function ClientShowPage(): React.JSX.Element {
                 </button>
               </div>
               <p className="text-gray-600 mb-6">
-                「{detail.clientName}」の利用を停止してもよろしいですか？
+                「{detail?.clientName}」の利用を停止してもよろしいですか？
               </p>
               <div className="flex gap-3 justify-end">
                 <button
