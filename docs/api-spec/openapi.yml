@@ -24,6 +24,24 @@ servers:
     description: ローカルTypeScript環境
 
 paths:
+  /auth/me:
+    get:
+      summary: 自分自身のプロフィールを取得します
+      description: staff_id クッキーで認証済みのユーザー情報を返します。ログイン判定・ヘッダー表示などに使用します。
+      tags:
+        - auth
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMe'
+        '401':
+          description: 未認証（staff_id クッキーなし、または復号失敗）
+        '404':
+          description: スタッフが存在しない
+
   /auth/login:
     get:
       summary: ログイン情報を取得します
@@ -620,6 +638,28 @@ paths:
 
 components:
   schemas:
+    AuthMe:
+      type: object
+      description: ログイン中スタッフのプロフィール情報
+      required:
+        - staff_id
+        - name
+      properties:
+        staff_id:
+          type: integer
+          format: int64
+          description: スタッフID
+          example: 1
+        name:
+          type: string
+          description: 表示名
+          example: "長柴聡史"
+        avatar:
+          type: string
+          nullable: true
+          description: アバター画像URL（未設定時は null）
+          example: "https://lh3.googleusercontent.com/a/example"
+
     ClientCreate:
       type: object
       description: クライアント登録情報を表すオブジェクトです。
