@@ -1,0 +1,17 @@
+{
+    "id": null,
+    "name": null,
+    "identifier": null,
+    "post_code": null,
+    "pref": null,
+    "city": null,
+    "address": null,
+    "building": null,
+    "tel": null,
+    "email": null,
+    "status": null,
+    "start_at": null,
+    "stop_at": null,
+    "created_at": null,
+    "updated_at": null
+}

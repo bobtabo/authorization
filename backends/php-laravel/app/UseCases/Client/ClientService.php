@@ -11,7 +11,7 @@ use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Client\ValueObjects\ClientDetailVo;
 use App\Domain\Client\ValueObjects\ClientListVo;
-use App\Domain\Client\ValueObjects\ClientMutationVo;
+use App\Domain\Client\ValueObjects\ClientStoreVo;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Client\Dtos\ClientDto;
@@ -31,9 +31,9 @@ class ClientService extends AbstractService
     /**
      * クライアント一覧を取得します。
      *
-     * @param ClientDto $dto
-     * @return ClientListVo
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
+     * @param  ClientDto  $dto  クライアントDTO
+     * @return ClientListVo クライアント一覧ValueObject
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function getClients(ClientDto $dto): ClientListVo
     {
@@ -56,65 +56,78 @@ class ClientService extends AbstractService
     /**
      * クライアント詳細を取得します。
      *
-     * @param ClientDto $dto
-     * @return ClientDetailVo
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
+     * @param  ClientDto  $dto  クライアントDTO
+     * @return ClientDetailVo クライアント詳細ValueObject
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function show(ClientDto $dto): ClientDetailVo
     {
         /** @var ClientCondition $condition */
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clientRepository->findByCondition($condition);
+        $entity = $this->clientRepository->findById($condition);
 
         $vo = new ClientDetailVo;
         if ($entity === null) {
             return $vo;
         }
 
-        $vo->assign($entity->attributes());
-
         return $vo->assign($entity->attributes());
     }
 
     /**
+     * クライアントを登録します。
      *
-     * @param ClientDto $dto
-     * @return ClientMutationVo
+     * @param  ClientDto  $dto  クライアントDTO
+     * @return ClientStoreVo クライアント登録ValueObject
      */
-    public function store(ClientDto $dto): ClientMutationVo
+    public function store(ClientDto $dto): ClientStoreVo
     {
         $entity = new Client;
         $entity->assign($dto->attributes());
+        $entity->assignCreated($dto->executorId ?? 0);
 
-        $saved = $this->clientRepository->save($entity, $dto->executorId);
+        // TODO 識別子、キーペア、フィンガープリント、トークンの作成
+        $token = null;
+        $saved = $this->clientRepository->persist($entity);
 
-        return (new ClientMutationVo)->assign($saved->attributes());
+        $configs = config('authorization.app.mail');
+        return (new ClientStoreVo)->assign([
+            'from' => $configs['from'],
+            'to' => $saved->email,
+            'subject' => get_mail_subject($configs['subject']['prefix'] . $configs['subject']['access_token']),
+            'template' => $configs['template']['login'],
+            'accessToken' => $token,
+        ]);
     }
 
     /**
-     * @param ClientDto $dto
-     * @return ClientMutationVo
+     * クライアントを更新します。
+     *
+     * @param  ClientDto  $dto  クライアントDTO
+     * @return ClientStoreVo クライアント更新ValueObject
      */
-    public function update(ClientDto $dto): ClientMutationVo
+    public function update(ClientDto $dto): ClientStoreVo
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
         $entity = $this->clientRepository->findById($condition);
         $entity->assign($dto->attributes());
+        $entity->assignUpdated($dto->executorId ?? 0);
 
-        $saved = $this->clientRepository->save($entity, $dto->executorId);
+        $saved = $this->clientRepository->persist($entity);
 
-        return (new ClientMutationVo)->assign($saved->attributes());
+        return (new ClientStoreVo)->assign($saved->attributes());
     }
 
     /**
+     * クライアントを論理削除します。
      *
-     * @param ClientDto $dto
+     * @param  ClientDto  $dto  クライアントDTO
      * @return void
      */
     public function destroy(ClientDto $dto): void
     {
-        $this->clientRepository->delete($dto->id, $dto->executorId);
+        $this->clientRepository->deleteById($dto->id, $dto->executorId ?? 0);
     }
 }

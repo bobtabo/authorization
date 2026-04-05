@@ -1,0 +1,13 @@
+{
+    "id": 1,
+    "name": "テスト株式会社（更新）",
+    "identifier": "test-client",
+    "post_code": "100-0001",
+    "pref": "東京都",
+    "city": "千代田区",
+    "address": "千代田1-1-1",
+    "building": null,
+    "tel": "03-0000-0000",
+    "email": "test@example.com",
+    "status": 1
+}

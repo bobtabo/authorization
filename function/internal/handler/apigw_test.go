@@ -2,69 +2,76 @@ package handler_test
 
 import (
 	"context"
-	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"authorization/function/internal/adapter"
 	"authorization/function/internal/handler"
 
 	"github.com/aws/aws-lambda-go/events"
 )
 
-// TestHandler_HandleAPIGatewayV2 はハンドラが 200・JSON・本文フィールドを満たすことを検証する。
-// RequestContext の最小フィールドだけ埋めた擬似イベントを使う（実 API の全項目は不要）。
-func TestHandler_HandleAPIGatewayV2(t *testing.T) {
+// newTestDeps はテスト用の Deps を組み立てる。
+// transport を差し替えることでバックエンド URL をモックサーバーへ向ける。
+func newTestDeps(transport http.RoundTripper) *adapter.Deps {
+	return adapter.NewDepsWithClient(&http.Client{Transport: transport})
+}
+
+// backendRedirect はリクエストを mock サーバーへリダイレクトする RoundTripper。
+// テスト内でバックエンドのドメインを気にせず、mock に転送できる。
+type backendRedirect struct {
+	target string
+}
+
+func (b *backendRedirect) RoundTrip(req *http.Request) (*http.Response, error) {
+	req2 := req.Clone(req.Context())
+	req2.URL.Host = b.target
+	req2.URL.Scheme = "http"
+	return http.DefaultTransport.RoundTrip(req2)
+}
+
+func TestHandler_Proxy(t *testing.T) {
 	t.Parallel()
 
-	h := handler.New(nil)
+	// モックバックエンドサーバー
+	// t.Cleanup を使い、全サブテスト完了後に閉じる（defer だとサブテスト並列実行中に閉じてしまう）
+	mock := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Backend-Path", r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	t.Cleanup(mock.Close)
+
+	h := handler.New(newTestDeps(&backendRedirect{target: mock.Listener.Addr().String()}))
 
 	tests := []struct {
-		name       string
-		req        events.APIGatewayV2HTTPRequest
-		wantPath   string
-		wantMethod string
+		name           string
+		rawPath        string
+		method         string
+		wantStatus     int
+		wantBackend    string // X-Backend-Path ヘッダーで確認
 	}{
 		{
-			name: "GET root",
-			req: events.APIGatewayV2HTTPRequest{
-				RawPath: "/",
-				RequestContext: events.APIGatewayV2HTTPRequestContext{
-					RequestID: "req-root",
-					HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
-						Method: "GET",
-					},
-				},
-			},
-			wantPath:   "/",
-			wantMethod: "GET",
+			name:        "PHP バックエンドへ転送",
+			rawPath:     "/function/php/api/clients",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/api/clients",
 		},
 		{
-			name: "POST nested path",
-			req: events.APIGatewayV2HTTPRequest{
-				RawPath: "/v1/clients",
-				RequestContext: events.APIGatewayV2HTTPRequestContext{
-					RequestID: "req-clients",
-					HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
-						Method: "POST",
-					},
-				},
-			},
-			wantPath:   "/v1/clients",
-			wantMethod: "POST",
+			name:        "Go バックエンドへ転送",
+			rawPath:     "/function/go/api/health",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/api/health",
 		},
 		{
-			// API Gateway によっては RawPath が空のケースがあり得るため、ハンドラが panic しないことも確認する。
-			name: "empty raw path still echoed",
-			req: events.APIGatewayV2HTTPRequest{
-				RawPath: "",
-				RequestContext: events.APIGatewayV2HTTPRequestContext{
-					RequestID: "req-empty-path",
-					HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
-						Method: "OPTIONS",
-					},
-				},
-			},
-			wantPath:   "",
-			wantMethod: "OPTIONS",
+			name:        "プレフィックスのみのパス",
+			rawPath:     "/function/php",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/",
 		},
 	}
 
@@ -73,57 +80,42 @@ func TestHandler_HandleAPIGatewayV2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			resp, err := h.HandleAPIGatewayV2(context.Background(), tt.req)
+			resp, err := h.HandleAPIGatewayV2(context.Background(), events.APIGatewayV2HTTPRequest{
+				RawPath: tt.rawPath,
+				RequestContext: events.APIGatewayV2HTTPRequestContext{
+					HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+						Method: tt.method,
+					},
+				},
+			})
 			if err != nil {
 				t.Fatalf("HandleAPIGatewayV2: %v", err)
 			}
-			if resp.StatusCode != 200 {
-				t.Fatalf("StatusCode = %d, want 200", resp.StatusCode)
+			if resp.StatusCode != tt.wantStatus {
+				t.Fatalf("StatusCode = %d, want %d", resp.StatusCode, tt.wantStatus)
 			}
-			if got := resp.Headers["Content-Type"]; got != "application/json" {
-				t.Fatalf("Content-Type = %q, want application/json", got)
-			}
-
-			var payload struct {
-				OK     bool   `json:"ok"`
-				Path   string `json:"path"`
-				Method string `json:"method"`
-			}
-			if err := json.Unmarshal([]byte(resp.Body), &payload); err != nil {
-				t.Fatalf("body JSON: %v\nbody=%q", err, resp.Body)
-			}
-			if !payload.OK {
-				t.Fatal(`want ok: true`)
-			}
-			if payload.Path != tt.wantPath {
-				t.Fatalf("path = %q, want %q", payload.Path, tt.wantPath)
-			}
-			if payload.Method != tt.wantMethod {
-				t.Fatalf("method = %q, want %q", payload.Method, tt.wantMethod)
+			if got := resp.Headers["X-Backend-Path"]; got != tt.wantBackend {
+				t.Fatalf("X-Backend-Path = %q, want %q", got, tt.wantBackend)
 			}
 		})
 	}
 }
 
-// BenchmarkHandler_HandleAPIGatewayV2 は JSON 応答生成コストの目安を計測する（最適化前後の比較など）。
-func BenchmarkHandler_HandleAPIGatewayV2(b *testing.B) {
-	h := handler.New(nil)
-	req := events.APIGatewayV2HTTPRequest{
-		RawPath: "/bench",
-		RequestContext: events.APIGatewayV2HTTPRequestContext{
-			RequestID: "bench",
-			HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
-				Method: "GET",
-			},
-		},
-	}
-	ctx := context.Background()
+func TestHandler_UnknownPrefix_Returns404(t *testing.T) {
+	t.Parallel()
 
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		_, err := h.HandleAPIGatewayV2(ctx, req)
-		if err != nil {
-			b.Fatal(err)
-		}
+	h := handler.New(nil)
+
+	resp, err := h.HandleAPIGatewayV2(context.Background(), events.APIGatewayV2HTTPRequest{
+		RawPath: "/unknown/path",
+		RequestContext: events.APIGatewayV2HTTPRequestContext{
+			HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.StatusCode != 404 {
+		t.Fatalf("StatusCode = %d, want 404", resp.StatusCode)
 	}
 }

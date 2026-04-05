@@ -31,7 +31,7 @@ trait CommandTesterTrait
         $target->setLaravel($this->app);
 
         $app = new Application();
-        $app->add($target);
+        $app->addCommand($target);
 
         $command = $app->find($signature);
         return new CommandTester($command);

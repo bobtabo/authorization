@@ -76,14 +76,23 @@ services:
       - authorization
 
   lambda:
-    image: public.ecr.aws/lambda/go:1.2024.10.04.19
+    image: public.ecr.aws/lambda/provided:al2023
     platform: linux/amd64
-    command: [ "index.handler" ]
+    entrypoint: ["/bin/sh", "-c", "cp /var/task/bootstrap /var/runtime/bootstrap && chmod +x /var/runtime/bootstrap && exec /lambda-entrypoint.sh bootstrap"]
     restart: always
     volumes:
-      - ../../../../function:/var/task
+      - ../../../function:/var/task
     ports:
       - "${LAMBDA_PORT}:8080"
+    environment:
+      - INSECURE_SKIP_TLS_VERIFY=true
+    networks:
+      - authorization
+    extra_hosts:
+      - "apis.authorization-php.dev:172.19.0.6"
+      - "apis.authorization-go.dev:172.19.0.6"
+      - "apis.authorization-python.dev:172.19.0.6"
+      - "apis.authorization-ts.dev:172.19.0.6"
     logging:
       options:
         max-size: "5m"

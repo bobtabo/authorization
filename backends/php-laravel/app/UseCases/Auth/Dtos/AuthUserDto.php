@@ -1,0 +1,20 @@
+<?php
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+namespace App\UseCases\Auth\Dtos;
+
+use App\Support\Dtos\AbstractDto;
+
+/**
+ * 認証ユーザー取得用 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\UseCases\Auth\Dtos
+ */
+class AuthUserDto extends AbstractDto
+{
+    public ?int $id = null;
+}

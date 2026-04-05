@@ -4,7 +4,7 @@ const raw = import.meta.env.VITE_API_URL?.trim();
 
 if (!raw) {
   throw new Error(
-    "VITE_API_URL is not set. Example (dev + proxy): /api/v1 — Example (prod): https://example.com/v1",
+    "VITE_API_URL is not set. Example (dev + Vite proxy): /function/api — Example (prod): https://apis.authorization-php.dev/api",
   );
 }
 
@@ -12,12 +12,11 @@ if (!raw) {
 const baseURL = raw.endsWith("/") ? raw.slice(0, -1) : raw;
 
 /**
- * Common HTTP client.
- * Backend language is irrelevant as long as HTTP contract is matched.
+ * Laravel `routes/api.php` 向けの共通クライアント（ルートに /v1 は含めない）。
  *
- * Development: `VITE_API_URL=/api/v1` のように **相対パス** にすると、
- * ブラウザは Vite と同一オリジンにだけアクセスし、vite.config の proxy がバックエンドへ転送する（CORS 回避）。
- * Production: `https://host/v1` のように絶対 URL を指定する。
+ * - 本番例: `VITE_API_URL=https://apis.authorization-php.dev/api`
+ * - 開発例: `VITE_API_URL=/function/api` → ブラウザは同一オリジンの `/function/api/...` のみ叩き、
+ *   vite.config の proxy が `/function` を除いて `VITE_API_PROXY_TARGET`（例: http://localhost:8080）の `/api/...` へ転送する（CORS 回避）。
  */
 export const apiClient = axios.create({
   baseURL,

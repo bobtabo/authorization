@@ -1,0 +1,79 @@
+# PHP CI ワークフロー
+# developブランチのbackends/php-laravel/**変更時にCIを実行
+name: PHP CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/php-laravel/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Ubuntu ランナーを使用
+    runs-on: ubuntu-latest
+
+    # サービスコンテナ: MySQLとRedisをテスト用に起動
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    # CI実行ステップ
+    steps:
+      - uses: actions/checkout@v4
+
+      # PHP 8.5 をセットアップし、pdo_mysql拡張を有効化
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo, pdo_mysql
+
+      # Composer 依存関係をインストール
+      - name: Install dependencies
+        run: composer install
+        working-directory: backends/php-laravel
+
+      # .env ファイルをコピー
+      - name: Generate .env
+        run: cp .env.testing .env
+        working-directory: backends/php-laravel
+
+      # 環境準備スクリプトを実行
+      - name: Prepare environment
+        run: |
+          find ./bin -type f -exec chmod 755 {} +
+          bin/clear-laravel-local.sh
+        working-directory: backends/php-laravel
+
+      # データベースマイグレーションを実行
+      - name: Run migrations
+        run: php artisan migrate
+        working-directory: backends/php-laravel
+
+      # PHPUnit テストを実行
+      - name: Run tests
+        run: ./vendor/bin/phpunit
+        working-directory: backends/php-laravel

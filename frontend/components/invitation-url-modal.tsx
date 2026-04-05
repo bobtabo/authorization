@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCopy, X, Loader2 } from "lucide-react";
-import { apiClient } from "@/src/api/client";
+import { getInvitation, issueInvitation } from "@/src/api";
 import { formatInvitationUrlForDisplay } from "@/lib/format-invitation-url";
 
 /** API 未実装・500・CORS 等のときに見せる、それっぽいモックURL */
@@ -30,7 +30,7 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
     setError(null);
     setLoading(true);
     try {
-      const { data } = await apiClient.get<{ url: string }>("/invitation");
+      const data = await getInvitation();
       setUrl(typeof data.url === "string" ? data.url : buildMockInvitationUrl());
       setIsMock(false);
     } catch {
@@ -72,7 +72,7 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
     setError(null);
     setReissuing(true);
     try {
-      const { data } = await apiClient.get<{ url: string }>("/invitation/issue");
+      const data = await issueInvitation();
       setUrl(typeof data.url === "string" ? data.url : buildMockInvitationUrl());
       setIsMock(false);
     } catch {

@@ -7,10 +7,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\Notification\BulkPatchResponse;
+use App\Http\Responses\Notification\CountsResponse;
+use App\Http\Responses\Notification\IndexResponse;
+use App\Http\Responses\Notification\IssueResponse;
+use App\Http\Responses\Notification\UpdateResponse;
+use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Notification\Dtos\NotificationDto;
 use App\UseCases\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * 通知Controllerクラスです。
@@ -23,11 +28,11 @@ class NotificationController extends Controller
     /**
      * 通知一覧（カーソルページング）を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  NotificationService  $notifications  通知ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function index(Request $request, NotificationService $notifications): JsonResponse
+    public function index(AppRequest $request, NotificationService $notifications): JsonResponse
     {
         $cursor = $request->query('cursor');
         $cursor = is_string($cursor) && $cursor !== '' ? $cursor : null;
@@ -44,35 +49,41 @@ class NotificationController extends Controller
         $dto->cursor = $cursor;
         $dto->limit = $limit;
 
-        $page = $notifications->listPage($dto);
+        $vo = $notifications->listPage($dto);
 
-        return response()->json($page->attributes());
+        $response = new IndexResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * 通知トリガーを受理する応答を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @return JsonResponse JSON レスポンス（202）
      */
-    public function store(Request $request): JsonResponse
+    public function store(AppRequest $request): JsonResponse
     {
         $body = $request->all();
 
-        return response()->json([
+        $response = new IssueResponse;
+        $response->assign([
             'message' => '受理しました（非同期処理は未接続です）。',
             'received' => $body !== [] ? $body : null,
-        ], 202);
+        ]);
+
+        return response()->json($response->attributes(), 202);
     }
 
     /**
      * 通知の一括更新（既読など）の応答を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  NotificationService  $notifications  通知ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function bulkPatch(Request $request, NotificationService $notifications): JsonResponse
+    public function bulkPatch(AppRequest $request, NotificationService $notifications): JsonResponse
     {
         $validated = $request->validate([
             'ids' => 'sometimes|array',
@@ -95,33 +106,38 @@ class NotificationController extends Controller
 
         $vo = $notifications->bulkMarkRead($dto);
 
-        return response()->json([
-            'message' => $vo->message,
-            'updated' => $vo->updated,
-        ]);
+        $response = new BulkPatchResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * 通知件数の集計を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  NotificationService  $notifications  通知ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function counts(Request $request, NotificationService $notifications): JsonResponse
+    public function counts(AppRequest $request, NotificationService $notifications): JsonResponse
     {
-        return response()->json($notifications->counts(new NotificationDto)->attributes());
+        $vo = $notifications->counts(new NotificationDto);
+
+        $response = new CountsResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * 単一通知を更新する応答を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  NotificationService  $notifications  通知ユースケース
      * @param  string  $id  通知ID（UUID）
      * @return JsonResponse JSON レスポンス
      */
-    public function update(Request $request, NotificationService $notifications, string $id): JsonResponse
+    public function update(AppRequest $request, NotificationService $notifications, string $id): JsonResponse
     {
         $attributes = $request->all();
 
@@ -131,13 +147,13 @@ class NotificationController extends Controller
 
         $vo = $notifications->patch($dto);
 
-        if (! $vo->ok) {
+        if (! $vo->isOk()) {
             return response()->json(['message' => '通知を更新できませんでした。'], 404);
         }
 
-        return response()->json([
-            'message' => $vo->message,
-            'id' => $vo->id,
-        ]);
+        $response = new UpdateResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 }

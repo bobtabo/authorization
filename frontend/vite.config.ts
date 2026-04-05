@@ -19,12 +19,18 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        // ブラウザは常に Vite オリジン（例: 5173）へ。ここからバックエンドへ中継して CORS を回避。
+        // 開発: フロントは VITE_API_URL=/function/api とし、ここで /function を外して Laravel の /api/... へ中継（例: http://localhost:8080/api/auth/login）
+        "/function": {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/function/, "") || "/",
+        },
+        // 互換: baseURL を /api のみにした場合もそのまま転送
         "/api": {
           target: proxyTarget,
           changeOrigin: true,
           secure: false,
-          rewrite: (p) => p.replace(/^\/api/, "") || "/",
         },
       },
     },

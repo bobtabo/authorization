@@ -8,10 +8,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Domain\Staff\Enums\StaffRole;
 use App\Http\Controllers\Controller;
+use App\Http\Responses\Staff\StaffDestroyResponse;
+use App\Http\Responses\Staff\StaffIndexResponse;
+use App\Http\Responses\Staff\StaffUpdateRoleResponse;
+use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Staff\Dtos\StaffDto;
 use App\UseCases\Staff\StaffService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -25,11 +28,11 @@ class StaffController extends Controller
     /**
      * スタッフ一覧を返します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  StaffService  $staff  スタッフユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function index(Request $request, StaffService $staff): JsonResponse
+    public function index(AppRequest $request, StaffService $staff): JsonResponse
     {
         $keyword = $request->query('keyword');
         $keyword = is_string($keyword) && $keyword !== '' ? $keyword : null;
@@ -44,18 +47,21 @@ class StaffController extends Controller
 
         $vo = $staff->index($dto);
 
-        return response()->json($vo->attributes()['items']);
+        $response = new StaffIndexResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * スタッフの権限を更新します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  StaffService  $staff  スタッフユースケース
      * @param  int  $id  スタッフID
      * @return JsonResponse JSON レスポンス
      */
-    public function updateRole(Request $request, StaffService $staff, int $id): JsonResponse
+    public function updateRole(AppRequest $request, StaffService $staff, int $id): JsonResponse
     {
         $validated = $request->validate([
             'role' => 'required|integer',
@@ -72,39 +78,39 @@ class StaffController extends Controller
         $dto->executorId = $this->executorId();
 
         $vo = $staff->updateRole($dto);
-        if (! $vo->ok) {
+        if (! $vo->isOk()) {
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }
 
-        return response()->json([
-            'message' => $vo->message,
-            'id' => $vo->id,
-        ]);
+        $response = new StaffUpdateRoleResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**
      * スタッフを論理削除します。
      *
-     * @param  Request  $request  HTTP リクエスト
+     * @param  AppRequest  $request  HTTP リクエスト
      * @param  StaffService  $staff  スタッフユースケース
      * @param  int  $id  スタッフID
      * @return JsonResponse JSON レスポンス
      */
-    public function destroy(Request $request, StaffService $staff, int $id): JsonResponse
+    public function destroy(AppRequest $request, StaffService $staff, int $id): JsonResponse
     {
         $dto = new StaffDto;
         $dto->id = $id;
         $dto->executorId = $this->executorId();
 
         $vo = $staff->destroy($dto);
-        if (! $vo->ok) {
+        if (! $vo->isOk()) {
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }
 
-        return response()->json([
-            'message' => $vo->message,
-            'id' => $vo->id,
-        ]);
+        $response = new StaffDestroyResponse;
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**

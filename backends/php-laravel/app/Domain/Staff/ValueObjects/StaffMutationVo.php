@@ -14,14 +14,16 @@ use App\Support\ValueObjects\AbstractValueObject;
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Staff\ValueObjects
+ *
+ * @method bool isOk()
+ * @method string getMessage()
+ * @method int|null getId()
  */
 class StaffMutationVo extends AbstractValueObject
 {
     use Getter;
 
-    public bool $ok = false;
-
-    public string $message = 'SUCCESS';
-
-    public ?int $id = null;
+    private bool $ok = false;
+    private string $message = 'SUCCESS';
+    private ?int $id = null;
 }

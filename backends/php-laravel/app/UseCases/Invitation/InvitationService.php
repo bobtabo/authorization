@@ -29,6 +29,9 @@ class InvitationService extends AbstractService
 
     /**
      * 現在の招待情報を取得します。
+     *
+     * @param  InvitationDto  $dto  招待DTO
+     * @return InvitationVo 招待ValueObject
      */
     public function current(InvitationDto $dto): InvitationVo
     {
@@ -39,32 +42,37 @@ class InvitationService extends AbstractService
             return $vo;
         }
 
-        $vo->found = true;
-        $vo->url = $entity->url;
-        $vo->token = $entity->token;
-
-        return $vo;
+        return $vo->assign([
+            'found' => true,
+            'url' => $entity->url,
+            'token' => $entity->token,
+        ]);
     }
 
     /**
      * 新しい招待を発行します。
      *
+     * @param  InvitationDto  $dto  招待DTO
+     * @return InvitationVo 招待ValueObject
      * @throws RandomException 乱数生成に失敗した場合（永続化実装に依存）
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
+        unset($dto);
         $entity = $this->invitations->issue();
-        $vo = new InvitationVo;
 
-        return $vo->assign([
+        return (new InvitationVo)->assign([
             'found' => true,
-            'url' => $vo->url,
-            'token' => $vo->token,
+            'url' => $entity->url,
+            'token' => $entity->token,
         ]);
     }
 
     /**
      * 招待トークンから招待情報を解決します。
+     *
+     * @param  InvitationDto  $dto  招待DTO
+     * @return InvitationVo 招待ValueObject
      */
     public function findByToken(InvitationDto $dto): InvitationVo
     {
@@ -79,10 +87,10 @@ class InvitationService extends AbstractService
             return $vo;
         }
 
-        $vo->found = true;
-        $vo->url = $entity->url;
-        $vo->token = $entity->token;
-
-        return $vo;
+        return $vo->assign([
+            'found' => true,
+            'url' => $entity->url,
+            'token' => $entity->token,
+        ]);
     }
 }

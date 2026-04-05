@@ -9,7 +9,7 @@ namespace App\Infrastructure\Repositories;
 use App\Domain\Invitation\Entities\Invitation as Entity;
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
 use App\Infrastructure\Models\Invitation as Model;
-use app\Support\Repositories\AbstractEloquentRepository;
+use App\Support\Repositories\AbstractEloquentRepository;
 use Random\RandomException;
 
 /**

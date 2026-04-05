@@ -1,0 +1,15 @@
+{
+    "id": null,
+    "name": null,
+    "identifier": null,
+    "post_code": null,
+    "pref": null,
+    "city": null,
+    "address": null,
+    "building": null,
+    "tel": null,
+    "email": null,
+    "status": null,
+    "ok": true,
+    "message": "SUCCESS"
+}

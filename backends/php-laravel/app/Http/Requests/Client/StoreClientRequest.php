@@ -9,7 +9,7 @@ namespace App\Http\Requests\Client;
 use App\Support\Http\Requests\AppRequest;
 
 /**
- * クライアント登録リクエストです。
+ * クライアント登録Requestクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Requests\Client

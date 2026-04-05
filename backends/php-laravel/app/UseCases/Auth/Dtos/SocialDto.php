@@ -6,6 +6,7 @@
  */
 namespace App\UseCases\Auth\Dtos;
 
+use App\Domain\Staff\Enums\Provider;
 use App\Support\Dtos\AbstractDto;
 
 /**
@@ -16,7 +17,8 @@ use App\Support\Dtos\AbstractDto;
  */
 class SocialDto extends AbstractDto
 {
-    public ?string $id = null;
+    public ?Provider $provider = null;
+    public ?string $providerId = null;
     public ?string $nickname = null;
     public ?string $name = null;
     public ?string $email = null;

@@ -31,49 +31,50 @@ class NotificationService extends AbstractService
 
     /**
      * カーソル付きで通知一覧ページを取得します。
+     *
+     * @param  NotificationDto  $dto  通知DTO
+     * @return NotificationListVo 通知一覧ValueObject
      */
     public function listPage(NotificationDto $dto): NotificationListVo
     {
-        $limit = $dto->limit;
-        if ($limit < 1) {
-            $limit = 1;
-        }
-        if ($limit > 100) {
-            $limit = 100;
-        }
+        $limit = max(1, min(100, $dto->limit));
 
         $page = $this->notifications->listPage($dto->cursor, $limit);
-        $vo = new NotificationListVo;
-        $vo->assignPage($page);
 
-        return $vo;
+        return (new NotificationListVo)->assign($page);
     }
 
     /**
      * 通知件数の集計を取得します。
+     *
+     * @param  NotificationDto  $dto  通知DTO
+     * @return NotificationCountsVo 通知件数ValueObject
      */
     public function counts(NotificationDto $dto): NotificationCountsVo
     {
         unset($dto);
-        $vo = new NotificationCountsVo;
-        $vo->assignCounts($this->notifications->counts());
 
-        return $vo;
+        return (new NotificationCountsVo)->assign($this->notifications->counts());
     }
 
     /**
      * 一括既読などの更新を行います。
+     *
+     * @param  NotificationDto  $dto  通知DTO
+     * @return NotificationBulkPatchVo 通知一括更新ValueObject
      */
     public function bulkMarkRead(NotificationDto $dto): NotificationBulkPatchVo
     {
-        $vo = new NotificationBulkPatchVo;
-        $vo->updated = $this->notifications->bulkMarkRead($dto->ids, $dto->all);
+        $updated = $this->notifications->bulkMarkRead($dto->ids, $dto->all);
 
-        return $vo;
+        return (new NotificationBulkPatchVo)->assign(['updated' => $updated]);
     }
 
     /**
      * 単一通知を部分更新します。
+     *
+     * @param  NotificationDto  $dto  通知DTO
+     * @return NotificationPatchVo 通知更新ValueObject
      */
     public function patch(NotificationDto $dto): NotificationPatchVo
     {
@@ -84,9 +85,7 @@ class NotificationService extends AbstractService
         }
 
         $ok = $this->notifications->patch($id, $dto->attributes);
-        $vo->ok = $ok;
-        $vo->id = $id;
 
-        return $vo;
+        return $vo->assign(['ok' => $ok, 'id' => $id]);
     }
 }
