@@ -24,24 +24,6 @@ servers:
     description: ローカルTypeScript環境
 
 paths:
-  /auth/me:
-    get:
-      summary: 自分自身のプロフィールを取得します
-      description: staff_id クッキーで認証済みのユーザー情報を返します。ログイン判定・ヘッダー表示などに使用します。
-      tags:
-        - auth
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthMe'
-        '401':
-          description: 未認証（staff_id クッキーなし、または復号失敗）
-        '404':
-          description: スタッフが存在しない
-
   /auth/login:
     get:
       summary: ログイン情報を取得します
@@ -94,6 +76,24 @@ paths:
           description: 成功時にレスポンスを返します。
         '500':
           description: Googleログインに失敗した場合のエラー
+
+  /auth/me:
+    get:
+      summary: 自分自身のプロフィールを取得します
+      description: staff_id クッキーで認証済みのユーザー情報を返します。ログイン判定・ヘッダー表示などに使用します。
+      tags:
+        - auth
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMe'
+        '401':
+          description: 未認証（staff_id クッキーなし、または復号失敗）
+        '404':
+          description: スタッフが存在しない
 
   /auth/logout:
     get:
