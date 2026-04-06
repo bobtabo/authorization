@@ -44,13 +44,23 @@ bin/docker-environment.sh
 ### コンテナを起動する
 ```bash
 # 起動（内部で authorization ネットワーク作成 + compose up）
-bin/docker-common-up.sh
+bin/docker-common.sh up
+```
+
+### コンテナを停止する
+```bash
+bin/docker-common.sh stop
+```
+
+### コンテナを再開する
+```bash
+bin/docker-common.sh start
 ```
 
 ### コンテナを破棄する
 ```bash
 # ボリュームや data も消えるので注意！
-bin/docker-common-down.sh
+bin/docker-common.sh down
 ```
 
 ## アプリコンテナ操作
@@ -61,48 +71,48 @@ bin/docker-common-down.sh
 
 ```bash
 # Go環境を起動する
-bin/docker-go-up.sh
+bin/docker-go.sh up
 
 # PHP環境を起動する
-bin/docker-php-up.sh
+bin/docker-php.sh up
 
 # Python環境を起動する
-bin/docker-python-up.sh
+bin/docker-python.sh up
 
 # TypeScript環境を起動する
-bin/docker-ts-up.sh
+bin/docker-ts.sh up
 ```
 
 ### コンテナに入る
 
 ```bash
 # Go環境に入る
-bin/docker-go-exec.sh
+bin/docker-go.sh exec
 
 # PHP環境に入る
-bin/docker-php-exec.sh
+bin/docker-php.sh exec
 
 # Python環境に入る
-bin/docker-python-exec.sh
+bin/docker-python.sh exec
 
 # TypeScript環境に入る
-bin/docker-ts-exec.sh
+bin/docker-ts.sh exec
 ```
 
 ### コンテナを破棄する
 
 ```bash
 # Go環境を破棄する
-bin/docker-go-down.sh
+bin/docker-go.sh down
 
 # PHP環境を破棄する
-bin/docker-php-down.sh
+bin/docker-php.sh down
 
 # Python環境を破棄する
-bin/docker-python-down.sh
+bin/docker-python.sh down
 
 # TypeScript環境を破棄する
-bin/docker-ts-down.sh
+bin/docker-ts.sh down
 ```
 
 ## :fire: 注意
