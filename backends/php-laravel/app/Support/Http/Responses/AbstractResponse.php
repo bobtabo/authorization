@@ -1,13 +1,18 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Support\Http\Responses;
 
 use App\Support\Traits\Assign;
 use App\Support\Traits\Initialize;
+use Illuminate\Support\Str;
 use ReflectionClass;
 
 /**
@@ -45,7 +50,7 @@ abstract class AbstractResponse implements Response
                 continue;
             }
 
-            $result[$property] = $this->$property;
+            $result[Str::snake($property)] = $this->$property;
         }
         return $result;
     }

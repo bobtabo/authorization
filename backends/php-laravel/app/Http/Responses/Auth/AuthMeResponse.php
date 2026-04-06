@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Http\Responses\Auth;
 
 use App\Support\Http\Responses\AbstractResponse;
@@ -19,7 +23,7 @@ class AuthMeResponse extends AbstractResponse
 {
     use Getter;
 
-    private ?int $staff_id = null;
+    private ?int $staffId = null;
     private ?string $name = null;
     private ?string $avatar = null;
 }

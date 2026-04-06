@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Http\Responses\Notification;
 
 use App\Support\Http\Responses\AbstractResponse;
@@ -20,5 +24,5 @@ class IndexResponse extends AbstractResponse
     use Getter;
 
     private array $items = [];
-    private ?string $next_cursor = null;
+    private ?string $nextCursor = null;
 }

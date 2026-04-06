@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Domain\Client\ValueObjects;
 
 use App\Domain\Client\Entities\Client;
@@ -77,7 +81,7 @@ class ClientListVo extends AbstractValueObject
                     {
                         $this->id = $entity->id;
                         $this->name = $entity->name;
-                        $this->identifier = $entity->identifer;
+                        $this->identifier = $entity->identifier;
                         $this->pref = $entity->pref;
                         $this->city = $entity->city;
                         $this->address = $entity->address;

@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Support\Repositories\Conditions;
 
 use App\Support\Traits\Assign;
@@ -28,7 +32,7 @@ class AbstractCondition
      *
      * @return bool ページング可能な場合 true を返します
      */
-    public function isPaging():bool
+    public function isPaging(): bool
     {
         if (empty($this->option)) {
             return false;

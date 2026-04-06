@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Domain\Client\Enums;
 
 use App\Support\Enums\Values;
@@ -18,8 +22,8 @@ enum ClientStatus: int
 {
     use Values;
 
-    case Inactive = 0;
-    case Active = 1;
-    case Suspended = 2;
-    case Closed = 3;
+    case Inactive = 1;
+    case Active = 2;
+    case Suspended = 3;
+    case Closed = 4;
 }

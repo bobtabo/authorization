@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\UseCases\Auth;
 
 use App\Domain\Staff\Condition\StaffCondition;
@@ -28,22 +32,23 @@ class AuthService extends AbstractService
 {
     public function __construct(
         private readonly StaffRepository $staffRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * ID でスタッフ（ログインユーザー）を取得します。
      *
-     * @param  AuthUserDto  $dto  認証ユーザーDTO
+     * @param AuthUserDto $dto 認証ユーザーDTO
      * @return StaffVo スタッフValueObject（found = false のとき未存在）
      */
     public function findUser(AuthUserDto $dto): StaffVo
     {
-        $vo = new StaffVo;
+        $vo = new StaffVo();
         if (empty($dto->id)) {
             return $vo;
         }
 
-        $condition = new StaffCondition;
+        $condition = new StaffCondition();
         $condition->id = $dto->id;
 
         $entity = $this->staffRepository->findById($condition);
@@ -57,7 +62,7 @@ class AuthService extends AbstractService
     /**
      * ソーシャル認証でログインします（未登録の場合は新規作成します）。
      *
-     * @param  SocialDto  $dto  ソーシャルDTO
+     * @param SocialDto $dto ソーシャルDTO
      * @return StaffVo スタッフValueObject
      * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
      */
@@ -67,9 +72,9 @@ class AuthService extends AbstractService
         $condition = SimpleMapper::map($dto, StaffCondition::class);
         $entity = $this->staffRepository->findByProvider($condition);
 
-        $vo = new StaffVo;
+        $vo = new StaffVo();
         if (empty($entity)) {
-            $newEntity = new Staff;
+            $newEntity = new Staff();
             $newEntity->assign($dto->attributes());
             $newEntity->role = StaffRole::Member;
             $newEntity->lastLoginAt = Carbon::now();

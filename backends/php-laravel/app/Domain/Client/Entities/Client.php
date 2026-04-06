@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Domain\Client\Entities;
 
 use App\Domain\Client\Enums\ClientStatus;
@@ -20,7 +24,7 @@ class Client extends AbstractEntity
 {
     public ?int $id = null;
     public ?string $name = null;
-    public ?string $identifer = null;
+    public ?string $identifier = null;
     public ?string $postCode = null;
     public ?string $pref = null;
     public ?string $city = null;

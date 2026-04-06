@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Domain\Client\ValueObjects;
 
 use App\Support\Mails\MailSend;
@@ -34,20 +38,20 @@ use Carbon\Carbon;
  */
 class ClientStoreVo extends MailSend
 {
-    private ?int $id = null;
-    private ?string $name = null;
-    private ?string $identifier = null;
-    private ?string $postCode = null;
-    private ?string $pref = null;
-    private ?string $city = null;
-    private ?string $address = null;
-    private ?string $building = null;
-    private ?string $tel = null;
-    private ?string $email = null;
-    private ?string $accessToken = null;
-    private ?int $status = null;
-    private ?Carbon $startAt = null;
-    private ?Carbon $stopAt = null;
-    private ?Carbon $createdAt = null;
-    private ?Carbon $updatedAt = null;
+    protected ?int $id = null;
+    protected ?string $name = null;
+    protected ?string $identifier = null;
+    protected ?string $postCode = null;
+    protected ?string $pref = null;
+    protected ?string $city = null;
+    protected ?string $address = null;
+    protected ?string $building = null;
+    protected ?string $tel = null;
+    protected ?string $email = null;
+    protected ?string $accessToken = null;
+    protected ?int $status = null;
+    protected ?Carbon $startAt = null;
+    protected ?Carbon $stopAt = null;
+    protected ?Carbon $createdAt = null;
+    protected ?Carbon $updatedAt = null;
 }

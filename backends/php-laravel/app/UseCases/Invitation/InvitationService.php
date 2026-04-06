@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\UseCases\Invitation;
 
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
@@ -21,22 +25,23 @@ use Random\RandomException;
 class InvitationService extends AbstractService
 {
     /**
-     * @param  InvitationRepositoryInterface  $invitations  招待Repository
+     * @param InvitationRepositoryInterface $invitations 招待Repository
      */
     public function __construct(
         private readonly InvitationRepositoryInterface $invitations,
-    ) {}
+    ) {
+    }
 
     /**
      * 現在の招待情報を取得します。
      *
-     * @param  InvitationDto  $dto  招待DTO
+     * @param InvitationDto $dto 招待DTO
      * @return InvitationVo 招待ValueObject
      */
     public function current(InvitationDto $dto): InvitationVo
     {
         unset($dto);
-        $vo = new InvitationVo;
+        $vo = new InvitationVo();
         $entity = $this->invitations->getCurrent();
         if ($entity === null) {
             return $vo;
@@ -52,7 +57,7 @@ class InvitationService extends AbstractService
     /**
      * 新しい招待を発行します。
      *
-     * @param  InvitationDto  $dto  招待DTO
+     * @param InvitationDto $dto 招待DTO
      * @return InvitationVo 招待ValueObject
      * @throws RandomException 乱数生成に失敗した場合（永続化実装に依存）
      */
@@ -61,7 +66,7 @@ class InvitationService extends AbstractService
         unset($dto);
         $entity = $this->invitations->issue();
 
-        return (new InvitationVo)->assign([
+        return (new InvitationVo())->assign([
             'found' => true,
             'url' => $entity->url,
             'token' => $entity->token,
@@ -71,14 +76,14 @@ class InvitationService extends AbstractService
     /**
      * 招待トークンから招待情報を解決します。
      *
-     * @param  InvitationDto  $dto  招待DTO
+     * @param InvitationDto $dto 招待DTO
      * @return InvitationVo 招待ValueObject
      */
     public function findByToken(InvitationDto $dto): InvitationVo
     {
-        $vo = new InvitationVo;
+        $vo = new InvitationVo();
         $token = $dto->token;
-        if (! is_string($token) || $token === '') {
+        if (!is_string($token) || $token === '') {
             return $vo;
         }
 

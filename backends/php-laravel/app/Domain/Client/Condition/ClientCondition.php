@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Domain\Client\Condition;
 
 use App\Domain\Client\Enums\ClientStatus;
@@ -17,8 +21,9 @@ use Carbon\Carbon;
  * @package App\Domain\Client\Condition
  */
 class ClientCondition extends AbstractCondition
-{    public ?string $name = null;
-    public ?string $identifer = null;
+{
+    public ?string $name = null;
+    public ?string $identifier = null;
     public ?string $postCode = null;
     public ?string $pref = null;
     public ?string $city = null;

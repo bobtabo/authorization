@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\UseCases\Staff;
 
 use App\Domain\Staff\Condition\StaffCondition;
@@ -27,27 +31,28 @@ use Illuminate\Database\QueryException;
 class StaffService extends AbstractService
 {
     /**
-     * @param  StaffRepository  $staffRepository  スタッフRepository
+     * @param StaffRepository $staffRepository スタッフRepository
      */
     public function __construct(
         private readonly StaffRepository $staffRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * ID でスタッフを1件取得します。
      *
-     * @param  StaffDto  $dto  スタッフDTO
+     * @param StaffDto $dto スタッフDTO
      * @return StaffResourceVo スタッフリソースValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function find(StaffDto $dto): StaffResourceVo
     {
-        $vo = new StaffResourceVo;
+        $vo = new StaffResourceVo();
         if ($dto->id === null) {
             return $vo;
         }
 
-        $condition = new StaffCondition;
+        $condition = new StaffCondition();
         $condition->id = $dto->id;
 
         $entity = $this->staffRepository->findById($condition);
@@ -63,20 +68,20 @@ class StaffService extends AbstractService
     /**
      * 条件でスタッフ一覧を取得します。
      *
-     * @param  StaffDto  $dto  スタッフDTO
+     * @param StaffDto $dto スタッフDTO
      * @return StaffListVo スタッフ一覧ValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function index(StaffDto $dto): StaffListVo
     {
-        $condition = new StaffCondition;
+        $condition = new StaffCondition();
         $condition->keyword = $dto->keyword;
         $condition->roles = $dto->roles;
         $condition->statuses = $dto->statuses;
 
         $list = $this->staffRepository->findByCondition($condition);
 
-        $vo = new StaffListVo;
+        $vo = new StaffListVo();
         $vo->assignStaff($list);
 
         return $vo;
@@ -85,13 +90,13 @@ class StaffService extends AbstractService
     /**
      * 権限を更新します。
      *
-     * @param  StaffDto  $dto  スタッフDTO
+     * @param StaffDto $dto スタッフDTO
      * @return StaffMutationVo スタッフ権限更新ValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function updateRole(StaffDto $dto): StaffMutationVo
     {
-        $vo = new StaffMutationVo;
+        $vo = new StaffMutationVo();
         if ($dto->id === null || $dto->role === null) {
             return $vo;
         }
@@ -110,13 +115,13 @@ class StaffService extends AbstractService
     /**
      * スタッフを論理削除します。
      *
-     * @param  StaffDto  $dto  スタッフDTO
+     * @param StaffDto $dto スタッフDTO
      * @return StaffRemoveVo スタッフ削除ValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function destroy(StaffDto $dto): StaffRemoveVo
     {
-        $vo = new StaffRemoveVo;
+        $vo = new StaffRemoveVo();
         if ($dto->id === null) {
             return $vo;
         }

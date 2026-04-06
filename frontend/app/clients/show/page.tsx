@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, X, Trash2, Play, Square } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
-import { getClient } from "@/src/api/clients";
+import { getClient, updateClient, deleteClient } from "@/src/api/clients";
 import { formatTimestamp } from "@/lib/format-datetime";
 
 type ClientStatus = "準備中" | "利用中" | "停止中" | "アーカイブ";
@@ -25,12 +25,6 @@ type ClientDetail = {
   createdAt: string;
   updatedAt: string;
 };
-
-function formatNowForDetail(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-}
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -62,7 +56,10 @@ function DetailRow({
   );
 }
 
+const STATUS_MAP: Record<number, ClientStatus> = { 1: "準備中", 2: "利用中", 3: "停止中", 4: "アーカイブ" };
+
 export default function ClientShowPage(): React.JSX.Element {
+  const [clientId, setClientId] = useState<number | null>(null);
   const [detail, setDetail] = useState<ClientDetail | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -72,12 +69,9 @@ export default function ClientShowPage(): React.JSX.Element {
   const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("id");
-    if (!id) return;
-    getClient(id).then((res) => {
+  const loadDetail = (id: number | string) => {
+    return getClient(id).then((res) => {
       const d = res as Record<string, unknown>;
-      const STATUS_MAP: Record<number, ClientStatus> = { 0: "準備中", 1: "利用中", 2: "停止中", 3: "アーカイブ" };
       setDetail({
         clientName: d.name as string,
         postalCode: d.post_code as string ?? "",
@@ -94,6 +88,13 @@ export default function ClientShowPage(): React.JSX.Element {
         updatedAt: formatTimestamp(d.updated_at as string),
       });
     });
+  };
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    setClientId(Number(id));
+    loadDetail(id);
   }, []);
 
   useEffect(() => {
@@ -102,49 +103,59 @@ export default function ClientShowPage(): React.JSX.Element {
     return () => clearTimeout(t);
   }, [toast]);
 
+  const buildUpdatePayload = (status: number) => ({
+    id: clientId,
+    name: detail?.clientName,
+    post_code: detail?.postalCode,
+    pref: detail?.prefecture,
+    city: detail?.city,
+    address: detail?.street,
+    building: detail?.building,
+    tel: detail?.tel,
+    email: detail?.email,
+    status,
+  });
+
   const handleDelete = () => {
+    if (!clientId) return;
     setDeleting(true);
-    setTimeout(() => {
+    deleteClient(clientId).then(() => {
+      window.location.href = "/clients";
+    }).catch(() => {
       setDeleting(false);
       setDeleteOpen(false);
-      setToast("削除しました（モック）");
-      setTimeout(() => {
-        window.location.href = "/clients";
-      }, 800);
-    }, 600);
+      setToast("削除に失敗しました。");
+    });
   };
 
   const handleStart = () => {
+    if (!clientId || !detail) return;
     setStarting(true);
-    setTimeout(() => {
-      const now = formatNowForDetail();
-      setStarting(false);
-      setStartOpen(false);
-      setDetail((prev) => prev ? {
-        ...prev,
-        status: "利用中",
-        startedAt: now,
-        stoppedAt: "—",
-        updatedAt: now,
-      } : prev);
-      setToast("利用を開始しました（モック）");
-    }, 600);
+    updateClient(clientId, buildUpdatePayload(2))
+      .then(() => loadDetail(clientId))
+      .then(() => {
+        setStarting(false);
+        setStartOpen(false);
+        setToast("利用を開始しました。");
+      }).catch(() => {
+        setStarting(false);
+        setToast("利用開始に失敗しました。");
+      });
   };
 
   const handleStop = () => {
+    if (!clientId || !detail) return;
     setStopping(true);
-    setTimeout(() => {
-      const now = formatNowForDetail();
-      setStopping(false);
-      setStopOpen(false);
-      setDetail((prev) => prev ? {
-        ...prev,
-        status: "停止中",
-        stoppedAt: now,
-        updatedAt: now,
-      } : prev);
-      setToast("利用を停止しました（モック）");
-    }, 600);
+    updateClient(clientId, buildUpdatePayload(3))
+      .then(() => loadDetail(clientId))
+      .then(() => {
+        setStopping(false);
+        setStopOpen(false);
+        setToast("利用を停止しました。");
+      }).catch(() => {
+        setStopping(false);
+        setToast("利用停止に失敗しました。");
+      });
   };
 
   return (
