@@ -79,6 +79,8 @@ package "2. Application Layer" #CFFAFE {
 package "3. Domain Layer" #FFFBEB {
     folder "Auth Domain" {
         [Auth Entity] <<Entity>>
+        interface "Auth Repository" <<Repository>>
+        [Auth Entity] -[hidden]right- "Auth Repository"
     }
     folder "Client Domain" {
         [Client Entity] <<Entity>>
@@ -107,6 +109,7 @@ package "4. Infrastructure Layer" #F1F5F9 {
 [Staff Service] -down-> "Staff Domain"
 
 ' 下向きで「実装」を示す（..|> の上向き矢印を避ける）
+"Auth Repository" ..> [Eloquent Implementation] : implements
 "Client Repository" ..> [Eloquent Implementation] : implements
 "Staff Repository" ..> [Eloquent Implementation] : implements
 [Eloquent Implementation] -down-> mysqlRedis
