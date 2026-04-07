@@ -1,10 +1,10 @@
 # AWS Lambda custom runtime (provided.al2023) 向けに bootstrap バイナリを生成する。
 # lambda.norpc: aws-lambda-go の RPC モードを使わず JSON 直列化で呼び出す（推奨タグ）。
 BINARY := bootstrap
-LOCAL_SERVER := local-server
+APIGW_EMULATOR := apigw-emulator
 ZIP := function.zip
 
-.PHONY: build build-HttpFunction build-arm64 build-local run-local zip zip-arm64 clean test
+.PHONY: build build-HttpFunction build-arm64 build-apigw-emulator run-apigw-emulator zip zip-arm64 clean test
 
 # SAM（BuildMethod: makefile）が呼ぶ想定のターゲット（template.yaml の HttpFunction に対応）
 build-HttpFunction: build
@@ -33,13 +33,13 @@ zip-arm64: build-arm64
 	rm -f $(ZIP)
 	zip $(ZIP) $(BINARY)
 
-# ローカル開発用サーバー（API Gateway エミュレーター）
-build-local:
-	go build -o $(LOCAL_SERVER) ./cmd/local-server
+# API Gateway エミュレーター（ローカル開発用）
+build-apigw-emulator:
+	go build -o $(APIGW_EMULATOR) ./cmd/apigw-emulator
 
-# PORT=8080 でローカルサーバーを起動する（Lambda コンテナは 9000 のまま）
-run-local: build-local
-	PORT=8080 ./$(LOCAL_SERVER)
+# PORT=8080 で API Gateway エミュレーターを起動する（Lambda コンテナは 9000 のまま）
+run-apigw-emulator: build-apigw-emulator
+	PORT=8080 ./$(APIGW_EMULATOR)
 
 clean:
-	rm -f $(BINARY) $(LOCAL_SERVER) $(ZIP)
+	rm -f $(BINARY) $(APIGW_EMULATOR) $(ZIP)

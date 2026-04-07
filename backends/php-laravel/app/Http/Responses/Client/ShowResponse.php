@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Http\Responses\Client;
 
 use App\Support\Http\Responses\AbstractResponse;
@@ -23,7 +27,7 @@ class ShowResponse extends AbstractResponse
     private ?int $id = null;
     private ?string $name = null;
     private ?string $identifier = null;
-    private ?string $post_code = null;
+    private ?string $postCode = null;
     private ?string $pref = null;
     private ?string $city = null;
     private ?string $address = null;

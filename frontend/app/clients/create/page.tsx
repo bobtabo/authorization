@@ -77,8 +77,10 @@ export default function ClientCreatePage(): React.JSX.Element {
       email,
     }).then(() => {
       setConfirmOpen(false);
+      sessionStorage.setItem("flashMessage", "クライアントを登録しました。");
       window.location.href = "/clients";
     }).catch(() => {
+      setConfirmOpen(false);
       setMessage("登録に失敗しました。");
     }).finally(() => {
       setSaving(false);
@@ -118,7 +120,7 @@ export default function ClientCreatePage(): React.JSX.Element {
           >
             <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
               {message && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3">
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
                   {message}
                 </div>
               )}

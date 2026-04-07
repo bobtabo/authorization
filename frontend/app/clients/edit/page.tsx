@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, Save, X } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
@@ -23,6 +23,7 @@ export default function ClientEditPage(): React.JSX.Element {
   const [saving, setSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
+  const userChangedPostal = useRef(false);
 
   const handleTelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digitsOnly = e.target.value.replace(/\D/g, "");
@@ -31,6 +32,7 @@ export default function ClientEditPage(): React.JSX.Element {
 
   const handlePostalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value.replace(/\D/g, "");
+    userChangedPostal.current = true;
     setPostalCode(v.slice(0, 7));
   };
 
@@ -57,13 +59,14 @@ export default function ClientEditPage(): React.JSX.Element {
   useEffect(() => {
     if (postcodeRows.length === 0) {
       const digits = postalCode.replace(/\D/g, "");
-      if (digits.length < 7) {
+      if (digits.length < 7 && userChangedPostal.current) {
         setPrefecture("");
         setCity("");
         setCityChoiceIndex(0);
       }
       return;
     }
+    if (!userChangedPostal.current) return;
     setPrefecture(postcodeRows[0].pref);
     setCityChoiceIndex(0);
     setCity(formatCityWard(postcodeRows[0]));
@@ -96,8 +99,10 @@ export default function ClientEditPage(): React.JSX.Element {
       email,
     }).then(() => {
       setConfirmOpen(false);
-      window.location.href = `/clients/show?id=${clientId}`;
+      sessionStorage.setItem("flashMessage", "クライアントを更新しました。");
+      window.location.href = "/clients";
     }).catch(() => {
+      setConfirmOpen(false);
       setMessage("更新に失敗しました。");
     }).finally(() => {
       setSaving(false);
@@ -137,7 +142,7 @@ export default function ClientEditPage(): React.JSX.Element {
           >
             <form onSubmit={handleSubmit} className="px-6 py-6 space-y-5">
               {message && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3">
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
                   {message}
                 </div>
               )}

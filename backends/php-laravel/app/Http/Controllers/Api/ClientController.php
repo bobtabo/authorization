@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -95,7 +99,7 @@ class ClientController extends Controller
         $response->assign($value->attributes());
 
         //アクセストークンをメール送信します
-        send_mail($value->getEmail(), new DefaultMail($value));
+        send_mail($value->getTo(), new DefaultMail($value));
 
         return response()->json($response->attributes(), 201);
     }

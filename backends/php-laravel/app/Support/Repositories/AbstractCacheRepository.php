@@ -1,9 +1,14 @@
 <?php
+
 /**
+ *
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Support\Repositories;
 
 use App\Support\Repositories\Cache\CacheKey;

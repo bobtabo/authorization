@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace App\Console\Commands\Make;
 
 use Illuminate\Console\GeneratorCommand;

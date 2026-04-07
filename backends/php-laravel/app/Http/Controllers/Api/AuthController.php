@@ -1,9 +1,12 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
@@ -81,7 +84,7 @@ class AuthController extends Controller
             return response()->json(['message' => '招待が無効です。'], 404);
         }
 
-        $response = new AuthInvitationResponse;
+        $response = new AuthInvitationResponse();
         $response->assign($vo->attributes());
 
         return response()->json($response->attributes());
@@ -92,8 +95,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function googleRedirect(
-    ): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    public function googleRedirect(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->stateless()->redirect();
     }
@@ -104,8 +106,8 @@ class AuthController extends Controller
      * @param AuthService $auth 認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $service
-    ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
+    public function googleCallback(AuthService $service): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+    {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 

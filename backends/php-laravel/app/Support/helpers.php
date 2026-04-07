@@ -1,9 +1,12 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
 
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Mail;

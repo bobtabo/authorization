@@ -18,6 +18,8 @@ import {
   Building2,
   Eraser,
   Filter,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
@@ -31,10 +33,10 @@ import { formatTimestamp } from "@/lib/format-datetime";
 type Status = "準備中" | "利用中" | "停止中" | "アーカイブ";
 
 const STATUS_MAP: Record<number, Status> = {
-  0: "準備中",
-  1: "利用中",
-  2: "停止中",
-  3: "アーカイブ",
+  1: "準備中",
+  2: "利用中",
+  3: "停止中",
+  4: "アーカイブ",
 };
 
 interface ClientType {
@@ -57,6 +59,8 @@ type SortOrder = "asc" | "desc";
 export default function ClientsPage(): React.JSX.Element {
   const [clients, setClients] = useState<ClientType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [flashMessage, setFlashMessage] = useState<string | null>(null);
+  const [flashVisible, setFlashVisible] = useState<boolean>(false);
   const [query, setQuery] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -67,6 +71,21 @@ export default function ClientsPage(): React.JSX.Element {
   const [statusFilterOpen, setStatusFilterOpen] = useState<boolean>(false);
   const [startedFromDate, setStartedFromDate] = useState<string>("");
   const [startedToDate, setStartedToDate] = useState<string>("");
+
+  useEffect(() => {
+    const msg = sessionStorage.getItem("flashMessage");
+    if (msg) {
+      sessionStorage.removeItem("flashMessage");
+      setFlashMessage(msg);
+      setFlashVisible(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!flashMessage || !flashVisible) return;
+    const timer = setTimeout(() => setFlashVisible(false), 2000);
+    return () => clearTimeout(timer);
+  }, [flashMessage, flashVisible]);
 
   useEffect(() => {
     getClients().then((res) => {
@@ -527,6 +546,35 @@ export default function ClientsPage(): React.JSX.Element {
 
       <ConsoleFooter />
 
+      {flashMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            opacity: flashVisible ? 1 : 0,
+            transition: "opacity 0.4s ease-in-out",
+            zIndex: 50,
+          }}
+          onTransitionEnd={(e) => {
+            if (e.propertyName === "opacity" && !flashVisible) {
+              setFlashMessage(null);
+            }
+          }}
+          className="flex items-center gap-3 bg-white border border-emerald-200 text-emerald-800 text-sm font-medium px-4 py-3 rounded-xl shadow-lg"
+        >
+          <CheckCircle2 size={18} className="shrink-0 text-emerald-500" />
+          {flashMessage}
+          <button
+            type="button"
+            onClick={() => setFlashVisible(false)}
+            className="ml-1 text-emerald-400 hover:text-emerald-600"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
