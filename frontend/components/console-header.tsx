@@ -56,6 +56,7 @@ export function ConsoleHeader(): React.JSX.Element {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [notifLoading, setNotifLoading] = useState<boolean>(false);
+  const [allLoaded, setAllLoaded] = useState<boolean>(false);
 
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const settingsMenuRef = useRef<HTMLDivElement | null>(null);
@@ -71,9 +72,9 @@ export function ConsoleHeader(): React.JSX.Element {
       .catch(() => {});
   }, []);
 
-  const fetchNotifications = useCallback(() => {
+  const fetchNotifications = useCallback((limit?: number) => {
     setNotifLoading(true);
-    getNotifications()
+    getNotifications(limit != null ? { limit } : undefined)
       .then((res) => {
         const data = res as { items: Array<Record<string, unknown>> };
         setNotifications((data.items ?? []).map(mapNotification));
@@ -90,6 +91,7 @@ export function ConsoleHeader(): React.JSX.Element {
   // 通知パネルを開いたときに一覧を取得
   useEffect(() => {
     if (notificationOpen) {
+      setAllLoaded(false);
       fetchNotifications();
     }
   }, [notificationOpen, fetchNotifications]);
@@ -252,7 +254,7 @@ export function ConsoleHeader(): React.JSX.Element {
                       <button
                         type="button"
                         onClick={() => setShowUnreadOnly((prev) => !prev)}
-                        className={`text-xs font-medium ${
+                        className={`cursor-pointer text-xs font-medium ${
                           showUnreadOnly
                             ? "text-indigo-700"
                             : "text-gray-500 hover:text-gray-700"
@@ -263,7 +265,7 @@ export function ConsoleHeader(): React.JSX.Element {
                       <button
                         type="button"
                         onClick={handleMarkAllRead}
-                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium disabled:text-gray-400"
+                        className="cursor-pointer text-xs text-indigo-600 hover:text-indigo-700 font-medium disabled:text-gray-400 disabled:cursor-default"
                         disabled={unreadCount === 0}
                       >
                         全既読
@@ -271,7 +273,7 @@ export function ConsoleHeader(): React.JSX.Element {
                       <span className="text-xs text-gray-500">未読 {unreadCount}件</span>
                     </div>
                   </div>
-                  <div className="max-h-80 overflow-y-auto">
+                  <div className={`overflow-y-auto ${allLoaded ? "max-h-[32rem]" : "max-h-80"}`}>
                     {notifLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -285,8 +287,8 @@ export function ConsoleHeader(): React.JSX.Element {
                         <div
                           key={item.id}
                           onClick={() => item.unread && handleMarkRead(item.id)}
-                          className={`px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${
-                            item.unread ? "cursor-pointer" : "opacity-60"
+                          className={`cursor-pointer px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${
+                            item.unread ? "" : "opacity-60"
                           }`}
                         >
                           <div className="flex items-start gap-2">
@@ -313,14 +315,20 @@ export function ConsoleHeader(): React.JSX.Element {
                       ))
                     )}
                   </div>
-                  <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
-                    <a
-                      href="#"
-                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
-                    >
-                      全て表示
-                    </a>
-                  </div>
+                  {!allLoaded && (
+                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAllLoaded(true);
+                          fetchNotifications(9999);
+                        }}
+                        className="cursor-pointer text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        全て表示
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

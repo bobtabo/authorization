@@ -46,12 +46,9 @@ class NotificationController extends Controller
         $cursor = $request->query('cursor');
         $cursor = is_string($cursor) && $cursor !== '' ? $cursor : null;
 
-        $limit = (int) $request->query('limit', 20);
+        $limit = (int) $request->query('limit', config('authorization.app.notification_default_limit'));
         if ($limit < 1) {
             $limit = 1;
-        }
-        if ($limit > 100) {
-            $limit = 100;
         }
 
         $dto = new NotificationDto;
