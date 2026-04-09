@@ -45,7 +45,7 @@ class CacheNotificationRepository extends AbstractCacheRepository implements Not
      * {@inheritdoc}
      */
     #[\Override]
-    public function bulkMarkRead(int $staffId, ?array $ids, bool $all): int
+    public function bulkMarkRead(int $staffId, array $ids, bool $all): int
     {
         // TODO: Implement bulkMarkRead() method.
         return 0;

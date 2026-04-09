@@ -30,23 +30,23 @@ class GateController extends Controller
     /**
      * クライアント会員向け JWT を発行する応答を返します。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  GateService  $gate  ゲートユースケース
+     * @param AppRequest $request HTTP リクエスト
+     * @param GateService $gate ゲートユースケース
      * @return JsonResponse JSON レスポンス
      */
     public function issue(AppRequest $request, GateService $gate): JsonResponse
     {
         $member = $request->query('member');
-        if (! is_string($member) || $member === '') {
+        if (!is_string($member) || $member === '') {
             return response()->json(['message' => 'member を指定してください。'], 400);
         }
 
-        $dto = new GateIssueDto;
+        $dto = new GateIssueDto();
         $dto->memberId = $member;
 
         $vo = $gate->issueToken($dto);
 
-        $response = new GateIssueResponse;
+        $response = new GateIssueResponse();
         $response->assign($vo->attributes());
 
         return response()->json($response->attributes());
@@ -55,25 +55,25 @@ class GateController extends Controller
     /**
      * JWT を検証し Payload 相当の応答を返します。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  GateService  $gate  ゲートユースケース
-     * @param  string  $identifier  クライアント識別名
+     * @param AppRequest $request HTTP リクエスト
+     * @param GateService $gate ゲートユースケース
+     * @param string $identifier クライアント識別名
      * @return JsonResponse JSON レスポンス
      */
     public function verify(AppRequest $request, GateService $gate, string $identifier): JsonResponse
     {
         $token = $request->query('token');
-        if (! is_string($token) || $token === '') {
+        if (!is_string($token) || $token === '') {
             return response()->json(['message' => 'token を指定してください。'], 400);
         }
 
-        $dto = new GateVerifyDto;
+        $dto = new GateVerifyDto();
         $dto->identifier = $identifier;
         $dto->token = $token;
 
         $vo = $gate->verify($dto);
 
-        $response = new GateVerifyResponse;
+        $response = new GateVerifyResponse();
         $response->assign($vo->attributes());
 
         return response()->json($response->attributes());

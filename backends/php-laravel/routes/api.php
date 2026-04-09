@@ -53,5 +53,5 @@ Route::get('gate/client/{identifier}/verify', [GateController::class, 'verify'])
 Route::get('notifications/counts', [NotificationController::class, 'counts']);
 Route::get('notifications', [NotificationController::class, 'index']);
 Route::post('notifications', [NotificationController::class, 'store']);
-Route::patch('notifications', [NotificationController::class, 'bulkPatch']);
-Route::patch('notifications/{id}', [NotificationController::class, 'update'])->whereNumber('id');
+Route::patch('notifications', [NotificationController::class, 'readAll']);
+Route::patch('notifications/{id}', [NotificationController::class, 'read'])->whereNumber('id');

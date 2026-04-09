@@ -17,8 +17,8 @@ import { useUser } from "@/lib/user-context";
 import {
   getNotificationCounts,
   getNotifications,
-  patchNotificationsBulk,
-  patchNotification,
+  readAllNotifications,
+  readNotification,
 } from "@/src/api/notifications";
 
 const TONE_MAP: Record<number, "info" | "warn" | "ok"> = { 1: "info", 2: "warn", 3: "ok" };
@@ -98,7 +98,7 @@ export function ConsoleHeader(): React.JSX.Element {
 
   const handleMarkAllRead = () => {
     if (!staffId || unreadCount === 0) return;
-    patchNotificationsBulk({ all: true }, staffId)
+    readAllNotifications({ all: true }, staffId)
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
         setUnreadCount(0);
@@ -108,7 +108,7 @@ export function ConsoleHeader(): React.JSX.Element {
 
   const handleMarkRead = (id: number) => {
     if (!staffId) return;
-    patchNotification(id, { read: true }, staffId)
+    readNotification(id, { read: true }, staffId)
       .then(() => {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, unread: false } : n))

@@ -12,16 +12,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Domain\Staff\Enums\StaffRole;
 use App\Http\Controllers\Controller;
-use App\Http\Responses\Staff\StaffDestroyResponse;
-use App\Http\Responses\Staff\StaffIndexResponse;
 use App\Http\Requests\Staff\DestroyRequest;
 use App\Http\Requests\Staff\RestoreRequest;
 use App\Http\Requests\Staff\UpdateRoleRequest;
+use App\Http\Responses\Staff\StaffDestroyResponse;
+use App\Http\Responses\Staff\StaffIndexResponse;
 use App\Http\Responses\Staff\StaffUpdateRoleResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Staff\Dtos\StaffDto;
 use App\UseCases\Staff\StaffService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 /**
  * スタッフControllerクラスです。
@@ -78,7 +79,9 @@ class StaffController extends Controller
         $dto->assign($request->input());
         $dto->role = $role->value;
 
-        $vo = $staff->updateRole($dto);
+        $vo = DB::transaction(function () use ($staff, $dto) {
+            return $staff->updateRole($dto);
+        });
         if (!$vo->isOk()) {
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }
@@ -92,17 +95,19 @@ class StaffController extends Controller
     /**
      * スタッフの論理削除を復元します。
      *
-     * @param AppRequest $request HTTP リクエスト
+     * @param RestoreRequest $request HTTP リクエスト
      * @param StaffService $staff スタッフユースケース
      * @param int $id スタッフID
-     * @return JsonResponse JSON レスポンス
+     * @return JsonResponse JSONレスポンス
      */
     public function restore(RestoreRequest $request, StaffService $staff, int $id): JsonResponse
     {
         $dto = new StaffDto();
         $dto->assign($request->input());
 
-        $vo = $staff->restore($dto);
+        $vo = DB::transaction(function () use ($staff, $dto) {
+            return $staff->restore($dto);
+        });
         if (!$vo->isOk()) {
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }
@@ -113,17 +118,20 @@ class StaffController extends Controller
     /**
      * スタッフを論理削除します。
      *
-     * @param AppRequest $request HTTP リクエスト
+     * @param DestroyRequest $request HTTPリクエスト
      * @param StaffService $staff スタッフユースケース
      * @param int $id スタッフID
-     * @return JsonResponse JSON レスポンス
+     * @return JsonResponse JSONレスポンス
+     * @throws \Throwable
      */
     public function destroy(DestroyRequest $request, StaffService $staff, int $id): JsonResponse
     {
         $dto = new StaffDto();
         $dto->assign($request->input());
 
-        $vo = $staff->destroy($dto);
+        $vo = DB::transaction(function () use ($staff, $dto) {
+            return $staff->destroy($dto);
+        });
         if (!$vo->isOk()) {
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }

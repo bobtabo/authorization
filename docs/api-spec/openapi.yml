@@ -599,7 +599,8 @@ paths:
           description: サーバーエラー
 
     patch:
-      summary: 一括既読更新
+      operationId: readAllNotifications
+      summary: 全通知を既読にする
       description: |
         複数通知を一括で既読などの状態に更新する。
 
@@ -658,11 +659,10 @@ paths:
         description: 通知 ID
 
     patch:
-      summary: 単一通知の状態更新（既読等）
+      operationId: readNotification
+      summary: 通知を既読にする
       description: |
-        1件の通知に対する部分更新（既読フラグなど）。
-
-        **モダンな点:** Partial Update（差分更新）の原則に従う。
+        1件の通知を既読にする。
       tags:
         - notifications
       security:

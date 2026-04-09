@@ -23,7 +23,6 @@ use App\UseCases\Client\ClientService;
 use App\UseCases\Client\Dtos\ClientDto;
 use App\UseCases\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -37,8 +36,8 @@ class ClientController extends Controller
     /**
      * クライアント一覧を検索して返します。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  ClientService  $service  クライアントユースケース
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントユースケース
      * @return JsonResponse JSON レスポンス
      */
     public function index(AppRequest $request, ClientService $service): JsonResponse
@@ -57,8 +56,8 @@ class ClientController extends Controller
     /**
      * クライアント詳細を返します。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  ClientService  $service  クライアントユースケース
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントユースケース
      * @return JsonResponse JSON レスポンス
      */
     public function show(AppRequest $request, ClientService $service): JsonResponse
@@ -82,15 +81,20 @@ class ClientController extends Controller
     /**
      * クライアントを登録します。
      *
-     * @param  StoreClientRequest  $request  登録内容
-     * @param  ClientService  $service  クライアントユースケース
+     * @param StoreClientRequest $request 登録内容
+     * @param ClientService $service クライアントユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function store(StoreClientRequest $request, ClientService $service, NotificationService $notifications): JsonResponse
-    {
+    public function store(
+        StoreClientRequest $request,
+        ClientService $service,
+        NotificationService $notifications
+    ): JsonResponse {
+        $executorId = $this->staffIdFromCookie($request);
+
         $dto = new ClientDto();
         $dto->assign($request->input());
-        $dto->executorId = $this->executorId();
+        $dto->executorId = $executorId;
 
         $value = DB::transaction(function () use ($service, $dto) {
             return $service->store($dto);
@@ -104,7 +108,7 @@ class ClientController extends Controller
             title: '新しいクライアントが登録されました',
             message: $value->getName() ?? '',
             messageType: 1,
-            executorId: $dto->executorId ?? 0,
+            executorId: $executorId ?? 0,
         );
 
         //アクセストークンをメール送信します
@@ -116,17 +120,19 @@ class ClientController extends Controller
     /**
      * クライアントを更新します。
      *
-     * @param  UpdateClientRequest  $request  更新内容
-     * @param  ClientService  $service  クライアントユースケース
+     * @param UpdateClientRequest $request 更新内容
+     * @param ClientService $service クライアントユースケース
      * @return JsonResponse JSON レスポンス
      */
     public function update(UpdateClientRequest $request, ClientService $service): JsonResponse
     {
         $dto = new ClientDto();
         $dto->assign($request->input());
-        $dto->executorId = $this->executorId();
+        $dto->executorId = $this->staffIdFromCookie($request);
 
-        $value = $service->update($dto);
+        $value = DB::transaction(function () use ($service, $dto) {
+            return $service->update($dto);
+        });
 
         $response = new StoreResponse();
         $response->assign($value->attributes(), [
@@ -142,9 +148,9 @@ class ClientController extends Controller
     /**
      * クライアントを論理削除します。
      *
-     * @param  AppRequest  $request  HTTP リクエスト
-     * @param  ClientService  $service  クライアントユースケース
-     * @param  int  $id  クライアントID
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントユースケース
+     * @param int $id クライアントID
      * @return JsonResponse JSON レスポンス
      */
     public function destroy(AppRequest $request, ClientService $service, int $id): JsonResponse
@@ -152,22 +158,14 @@ class ClientController extends Controller
         $dto = new ClientDto();
         $dto->assign($request->input());
         $dto->id = $id;
-        $dto->executorId = $this->executorId();
+        $dto->executorId = $this->staffIdFromCookie($request);
 
-        $service->destroy($dto);
+        DB::transaction(function () use ($service, $dto) {
+            $service->destroy($dto);
+        });
 
         $response = new DestroyResponse();
 
         return response()->json($response->attributes());
-    }
-
-    /**
-     * @return int|null 未ログイン等のときは null（0 に落とさない）
-     */
-    private function executorId(): ?int
-    {
-        $id = Auth::id();
-
-        return $id !== null ? (int) $id : null;
     }
 }

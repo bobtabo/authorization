@@ -27,11 +27,11 @@ class NotificationDto extends AbstractDto
     public int $limit = 20;
 
     /**
-     * 一括更新対象の通知 ID（null は ids 未指定）。
+     * 一括更新対象の通知 ID（空配列は ids 未指定）。
      *
-     * @var list<int>|null
+     * @var list<int>
      */
-    public ?array $ids = null;
+    public array $ids = [];
 
     public bool $all = false;
 

@@ -93,7 +93,8 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function googleRedirect(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    public function googleRedirect(
+    ): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->stateless()->redirect();
     }
@@ -104,8 +105,8 @@ class AuthController extends Controller
      * @param AuthService $auth 認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $service): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
-    {
+    public function googleCallback(AuthService $service
+    ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
@@ -125,7 +126,15 @@ class AuthController extends Controller
 
             $secure = config('app.env') === 'production';
             return redirect(config('authorization.app.frontend_url') . '/clients')
-                ->cookie('staff_id', (string)$vo->getId(), config('authorization.app.staff_cookie_lifetime'), '/', null, $secure, true);
+                ->cookie(
+                    'staff_id',
+                    (string)$vo->getId(),
+                    config('authorization.app.staff_cookie_lifetime'),
+                    '/',
+                    null,
+                    $secure,
+                    true
+                );
         } catch (Exception $e) {
             Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
             return redirect(config('authorization.app.frontend_url') . '/error?code=500');
@@ -175,5 +184,4 @@ class AuthController extends Controller
         return response()->json(['message' => 'SUCCESS'])
             ->cookie(\Cookie::forget('staff_id'));
     }
-
 }

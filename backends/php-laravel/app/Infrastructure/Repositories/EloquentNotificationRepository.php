@@ -42,7 +42,7 @@ class EloquentNotificationRepository implements NotificationRepository
                     $q->where('created_at', '<', $cursorCreatedAt)
                         ->orWhere(function ($q2) use ($cursorCreatedAt, $cursorId) {
                             $q2->where('created_at', '=', $cursorCreatedAt)
-                                ->where('id', '<', (int) $cursorId);
+                                ->where('id', '<', (int)$cursorId);
                         });
                 });
             }
@@ -58,7 +58,7 @@ class EloquentNotificationRepository implements NotificationRepository
             $nextCursor = base64_encode($last->created_at->format('Y-m-d H:i:s') . ',' . $last->id);
         }
 
-        $entities = $items->map(fn ($model) => (new Entity())->assign($model->toArray()))->values()->all();
+        $entities = $items->map(fn($model) => (new Entity())->assign($model->toArray()))->values()->all();
 
         return [
             'items' => $entities,
@@ -86,13 +86,13 @@ class EloquentNotificationRepository implements NotificationRepository
      * {@inheritdoc}
      */
     #[\Override]
-    public function bulkMarkRead(int $staffId, ?array $ids, bool $all): int
+    public function bulkMarkRead(int $staffId, array $ids, bool $all): int
     {
         $query = Model::query()
             ->where('staff_id', $staffId)
             ->where('read', false);
 
-        if (!$all && $ids !== null && $ids !== []) {
+        if (!$all && $ids !== []) {
             $query->whereIn('id', $ids);
         }
 
