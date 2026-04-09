@@ -6,6 +6,8 @@
 return [
     //フロントエンドURL
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    //スタッフクッキー有効期間（分）
+    'staff_cookie_lifetime' => (int)env('STAFF_COOKIE_LIFETIME', 60 * 24 * 7),
     //キャッシュPrefix
     'cache_prefix' => env('CACHE_PREFIX'),
     //クエリーキャッシュ

@@ -18,7 +18,7 @@ use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Gate\StubJwtIssuer;
 use App\Infrastructure\Gate\StubJwtVerifier;
-use App\Infrastructure\Repositories\CacheNotificationRepository;
+use App\Infrastructure\Repositories\EloquentNotificationRepository;
 use App\Infrastructure\Repositories\EloquentClientEloquentRepository;
 use App\Infrastructure\Repositories\EloquentInvitationEloquentRepository;
 use App\Infrastructure\Repositories\EloquentStaffEloquentRepository;
@@ -48,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ClientRepository::class, EloquentClientEloquentRepository::class);
         $this->app->bind(StaffRepository::class, EloquentStaffEloquentRepository::class);
         $this->app->bind(InvitationRepositoryInterface::class, EloquentInvitationEloquentRepository::class);
-        $this->app->bind(NotificationRepository::class, CacheNotificationRepository::class);
+        $this->app->bind(NotificationRepository::class, EloquentNotificationRepository::class);
         $this->app->bind(JwtIssuerInterface::class, StubJwtIssuer::class);
         $this->app->bind(JwtVerifierInterface::class, StubJwtVerifier::class);
 

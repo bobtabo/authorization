@@ -115,6 +115,30 @@ class EloquentStaffEloquentRepository extends AbstractEloquentRepository impleme
      * {@inheritdoc}
      */
     #[\Override]
+    public function restoreById(int $id): bool
+    {
+        $model = Model::withTrashed()->find($id);
+        if ($model === null || !$model->trashed()) {
+            return false;
+        }
+        return (bool) $model->restore();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function findAllActive(): Collection
+    {
+        return $this->findByQuery(
+            Model::query()->select('staffs.*')
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
     protected function getModel(): Model
     {
         return new Model();

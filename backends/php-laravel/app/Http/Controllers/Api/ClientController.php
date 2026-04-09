@@ -21,6 +21,7 @@ use App\Support\Http\Requests\AppRequest;
 use App\Support\Mails\DefaultMail;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Client\Dtos\ClientDto;
+use App\UseCases\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,12 +43,12 @@ class ClientController extends Controller
      */
     public function index(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto;
+        $dto = new ClientDto();
         $dto->assign($request->input());
 
         $value = $service->getClients($dto);
 
-        $response = new IndexResponse;
+        $response = new IndexResponse();
         $response->assign($value->attributes());
 
         return response()->json($response->attributes());
@@ -62,12 +63,12 @@ class ClientController extends Controller
      */
     public function show(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto;
+        $dto = new ClientDto();
         $dto->assign($request->input());
 
         $value = $service->show($dto);
 
-        $response = new ShowResponse;
+        $response = new ShowResponse();
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
@@ -85,9 +86,9 @@ class ClientController extends Controller
      * @param  ClientService  $service  クライアントユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function store(StoreClientRequest $request, ClientService $service): JsonResponse
+    public function store(StoreClientRequest $request, ClientService $service, NotificationService $notifications): JsonResponse
     {
-        $dto = new ClientDto;
+        $dto = new ClientDto();
         $dto->assign($request->input());
         $dto->executorId = $this->executorId();
 
@@ -95,8 +96,16 @@ class ClientController extends Controller
             return $service->store($dto);
         });
 
-        $response = new StoreResponse;
+        $response = new StoreResponse();
         $response->assign($value->attributes());
+
+        // 全スタッフへ通知を配信
+        $notifications->fanOut(
+            title: '新しいクライアントが登録されました',
+            message: $value->getName() ?? '',
+            messageType: 1,
+            executorId: $dto->executorId ?? 0,
+        );
 
         //アクセストークンをメール送信します
         send_mail($value->getTo(), new DefaultMail($value));
@@ -113,13 +122,13 @@ class ClientController extends Controller
      */
     public function update(UpdateClientRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto;
+        $dto = new ClientDto();
         $dto->assign($request->input());
         $dto->executorId = $this->executorId();
 
         $value = $service->update($dto);
 
-        $response = new StoreResponse;
+        $response = new StoreResponse();
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
@@ -140,14 +149,14 @@ class ClientController extends Controller
      */
     public function destroy(AppRequest $request, ClientService $service, int $id): JsonResponse
     {
-        $dto = new ClientDto;
+        $dto = new ClientDto();
         $dto->assign($request->input());
         $dto->id = $id;
         $dto->executorId = $this->executorId();
 
         $service->destroy($dto);
 
-        $response = new DestroyResponse;
+        $response = new DestroyResponse();
 
         return response()->json($response->attributes());
     }

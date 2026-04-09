@@ -13,7 +13,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * 招待Migrationクラスです。
+ * 通知Migrationクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
@@ -23,17 +23,21 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('invitations', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('token')->comment('トークン');
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->integer('staff_id')->unsigned()->comment('スタッフID');
+            $table->integer('message_type')->unsigned()->comment('メッセージ種類');
+            $table->string('title', 255)->comment('タイトル');
+            $table->string('message', 512)->comment('メッセージ');
+            $table->tinyInteger('read')->unsigned()->default(0)->comment('既読');
             $table->timestamp('created_at')->useCurrent()->comment('登録日時');
             $table->integer('created_by')->unsigned()->comment('登録者ID');
             $table->timestamp('updated_at')->useCurrent()->comment('更新日時');
             $table->integer('updated_by')->unsigned()->comment('更新者ID');
             $table->timestamp('deleted_at')->nullable()->comment('削除日時');
             $table->integer('deleted_by')->unsigned()->nullable()->comment('削除者ID');
-            $table->integer('version')->unsigned()->default(1)->comment('バージョン');
-            $table->unique(['token'], 'invitations_token_unique');
+            $table->integer('version')->unsigned()->comment('バージョン');
+            $table->foreign('staff_id')->references('id')->on('staffs');
         });
     }
 
@@ -42,6 +46,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('invitations');
+        Schema::dropIfExists('notifications');
     }
 };

@@ -42,4 +42,9 @@ class StaffDto extends AbstractDto
      * 権限更新時の権限コード（{@see \App\Domain\Staff\Enums\StaffRole} の値）。
      */
     public ?int $role = null;
+
+    /**
+     * 操作を実行したスタッフID。
+     */
+    public ?int $executorId = null;
 }

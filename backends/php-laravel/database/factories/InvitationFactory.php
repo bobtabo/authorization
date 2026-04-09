@@ -1,12 +1,16 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Database\Factories;
 
-use App\Infrastructure\Persistence\Eloquent\Models\Invitation as Model;
+use App\Infrastructure\Models\Invitation as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,17 +27,21 @@ class InvitationFactory extends Factory
     protected $model = Model::class;
 
     /**
-     * モデル生成用のデフォルト属性を返します。
-     *
      * {@inheritdoc}
-     *
-     * @return array<string, mixed> 属性の連想配列
      */
     #[\Override]
     public function definition(): array
     {
         return [
-            //
+            'id' => '',
+            'token' => '',
+            'created_at' => '',
+            'created_by' => '',
+            'updated_at' => '',
+            'updated_by' => '',
+            'deleted_at' => '',
+            'deleted_by' => '',
+            'version' => '',
         ];
     }
 }

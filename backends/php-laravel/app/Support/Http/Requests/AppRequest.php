@@ -58,32 +58,22 @@ class AppRequest extends FormRequest
      * {@inheritdoc}
      */
     #[\Override]
+    public function all($keys = null)
+    {
+        $all = parent::all($keys);
+        return array_merge($all, $this->getExtendValue());
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
     public function input($key = null, $default = null)
     {
-        $inputs = parent::input($key, $default);
-
-        $result = [];
-        foreach ($inputs as $inputKey => $value) {
-            //ハイフン区切りのリクエストキーは除外します
-            if (str($inputKey)->contains('-')) {
-                continue;
-            }
-            $result[$inputKey] = $value;
+        if ($key !== null) {
+            return parent::input($key, $default);
         }
-
-        $agent = new Agent();
-        $result += [
-            'device' => $agent->device(),
-            'platform' => $agent->platform(),
-            'browser' => $agent->browser(),
-            'user_agent' => $agent->getUserAgent(),
-        ];
-
-        if (!Arr::has($result, 'id') && !empty($this->route('id'))) {
-            $result['id'] = $this->route('id');
-        }
-
-        return $result;
+        return array_merge(parent::input(), $this->getExtendValue());
     }
 
     /**
@@ -98,5 +88,30 @@ class AppRequest extends FormRequest
             ->redirectTo($this->getRedirectUrl());
 
         throw $exception;
+    }
+
+    /**
+     * 拡張データを取得します。
+     *
+     * @return array 拡張データ
+     */
+    protected function getExtendValue(): array
+    {
+        $agent = new Agent();
+        $result = [
+            'device' => $agent->device(),
+            'platform' => $agent->platform(),
+            'browser' => $agent->browser(),
+            'user_agent' => $agent->getUserAgent(),
+        ];
+
+        if (!Arr::has($result, 'id') && !empty($this->route('id'))) {
+            $result['id'] = $this->route('id');
+        }
+
+        $value = $this->header('X-Executor-Id');
+        $result['executor_id'] = ($value !== null && $value !== '') ? (int)$value : null;
+
+        return $result;
     }
 }

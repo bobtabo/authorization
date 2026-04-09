@@ -17,8 +17,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -40,6 +39,7 @@ return new class extends Migration
             $table->timestamp('deleted_at')->nullable()->comment('削除日時');
             $table->integer('deleted_by')->unsigned()->nullable()->comment('削除者ID');
             $table->integer('version')->unsigned()->default(1)->comment('バージョン');
+            $table->unique(['email'], 'staffs_email_unique');
         });
     }
 

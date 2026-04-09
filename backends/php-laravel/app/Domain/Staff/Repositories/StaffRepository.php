@@ -73,4 +73,19 @@ interface StaffRepository
      * @return bool 対象が存在して削除できた場合 true
      */
     public function deleteById(int $id, int $executorId): bool;
+
+    /**
+     * スタッフの論理削除を復元します。
+     *
+     * @param  int  $id  スタッフID
+     * @return bool 対象が存在して復元できた場合 true
+     */
+    public function restoreById(int $id): bool;
+
+    /**
+     * 有効なスタッフ全件を取得します（論理削除済み除外）。
+     *
+     * @return Collection スタッフエンティティのコレクション
+     */
+    public function findAllActive(): Collection;
 }

@@ -10,16 +10,16 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Infrastructure\Models\Staff as Model;
+use App\Infrastructure\Models\Notification as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * スタッフFactoryクラスです。
+ * 通知Factoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Factories
  */
-class StaffFactory extends Factory
+class NotificationFactory extends Factory
 {
     /**
      * @var string モデル
@@ -34,13 +34,11 @@ class StaffFactory extends Factory
     {
         return [
             'id' => '',
-            'name' => '',
-            'email' => '',
-            'provider' => '',
-            'provider_id' => '',
-            'avatar' => '',
-            'role' => '',
-            'last_login_at' => '',
+            'staff_id' => '',
+            'message_type' => '',
+            'title' => '',
+            'message' => '',
+            'read' => '',
             'created_at' => '',
             'created_by' => '',
             'updated_at' => '',

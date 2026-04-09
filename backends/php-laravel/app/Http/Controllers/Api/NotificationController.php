@@ -38,6 +38,11 @@ class NotificationController extends Controller
      */
     public function index(AppRequest $request, NotificationService $notifications): JsonResponse
     {
+        $staffId = $this->staffIdFromCookie($request);
+        if (empty($staffId)) {
+            return response()->json(['message' => '未認証です。'], 401);
+        }
+
         $cursor = $request->query('cursor');
         $cursor = is_string($cursor) && $cursor !== '' ? $cursor : null;
 
@@ -50,6 +55,7 @@ class NotificationController extends Controller
         }
 
         $dto = new NotificationDto;
+        $dto->staffId = (int) $staffId;
         $dto->cursor = $cursor;
         $dto->limit = $limit;
 
@@ -89,14 +95,19 @@ class NotificationController extends Controller
      */
     public function bulkPatch(AppRequest $request, NotificationService $notifications): JsonResponse
     {
+        $staffId = $request->all()['executor_id'] ?? null;
+        if (empty($staffId)) {
+            return response()->json(['message' => '未認証です。'], 401);
+        }
+
         $validated = $request->validate([
             'ids' => 'sometimes|array',
-            'ids.*' => 'string',
+            'ids.*' => 'integer',
             'all' => 'sometimes|boolean',
         ]);
 
         $ids = isset($validated['ids']) && is_array($validated['ids'])
-            ? array_values(array_filter($validated['ids'], static fn ($v) => is_string($v) && $v !== ''))
+            ? array_values(array_filter(array_map('intval', $validated['ids']), static fn ($v) => $v > 0))
             : null;
         $all = (bool) ($validated['all'] ?? false);
 
@@ -105,6 +116,7 @@ class NotificationController extends Controller
         }
 
         $dto = new NotificationDto;
+        $dto->staffId = (int) $staffId;
         $dto->ids = $ids;
         $dto->all = $all;
 
@@ -125,7 +137,15 @@ class NotificationController extends Controller
      */
     public function counts(AppRequest $request, NotificationService $notifications): JsonResponse
     {
-        $vo = $notifications->counts(new NotificationDto);
+        $staffId = $this->staffIdFromCookie($request);
+        if (empty($staffId)) {
+            return response()->json(['message' => '未認証です。'], 401);
+        }
+
+        $dto = new NotificationDto;
+        $dto->staffId = (int) $staffId;
+
+        $vo = $notifications->counts($dto);
 
         $response = new CountsResponse;
         $response->assign($vo->attributes());
@@ -138,10 +158,10 @@ class NotificationController extends Controller
      *
      * @param  AppRequest  $request  HTTP リクエスト
      * @param  NotificationService  $notifications  通知ユースケース
-     * @param  string  $id  通知ID（UUID）
+     * @param  int  $id  通知ID
      * @return JsonResponse JSON レスポンス
      */
-    public function update(AppRequest $request, NotificationService $notifications, string $id): JsonResponse
+    public function update(AppRequest $request, NotificationService $notifications, int $id): JsonResponse
     {
         $attributes = $request->all();
 

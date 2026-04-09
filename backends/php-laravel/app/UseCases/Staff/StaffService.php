@@ -131,4 +131,24 @@ class StaffService extends AbstractService
 
         return $vo;
     }
+
+    /**
+     * スタッフの論理削除を復元します。
+     *
+     * @param StaffDto $dto スタッフDTO
+     * @return StaffRemoveVo スタッフ復元ValueObject
+     * @throws QueryException 永続化層のクエリに失敗した場合
+     */
+    public function restore(StaffDto $dto): StaffRemoveVo
+    {
+        $vo = new StaffRemoveVo();
+        if ($dto->id === null) {
+            return $vo;
+        }
+
+        $ok = $this->staffRepository->restoreById($dto->id);
+        $vo->assign(['ok' => $ok, 'id' => $dto->id]);
+
+        return $vo;
+    }
 }

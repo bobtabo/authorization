@@ -20,6 +20,8 @@ use App\Support\Dtos\AbstractDto;
  */
 class NotificationDto extends AbstractDto
 {
+    public ?int $staffId = null;
+
     public ?string $cursor = null;
 
     public int $limit = 20;
@@ -27,13 +29,13 @@ class NotificationDto extends AbstractDto
     /**
      * 一括更新対象の通知 ID（null は ids 未指定）。
      *
-     * @var list<string>|null
+     * @var list<int>|null
      */
     public ?array $ids = null;
 
     public bool $all = false;
 
-    public ?string $notificationId = null;
+    public ?int $notificationId = null;
 
     /**
      * 単一通知の部分更新内容。
