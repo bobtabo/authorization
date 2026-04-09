@@ -52,6 +52,9 @@ export function UserProvider({ children }: { children: React.ReactNode }): React
         if (status === 401) {
           localStorage.removeItem(USER_CACHE_KEY);
           setUser(null);
+          if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
+          }
         }
       });
   }, []);
