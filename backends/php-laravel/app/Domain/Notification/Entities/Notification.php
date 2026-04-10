@@ -21,5 +21,9 @@ use App\Support\Entities\AbstractEntity;
 class Notification extends AbstractEntity
 {
     public ?int $id = null;
-    public ?string $token = null;
+    public ?int $staffId = null;
+    public ?int $messageType = null;
+    public ?string $title = null;
+    public ?string $message = null;
+    public ?bool $read = null;
 }

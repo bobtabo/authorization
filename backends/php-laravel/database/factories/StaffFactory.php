@@ -1,12 +1,16 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Database\Factories;
 
-use App\Infrastructure\Persistence\Eloquent\Models\Staff as Model;
+use App\Infrastructure\Models\Staff as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,17 +27,26 @@ class StaffFactory extends Factory
     protected $model = Model::class;
 
     /**
-     * モデル生成用のデフォルト属性を返します。
-     *
      * {@inheritdoc}
-     *
-     * @return array<string, mixed> 属性の連想配列
      */
     #[\Override]
     public function definition(): array
     {
         return [
-            //
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'provider' => 1,
+            'provider_id' => $this->faker->numerify('##########'),
+            'avatar' => null,
+            'role' => 1,
+            'last_login_at' => now(),
+            'created_at' => now(),
+            'created_by' => 1,
+            'updated_at' => now(),
+            'updated_by' => 1,
+            'deleted_at' => null,
+            'deleted_by' => null,
+            'version' => 1,
         ];
     }
 }

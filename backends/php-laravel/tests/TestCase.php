@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
 namespace Tests;
 
 use App\Support\Tests\CreatesApplication;
@@ -70,6 +71,18 @@ abstract class TestCase extends BaseTestCase
         $method = $this->reflectionMethod($class, $method);
         $instance = $useApp ? new $class($this->app) : new $class();
         return $method->invokeArgs($instance, $args);
+    }
+
+    /**
+     * テスト用 staff_id クッキーを生成します。
+     * テストフレームワークが withCookies 送信前に encrypt() するため、平文で渡します。
+     *
+     * @param int $staffId スタッフID
+     * @return array<string, string> クッキー配列
+     */
+    protected function staffCookies(int $staffId): array
+    {
+        return ['staff_id' => (string)$staffId];
     }
 
     /**

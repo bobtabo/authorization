@@ -6,6 +6,10 @@
 return [
     //フロントエンドURL
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    //スタッフクッキー有効期間（分）
+    'staff_cookie_lifetime' => (int)env('STAFF_COOKIE_LIFETIME', 60 * 24 * 7),
+    //通知一覧デフォルト取得件数
+    'notification_default_limit' => 10,
     //キャッシュPrefix
     'cache_prefix' => env('CACHE_PREFIX'),
     //クエリーキャッシュ

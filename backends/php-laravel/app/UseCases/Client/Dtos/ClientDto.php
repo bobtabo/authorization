@@ -32,17 +32,17 @@ class ClientDto extends AbstractDto
     public ?string $startTo = null;
 
     /**
-     * 一覧検索用の状態コード（複数）。未指定は null（無条件）。
+     * 一覧検索用の状態コード（複数）。空配列は無条件。
      *
-     * @var list<int>|null
+     * @var list<int>
      */
-    public ?array $statuses = null;
+    public array $statuses = [];
 
     public ?string $name = null;
 
     public ?string $identifier = null;
 
-    public ?string $post_code = null;
+    public ?string $postCode = null;
 
     public ?string $pref = null;
 

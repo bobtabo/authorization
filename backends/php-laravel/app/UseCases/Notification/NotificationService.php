@@ -15,6 +15,7 @@ use App\Domain\Notification\ValueObjects\NotificationBulkPatchVo;
 use App\Domain\Notification\ValueObjects\NotificationCountsVo;
 use App\Domain\Notification\ValueObjects\NotificationListVo;
 use App\Domain\Notification\ValueObjects\NotificationPatchVo;
+use App\Domain\Staff\Repositories\StaffRepository;
 use App\Support\Services\AbstractService;
 use App\UseCases\Notification\Dtos\NotificationDto;
 
@@ -28,9 +29,11 @@ class NotificationService extends AbstractService
 {
     /**
      * @param NotificationRepository $notifications 通知Repository
+     * @param StaffRepository $staffs スタッフRepository
      */
     public function __construct(
         private readonly NotificationRepository $notifications,
+        private readonly StaffRepository $staffs,
     ) {
     }
 
@@ -44,7 +47,7 @@ class NotificationService extends AbstractService
     {
         $limit = max(1, min(100, $dto->limit));
 
-        $page = $this->notifications->listPage($dto->cursor, $limit);
+        $page = $this->notifications->listPage((int) $dto->staffId, $dto->cursor, $limit);
 
         return (new NotificationListVo())->assign($page);
     }
@@ -57,9 +60,7 @@ class NotificationService extends AbstractService
      */
     public function counts(NotificationDto $dto): NotificationCountsVo
     {
-        unset($dto);
-
-        return (new NotificationCountsVo())->assign($this->notifications->counts());
+        return (new NotificationCountsVo())->assign($this->notifications->counts((int) $dto->staffId));
     }
 
     /**
@@ -70,9 +71,26 @@ class NotificationService extends AbstractService
      */
     public function bulkMarkRead(NotificationDto $dto): NotificationBulkPatchVo
     {
-        $updated = $this->notifications->bulkMarkRead($dto->ids, $dto->all);
+        $updated = $this->notifications->bulkMarkRead((int) $dto->staffId, $dto->ids, $dto->all);
 
         return (new NotificationBulkPatchVo())->assign(['updated' => $updated]);
+    }
+
+    /**
+     * 有効なスタッフ全員へ通知を配信します（ファンアウト）。
+     *
+     * @param string $title タイトル
+     * @param string $message メッセージ
+     * @param int $messageType メッセージ種類（1=info / 2=warn / 3=ok）
+     * @param int $executorId 登録者ID
+     * @return void
+     */
+    public function fanOut(string $title, string $message, int $messageType, int $executorId): void
+    {
+        $staffs = $this->staffs->findAllActive();
+        foreach ($staffs as $staff) {
+            $this->notifications->store($staff->id, $messageType, $title, $message, $executorId);
+        }
     }
 
     /**
@@ -85,7 +103,7 @@ class NotificationService extends AbstractService
     {
         $vo = new NotificationPatchVo();
         $id = $dto->notificationId;
-        if (!is_string($id) || $id === '') {
+        if ($id === null || $id <= 0) {
             return $vo;
         }
 

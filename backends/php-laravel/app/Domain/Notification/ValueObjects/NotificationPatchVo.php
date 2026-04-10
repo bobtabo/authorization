@@ -25,5 +25,5 @@ class NotificationPatchVo extends AbstractValueObject
 
     private bool $ok = false;
     private string $message = 'SUCCESS';
-    private string $id = '';
+    private int $id = 0;
 }

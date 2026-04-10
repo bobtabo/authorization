@@ -32,7 +32,9 @@ class StaffApiMapper
             'name' => $staff->name,
             'email' => $staff->email,
             'role' => $staff->role instanceof StaffRole ? $staff->role->value : $staff->role,
-            'status' => $staff->status instanceof StaffStatus ? $staff->status->value : ($staff->status ?? StaffStatus::Active->value),
+            'status' => $staff->deletedAt === null ? StaffStatus::Active->value : StaffStatus::Inactive->value,
+            'created_at' => $staff->createdAt?->format('Y-m-d H:i'),
+            'updated_at' => $staff->updatedAt?->format('Y-m-d H:i'),
         ];
     }
 }

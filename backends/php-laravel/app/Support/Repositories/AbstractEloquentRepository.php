@@ -84,14 +84,14 @@ abstract class AbstractEloquentRepository
      * 論理削除します。
      *
      * @param int $id プライマリキー値
-     * @param int|null $deletedId 削除実行者ID
+     * @param int|null $deletedBy 削除実行者ID
      * @param string|null $column 検索カラム
      * @return bool 処理結果
      */
-    public function delete(int $id, ?int $deletedId, ?string $column = null): bool
+    public function delete(int $id, ?int $deletedBy, ?string $column = null): bool
     {
-        if (empty($deletedId)) {
-            throw new SystemException(SystemException::GENERAL, [ '削除実行者IDが指定されていません。' ]);
+        if (empty($deletedBy)) {
+            throw new SystemException(SystemException::GENERAL, ['削除実行者IDが指定されていません。']);
         }
 
         $model = $this->getModel();
@@ -104,7 +104,7 @@ abstract class AbstractEloquentRepository
 
         $models = $query->get();
         foreach ($models as $model) {
-            $model->deleted_id = $deletedId;
+            $model->deleted_by = $deletedBy;
             $model->delete();
         }
 
@@ -203,7 +203,7 @@ abstract class AbstractEloquentRepository
     public function findByPk(int $id, ?Builder $query = null): ?Entity
     {
         $model = $this->getModel();
-        $cache = CacheKey::getCacheKeyByModel($model, [ $id ]);
+        $cache = CacheKey::getCacheKeyByModel($model, [$id]);
         $modelValue = RedisModelCache::get($cache);
 
         // キャッシュヒットでも __PHP_Incomplete_Class になる場合は DB 検索します

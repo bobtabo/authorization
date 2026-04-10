@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { UserAvatar } from "@/components/user-avatar";
+import { getStaffs, updateStaffRole, deleteStaff, restoreStaff } from "@/src/api/staff";
+import { getAuthMe } from "@/src/api/auth";
+import { ConsoleFooter } from "@/components/console-footer";
 
 type StaffActive = "有効" | "無効";
 type StaffRole = "管理者" | "メンバー";
@@ -58,21 +61,24 @@ function RoleSegmentSwitch({
   role,
   onChange,
   ariaLabel,
+  disabled = false,
 }: {
   role: StaffRole;
   onChange: (r: StaffRole) => void;
   ariaLabel: string;
+  disabled?: boolean;
 }): React.JSX.Element {
   return (
     <div
-      className="inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm"
+      className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
       role="group"
       aria-label={ariaLabel}
     >
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange("メンバー")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 ${
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
           role === "メンバー"
             ? `${getRoleBadgeClass("メンバー")} shadow-sm`
             : segmentInactive
@@ -82,8 +88,9 @@ function RoleSegmentSwitch({
       </button>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange("管理者")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 ${
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
           role === "管理者"
             ? `${getRoleBadgeClass("管理者")} shadow-sm`
             : segmentInactive
@@ -99,21 +106,24 @@ function ActiveSegmentSwitch({
   active,
   onChange,
   ariaLabel,
+  disabled = false,
 }: {
   active: StaffActive;
   onChange: (a: StaffActive) => void;
   ariaLabel: string;
+  disabled?: boolean;
 }): React.JSX.Element {
   return (
     <div
-      className="inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm"
+      className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
       role="group"
       aria-label={ariaLabel}
     >
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange("無効")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 ${
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
           active === "無効"
             ? `${getActiveBadgeClass("無効")} shadow-sm`
             : segmentInactive
@@ -123,8 +133,9 @@ function ActiveSegmentSwitch({
       </button>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange("有効")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 ${
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
           active === "有効"
             ? `${getActiveBadgeClass("有効")} shadow-sm`
             : segmentInactive
@@ -136,9 +147,15 @@ function ActiveSegmentSwitch({
   );
 }
 
+const ROLE_MAP: Record<number, StaffRole> = { 1: "管理者", 2: "メンバー" };
+const STATUS_MAP: Record<number, StaffActive> = { 1: "有効", 0: "無効" };
+const ROLE_VALUE: Record<StaffRole, number> = { 管理者: 1, メンバー: 2 };
+
 export default function StaffPage(): React.JSX.Element {
   const [staff, setStaff] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [myStaffId, setMyStaffId] = useState<number | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [query, setQuery] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -149,91 +166,54 @@ export default function StaffPage(): React.JSX.Element {
   const [selectedRoleFilters, setSelectedRoleFilters] = useState<StaffRole[]>([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setStaff([
-        {
-          id: 1,
-          name: "山田 太郎",
-          email: "yamada@example.com",
-          active: "有効",
-          role: "管理者",
-          createdAt: "2026-01-15 09:30",
-          updatedAt: "2026-01-20 10:00",
-        },
-        {
-          id: 2,
-          name: "佐藤 花子",
-          email: "sato@example.com",
-          active: "有効",
-          role: "メンバー",
-          createdAt: "2026-01-20 14:00",
-          updatedAt: "2026-01-20 14:00",
-        },
-        {
-          id: 3,
-          name: "鈴木 一郎",
-          email: "suzuki@example.com",
-          active: "無効",
-          role: "メンバー",
-          createdAt: "2026-02-01 11:00",
-          updatedAt: "2026-02-05 09:00",
-        },
-        {
-          id: 4,
-          name: "田中 美咲",
-          email: "tanaka@example.com",
-          active: "有効",
-          role: "管理者",
-          createdAt: "2026-02-05 15:30",
-          updatedAt: "2026-03-01 18:00",
-        },
-        {
-          id: 5,
-          name: "伊藤 健",
-          email: "ito@example.com",
-          active: "有効",
-          role: "メンバー",
-          createdAt: "2026-02-10 09:00",
-          updatedAt: "2026-02-15 10:00",
-        },
-        {
-          id: 6,
-          name: "渡辺 直子",
-          email: "watanabe@example.com",
-          active: "無効",
-          role: "管理者",
-          createdAt: "2026-02-15 13:00",
-          updatedAt: "2026-02-20 16:00",
-        },
-        {
-          id: 7,
-          name: "中村 翔",
-          email: "nakamura@example.com",
-          active: "有効",
-          role: "メンバー",
-          createdAt: "2026-02-20 10:30",
-          updatedAt: "2026-02-25 09:00",
-        },
-        {
-          id: 8,
-          name: "小林 誠",
-          email: "kobayashi@example.com",
-          active: "有効",
-          role: "メンバー",
-          createdAt: "2026-03-01 08:00",
-          updatedAt: "2026-03-01 08:00",
-        },
-      ]);
-      setLoading(false);
-    }, 800);
+    getAuthMe()
+      .then((res) => {
+        const me = res as Record<string, unknown>;
+        setMyStaffId(me.staff_id as number);
+      })
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  useEffect(() => {
+    getStaffs()
+      .then((res) => {
+        const data = res as { items: Array<Record<string, unknown>> };
+        setStaff(
+          data.items.map((row) => ({
+            id: row.id as number,
+            name: row.name as string,
+            email: row.email as string,
+            role: ROLE_MAP[row.role as number] ?? "メンバー",
+            active: STATUS_MAP[row.status as number] ?? "有効",
+            createdAt: (row.created_at as string | null) ?? "",
+            updatedAt: (row.updated_at as string | null) ?? "",
+          }))
+        );
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const setStaffRowActive = (id: number, active: StaffActive) => {
-    setStaff((prev) => prev.map((a) => (a.id === id ? { ...a, active } : a)));
+    const prev = staff.find((a) => a.id === id)?.active;
+    setStaff((s) => s.map((a) => (a.id === id ? { ...a, active } : a)));
+    const apiCall =
+      active === "無効" ? deleteStaff(id, myStaffId) : restoreStaff(id, myStaffId);
+    apiCall.catch(() => {
+      if (prev !== undefined) {
+        setStaff((s) => s.map((a) => (a.id === id ? { ...a, active: prev } : a)));
+      }
+    });
   };
 
   const setStaffRowRole = (id: number, role: StaffRole) => {
-    setStaff((prev) => prev.map((a) => (a.id === id ? { ...a, role } : a)));
+    const prev = staff.find((a) => a.id === id)?.role;
+    setStaff((s) => s.map((a) => (a.id === id ? { ...a, role } : a)));
+    updateStaffRole(id, { role: ROLE_VALUE[role] }, myStaffId).catch(() => {
+      // 失敗時はロールバック
+      if (prev !== undefined) {
+        setStaff((s) => s.map((a) => (a.id === id ? { ...a, role: prev } : a)));
+      }
+    });
   };
 
   const handleSort = (key: SortKey) => {
@@ -550,6 +530,7 @@ export default function StaffPage(): React.JSX.Element {
                                   role={row.role}
                                   onChange={(r) => setStaffRowRole(row.id, r)}
                                   ariaLabel={`${row.name}の権限`}
+                                  disabled={authLoading || row.id === myStaffId}
                                 />
                               </div>
                             </td>
@@ -565,6 +546,7 @@ export default function StaffPage(): React.JSX.Element {
                                   active={row.active}
                                   onChange={(a) => setStaffRowActive(row.id, a)}
                                   ariaLabel={`${row.name}の状態`}
+                                  disabled={authLoading || row.id === myStaffId}
                                 />
                               </div>
                             </td>
@@ -636,9 +618,7 @@ export default function StaffPage(): React.JSX.Element {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 bg-white py-6 text-center text-xs text-gray-400">
-        © 2026 Authorization Console. All rights reserved.
-      </footer>
+      <ConsoleFooter />
     </div>
   );
 }

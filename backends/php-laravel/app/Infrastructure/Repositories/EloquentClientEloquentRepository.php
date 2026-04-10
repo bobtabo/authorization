@@ -57,7 +57,7 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
     public function findById(ClientCondition $condition): ?Entity
     {
         /** @var Entity $result */
-        $result = $this->findByPk($condition->id);
+        $result = $this->findByPk($condition->id, Model::withTrashed()->newQuery());
         return $result;
     }
 

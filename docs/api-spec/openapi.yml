@@ -319,6 +319,12 @@ paths:
             type: integer
             format: int64
           description: スタッフID
+        - name: X-Executor-Id
+          in: header
+          required: false
+          schema:
+            type: integer
+          description: 操作を実行したスタッフID
       requestBody:
         required: true
         content:
@@ -331,7 +337,7 @@ paths:
                 role:
                   type: integer
                   format: int64
-                  description: 権限種別
+                  description: 権限種別（1=管理者、2=メンバー）
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -346,13 +352,13 @@ paths:
         '400':
           description: リクエストが不正です
         '404':
-          description: ユーザーが存在しない場合のエラー
+          description: スタッフが存在しない場合のエラー
         '500':
           description: サーバーエラー
 
-  /staffs/{id}/delete:
-    delete:
-      summary: スタッフを削除
+  /staffs/{id}/restore:
+    patch:
+      summary: スタッフの論理削除を復元します
       tags:
         - staff
       parameters:
@@ -363,6 +369,12 @@ paths:
             type: integer
             format: int64
           description: スタッフID
+        - name: X-Executor-Id
+          in: header
+          required: false
+          schema:
+            type: integer
+          description: 操作を実行したスタッフID
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -371,9 +383,46 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: "SUCCESS"
+                  ok:
+                    type: boolean
+                  id:
+                    type: integer
+                    format: int64
+        '404':
+          description: スタッフが存在しない場合のエラー
+
+  /staffs/{id}/delete:
+    delete:
+      summary: スタッフを論理削除します
+      tags:
+        - staff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: スタッフID
+        - name: X-Executor-Id
+          in: header
+          required: false
+          schema:
+            type: integer
+          description: 操作を実行したスタッフID
+      responses:
+        '200':
+          description: 成功時にレスポンスを返します。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  id:
+                    type: integer
+                    format: int64
         '404':
           description: スタッフが存在しない場合のエラー
 
@@ -550,7 +599,8 @@ paths:
           description: サーバーエラー
 
     patch:
-      summary: 一括既読更新
+      operationId: readAllNotifications
+      summary: 全通知を既読にする
       description: |
         複数通知を一括で既読などの状態に更新する。
 
@@ -609,11 +659,10 @@ paths:
         description: 通知 ID
 
     patch:
-      summary: 単一通知の状態更新（既読等）
+      operationId: readNotification
+      summary: 通知を既読にする
       description: |
-        1件の通知に対する部分更新（既読フラグなど）。
-
-        **モダンな点:** Partial Update（差分更新）の原則に従う。
+        1件の通知を既読にする。
       tags:
         - notifications
       security:
@@ -817,111 +866,17 @@ components:
       items:
         $ref: '#/components/schemas/Client'
 
-    StaffStatusOption:
-      type: object
-      description: 状態の1選択肢（連想配列）
-      required:
-        - value
-        - label
-      properties:
-        value:
-          type: integer
-          format: int64
-          description: 状態コード（例：1=有効、0=無効）
-          example: 1
-        label:
-          type: string
-          description: 表示ラベル
-          example: "有効"
-
-    StaffStatus:
-      type: object
-      description: |
-        状態。現在値に加え、取り得る選択肢を choices で返す（UI のプルダウン等に利用）。
-      required:
-        - value
-        - label
-        - choices
-      properties:
-        value:
-          type: integer
-          format: int64
-          description: 現在の状態コード
-          example: 1
-        label:
-          type: string
-          description: 現在の状態の表示ラベル
-          example: "有効"
-        choices:
-          type: array
-          description: 選択可能な状態の一覧（各要素は value / label のオブジェクト）
-          items:
-            $ref: '#/components/schemas/StaffStatusOption'
-          example:
-            - value: 1
-              label: "有効"
-            - value: 0
-              label: "無効"
-
-    StaffRoleOption:
-      type: object
-      description: 権限の1選択肢（連想配列）
-      required:
-        - value
-        - label
-      properties:
-        value:
-          type: integer
-          format: int64
-          description: 権限コード（例：1=管理者、2=メンバー）
-          example: 1
-        label:
-          type: string
-          description: 表示ラベル
-          example: "管理者"
-
-    StaffRole:
-      type: object
-      description: |
-        スタッフの権限。現在値に加え、取り得る選択肢を choices で返す。
-      required:
-        - value
-        - label
-        - choices
-      properties:
-        value:
-          type: integer
-          format: int64
-          description: 現在の権限コード
-          example: 1
-        label:
-          type: string
-          description: 現在の権限の表示ラベル
-          example: "管理者"
-        choices:
-          type: array
-          description: 選択可能な権限の一覧（各要素は value / label のオブジェクト）
-          items:
-            $ref: '#/components/schemas/StaffRoleOption'
-          example:
-            - value: 1
-              label: "管理者"
-            - value: 2
-              label: "メンバー"
-
     Staff:
       type: object
-      description: |
-        スタッフ一覧の1行です。active / role はフラットな enum ではなく、
-        現在値と選択肢一覧を含むオブジェクトで返す。
+      description: スタッフ一覧の1行です。
       required:
         - id
         - name
         - email
-        - active
         - role
-        - createdAt
-        - updatedAt
+        - status
+        - created_at
+        - updated_at
       properties:
         id:
           type: integer
@@ -935,46 +890,33 @@ components:
           type: string
           format: email
           example: "yamada@example.com"
-        active:
-          $ref: '#/components/schemas/StaffStatus'
         role:
-          $ref: '#/components/schemas/StaffRole'
-        createdAt:
+          type: integer
+          description: 権限コード（1=管理者、2=メンバー）
+          example: 1
+        status:
+          type: integer
+          description: 状態コード（1=有効、0=無効。deleted_at の有無で算出）
+          example: 1
+        created_at:
           type: string
-          description: 登録日時（表示形式はAPI実装に依存）
+          description: 登録日時（Y-m-d H:i 形式）
           example: "2026-01-15 09:30"
-        updatedAt:
+        updated_at:
           type: string
-          description: 更新日時（表示形式はAPI実装に依存）
+          description: 更新日時（Y-m-d H:i 形式）
           example: "2026-01-20 10:00"
-      example:
-        id: 1
-        name: "山田 太郎"
-        email: "yamada@example.com"
-        active:
-          value: 1
-          label: "有効"
-          choices:
-            - value: 1
-              label: "有効"
-            - value: 0
-              label: "無効"
-        role:
-          value: 1
-          label: "管理者"
-          choices:
-            - value: 1
-              label: "管理者"
-            - value: 2
-              label: "メンバー"
-        createdAt: "2026-01-15 09:30"
-        updatedAt: "2026-01-20 10:00"
 
     StaffList:
-      type: array
-      description: スタッフのリストです。
-      items:
-        $ref: '#/components/schemas/Staff'
+      type: object
+      description: スタッフ一覧レスポンス
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Staff'
 
     Payload:
       type: object

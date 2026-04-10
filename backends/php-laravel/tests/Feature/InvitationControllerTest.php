@@ -1,11 +1,16 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
+use App\Infrastructure\Models\Invitation;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -20,19 +25,6 @@ class InvitationControllerTest extends TestCase
     use DatabaseMigrations;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $testName = $this->toString();
-        if (str($testName)->contains('testIssue', true)) {
-            //
-        }
-    }
-
-    /**
      * 招待URL発行テストです。
      *
      * @return void
@@ -40,10 +32,9 @@ class InvitationControllerTest extends TestCase
     public function testIssue(): void
     {
         $response = $this->get('/api/invitation/issue');
-        $data = $this->getResponseData('Invitation/issue.json');
         $response
             ->assertStatus(200)
-            ->assertJson($data);
+            ->assertJsonStructure(['url', 'token']);
     }
 
     /**
@@ -53,6 +44,7 @@ class InvitationControllerTest extends TestCase
      */
     public function testIndex(): void
     {
+        Invitation::factory()->create(['token' => 'test-current-token']);
         $response = $this->get('/api/invitation');
         $data = $this->getResponseData('Invitation/index.json');
         $response

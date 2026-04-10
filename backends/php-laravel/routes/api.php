@@ -37,6 +37,7 @@ Route::delete('clients/{id}/delete', [ClientController::class, 'destroy'])->wher
 // --- staffs ---
 Route::get('staffs', [StaffController::class, 'index']);
 Route::patch('staffs/{id}/updateRole', [StaffController::class, 'updateRole'])->whereNumber('id');
+Route::patch('staffs/{id}/restore', [StaffController::class, 'restore'])->whereNumber('id');
 Route::delete('staffs/{id}/delete', [StaffController::class, 'destroy'])->whereNumber('id');
 
 // --- invitation（/invitation/issue を先に）---
@@ -48,9 +49,9 @@ Route::get('gate/issue', [GateController::class, 'issue'])->middleware('auth:san
 Route::get('gate/client/{identifier}/verify', [GateController::class, 'verify'])
     ->where('identifier', '[a-zA-Z0-9._-]+');
 
-// --- notifications（OpenAPI: POST トリガー以外は主に bearerAuth）---
-Route::get('notifications/counts', [NotificationController::class, 'counts'])->middleware('auth:sanctum');
-Route::get('notifications', [NotificationController::class, 'index'])->middleware('auth:sanctum');
+// --- notifications（認証は X-Executor-Id ヘッダーでコントローラー側が処理）---
+Route::get('notifications/counts', [NotificationController::class, 'counts']);
+Route::get('notifications', [NotificationController::class, 'index']);
 Route::post('notifications', [NotificationController::class, 'store']);
-Route::patch('notifications', [NotificationController::class, 'bulkPatch'])->middleware('auth:sanctum');
-Route::patch('notifications/{id}', [NotificationController::class, 'update'])->middleware('auth:sanctum')->whereUuid('id');
+Route::patch('notifications', [NotificationController::class, 'readAll']);
+Route::patch('notifications/{id}', [NotificationController::class, 'read'])->whereNumber('id');

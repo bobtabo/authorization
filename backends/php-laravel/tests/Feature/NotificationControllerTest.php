@@ -1,11 +1,17 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
+use App\Infrastructure\Models\Notification;
+use App\Infrastructure\Models\Staff;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -20,26 +26,14 @@ class NotificationControllerTest extends TestCase
     use DatabaseMigrations;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $testName = $this->toString();
-        if (str($testName)->contains('testCounts', true)) {
-            //
-        }
-    }
-
-    /**
      * 通知件数集計取得テストです。
      *
      * @return void
      */
     public function testCounts(): void
     {
-        $response = $this->get('/api/notifications/counts');
+        $response = $this->withCookies($this->staffCookies(1))
+            ->get('/api/notifications/counts');
         $data = $this->getResponseData('Notification/counts.json');
         $response
             ->assertStatus(200)
@@ -54,7 +48,8 @@ class NotificationControllerTest extends TestCase
     public function testIndex(): void
     {
         $params = $this->getRequestParams('Notification/index.json');
-        $response = $this->get('/api/notifications', $params);
+        $response = $this->withCookies($this->staffCookies(1))
+            ->get('/api/notifications', $params);
         $data = $this->getResponseData('Notification/index.json');
         $response
             ->assertStatus(200)
@@ -77,14 +72,15 @@ class NotificationControllerTest extends TestCase
     }
 
     /**
-     * 通知一括更新テストです。
+     * 通知一括既読テストです。
      *
      * @return void
      */
     public function testBulkPatch(): void
     {
         $params = $this->getRequestParams('Notification/bulkPatch.json');
-        $response = $this->patch('/api/notifications', $params);
+        $response = $this->withHeader('X-Executor-Id', '1')
+            ->patch('/api/notifications', $params);
         $data = $this->getResponseData('Notification/bulkPatch.json');
         $response
             ->assertStatus(200)
@@ -92,14 +88,16 @@ class NotificationControllerTest extends TestCase
     }
 
     /**
-     * 単一通知更新テストです。
+     * 単一通知既読テストです。
      *
      * @return void
      */
     public function testUpdate(): void
     {
+        $staff = Staff::factory()->create();
+        $notification = Notification::factory()->create(['staff_id' => $staff->id]);
         $params = $this->getRequestParams('Notification/update.json');
-        $id = '00000000-0000-0000-0000-000000000001';
+        $id = $notification->id;
         $response = $this->patch("/api/notifications/{$id}", $params);
         $data = $this->getResponseData('Notification/update.json');
         $response

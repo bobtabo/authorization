@@ -72,14 +72,14 @@ abstract class AppModel extends Model
 
         $this->{$this->getDeletedAtColumn()} = $time;
 
-        if ($this->usesTimestamps() && ! is_null($this->getUpdatedAtColumn())) {
+        if ($this->usesTimestamps() && !is_null($this->getUpdatedAtColumn())) {
             $this->{$this->getUpdatedAtColumn()} = $time;
 
             $columns[$this->getUpdatedAtColumn()] = $this->fromDateTime($time);
         }
 
         //削除者を更新します
-        $columns['deleted_by'] = $this->deleted_id;
+        $columns['deleted_by'] = $this->deleted_by;
 
         $query->update($columns);
 

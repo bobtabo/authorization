@@ -1,4 +1,1 @@
-{
-    "url": null,
-    "token": null
-}
+{"url": "/auth/invitation/test-current-token", "token": "test-current-token"}

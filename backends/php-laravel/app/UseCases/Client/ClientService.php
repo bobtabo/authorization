@@ -45,7 +45,6 @@ class ClientService extends AbstractService
     public function getClients(ClientDto $dto): ClientListVo
     {
         /** @var ClientCondition $condition */
-        $dto->statuses = $dto->statuses ?? [];
         $condition = SimpleMapper::mapSpecific($dto, ClientCondition::class, [
             'keyword' => 'keyword',
             'startFrom' => 'startFrom',
@@ -179,12 +178,20 @@ class ClientService extends AbstractService
 
     /**
      * クライアントを論理削除します。
+     * 削除前にステータスを Closed（4）に更新します。
      *
      * @param ClientDto $dto クライアントDTO
      * @return void
      */
     public function destroy(ClientDto $dto): void
     {
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+        $entity = $this->clientRepository->findById($condition);
+
+        $entity->status = ClientStatus::Closed;
+        $entity->assignUpdated($dto->executorId ?? 0);
+        $this->clientRepository->persist($entity);
+
         $this->clientRepository->deleteById($dto->id, $dto->executorId ?? 0);
     }
 }

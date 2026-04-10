@@ -10,16 +10,16 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Infrastructure\Models\Invitation as Model;
+use App\Infrastructure\Models\Notification as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * 招待Factoryクラスです。
+ * 通知Factoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Factories
  */
-class InvitationFactory extends Factory
+class NotificationFactory extends Factory
 {
     /**
      * @var string モデル
@@ -33,7 +33,11 @@ class InvitationFactory extends Factory
     public function definition(): array
     {
         return [
-            'token' => bin2hex(random_bytes(16)),
+            'staff_id' => 1,
+            'message_type' => 1,
+            'title' => $this->faker->sentence(),
+            'message' => $this->faker->paragraph(),
+            'read' => false,
             'created_at' => now(),
             'created_by' => 1,
             'updated_at' => now(),

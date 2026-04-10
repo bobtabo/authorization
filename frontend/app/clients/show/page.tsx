@@ -228,14 +228,16 @@ export default function ClientShowPage(): React.JSX.Element {
 
             <div className="px-6 py-5 border-t border-gray-200 bg-gray-50/80">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <button
-                  type="button"
-                  onClick={() => setDeleteOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 border-red-500/80 bg-white text-red-600 hover:bg-red-50 hover:border-red-600 transition-colors w-full md:w-auto shrink-0"
-                >
-                  <Trash2 size={16} />
-                  削除
-                </button>
+                {detail.status !== "アーカイブ" && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 border-red-500/80 bg-white text-red-600 hover:bg-red-50 hover:border-red-600 transition-colors w-full md:w-auto shrink-0"
+                  >
+                    <Trash2 size={16} />
+                    削除
+                  </button>
+                )}
 
                 <div className="hidden md:block flex-1 min-w-[2rem]" aria-hidden />
 
@@ -246,25 +248,26 @@ export default function ClientShowPage(): React.JSX.Element {
                   >
                     キャンセル
                   </a>
-                  {detail.status === "利用中" ? (
-                    <button
-                      type="button"
-                      onClick={() => setStopOpen(true)}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
-                    >
-                      <Square size={16} />
-                      利用停止
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setStartOpen(true)}
-                      disabled={detail.status === "アーカイブ"}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                    >
-                      <Play size={16} />
-                      利用開始
-                    </button>
+                  {detail.status !== "アーカイブ" && (
+                    detail.status === "利用中" ? (
+                      <button
+                        type="button"
+                        onClick={() => setStopOpen(true)}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
+                      >
+                        <Square size={16} />
+                        利用停止
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setStartOpen(true)}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                      >
+                        <Play size={16} />
+                        利用開始
+                      </button>
+                    )
                   )}
                 </div>
               </div>

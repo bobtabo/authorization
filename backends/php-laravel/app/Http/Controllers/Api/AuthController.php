@@ -22,10 +22,8 @@ use App\UseCases\Auth\Dtos\SocialDto;
 use App\UseCases\Invitation\Dtos\InvitationDto;
 use App\UseCases\Invitation\InvitationService;
 use Exception;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
@@ -47,7 +45,7 @@ class AuthController extends Controller
      */
     public function login(Request $request, AuthService $auth): JsonResponse
     {
-        $staffId = $this->resolveStaffId($request);
+        $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
             return response()->json(['message' => '未認証です。'], 401);
         }
@@ -95,7 +93,8 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function googleRedirect(): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    public function googleRedirect(
+    ): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->stateless()->redirect();
     }
@@ -106,8 +105,8 @@ class AuthController extends Controller
      * @param AuthService $auth 認証ユースケース
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $service): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
-    {
+    public function googleCallback(AuthService $service
+    ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
@@ -127,7 +126,15 @@ class AuthController extends Controller
 
             $secure = config('app.env') === 'production';
             return redirect(config('authorization.app.frontend_url') . '/clients')
-                ->cookie('staff_id', (string)$vo->getId(), 60 * 24 * 7, '/', null, $secure, true);
+                ->cookie(
+                    'staff_id',
+                    (string)$vo->getId(),
+                    config('authorization.app.staff_cookie_lifetime'),
+                    '/',
+                    null,
+                    $secure,
+                    true
+                );
         } catch (Exception $e) {
             Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
             return redirect(config('authorization.app.frontend_url') . '/error?code=500');
@@ -143,7 +150,7 @@ class AuthController extends Controller
      */
     public function getMyProfile(Request $request, AuthService $auth): JsonResponse
     {
-        $staffId = $this->resolveStaffId($request);
+        $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
             return response()->json(['message' => '未認証です。'], 401);
         }
@@ -176,32 +183,5 @@ class AuthController extends Controller
     {
         return response()->json(['message' => 'SUCCESS'])
             ->cookie(\Cookie::forget('staff_id'));
-    }
-
-    /**
-     * staff_id クッキーを復号してスタッフIDを返します。
-     * クッキーがない・復号失敗・値が不正な場合は null を返します。
-     *
-     * @param Request $request HTTP リクエスト
-     * @return int|null スタッフID
-     */
-    private function resolveStaffId(Request $request): ?int
-    {
-        $encrypted = $request->cookie('staff_id');
-        if (empty($encrypted)) {
-            return null;
-        }
-
-        try {
-            // EncryptCookies は "{prefix}|{value}" 形式で暗号化するため、| 以降を値として取り出す
-            $decrypted = Crypt::decrypt($encrypted, false);
-            $value = str_contains($decrypted, '|') ?
-                substr($decrypted, strrpos($decrypted, '|') + 1) : $decrypted;
-            $staffId = (int)$value;
-
-            return $staffId > 0 ? $staffId : null;
-        } catch (DecryptException) {
-            return null;
-        }
     }
 }
