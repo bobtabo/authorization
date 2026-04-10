@@ -114,26 +114,15 @@ composer install
 
 ### 2. 環境変数の設定
 
-`.env.local` を作成し、以下を設定してください。
+```bash
+cp .env.example .env
+```
+
+以下を設定してください。
 
 ```dotenv
-APP_ENV=local
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=authorization
-DB_USERNAME=root
-DB_PASSWORD=secret
-
-REDIS_HOST=host.docker.internal
-REDIS_PORT=6379
-
-AUTHORIZATION_FRONTEND_URL=http://localhost:3000
-
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
 ```
 
 ### 3. マイグレーション
