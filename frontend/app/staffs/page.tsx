@@ -161,7 +161,7 @@ export default function StaffPage(): React.JSX.Element {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(5);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [selectedActiveFilters, setSelectedActiveFilters] = useState<StaffActive[]>([]);
   const [selectedRoleFilters, setSelectedRoleFilters] = useState<StaffRole[]>([]);
 
@@ -572,9 +572,11 @@ export default function StaffPage(): React.JSX.Element {
                       }}
                       className="border border-gray-300 bg-white rounded-md px-2 py-1 text-sm text-gray-700"
                     >
-                      <option value={5}>5件</option>
                       <option value={10}>10件</option>
-                      <option value={20}>20件</option>
+                      <option value={50}>50件</option>
+                      <option value={100}>100件</option>
+                      <option value={500}>500件</option>
+                      <option value={1000}>1000件</option>
                     </select>
 
                     <button

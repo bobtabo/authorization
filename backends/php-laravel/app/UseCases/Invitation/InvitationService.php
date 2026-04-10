@@ -50,6 +50,7 @@ class InvitationService extends AbstractService
         return $vo->assign([
             'found' => true,
             'url' => $entity->url,
+            'displayUrl' => $entity->displayUrl,
             'token' => $entity->token,
         ]);
     }
@@ -69,6 +70,7 @@ class InvitationService extends AbstractService
         return (new InvitationVo())->assign([
             'found' => true,
             'url' => $entity->url,
+            'displayUrl' => $entity->displayUrl,
             'token' => $entity->token,
         ]);
     }
@@ -95,6 +97,7 @@ class InvitationService extends AbstractService
         return $vo->assign([
             'found' => true,
             'url' => $entity->url,
+            'displayUrl' => $entity->displayUrl,
             'token' => $entity->token,
         ]);
     }

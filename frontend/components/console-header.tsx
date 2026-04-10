@@ -46,6 +46,7 @@ export function ConsoleHeader(): React.JSX.Element {
   const location = useLocation();
   const displayName = user?.name ?? "";
   const staffId = user?.staff_id ?? null;
+  const isAdmin = user?.role === 1;
 
   const [accountMenuOpen, setAccountMenuOpen] = useState<boolean>(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState<boolean>(false);
@@ -178,7 +179,7 @@ export function ConsoleHeader(): React.JSX.Element {
         </div>
 
         <div className="flex items-center gap-2">
-          <div ref={settingsMenuRef} className="relative">
+          {isAdmin && <div ref={settingsMenuRef} className="relative">
             <button
               type="button"
               aria-label="設定メニューを開く"
@@ -217,7 +218,7 @@ export function ConsoleHeader(): React.JSX.Element {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </div>}
 
           <div ref={notificationRef} className="relative">
             <button
@@ -383,9 +384,11 @@ export function ConsoleHeader(): React.JSX.Element {
           <NavLink to="/clients" className={navTabClass} end={false}>
             クライアント
           </NavLink>
-          <NavLink to="/staffs" className={navTabClass} end>
-            スタッフ
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/staffs" className={navTabClass} end>
+              スタッフ
+            </NavLink>
+          )}
         </nav>
       </div>
     </header>

@@ -15,9 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\DestroyRequest;
 use App\Http\Requests\Staff\RestoreRequest;
 use App\Http\Requests\Staff\UpdateRoleRequest;
-use App\Http\Responses\Staff\StaffDestroyResponse;
 use App\Http\Responses\Staff\StaffIndexResponse;
-use App\Http\Responses\Staff\StaffUpdateRoleResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Staff\Dtos\StaffDto;
 use App\UseCases\Staff\StaffService;
@@ -86,10 +84,7 @@ class StaffController extends Controller
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }
 
-        $response = new StaffUpdateRoleResponse();
-        $response->assign($vo->attributes());
-
-        return response()->json($response->attributes());
+        return response()->success(['id' => $vo->getId()]);
     }
 
     /**
@@ -136,10 +131,7 @@ class StaffController extends Controller
             return response()->json(['message' => 'スタッフが存在しません。'], 404);
         }
 
-        $response = new StaffDestroyResponse();
-        $response->assign($vo->attributes());
-
-        return response()->json($response->attributes());
+        return response()->success(['id' => $vo->getId()]);
     }
 
     /**

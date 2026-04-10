@@ -26,4 +26,5 @@ class AuthMeResponse extends AbstractResponse
     private ?int $staffId = null;
     private ?string $name = null;
     private ?string $avatar = null;
+    private ?int $role = null;
 }

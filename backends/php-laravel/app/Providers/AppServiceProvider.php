@@ -18,9 +18,9 @@ use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Gate\StubJwtIssuer;
 use App\Infrastructure\Gate\StubJwtVerifier;
-use App\Infrastructure\Repositories\EloquentNotificationRepository;
 use App\Infrastructure\Repositories\EloquentClientEloquentRepository;
 use App\Infrastructure\Repositories\EloquentInvitationEloquentRepository;
+use App\Infrastructure\Repositories\EloquentNotificationRepository;
 use App\Infrastructure\Repositories\EloquentStaffEloquentRepository;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Client\ClientService;
@@ -28,7 +28,9 @@ use App\UseCases\Gate\GateService;
 use App\UseCases\Invitation\InvitationService;
 use App\UseCases\Notification\NotificationService;
 use App\UseCases\Staff\StaffService;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\HttpFoundation\Response as ResponseStatus;
 
 /**
  * ドメインのポート実装とアプリケーションサービスを登録するServiceProviderクラスです。
@@ -65,9 +67,21 @@ class AppServiceProvider extends ServiceProvider
      * 全アプリケーションサービスの初期起動処理を行います。
      *
      * @return void
+     * @method \Illuminate\Http\JsonResponse success(array $data, int $status = 200)
      */
     public function boot(): void
     {
-        //
+        // Success (200 OK.)
+        Response::macro('success', function ($data = [], $status = ResponseStatus::HTTP_OK) {
+            return response()->json(
+                array_merge(
+                    [
+                        'message' => 'SUCCESS'
+                    ],
+                    (array)$data
+                ),
+                $status
+            );
+        });
     }
 }

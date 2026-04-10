@@ -13,7 +13,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
-use App\Http\Responses\Client\DestroyResponse;
 use App\Http\Responses\Client\IndexResponse;
 use App\Http\Responses\Client\ShowResponse;
 use App\Http\Responses\Client\StoreResponse;
@@ -164,8 +163,6 @@ class ClientController extends Controller
             $service->destroy($dto);
         });
 
-        $response = new DestroyResponse();
-
-        return response()->json($response->attributes());
+        return response()->success();
     }
 }

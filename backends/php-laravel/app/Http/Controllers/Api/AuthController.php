@@ -167,7 +167,8 @@ class AuthController extends Controller
         $response->assign([
             'staff_id' => $vo->getId(),
             'name' => $vo->getName(),
-            'avatar' => $vo->getAvatar()
+            'avatar' => $vo->getAvatar(),
+            'role' => $vo->getRole(),
         ]);
 
         return response()->json($response->attributes());
@@ -181,7 +182,6 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        return response()->json(['message' => 'SUCCESS'])
-            ->cookie(\Cookie::forget('staff_id'));
+        return response()->success()->cookie(\Cookie::forget('staff_id'));
     }
 }

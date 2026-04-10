@@ -11,11 +11,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Responses\Notification\BulkPatchResponse;
 use App\Http\Responses\Notification\CountsResponse;
 use App\Http\Responses\Notification\IndexResponse;
-use App\Http\Responses\Notification\IssueResponse;
-use App\Http\Responses\Notification\UpdateResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Notification\Dtos\NotificationDto;
 use App\UseCases\Notification\NotificationService;
@@ -75,13 +72,10 @@ class NotificationController extends Controller
     {
         $body = $request->all();
 
-        $response = new IssueResponse();
-        $response->assign([
+        return response()->success([
             'message' => '受理しました（非同期処理は未接続です）。',
             'received' => $body !== [] ? $body : null,
-        ]);
-
-        return response()->json($response->attributes(), 202);
+        ], 202);
     }
 
     /**
@@ -122,10 +116,7 @@ class NotificationController extends Controller
             return $notifications->bulkMarkRead($dto);
         });
 
-        $response = new BulkPatchResponse();
-        $response->assign($vo->attributes());
-
-        return response()->json($response->attributes());
+        return response()->success(['updated' => $vo->getUpdated()]);
     }
 
     /**
@@ -177,9 +168,6 @@ class NotificationController extends Controller
             return response()->json(['message' => '通知を更新できませんでした。'], 404);
         }
 
-        $response = new UpdateResponse();
-        $response->assign($vo->attributes());
-
-        return response()->json($response->attributes());
+        return response()->success(['id' => $vo->getId()]);
     }
 }

@@ -24,5 +24,6 @@ class InvitationIssueResponse extends AbstractResponse
     use Getter;
 
     private ?string $url = null;
+    private ?string $displayUrl = null;
     private ?string $token = null;
 }

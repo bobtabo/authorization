@@ -5,6 +5,7 @@ interface User {
   staff_id: number;
   name: string;
   avatar: string | null;
+  role: number;
 }
 
 interface UserContextValue {
@@ -41,6 +42,7 @@ export function UserProvider({ children }: { children: React.ReactNode }): React
             staff_id: data.staff_id as number,
             name: data.name as string,
             avatar: (data.avatar as string | null) ?? null,
+            role: (data.role as number) ?? 2,
           };
           localStorage.setItem(USER_CACHE_KEY, JSON.stringify(u));
           setUser(u);
