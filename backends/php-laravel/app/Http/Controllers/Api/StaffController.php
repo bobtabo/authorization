@@ -70,7 +70,7 @@ class StaffController extends Controller
     {
         $role = StaffRole::tryFrom((int)$request->input('role'));
         if ($role === null) {
-            return response()->json(['message' => '権限の指定が不正です。'], 400);
+            return response()->json(['message' => __('validation.custom.role_invalid')], 400);
         }
 
         $dto = new StaffDto();
@@ -81,7 +81,7 @@ class StaffController extends Controller
             return $staff->updateRole($dto);
         });
         if (!$vo->isOk()) {
-            return response()->notFound('スタッフが存在しません。');
+            return response()->notFound(__('validation.custom.staff_not_found'));
         }
 
         return response()->success(['id' => $vo->getId()]);
@@ -104,7 +104,7 @@ class StaffController extends Controller
             return $staff->restore($dto);
         });
         if (!$vo->isOk()) {
-            return response()->notFound('スタッフが存在しません。');
+            return response()->notFound(__('validation.custom.staff_not_found'));
         }
 
         return response()->json($vo->attributes());
@@ -128,7 +128,7 @@ class StaffController extends Controller
             return $staff->destroy($dto);
         });
         if (!$vo->isOk()) {
-            return response()->notFound('スタッフが存在しません。');
+            return response()->notFound(__('validation.custom.staff_not_found'));
         }
 
         return response()->success(['id' => $vo->getId()]);

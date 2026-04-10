@@ -38,7 +38,7 @@ class InvitationController extends Controller
     {
         $vo = $invitations->current(new InvitationDto());
         if (!$vo->isFound()) {
-            return response()->notFound('招待情報がありません。');
+            return response()->notFound(__('validation.custom.invitation_not_found'));
         }
 
         $response = new InvitationIndexResponse();

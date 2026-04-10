@@ -179,9 +179,22 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
-        ],
+        // 認証・認可
+        'unauthenticated'        => '未認証です。',
+        // ユーザー・スタッフ
+        'user_not_found'         => 'ユーザーが存在しません。',
+        'staff_not_found'        => 'スタッフが存在しません。',
+        'role_invalid'           => '権限の指定が不正です。',
+        // 招待
+        'invitation_not_found'   => '招待情報がありません。',
+        'invitation_invalid'     => '招待が無効です。',
+        // 通知
+        'notification_not_found' => '通知を更新できませんでした。',
+        'notification_accepted'  => '受理しました（非同期処理は未接続です）。',
+        'ids_or_all_required'    => 'ids または all を指定してください。',
+        // Gate
+        'member_required'        => 'member を指定してください。',
+        'token_required'         => 'token を指定してください。',
     ],
 
     /*
