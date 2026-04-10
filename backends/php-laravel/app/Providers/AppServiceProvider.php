@@ -72,7 +72,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // 200 OK
+        // Success (200 OK.)
         Response::macro('success', function (array $data = [], int $status = ResponseStatus::HTTP_OK): JsonResponse {
             return response()->json(
                 array_merge(
@@ -85,11 +85,14 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        // 404 NOT FOUND
-        Response::macro('notFound', function (string $message = 'データが存在しません。') {
+        // Error (4xx, 5xx)
+        Response::macro('failure', function (
+            string $message = 'データが存在しません。',
+            int $status = ResponseStatus::HTTP_NOT_FOUND
+        ) {
             return response()->json([
                 'message' => $message,
-            ], ResponseStatus::HTTP_NOT_FOUND);
+            ], $status);
         });
     }
 }

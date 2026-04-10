@@ -21,7 +21,7 @@ namespace Illuminate\Http {
     class Response
     {
         /**
-         * 200 OKのレスポンスを返します。
+         * 正常（200）のレスポンスを返します。
          *
          * @param array $data データ
          * @param int $status HTTPステータスコード
@@ -32,13 +32,16 @@ namespace Illuminate\Http {
         }
 
         /**
-         * 404 NOT FOUNDのレスポンスを返します。
+         * エラー（4xx、5xx）のレスポンスを返します。
          *
          * @param string $message メッセージ
+         * @param int $status HTTPステータスコード
          * @return JsonResponse レスポンス
          */
-        public function notFound(string $message = 'データが存在しません。'): \Illuminate\Http\JsonResponse
-        {
+        public function failure(
+            string $message = 'データが存在しません。',
+            int $status = ResponseStatus::HTTP_NOT_FOUND
+        ): \Illuminate\Http\JsonResponse {
         }
     }
 }

@@ -47,7 +47,7 @@ class AuthController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
-            return response()->json(['message' => __('validation.custom.unauthenticated')], 401);
+            return response()->failure(__('validation.custom.unauthenticated'), 401);
         }
 
         $dto = new AuthUserDto();
@@ -55,7 +55,7 @@ class AuthController extends Controller
 
         $vo = $auth->findUser($dto);
         if ($vo->getId() === null) {
-            return response()->notFound(__('validation.custom.user_not_found'));
+            return response()->failure(__('validation.custom.user_not_found'));
         }
 
         $response = new AuthLoginResponse();
@@ -79,7 +79,7 @@ class AuthController extends Controller
 
         $vo = $invitations->findByToken($dto);
         if (!$vo->isFound()) {
-            return response()->notFound(__('validation.custom.invitation_invalid'));
+            return response()->failure(__('validation.custom.invitation_invalid'));
         }
 
         $response = new AuthInvitationResponse();
@@ -152,7 +152,7 @@ class AuthController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
-            return response()->json(['message' => __('validation.custom.unauthenticated')], 401);
+            return response()->failure(__('validation.custom.unauthenticated'), 401);
         }
 
         $dto = new AuthUserDto();
@@ -160,7 +160,7 @@ class AuthController extends Controller
 
         $vo = $auth->findUser($dto);
         if ($vo->getId() === null) {
-            return response()->notFound(__('validation.custom.user_not_found'));
+            return response()->failure(__('validation.custom.user_not_found'));
         }
 
         $response = new AuthMeResponse();

@@ -38,7 +38,7 @@ class GateController extends Controller
     {
         $member = $request->query('member');
         if (!is_string($member) || $member === '') {
-            return response()->json(['message' => __('validation.custom.member_required')], 400);
+            return response()->failure(__('validation.custom.member_required'), 400);
         }
 
         $dto = new GateIssueDto();
@@ -64,7 +64,7 @@ class GateController extends Controller
     {
         $token = $request->query('token');
         if (!is_string($token) || $token === '') {
-            return response()->json(['message' => __('validation.custom.token_required')], 400);
+            return response()->failure(__('validation.custom.token_required'), 400);
         }
 
         $dto = new GateVerifyDto();

@@ -38,7 +38,7 @@ class NotificationController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
-            return response()->json(['message' => __('validation.custom.unauthenticated')], 401);
+            return response()->failure(__('validation.custom.unauthenticated'), 401);
         }
 
         $cursor = $request->query('cursor');
@@ -89,7 +89,7 @@ class NotificationController extends Controller
     {
         $staffId = $request->all()['executor_id'] ?? null;
         if (empty($staffId)) {
-            return response()->json(['message' => __('validation.custom.unauthenticated')], 401);
+            return response()->failure(__('validation.custom.unauthenticated'), 401);
         }
 
         $validated = $request->validate([
@@ -104,7 +104,7 @@ class NotificationController extends Controller
         $all = (bool)($validated['all'] ?? false);
 
         if (($ids === null || $ids === []) && !$all) {
-            return response()->json(['message' => __('validation.custom.ids_or_all_required')], 400);
+            return response()->failure(__('validation.custom.ids_or_all_required'), 400);
         }
 
         $dto = new NotificationDto();
@@ -130,7 +130,7 @@ class NotificationController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
-            return response()->json(['message' => __('validation.custom.unauthenticated')], 401);
+            return response()->failure(__('validation.custom.unauthenticated'), 401);
         }
 
         $dto = new NotificationDto();
@@ -165,7 +165,7 @@ class NotificationController extends Controller
         });
 
         if (!$vo->isOk()) {
-            return response()->notFound(__('validation.custom.notification_not_found'));
+            return response()->failure(__('validation.custom.notification_not_found'));
         }
 
         return response()->success(['id' => $vo->getId()]);
