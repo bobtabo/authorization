@@ -55,7 +55,7 @@ class StaffController extends Controller
         $response = new StaffIndexResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**

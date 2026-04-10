@@ -49,7 +49,7 @@ class ClientController extends Controller
         $response = new IndexResponse();
         $response->assign($value->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -74,7 +74,7 @@ class ClientController extends Controller
             'updatedAtCarbon' => 'updatedAtCarbon',
         ]);
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -113,7 +113,7 @@ class ClientController extends Controller
         //アクセストークンをメール送信します
         send_mail($value->getTo(), new DefaultMail($value));
 
-        return response()->json($response->attributes(), 201);
+        return response()->success($response->attributes(), 201);
     }
 
     /**
@@ -141,7 +141,7 @@ class ClientController extends Controller
             'updatedAtCarbon' => 'updatedAtCarbon',
         ]);
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**

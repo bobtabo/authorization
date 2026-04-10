@@ -44,7 +44,7 @@ class InvitationController extends Controller
         $response = new InvitationIndexResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -63,6 +63,6 @@ class InvitationController extends Controller
         $response = new InvitationIssueResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 }

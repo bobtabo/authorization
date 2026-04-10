@@ -61,7 +61,7 @@ class AuthController extends Controller
         $response = new AuthLoginResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -85,7 +85,7 @@ class AuthController extends Controller
         $response = new AuthInvitationResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -171,7 +171,7 @@ class AuthController extends Controller
             'role' => $vo->getRole(),
         ]);
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**

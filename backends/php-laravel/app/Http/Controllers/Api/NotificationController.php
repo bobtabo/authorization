@@ -59,7 +59,7 @@ class NotificationController extends Controller
         $response = new IndexResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -141,7 +141,7 @@ class NotificationController extends Controller
         $response = new CountsResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**

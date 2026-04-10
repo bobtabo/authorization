@@ -28,6 +28,7 @@ use App\UseCases\Gate\GateService;
 use App\UseCases\Invitation\InvitationService;
 use App\UseCases\Notification\NotificationService;
 use App\UseCases\Staff\StaffService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpFoundation\Response as ResponseStatus;
@@ -72,7 +73,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // 200 OK
-        Response::macro('success', function (array $data = []) {
+        Response::macro('success', function (array $data = [], int $status = ResponseStatus::HTTP_OK): JsonResponse {
             return response()->json(
                 array_merge(
                     [
@@ -80,7 +81,7 @@ class AppServiceProvider extends ServiceProvider
                     ],
                     (array)$data
                 ),
-                ResponseStatus::HTTP_OK
+                $status
             );
         });
 

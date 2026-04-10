@@ -16,15 +16,18 @@ declare(strict_types=1);
 
 namespace Illuminate\Http {
 
+    use Symfony\Component\HttpFoundation\Response as ResponseStatus;
+
     class Response
     {
         /**
          * 200 OKのレスポンスを返します。
          *
          * @param array $data データ
+         * @param int $status HTTPステータスコード
          * @return JsonResponse レスポンス
          */
-        public function success(array $data = []): \Illuminate\Http\JsonResponse
+        public function success(array $data = [], int $status = ResponseStatus::HTTP_OK): \Illuminate\Http\JsonResponse
         {
         }
 

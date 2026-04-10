@@ -49,7 +49,7 @@ class GateController extends Controller
         $response = new GateIssueResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -76,6 +76,6 @@ class GateController extends Controller
         $response = new GateVerifyResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 }
