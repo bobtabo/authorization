@@ -173,7 +173,7 @@ export function ConsoleHeader(): React.JSX.Element {
             <ShieldCheck size={16} />
           </div>
           <span className="text-sm font-semibold text-gray-800">
-            Authorization Console
+            Authorization Gateway
           </span>
         </div>
 

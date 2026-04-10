@@ -21,7 +21,7 @@ export default function LoginPage(): React.JSX.Element {
 
           <h1 className="text-center">
             <span className="block text-2xl font-semibold tracking-tight text-[#1f2328]">
-              Authorization Console
+              Authorization Gateway
             </span>
             <span className="mt-1.5 block text-base font-normal text-[#656d76]">
               ログイン
@@ -53,7 +53,7 @@ export default function LoginPage(): React.JSX.Element {
       </main>
 
       <footer className="border-t border-[#d0d7de] bg-white py-5 text-center text-xs text-[#656d76]">
-        © 2026 Authorization Console. All rights reserved.
+        © 2026 Authorization Gateway. All rights reserved.
       </footer>
     </div>
   );

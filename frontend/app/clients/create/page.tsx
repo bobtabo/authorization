@@ -239,7 +239,7 @@ export default function ClientCreatePage(): React.JSX.Element {
                   type="text"
                   value={street}
                   onChange={(e) => setStreet(e.target.value.slice(0, 255))}
-                  placeholder="仮想1丁目2番3号"
+                  placeholder="1丁目2番3号"
                   required
                   maxLength={255}
                   className={inputClass}
