@@ -81,7 +81,7 @@ class StaffController extends Controller
             return $staff->updateRole($dto);
         });
         if (!$vo->isOk()) {
-            return response()->json(['message' => 'スタッフが存在しません。'], 404);
+            return response()->notFound('スタッフが存在しません。');
         }
 
         return response()->success(['id' => $vo->getId()]);
@@ -104,7 +104,7 @@ class StaffController extends Controller
             return $staff->restore($dto);
         });
         if (!$vo->isOk()) {
-            return response()->json(['message' => 'スタッフが存在しません。'], 404);
+            return response()->notFound('スタッフが存在しません。');
         }
 
         return response()->json($vo->attributes());
@@ -128,7 +128,7 @@ class StaffController extends Controller
             return $staff->destroy($dto);
         });
         if (!$vo->isOk()) {
-            return response()->json(['message' => 'スタッフが存在しません。'], 404);
+            return response()->notFound('スタッフが存在しません。');
         }
 
         return response()->success(['id' => $vo->getId()]);

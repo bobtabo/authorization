@@ -165,7 +165,7 @@ class NotificationController extends Controller
         });
 
         if (!$vo->isOk()) {
-            return response()->json(['message' => '通知を更新できませんでした。'], 404);
+            return response()->notFound('通知を更新できませんでした。');
         }
 
         return response()->success(['id' => $vo->getId()]);

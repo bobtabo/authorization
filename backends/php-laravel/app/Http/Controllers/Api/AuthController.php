@@ -55,7 +55,7 @@ class AuthController extends Controller
 
         $vo = $auth->findUser($dto);
         if ($vo->getId() === null) {
-            return response()->json(['message' => 'ユーザーが存在しません。'], 404);
+            return response()->notFound('ユーザーが存在しません。');
         }
 
         $response = new AuthLoginResponse();
@@ -79,7 +79,7 @@ class AuthController extends Controller
 
         $vo = $invitations->findByToken($dto);
         if (!$vo->isFound()) {
-            return response()->json(['message' => '招待が無効です。'], 404);
+            return response()->notFound('招待が無効です。');
         }
 
         $response = new AuthInvitationResponse();
@@ -160,7 +160,7 @@ class AuthController extends Controller
 
         $vo = $auth->findUser($dto);
         if ($vo->getId() === null) {
-            return response()->json(['message' => 'ユーザーが存在しません。'], 404);
+            return response()->notFound('ユーザーが存在しません。');
         }
 
         $response = new AuthMeResponse();

@@ -38,7 +38,7 @@ class InvitationController extends Controller
     {
         $vo = $invitations->current(new InvitationDto());
         if (!$vo->isFound()) {
-            return response()->json(['message' => '招待情報がありません。'], 404);
+            return response()->notFound('招待情報がありません。');
         }
 
         $response = new InvitationIndexResponse();

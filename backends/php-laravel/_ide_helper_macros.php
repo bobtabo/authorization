@@ -8,18 +8,33 @@
 
 declare(strict_types=1);
 
-namespace Illuminate\Http {
+/**
+ * LaravelのResponseクラスにマクロを追加するためのファイルです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 
-    use Symfony\Component\HttpFoundation\Response as ResponseStatus;
+namespace Illuminate\Http {
 
     class Response
     {
         /**
-         * @param array|object $data
-         * @param int $status
-         * @return \Illuminate\Http\JsonResponse
+         * 200 OKのレスポンスを返します。
+         *
+         * @param array $data データ
+         * @return JsonResponse レスポンス
          */
-        public function success($data, int $status = ResponseStatus::HTTP_OK): \Illuminate\Http\JsonResponse
+        public function success(array $data = []): \Illuminate\Http\JsonResponse
+        {
+        }
+
+        /**
+         * 404 NOT FOUNDのレスポンスを返します。
+         *
+         * @param string $message メッセージ
+         * @return JsonResponse レスポンス
+         */
+        public function notFound(string $message = 'データが存在しません。'): \Illuminate\Http\JsonResponse
         {
         }
     }
