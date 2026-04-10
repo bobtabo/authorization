@@ -26,13 +26,26 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
 {
     /**
      * {@inheritdoc}
-     *
-     * @return Entity|null 常に null（スタブ）
      */
     #[\Override]
     public function getCurrent(): ?Entity
     {
-        return null;
+        $model = Model::query()
+            ->whereNull('deleted_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($model === null) {
+            return null;
+        }
+
+        $entity = new Entity();
+        $entity->assign([
+            'token' => $model->token,
+            'url' => '/auth/invitation/' . $model->token,
+        ]);
+
+        return $entity;
     }
 
     /**
@@ -47,7 +60,7 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
         $invitation = new Entity;
         $invitation->assign([
             'token' => $token,
-            'url' => '/auth/invitation/'.$token,
+            'url' => '/auth/invitation/' . $token,
         ]);
 
         return $invitation;
@@ -67,7 +80,7 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
         $invitation = new Entity();
         $invitation->assign([
             'token' => $trimmed,
-            'url' => '/auth/invitation/'.$trimmed,
+            'url' => '/auth/invitation/' . $trimmed,
         ]);
 
         return $invitation;

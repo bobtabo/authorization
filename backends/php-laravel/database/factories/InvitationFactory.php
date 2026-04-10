@@ -33,15 +33,14 @@ class InvitationFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => '',
-            'token' => '',
-            'created_at' => '',
-            'created_by' => '',
-            'updated_at' => '',
-            'updated_by' => '',
-            'deleted_at' => '',
-            'deleted_by' => '',
-            'version' => '',
+            'token' => bin2hex(random_bytes(16)),
+            'created_at' => now(),
+            'created_by' => 1,
+            'updated_at' => now(),
+            'updated_by' => 1,
+            'deleted_at' => null,
+            'deleted_by' => null,
+            'version' => 1,
         ];
     }
 }

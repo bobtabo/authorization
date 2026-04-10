@@ -1,11 +1,16 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
+use App\Infrastructure\Models\Staff;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -18,19 +23,6 @@ use Tests\TestCase;
 class StaffControllerTest extends TestCase
 {
     use DatabaseMigrations;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $testName = $this->toString();
-        if (str($testName)->contains('testIndex', true)) {
-            //
-        }
-    }
 
     /**
      * スタッフ一覧取得テストです。
@@ -56,7 +48,8 @@ class StaffControllerTest extends TestCase
     {
         $params = $this->getRequestParams('Staff/updateRole.json');
         $id = 1;
-        $response = $this->patch("/api/staffs/{$id}/updateRole", $params);
+        $response = $this->withHeader('X-Executor-Id', '1')
+            ->patch("/api/staffs/{$id}/updateRole", $params);
         $data = $this->getResponseData('Staff/updateRole.json');
         $response
             ->assertStatus(200)
@@ -70,9 +63,10 @@ class StaffControllerTest extends TestCase
      */
     public function testDestroy(): void
     {
-        $params = $this->getRequestParams('Staff/destroy.json');
-        $id = $params['id'];
-        $response = $this->delete("/api/staffs/{$id}/delete");
+        $staff = Staff::factory()->create();
+        $id = $staff->id;
+        $response = $this->withHeader('X-Executor-Id', '1')
+            ->delete("/api/staffs/{$id}/delete");
         $data = $this->getResponseData('Staff/destroy.json');
         $response
             ->assertStatus(200)

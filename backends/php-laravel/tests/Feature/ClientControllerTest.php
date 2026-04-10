@@ -1,11 +1,17 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
+use App\Infrastructure\Models\Client;
+use App\Infrastructure\Models\Staff;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -18,19 +24,6 @@ use Tests\TestCase;
 class ClientControllerTest extends TestCase
 {
     use DatabaseMigrations;
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $testName = $this->toString();
-        if (str($testName)->contains('testIndex', true)) {
-            //
-        }
-    }
 
     /**
      * クライアント一覧取得テストです。
@@ -85,9 +78,10 @@ class ClientControllerTest extends TestCase
      */
     public function testUpdate(): void
     {
+        $client = Client::factory()->create();
         $params = $this->getRequestParams('Client/update.json');
-        $id = $params['id'];
-        $response = $this->put("/api/clients/{$id}/update", $params);
+        $id = $client->id;
+        $response = $this->put("/api/clients/{$id}/update", array_merge($params, ['id' => $id]));
         $data = $this->getResponseData('Client/update.json');
         $response
             ->assertStatus(200)
@@ -101,9 +95,11 @@ class ClientControllerTest extends TestCase
      */
     public function testDestroy(): void
     {
-        $params = $this->getRequestParams('Client/destroy.json');
-        $id = $params['id'];
-        $response = $this->delete("/api/clients/{$id}/delete");
+        $staff = Staff::factory()->create();
+        $client = Client::factory()->create();
+        $id = $client->id;
+        $response = $this->withCookies($this->staffCookies($staff->id))
+            ->delete("/api/clients/{$id}/delete");
         $data = $this->getResponseData('Client/destroy.json');
         $response
             ->assertStatus(200)

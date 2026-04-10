@@ -1,9 +1,4 @@
 {
-    "iss": null,
-    "sub": null,
-    "aud": null,
-    "exp": null,
-    "iat": null,
-    "nbf": null,
-    "jti": null
+    "iss": "sii-auth",
+    "aud": "test-client"
 }

@@ -33,21 +33,20 @@ class StaffFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => '',
-            'name' => '',
-            'email' => '',
-            'provider' => '',
-            'provider_id' => '',
-            'avatar' => '',
-            'role' => '',
-            'last_login_at' => '',
-            'created_at' => '',
-            'created_by' => '',
-            'updated_at' => '',
-            'updated_by' => '',
-            'deleted_at' => '',
-            'deleted_by' => '',
-            'version' => '',
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'provider' => 1,
+            'provider_id' => $this->faker->numerify('##########'),
+            'avatar' => null,
+            'role' => 1,
+            'last_login_at' => now(),
+            'created_at' => now(),
+            'created_by' => 1,
+            'updated_at' => now(),
+            'updated_by' => 1,
+            'deleted_at' => null,
+            'deleted_by' => null,
+            'version' => 1,
         ];
     }
 }

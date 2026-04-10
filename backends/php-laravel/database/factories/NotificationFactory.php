@@ -33,19 +33,18 @@ class NotificationFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => '',
-            'staff_id' => '',
-            'message_type' => '',
-            'title' => '',
-            'message' => '',
-            'read' => '',
-            'created_at' => '',
-            'created_by' => '',
-            'updated_at' => '',
-            'updated_by' => '',
-            'deleted_at' => '',
-            'deleted_by' => '',
-            'version' => '',
+            'staff_id' => 1,
+            'message_type' => 1,
+            'title' => $this->faker->sentence(),
+            'message' => $this->faker->paragraph(),
+            'read' => false,
+            'created_at' => now(),
+            'created_by' => 1,
+            'updated_at' => now(),
+            'updated_by' => 1,
+            'deleted_at' => null,
+            'deleted_by' => null,
+            'version' => 1,
         ];
     }
 }
