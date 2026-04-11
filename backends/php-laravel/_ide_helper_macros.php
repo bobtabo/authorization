@@ -43,5 +43,18 @@ namespace Illuminate\Http {
             int $status = ResponseStatus::HTTP_NOT_FOUND
         ): \Illuminate\Http\JsonResponse {
         }
+
+        /**
+         * バリデーションの詳細付きエラー（422）のレスポンスを返します。
+         *
+         * @param array $errors エラー配列
+         * @param int $status HTTPステータスコード
+         * @return JsonResponse レスポンス
+         */
+        public function errors(
+            array $errors = [],
+            int $status = ResponseStatus::HTTP_UNPROCESSABLE_ENTITY
+        ): \Illuminate\Http\JsonResponse {
+        }
     }
 }

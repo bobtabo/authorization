@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
@@ -9,6 +10,8 @@ use App\Application;
 use App\Support\Exceptions\AppException;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,8 +26,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AppException $e, Request $request) {
             if ($request->is('api/*')) {
-                // ここでレスポンスマクロを呼び出す！
                 return response()->failure($e->getMessage(), $e->getCode());
             }
+
+            return null;
+        });
+
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->errors(
+                    $e->errors(),
+                    Response::HTTP_BAD_REQUEST
+                );
+            }
+
+            return null;
         });
     })->create();

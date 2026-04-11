@@ -94,5 +94,15 @@ class AppServiceProvider extends ServiceProvider
                 'message' => $message,
             ], $status);
         });
+
+        // バリデーションの詳細付きエラー
+        Response::macro('errors', function (
+            array $errors,
+            int $status = ResponseStatus::HTTP_UNPROCESSABLE_ENTITY
+        ) {
+            return response()->json([
+                'errors' => $errors,
+            ], $status);
+        });
     }
 }
