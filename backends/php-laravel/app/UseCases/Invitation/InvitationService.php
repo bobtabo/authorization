@@ -12,6 +12,7 @@ namespace App\UseCases\Invitation;
 
 use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
 use App\Domain\Invitation\ValueObjects\InvitationVo;
+use App\Support\Exceptions\AppException;
 use App\Support\Services\AbstractService;
 use App\UseCases\Invitation\Dtos\InvitationDto;
 use Random\RandomException;
@@ -41,13 +42,12 @@ class InvitationService extends AbstractService
     public function current(InvitationDto $dto): InvitationVo
     {
         unset($dto);
-        $vo = new InvitationVo();
         $entity = $this->invitations->getCurrent();
         if ($entity === null) {
-            return $vo;
+            throw AppException::noFound('invitation_not_found');
         }
 
-        return $vo->assign([
+        return (new InvitationVo())->assign([
             'found' => true,
             'url' => $entity->url,
             'displayUrl' => $entity->displayUrl,
@@ -83,18 +83,17 @@ class InvitationService extends AbstractService
      */
     public function findByToken(InvitationDto $dto): InvitationVo
     {
-        $vo = new InvitationVo();
         $token = $dto->token;
         if (!is_string($token) || $token === '') {
-            return $vo;
+            throw AppException::badRequest('invitation_invalid');
         }
 
         $entity = $this->invitations->findByToken($token);
         if ($entity === null) {
-            return $vo;
+            throw AppException::badRequest('invitation_invalid');
         }
 
-        return $vo->assign([
+        return (new InvitationVo())->assign([
             'found' => true,
             'url' => $entity->url,
             'displayUrl' => $entity->displayUrl,

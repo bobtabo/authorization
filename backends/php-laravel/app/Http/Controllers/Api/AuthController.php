@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\Auth\AuthInvitationResponse;
 use App\Http\Responses\Auth\AuthLoginResponse;
 use App\Http\Responses\Auth\AuthMeResponse;
+use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
@@ -47,16 +48,13 @@ class AuthController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
-            return response()->failure(__('validation.custom.unauthenticated'), 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $dto = new AuthUserDto();
         $dto->id = $staffId;
 
         $vo = $auth->findUser($dto);
-        if ($vo->getId() === null) {
-            return response()->failure(__('validation.custom.user_not_found'));
-        }
 
         $response = new AuthLoginResponse();
         $response->assign($vo->attributes());
@@ -78,9 +76,6 @@ class AuthController extends Controller
         $dto->token = $request->route('token');
 
         $vo = $invitations->findByToken($dto);
-        if (!$vo->isFound()) {
-            return response()->failure(__('validation.custom.invitation_invalid'));
-        }
 
         $response = new AuthInvitationResponse();
         $response->assign($vo->attributes());
@@ -152,16 +147,13 @@ class AuthController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
-            return response()->failure(__('validation.custom.unauthenticated'), 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $dto = new AuthUserDto();
         $dto->id = $staffId;
 
         $vo = $auth->findUser($dto);
-        if ($vo->getId() === null) {
-            return response()->failure(__('validation.custom.user_not_found'));
-        }
 
         $response = new AuthMeResponse();
         $response->assign([

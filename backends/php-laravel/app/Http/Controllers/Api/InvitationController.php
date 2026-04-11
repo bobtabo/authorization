@@ -37,9 +37,6 @@ class InvitationController extends Controller
     public function index(AppRequest $request, InvitationService $invitations): JsonResponse
     {
         $vo = $invitations->current(new InvitationDto());
-        if (!$vo->isFound()) {
-            return response()->failure(__('validation.custom.invitation_not_found'));
-        }
 
         $response = new InvitationIndexResponse();
         $response->assign($vo->attributes());

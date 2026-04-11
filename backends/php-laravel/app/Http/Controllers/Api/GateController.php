@@ -13,6 +13,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\Gate\GateIssueResponse;
 use App\Http\Responses\Gate\GateVerifyResponse;
+use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Gate\Dtos\GateIssueDto;
 use App\UseCases\Gate\Dtos\GateVerifyDto;
@@ -38,7 +39,7 @@ class GateController extends Controller
     {
         $member = $request->query('member');
         if (!is_string($member) || $member === '') {
-            return response()->failure(__('validation.custom.member_required'), 400);
+            throw AppException::badRequest('member_required');
         }
 
         $dto = new GateIssueDto();
@@ -64,7 +65,7 @@ class GateController extends Controller
     {
         $token = $request->query('token');
         if (!is_string($token) || $token === '') {
-            return response()->failure(__('validation.custom.token_required'), 400);
+            throw AppException::badRequest('token_required');
         }
 
         $dto = new GateVerifyDto();

@@ -10,7 +10,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Domain\Staff\Enums\StaffRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Staff\DestroyRequest;
 use App\Http\Requests\Staff\RestoreRequest;
@@ -68,21 +67,12 @@ class StaffController extends Controller
      */
     public function updateRole(UpdateRoleRequest $request, StaffService $staff, int $id): JsonResponse
     {
-        $role = StaffRole::tryFrom((int)$request->input('role'));
-        if ($role === null) {
-            return response()->failure(__('validation.custom.role_invalid'), 400);
-        }
-
         $dto = new StaffDto();
         $dto->assign($request->input());
-        $dto->role = $role->value;
 
         $vo = DB::transaction(function () use ($staff, $dto) {
             return $staff->updateRole($dto);
         });
-        if (!$vo->isOk()) {
-            return response()->failure(__('validation.custom.staff_not_found'));
-        }
 
         return response()->success(['id' => $vo->getId()]);
     }
@@ -103,11 +93,8 @@ class StaffController extends Controller
         $vo = DB::transaction(function () use ($staff, $dto) {
             return $staff->restore($dto);
         });
-        if (!$vo->isOk()) {
-            return response()->failure(__('validation.custom.staff_not_found'));
-        }
 
-        return response()->json($vo->attributes());
+        return response()->success(['id' => $vo->getId()]);
     }
 
     /**
@@ -127,9 +114,6 @@ class StaffController extends Controller
         $vo = DB::transaction(function () use ($staff, $dto) {
             return $staff->destroy($dto);
         });
-        if (!$vo->isOk()) {
-            return response()->failure(__('validation.custom.staff_not_found'));
-        }
 
         return response()->success(['id' => $vo->getId()]);
     }

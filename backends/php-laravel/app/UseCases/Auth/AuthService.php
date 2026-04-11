@@ -12,10 +12,10 @@ namespace App\UseCases\Auth;
 
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff;
-use App\Domain\Staff\Enums\Provider;
 use App\Domain\Staff\Enums\StaffRole;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Domain\Staff\ValueObjects\StaffVo;
+use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
@@ -43,20 +43,15 @@ class AuthService extends AbstractService
      */
     public function findUser(AuthUserDto $dto): StaffVo
     {
-        $vo = new StaffVo();
-        if (empty($dto->id)) {
-            return $vo;
-        }
-
         $condition = new StaffCondition();
         $condition->id = $dto->id;
 
         $entity = $this->staffRepository->findById($condition);
         if (empty($entity)) {
-            return $vo;
+            throw AppException::noFound('user_not_found');
         }
 
-        return $vo->assign($entity->attributes());
+        return (new StaffVo())->assign($entity->attributes());
     }
 
     /**

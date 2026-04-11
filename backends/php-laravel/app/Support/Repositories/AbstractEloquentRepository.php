@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\Support\Repositories;
 
 use App\Support\Entity;
+use App\Support\Exceptions\AppException;
 use App\Support\Exceptions\SystemException;
 use App\Support\Models\AppModel;
 use App\Support\Repositories\Cache\CacheKey;
@@ -91,7 +92,7 @@ abstract class AbstractEloquentRepository
     public function delete(int $id, ?int $deletedBy, ?string $column = null): bool
     {
         if (empty($deletedBy)) {
-            throw new SystemException(SystemException::GENERAL, ['削除実行者IDが指定されていません。']);
+            AppException::internal('general', ['削除実行者IDが指定されていません。']);
         }
 
         $model = $this->getModel();

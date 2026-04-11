@@ -18,6 +18,7 @@ use App\Domain\Staff\ValueObjects\StaffListVo;
 use App\Domain\Staff\ValueObjects\StaffMutationVo;
 use App\Domain\Staff\ValueObjects\StaffRemoveVo;
 use App\Domain\Staff\ValueObjects\StaffResourceVo;
+use App\Support\Exceptions\AppException;
 use App\Support\Services\AbstractService;
 use App\UseCases\Staff\Dtos\StaffDto;
 use Illuminate\Database\QueryException;
@@ -96,20 +97,17 @@ class StaffService extends AbstractService
      */
     public function updateRole(StaffDto $dto): StaffMutationVo
     {
-        $vo = new StaffMutationVo();
-        if ($dto->id === null || $dto->role === null) {
-            return $vo;
-        }
-
-        $role = StaffRole::tryFrom($dto->role);
+        $role = StaffRole::tryFrom((int)$dto->role);
         if ($role === null) {
-            return $vo;
+            throw AppException::badRequest('role_invalid');
         }
 
-        $ok = $this->staffRepository->updateRole($dto->id, $role, $dto->executorId);
-        $vo->assign(['ok' => $ok, 'id' => $dto->id]);
+        $ok = $this->staffRepository->updateRole((int)$dto->id, $role, $dto->executorId);
+        if (!$ok) {
+            throw AppException::noFound('staff_not_found');
+        }
 
-        return $vo;
+        return (new StaffMutationVo())->assign(['ok' => true, 'id' => $dto->id]);
     }
 
     /**
@@ -121,15 +119,12 @@ class StaffService extends AbstractService
      */
     public function destroy(StaffDto $dto): StaffRemoveVo
     {
-        $vo = new StaffRemoveVo();
-        if ($dto->id === null) {
-            return $vo;
+        $ok = $this->staffRepository->deleteById((int)$dto->id, $dto->executorId);
+        if (!$ok) {
+            throw AppException::noFound('staff_not_found');
         }
 
-        $ok = $this->staffRepository->deleteById($dto->id, $dto->executorId);
-        $vo->assign(['ok' => $ok, 'id' => $dto->id]);
-
-        return $vo;
+        return (new StaffRemoveVo())->assign(['ok' => true, 'id' => $dto->id]);
     }
 
     /**
@@ -141,14 +136,11 @@ class StaffService extends AbstractService
      */
     public function restore(StaffDto $dto): StaffRemoveVo
     {
-        $vo = new StaffRemoveVo();
-        if ($dto->id === null) {
-            return $vo;
+        $ok = $this->staffRepository->restoreById((int)$dto->id);
+        if (!$ok) {
+            throw AppException::noFound('staff_not_found');
         }
 
-        $ok = $this->staffRepository->restoreById($dto->id);
-        $vo->assign(['ok' => $ok, 'id' => $dto->id]);
-
-        return $vo;
+        return (new StaffRemoveVo())->assign(['ok' => true, 'id' => $dto->id]);
     }
 }

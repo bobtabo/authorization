@@ -10,57 +10,114 @@ declare(strict_types=1);
 
 namespace App\Support\Exceptions;
 
-use Lang;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * 基底Exceptionクラスです。
+ * アプリケーションExceptionクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Exceptions
  */
 class AppException extends RuntimeException
 {
-    public ?string $redirectTo = null;
-
-    protected array $responses = [];
-
-    protected static string $errorType = '';
-
-    const string DEFAULT = 'default';
-
     /**
      * コンストラクタ。
      *
-     * @param string|null $errorKey エラーキー
-     * @param array|null $replace メッセージ置換文字列
-     * @param int|null $statusCode ステータスコード
-     * @param array<int, mixed> $responses 追加レスポンス
+     * @param int $status HTTPステータスコード
+     * @param string $key メッセージキー
+     * @param array $replace メッセージ置換文字列
      */
     public function __construct(
-        ?string $errorKey = self::DEFAULT,
-        ?array $replace = [],
-        ?int $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR,
-        ...$responses
+        int $status,
+        string $key,
+        array $replace = [],
     ) {
-        if (empty(static::$errorType)) {
-            $message = Lang::get('exception.' . $errorKey, $replace);
-        } else {
-            $message = Lang::get('exception.' . static::$errorType . '.' . $errorKey, $replace);
-        }
-
-        parent::__construct($message, $statusCode);
-        $this->responses = $responses;
+        $message = __('validation.custom.' . $key, $replace);
+        parent::__construct($message, $status);
     }
 
     /**
-     * 追加レスポンスを取得します。
+     * 不正リクエスト例外を取得します。
      *
-     * @return array<int, mixed> 追加レスポンス
+     * @param string $key
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
      */
-    final public function getResponses(): array
+    public static function badRequest(string $key, array $replace = []): self
     {
-        return $this->responses;
+        return new self(Response::HTTP_BAD_REQUEST, $key, $replace);
+    }
+
+    /**
+     * 認証エラー例外を取得します。
+     *
+     * @param string $key エラーメッセージキー
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
+     */
+    public static function unauthorized(string $key, array $replace = []): self
+    {
+        return new self(Response::HTTP_UNAUTHORIZED, $key, $replace);
+    }
+
+    /**
+     * アクセス拒否の例外を取得します。
+     *
+     * @param string $key エラーメッセージキー
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
+     */
+    public static function forbidden(string $key, array $replace = []): self
+    {
+        return new self(Response::HTTP_FORBIDDEN, $key, $replace);
+    }
+
+    /**
+     * リソース未検出の例外を取得します。
+     *
+     * @param string $key エラーメッセージキー
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
+     */
+    public static function noFound(string $key, array $replace = []): self
+    {
+        return new self(Response::HTTP_NOT_FOUND, $key, $replace);
+    }
+
+    /**
+     * リクエスト制限の例外を取得します。
+     *
+     * @param string $key エラーメッセージキー
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
+     */
+    public static function manyRequest(string $key, array $replace = []): self
+    {
+        return new self(Response::HTTP_TOO_MANY_REQUESTS, $key, $replace);
+    }
+
+    /**
+     * サーバー内部エラー例外を取得します。
+     *
+     * @param string $key エラーメッセージキー
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
+     */
+    public static function internal(string $key, array $replace = []): self
+    {
+        return new self(Response::HTTP_INTERNAL_SERVER_ERROR, $key, $replace);
+    }
+
+    /**
+     * サービス利用不可の例外を取得します。
+     *
+     * @param string $key エラーメッセージキー
+     * @param array $replace メッセージ置換文字列
+     * @return self 例外
+     */
+    public static function unavailable(string $key, array $replace = []): self
+    {
+        return new self(Response::HTTP_SERVICE_UNAVAILABLE, $key, $replace);
     }
 }

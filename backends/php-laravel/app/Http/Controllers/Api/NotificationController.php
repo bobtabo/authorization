@@ -13,6 +13,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\Notification\CountsResponse;
 use App\Http\Responses\Notification\IndexResponse;
+use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Notification\Dtos\NotificationDto;
 use App\UseCases\Notification\NotificationService;
@@ -38,7 +39,7 @@ class NotificationController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
-            return response()->failure(__('validation.custom.unauthenticated'), 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $cursor = $request->query('cursor');
@@ -89,7 +90,7 @@ class NotificationController extends Controller
     {
         $staffId = $request->all()['executor_id'] ?? null;
         if (empty($staffId)) {
-            return response()->failure(__('validation.custom.unauthenticated'), 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $validated = $request->validate([
@@ -104,7 +105,7 @@ class NotificationController extends Controller
         $all = (bool)($validated['all'] ?? false);
 
         if (($ids === null || $ids === []) && !$all) {
-            return response()->failure(__('validation.custom.ids_or_all_required'), 400);
+            throw AppException::badRequest('ids_or_all_required');
         }
 
         $dto = new NotificationDto();
@@ -130,7 +131,7 @@ class NotificationController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
-            return response()->failure(__('validation.custom.unauthenticated'), 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $dto = new NotificationDto();
@@ -163,10 +164,6 @@ class NotificationController extends Controller
         $vo = DB::transaction(function () use ($notifications, $dto) {
             return $notifications->patch($dto);
         });
-
-        if (!$vo->isOk()) {
-            return response()->failure(__('validation.custom.notification_not_found'));
-        }
 
         return response()->success(['id' => $vo->getId()]);
     }

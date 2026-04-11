@@ -16,6 +16,7 @@ use App\Domain\Notification\ValueObjects\NotificationCountsVo;
 use App\Domain\Notification\ValueObjects\NotificationListVo;
 use App\Domain\Notification\ValueObjects\NotificationPatchVo;
 use App\Domain\Staff\Repositories\StaffRepository;
+use App\Support\Exceptions\AppException;
 use App\Support\Services\AbstractService;
 use App\UseCases\Notification\Dtos\NotificationDto;
 
@@ -47,7 +48,7 @@ class NotificationService extends AbstractService
     {
         $limit = max(1, min(100, $dto->limit));
 
-        $page = $this->notifications->listPage((int) $dto->staffId, $dto->cursor, $limit);
+        $page = $this->notifications->listPage((int)$dto->staffId, $dto->cursor, $limit);
 
         return (new NotificationListVo())->assign($page);
     }
@@ -60,7 +61,7 @@ class NotificationService extends AbstractService
      */
     public function counts(NotificationDto $dto): NotificationCountsVo
     {
-        return (new NotificationCountsVo())->assign($this->notifications->counts((int) $dto->staffId));
+        return (new NotificationCountsVo())->assign($this->notifications->counts((int)$dto->staffId));
     }
 
     /**
@@ -71,7 +72,7 @@ class NotificationService extends AbstractService
      */
     public function bulkMarkRead(NotificationDto $dto): NotificationBulkPatchVo
     {
-        $updated = $this->notifications->bulkMarkRead((int) $dto->staffId, $dto->ids, $dto->all);
+        $updated = $this->notifications->bulkMarkRead((int)$dto->staffId, $dto->ids, $dto->all);
 
         return (new NotificationBulkPatchVo())->assign(['updated' => $updated]);
     }
@@ -101,14 +102,12 @@ class NotificationService extends AbstractService
      */
     public function patch(NotificationDto $dto): NotificationPatchVo
     {
-        $vo = new NotificationPatchVo();
         $id = $dto->notificationId;
-        if ($id === null || $id <= 0) {
-            return $vo;
+        $ok = $this->notifications->patch((int)$id, $dto->attributes);
+        if (!$ok) {
+            throw AppException::noFound('notification_not_found');
         }
 
-        $ok = $this->notifications->patch($id, $dto->attributes);
-
-        return $vo->assign(['ok' => $ok, 'id' => $id]);
+        return (new NotificationPatchVo())->assign(['ok' => true, 'id' => $id]);
     }
 }
