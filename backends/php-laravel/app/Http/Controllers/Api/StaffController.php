@@ -60,12 +60,11 @@ class StaffController extends Controller
     /**
      * スタッフの権限を更新します。
      *
-     * @param AppRequest $request HTTP リクエスト
+     * @param UpdateRoleRequest $request HTTP リクエスト
      * @param StaffService $staff スタッフユースケース
-     * @param int $id スタッフID
      * @return JsonResponse JSON レスポンス
      */
-    public function updateRole(UpdateRoleRequest $request, StaffService $staff, int $id): JsonResponse
+    public function updateRole(UpdateRoleRequest $request, StaffService $staff): JsonResponse
     {
         $dto = new StaffDto();
         $dto->assign($request->input());
@@ -82,10 +81,9 @@ class StaffController extends Controller
      *
      * @param RestoreRequest $request HTTP リクエスト
      * @param StaffService $staff スタッフユースケース
-     * @param int $id スタッフID
      * @return JsonResponse JSONレスポンス
      */
-    public function restore(RestoreRequest $request, StaffService $staff, int $id): JsonResponse
+    public function restore(RestoreRequest $request, StaffService $staff): JsonResponse
     {
         $dto = new StaffDto();
         $dto->assign($request->input());
@@ -102,11 +100,9 @@ class StaffController extends Controller
      *
      * @param DestroyRequest $request HTTPリクエスト
      * @param StaffService $staff スタッフユースケース
-     * @param int $id スタッフID
      * @return JsonResponse JSONレスポンス
-     * @throws \Throwable
      */
-    public function destroy(DestroyRequest $request, StaffService $staff, int $id): JsonResponse
+    public function destroy(DestroyRequest $request, StaffService $staff): JsonResponse
     {
         $dto = new StaffDto();
         $dto->assign($request->input());
