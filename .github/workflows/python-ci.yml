@@ -1,0 +1,61 @@
+# Python CI ワークフロー
+# developブランチのbackends/python-fastapi/**変更時にCIを実行
+name: Python CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/python-fastapi/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Ubuntu ランナーを使用
+    runs-on: ubuntu-latest
+
+    # サービスコンテナ: MySQLとRedisをテスト用に起動
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    # CI実行ステップ
+    steps:
+      - uses: actions/checkout@v4
+
+      # Python をセットアップ
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      # Python 依存関係をインストール
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        working-directory: backends/python-fastapi
+
+      # インポートチェックを実行
+      - name: Check imports
+        run: python -c "import app.main; print('Import successful')"
+        working-directory: backends/python-fastapi

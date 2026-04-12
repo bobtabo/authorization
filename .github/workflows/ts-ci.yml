@@ -1,0 +1,61 @@
+# TypeScript CI ワークフロー
+# developブランチのbackends/ts-hono/**変更時にCIを実行
+name: TypeScript CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/ts-hono/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Ubuntu ランナーを使用
+    runs-on: ubuntu-latest
+
+    # サービスコンテナ: MySQLとRedisをテスト用に起動
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    # CI実行ステップ
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node.js をセットアップ
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # Node.js 依存関係をインストール
+      - name: Install dependencies
+        run: npm install
+        working-directory: backends/ts-hono
+
+      # ビルドを実行
+      - name: Build
+        run: npm run build
+        working-directory: backends/ts-hono

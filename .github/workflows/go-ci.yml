@@ -1,0 +1,66 @@
+# Go CI ワークフロー
+# developブランチのbackends/go-gin/**変更時にCIを実行
+name: Go CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/go-gin/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Ubuntu ランナーを使用
+    runs-on: ubuntu-latest
+
+    # サービスコンテナ: MySQLとRedisをテスト用に起動
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    # CI実行ステップ
+    steps:
+      - uses: actions/checkout@v4
+
+      # Go 1.24 をセットアップ
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      # Go 依存関係をインストール
+      - name: Install dependencies
+        run: go mod download
+        working-directory: backends/go-gin
+
+      # ビルドを実行
+      - name: Build
+        run: go build ./...
+        working-directory: backends/go-gin
+
+      # テストを実行（テストファイルがない場合はスキップ）
+      - name: Run tests
+        run: go test ./...
+        working-directory: backends/go-gin
