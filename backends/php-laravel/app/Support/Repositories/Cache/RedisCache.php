@@ -41,11 +41,12 @@ class RedisCache
             return;
         }
 
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
+        $prefix = (string)config('authorization.app.cache_prefix');
+        Cache::setPrefix($prefix);
         Cache::tags($cacheKey->tag)->put($cacheKey->key, $value, $second);
 
         foreach ($cacheKey->tag as $tag) {
-            Redis::sadd(static::tagSetKey($tag), $cacheKey->key);
+            Redis::sadd(static::tagSetKey($tag, $prefix), $cacheKey->key);
         }
     }
 
@@ -58,7 +59,7 @@ class RedisCache
     public static function get(CacheKey $cacheKey): mixed
     {
         if (Cache::getStore() instanceof RedisStore) {
-            Cache::setPrefix(config('authorization.app.cache_prefix'));
+            Cache::setPrefix((string)config('authorization.app.cache_prefix'));
             return Cache::tags($cacheKey->tag)->get($cacheKey->key);
         }
 
@@ -79,11 +80,12 @@ class RedisCache
             return;
         }
 
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
+        $prefix = (string)config('authorization.app.cache_prefix');
+        Cache::setPrefix($prefix);
         Cache::tags($cacheKey->tag)->forget($cacheKey->key);
 
         foreach ($cacheKey->tag as $tag) {
-            Redis::srem(static::tagSetKey($tag), $cacheKey->key);
+            Redis::srem(static::tagSetKey($tag, $prefix), $cacheKey->key);
         }
     }
 
@@ -100,10 +102,11 @@ class RedisCache
             return;
         }
 
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
+        $prefix = (string)config('authorization.app.cache_prefix');
+        Cache::setPrefix($prefix);
 
         foreach ($cacheKey->tag as $tag) {
-            $tagSetKey = static::tagSetKey($tag);
+            $tagSetKey = static::tagSetKey($tag, $prefix);
             $keys = Redis::smembers($tagSetKey);
 
             foreach ($keys as $key) {
@@ -123,7 +126,7 @@ class RedisCache
     public static function getByKey(string $key): mixed
     {
         if (Cache::getStore() instanceof RedisStore) {
-            Cache::setPrefix(config('authorization.app.cache_prefix'));
+            Cache::setPrefix((string)config('authorization.app.cache_prefix'));
         }
 
         return Cache::get($key);
@@ -135,9 +138,8 @@ class RedisCache
      * @param string $tag タグ名
      * @return string Redis キー
      */
-    private static function tagSetKey(string $tag): string
+    private static function tagSetKey(string $tag, string $prefix): string
     {
-        $prefix = config('authorization.app.cache_prefix');
         return empty($prefix) ? "tag_keys:{$tag}" : "{$prefix}:tag_keys:{$tag}";
     }
 }

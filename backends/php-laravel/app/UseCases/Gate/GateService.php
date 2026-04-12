@@ -21,6 +21,7 @@ use App\UseCases\Gate\Dtos\GateVerifyDto;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * JWT の発行・検証のユースケースをまとめるサービスです。
@@ -30,10 +31,6 @@ use Illuminate\Support\Str;
  */
 class GateService extends AbstractService
 {
-    private const TTL_SECONDS = 1800; // 30 分
-    private const ISSUER = 'authorization';
-    private const ALGORITHM = 'RS256';
-
     /**
      * @param ClientRepository $clientRepository クライアントリポジトリ
      * @param GateCacheRepository $cache JWT キャッシュリポジトリ
@@ -56,18 +53,20 @@ class GateService extends AbstractService
             throw AppException::unauthorized('client_not_found');
         }
 
+        /** @var array{issuer: string, algorithm: string, ttl: int, cache_ttl: int} $jwt */
+        $jwt = config('authorization.app.jwt');
         $identifier = (string)$client->identifier;
         $token = $this->cache->getJwt($identifier, $dto->memberId);
 
         if ($token === null) {
             $token = $this->issueJwt(
+                $jwt,
                 $dto->memberId,
                 $identifier,
                 (string)$client->privateKey,
                 (string)$client->fingerprint,
             );
-            $ttl = (int)config('authorization.app.jwt_cache_ttl');
-            $this->cache->putJwt($identifier, $dto->memberId, $token, $ttl);
+            $this->cache->putJwt($identifier, $dto->memberId, $token, $jwt['cache_ttl']);
         }
 
         $vo = new GateIssueVo();
@@ -103,26 +102,32 @@ class GateService extends AbstractService
     /**
      * RS256 で署名した JWT を発行します。
      *
+     * @param array{issuer: string, algorithm: string, ttl: int} $jwt JWT 設定
      * @param string $memberId クライアント会員ID（sub）
      * @param string $identifier クライアント識別名（aud）
      * @param string $privateKey 署名用 RSA 秘密鍵（PEM 形式）
      * @param string $fingerprint 秘密鍵フィンガープリント（kid）
      * @return string 発行した JWT 文字列
      */
-    private function issueJwt(string $memberId, string $identifier, string $privateKey, string $fingerprint): string
-    {
+    private function issueJwt(
+        array $jwt,
+        string $memberId,
+        string $identifier,
+        string $privateKey,
+        string $fingerprint
+    ): string {
         $now = time();
         $payload = [
-            'iss' => self::ISSUER,
+            'iss' => $jwt['issuer'],
             'sub' => $memberId,
             'aud' => $identifier,
-            'exp' => $now + self::TTL_SECONDS,
+            'exp' => $now + $jwt['ttl'],
             'iat' => $now,
             'nbf' => $now,
             'jti' => (string)Str::uuid(),
         ];
 
-        return JWT::encode($payload, $privateKey, self::ALGORITHM, $fingerprint);
+        return JWT::encode($payload, $privateKey, $jwt['algorithm'], $fingerprint);
     }
 
     /**
@@ -136,15 +141,18 @@ class GateService extends AbstractService
      */
     private function verifyJwt(string $identifier, string $token, string $publicKey): array
     {
+        /** @var array{issuer: string, algorithm: string} $jwt */
+        $jwt = config('authorization.app.jwt');
+
         try {
-            $decoded = JWT::decode($token, new Key($publicKey, self::ALGORITHM));
-        } catch (\Throwable) {
+            $decoded = JWT::decode($token, new Key($publicKey, $jwt['algorithm']));
+        } catch (Throwable) {
             throw AppException::unauthorized('jwt_invalid');
         }
 
         $payload = (array)$decoded;
 
-        if (($payload['iss'] ?? '') !== self::ISSUER) {
+        if (($payload['iss'] ?? '') !== $jwt['issuer']) {
             throw AppException::unauthorized('jwt_invalid');
         }
 

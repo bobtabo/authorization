@@ -102,6 +102,8 @@ class AuthController extends Controller
      */
     public function googleCallback(AuthService $service
     ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
+        $appConfig = config('authorization.app');
+
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
@@ -120,11 +122,11 @@ class AuthController extends Controller
             });
 
             $secure = config('app.env') === 'production';
-            return redirect(config('authorization.app.frontend_url') . '/clients')
+            return redirect($appConfig['frontend_url'] . '/clients')
                 ->cookie(
                     'staff_id',
                     (string)$vo->getId(),
-                    config('authorization.app.staff_cookie_lifetime'),
+                    $appConfig['staff_cookie_lifetime'],
                     '/',
                     null,
                     $secure,
@@ -132,7 +134,7 @@ class AuthController extends Controller
                 );
         } catch (Exception $e) {
             Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect(config('authorization.app.frontend_url') . '/error?code=500');
+            return redirect($appConfig['frontend_url'] . '/error?code=500');
         }
     }
 
