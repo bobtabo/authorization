@@ -49,7 +49,7 @@ class ClientController extends Controller
         $response = new IndexResponse();
         $response->assign($value->attributes());
 
-        return response()->success($response->attributes());
+        return response()->json($response->attributes());
     }
 
     /**

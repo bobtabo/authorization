@@ -11,6 +11,9 @@ from app.services.invitation_service import InvitationService
 
 router = APIRouter()
 
+# OAuth はブラウザリダイレクトのため /api 外に配置（PHP と同じパス構造）
+oauth_router = APIRouter()
+
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
@@ -27,9 +30,8 @@ def get_my_profile(
     if staff is None:
         raise unauthorized("unauthenticated")
     return {
-        "id": staff.id,
+        "staff_id": staff.id,
         "name": staff.name,
-        "email": staff.email,
         "avatar": staff.avatar,
         "role": staff.role,
     }
@@ -55,7 +57,7 @@ def invitation(
     return {"token": inv.token}
 
 
-@router.get("/auth/google/redirect")
+@oauth_router.get("/auth/google/redirect")
 def google_redirect(settings: Settings = Depends(get_settings)):
     params = {
         "client_id": settings.google_client_id,
@@ -68,9 +70,8 @@ def google_redirect(settings: Settings = Depends(get_settings)):
     return RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{query}", status_code=302)
 
 
-@router.get("/auth/google/callback")
+@oauth_router.get("/auth/google/callback")
 def google_callback(
-    response: Response,
     code: str = "",
     settings: Settings = Depends(get_settings),
     auth_svc: AuthService = Depends(get_auth_service),
@@ -95,7 +96,7 @@ def google_callback(
         user_info = user_resp.json()
 
     staff = auth_svc.login(
-        provider="google",
+        provider=1,  # Provider::Google
         provider_id=user_info["id"],
         name=user_info.get("name", ""),
         email=user_info.get("email", ""),
@@ -103,5 +104,6 @@ def google_callback(
     )
 
     max_age = settings.staff_cookie_lifetime * 60
-    response.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
-    return RedirectResponse(url=f"{settings.frontend_url}/", status_code=302)
+    redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
+    redirect.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
+    return redirect

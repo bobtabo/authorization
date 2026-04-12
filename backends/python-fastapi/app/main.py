@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from app.config.settings import get_settings
 from app.exceptions import AppError
 from app.routers import auth, clients, staffs, invitations, gate, notifications
+from app.routers.auth import oauth_router
 
 settings = get_settings()
 
@@ -25,6 +26,8 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
 
 
 # ルーター登録
+# OAuth はブラウザリダイレクトのため /api 外に配置（PHP と同じパス構造）
+app.include_router(oauth_router)
 prefix = "/api"
 app.include_router(auth.router, prefix=prefix)
 app.include_router(clients.router, prefix=prefix)

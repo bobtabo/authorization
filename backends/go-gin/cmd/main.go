@@ -71,6 +71,10 @@ func main() {
 		c.Next()
 	})
 
+	// OAuth はブラウザリダイレクトのため /api 外に配置（PHP と同じパス構造）
+	r.GET("/auth/google/redirect", authH.GoogleRedirect)
+	r.GET("/auth/google/callback", authH.GoogleCallback)
+
 	api := r.Group("/api")
 	{
 		// --- auth ---
@@ -78,8 +82,6 @@ func main() {
 		api.GET("/auth/login", authH.Login)
 		api.GET("/auth/logout", authH.Logout)
 		api.GET("/auth/invitation/:token", authH.Invitation)
-		api.GET("/auth/google/redirect", authH.GoogleRedirect)
-		api.GET("/auth/google/callback", authH.GoogleCallback)
 
 		// --- clients ---
 		api.GET("/clients", clientH.Index)

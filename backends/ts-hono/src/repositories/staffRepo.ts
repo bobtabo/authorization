@@ -9,7 +9,7 @@ export async function findAllStaffs(keyword?: string, roles?: number[]): Promise
   return db.select().from(staffs).where(conds.length ? and(...conds) : undefined).orderBy(staffs.id);
 }
 
-export async function findStaffByProvider(provider: string, providerId: string): Promise<Staff | undefined> {
+export async function findStaffByProvider(provider: number, providerId: string): Promise<Staff | undefined> {
   const rows = await db.select().from(staffs)
     .where(and(eq(staffs.provider, provider), eq(staffs.providerId, providerId), isNull(staffs.deletedAt)))
     .limit(1);

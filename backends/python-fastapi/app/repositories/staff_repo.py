@@ -18,7 +18,7 @@ class StaffRepository:
             q = q.filter(Staff.role.in_(roles))
         return q.order_by(Staff.id).all()
 
-    def find_by_provider(self, provider: str, provider_id: str) -> Optional[Staff]:
+    def find_by_provider(self, provider: int, provider_id: str) -> Optional[Staff]:
         return self.db.query(Staff).filter(
             Staff.provider == provider,
             Staff.provider_id == provider_id,

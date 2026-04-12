@@ -4,17 +4,27 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
+import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+
+const RUNTIME_LABEL: Record<string, string> = {
+  php:    "PHP",
+  go:     "Go",
+  python: "Python",
+  ts:     "TypeScript",
+};
 
 export default function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
   const e2eLogin = import.meta.env.VITE_E2E === "1";
+  const runtime = useMemo(() => localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php", []);
+  const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
   const connectionDetail = useMemo(() => getBackendConnectionDetail(), []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
       <div className="shrink-0 border-b border-[#d0d7de] bg-white px-4 py-3 text-left shadow-sm">
         <p className="text-xs font-semibold text-[#1f2328]">
-          Backend は PHP と通信しています
+          Backend は {runtimeLabel} と通信しています
         </p>
         <p
           className="mt-1.5 break-all font-mono text-[11px] leading-relaxed text-[#656d76]"
@@ -55,7 +65,7 @@ export default function LoginPage(): React.JSX.Element {
                   navigate("/clients");
                   return;
                 }
-                window.location.href = "/function/php/auth/google/redirect";
+                window.location.href = `/function/${runtime}/auth/google/redirect`;
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#d0d7de] bg-white px-3 py-2.5 text-sm font-medium text-[#24292f] shadow-sm transition hover:bg-gray-50 hover:border-[#b6bcc3] active:bg-gray-100"
             >

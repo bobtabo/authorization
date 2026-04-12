@@ -10,7 +10,7 @@ class AuthService:
     def find_user(self, staff_id: int) -> Optional[Staff]:
         return self.staff_repo.find_by_id(staff_id)
 
-    def login(self, provider: str, provider_id: str, name: str, email: str, avatar: Optional[str]) -> Staff:
+    def login(self, provider: int, provider_id: str, name: str, email: str, avatar: Optional[str]) -> Staff:
         staff = self.staff_repo.find_by_provider(provider, provider_id)
         if staff is None:
             staff = Staff(

@@ -6,7 +6,7 @@ export async function findUser(staffId: number): Promise<Staff | undefined> {
 }
 
 export async function login(
-  provider: string, providerId: string,
+  provider: number, providerId: string,
   name: string, email: string, avatar?: string,
 ): Promise<Staff> {
   return upsertStaff({ provider, providerId, name, email, avatar, role: 0 });

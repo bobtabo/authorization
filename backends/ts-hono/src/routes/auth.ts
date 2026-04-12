@@ -8,6 +8,9 @@ import { findByToken } from "../services/invitationService.js";
 
 const app = new Hono();
 
+// OAuth はブラウザリダイレクトのため /api 外に配置（PHP と同じパス構造）
+export const oauthApp = new Hono();
+
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
@@ -17,7 +20,7 @@ app.get("/auth/me", async (c) => {
   if (!staffId) throw unauthorized("unauthenticated");
   const staff = await findUser(staffId);
   if (!staff) throw unauthorized("unauthenticated");
-  return c.json({ id: staff.id, name: staff.name, email: staff.email, avatar: staff.avatar, role: staff.role });
+  return c.json({ staff_id: staff.id, name: staff.name, avatar: staff.avatar, role: staff.role });
 });
 
 app.get("/auth/login", (c) => {
@@ -25,7 +28,7 @@ app.get("/auth/login", (c) => {
 });
 
 app.get("/auth/logout", (c) => {
-  deleteCookie(c, "staff_id");
+  deleteCookie(c, "staff_id", { path: "/" });
   return c.json({ message: "logged_out" });
 });
 
@@ -35,7 +38,7 @@ app.get("/auth/invitation/:token", async (c) => {
   return c.json({ token: inv.token });
 });
 
-app.get("/auth/google/redirect", (c) => {
+oauthApp.get("/auth/google/redirect", (c) => {
   const params = new URLSearchParams({
     client_id: config.oauth.googleClientId,
     redirect_uri: config.oauth.googleRedirectUrl,
@@ -46,7 +49,7 @@ app.get("/auth/google/redirect", (c) => {
   return c.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`, 302);
 });
 
-app.get("/auth/google/callback", async (c) => {
+oauthApp.get("/auth/google/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) throw badRequest("code_required");
 
@@ -69,10 +72,10 @@ app.get("/auth/google/callback", async (c) => {
   });
   const userInfo = await userRes.json() as { id: string; name?: string; email?: string; picture?: string };
 
-  const staff = await login("google", userInfo.id, userInfo.name ?? "", userInfo.email ?? "", userInfo.picture);
+  const staff = await login(1, userInfo.id, userInfo.name ?? "", userInfo.email ?? "", userInfo.picture);
   const maxAge = config.app.staffCookieLifetime * 60;
-  setCookie(c, "staff_id", String(staff.id), { maxAge, httpOnly: true, sameSite: "Lax" });
-  return c.redirect(`${config.app.frontendUrl}/`, 302);
+  setCookie(c, "staff_id", String(staff.id), { maxAge, httpOnly: true, sameSite: "Lax", path: "/" });
+  return c.redirect(`${config.app.frontendUrl}/clients`, 302);
 });
 
 export default app;

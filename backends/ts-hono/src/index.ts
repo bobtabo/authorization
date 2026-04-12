@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { AppError } from "./lib/errors.js";
 import { config } from "./config.js";
-import authRoutes from "./routes/auth.js";
+import authRoutes, { oauthApp } from "./routes/auth.js";
 import clientRoutes from "./routes/clients.js";
 import staffRoutes from "./routes/staffs.js";
 import invitationRoutes from "./routes/invitations.js";
@@ -26,6 +26,9 @@ app.onError((err, c) => {
   console.error(err);
   return c.json({ message: "internal_server_error" }, 500);
 });
+
+// OAuth はブラウザリダイレクトのため /api 外に配置（PHP と同じパス構造）
+app.route("/", oauthApp);
 
 const api = app.basePath("/api");
 api.route("/", authRoutes);
