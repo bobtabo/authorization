@@ -32,6 +32,10 @@ services:
     ports:
       - '${TS_DEBUG_PORT}:9229'
     volumes:
-      - ./../../../backends/ts:/var/www/${APP_NAME}
+      - ./../../../backends/ts-hono:/var/www/${APP_NAME}
+    working_dir: /var/www/${APP_NAME}
+    command: >
+      sh -c "npm install --silent &&
+             npx tsx watch src/index.ts"
     networks:
       - authorization
