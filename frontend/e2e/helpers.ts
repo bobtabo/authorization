@@ -61,6 +61,24 @@ export const mockClientDetail = {
   updated_at: "2026-01-15 09:00",
 };
 
+/** ログアウトのモックを設定します。 */
+export async function mockLogout(page: Page): Promise<void> {
+  await page.route(`${API}/auth/logout`, (route) =>
+    route.fulfill({ status: 200, json: {} }),
+  );
+}
+
+/**
+ * バックエンドランタイム定義。
+ * 実装が完了したランタイムのコメントアウトを外してください。
+ */
+export const BACKENDS = [
+  { value: "php",    label: "PHP",        apiPrefix: "**/function/php/api" },
+  // { value: "go",     label: "Go",         apiPrefix: "**/function/go/api" },
+  // { value: "python", label: "Python",     apiPrefix: "**/function/python/api" },
+  // { value: "ts",     label: "TypeScript", apiPrefix: "**/function/ts/api" },
+] as const;
+
 /** スタッフ一覧のモックデータ */
 export const mockStaffs = {
   items: [
