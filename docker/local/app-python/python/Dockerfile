@@ -24,3 +24,6 @@ ENV LANG="ja_JP.UTF-8" \
     LC_ALL="ja_JP.UTF-8"
 
 WORKDIR /var/www
+
+# pip を最新化
+RUN pip install --upgrade pip
