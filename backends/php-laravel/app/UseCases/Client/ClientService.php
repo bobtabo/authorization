@@ -36,6 +36,17 @@ class ClientService extends AbstractService
     }
 
     /**
+     * アクセストークンでクライアントを認証します。
+     *
+     * @param string $token Bearer アクセストークン
+     * @return bool 認証成功の場合 true
+     */
+    public function authenticateByToken(string $token): bool
+    {
+        return $this->clientRepository->findByAccessToken($token) !== null;
+    }
+
+    /**
      * クライアント一覧を取得します。
      *
      * @param ClientDto $dto クライアントDTO

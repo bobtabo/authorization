@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace App\Support\Repositories\Traits;
 
+use App\Support\Repositories\Cache\CacheKey;
+use App\Support\Repositories\Cache\RedisCache;
 use Batch;
 use DB;
-use Sii\Selloop\Core\Repositories\Cache\CacheKey;
-use Sii\Selloop\Core\Repositories\Cache\RedisCache;
 
 /**
  * バルク操作Traitです。
@@ -60,7 +60,7 @@ trait Bulk
      * @param array $ids 削除ID配列
      * @return void
      */
-    public function forceDeleteBatch(array $ids = []) : void
+    public function forceDeleteBatch(array $ids = []): void
     {
         if (empty($ids)) {
             return;

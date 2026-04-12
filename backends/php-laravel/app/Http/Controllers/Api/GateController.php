@@ -44,6 +44,7 @@ class GateController extends Controller
 
         $dto = new GateIssueDto();
         $dto->memberId = $member;
+        $dto->accessToken = $request->bearerToken() ?? '';
 
         $vo = $gate->issueToken($dto);
 

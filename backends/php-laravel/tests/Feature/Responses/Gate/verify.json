@@ -1,4 +1,4 @@
 {
-    "iss": "sii-auth",
+    "iss": "authorization",
     "aud": "test-client"
 }

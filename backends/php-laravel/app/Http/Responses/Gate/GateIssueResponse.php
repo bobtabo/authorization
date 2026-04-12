@@ -23,5 +23,5 @@ class GateIssueResponse extends AbstractResponse
 {
     use Getter;
 
-    private string $message = '';
+    private string $token = '';
 }

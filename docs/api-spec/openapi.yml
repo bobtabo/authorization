@@ -723,28 +723,28 @@ components:
       properties:
         name:
           type: string
-          example: "株式会社ストラテジックインサイト"
+          example: "株式会社モックデータ商事"
         post_code:
           type: string
-          example: "1070061"
+          example: "1234567"
         pref:
           type: string
           example: "東京都"
         city:
           type: string
-          example: "港区北青山"
+          example: "架空市中央区みなみ町"
         address:
           type: string
-          example: "二丁目5番8号"
+          example: "1丁目2番3号"
         building:
           type: string
-          example: "青山OMスクエア"
+          example: "サンプルプラザ東館"
         tel:
           type: string
           example: "0312345678"
         email:
           type: string
-          example: "nagashibas@sii-japan.co.jp"
+          example: "satoshi.nagashiba@gmail.com"
 
     ClientUpdate:
       type: object
@@ -799,31 +799,31 @@ components:
           example: "1"
         name:
           type: string
-          example: "株式会社ストラテジックインサイト"
+          example: "株式会社モックデータ商事"
         identifier:
           type: string
-          example: "sii"
+          example: "mock"
         post_code:
           type: string
-          example: "1070061"
+          example: "1234567"
         pref:
           type: string
           example: "東京都"
         city:
           type: string
-          example: "港区北青山"
+          example: "架空市中央区みなみ町"
         address:
           type: string
-          example: "二丁目5番8号"
+          example: "1丁目2番3号"
         building:
           type: string
-          example: "青山OMスクエア"
+          example: "サンプルプラザ東館"
         tel:
           type: string
           example: "0312345678"
         email:
           type: string
-          example: "0312345678"
+          example: "satoshi.nagashiba@gmail.com"
         status:
           type: integer
           example: 1

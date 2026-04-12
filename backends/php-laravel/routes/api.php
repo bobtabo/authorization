@@ -45,7 +45,7 @@ Route::get('invitation/issue', [InvitationController::class, 'issue']);
 Route::get('invitation', [InvitationController::class, 'index']);
 
 // --- gate（OpenAPI: issue のみ bearerAuth）---
-Route::get('gate/issue', [GateController::class, 'issue'])->middleware('auth:sanctum');
+Route::get('gate/issue', [GateController::class, 'issue'])->middleware('client.token');
 Route::get('gate/client/{identifier}/verify', [GateController::class, 'verify'])
     ->where('identifier', '[a-zA-Z0-9._-]+');
 

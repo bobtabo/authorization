@@ -60,7 +60,7 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
     {
         $token = bin2hex(random_bytes(16));
         $url = $this->buildUrl($token);
-        $invitation = new Entity;
+        $invitation = new Entity();
         $invitation->assign([
             'token' => $token,
             'url' => $url,

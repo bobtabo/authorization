@@ -19,11 +19,11 @@ use App\Support\ValueObjects\AbstractValueObject;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Gate\ValueObjects
  *
- * @method string getMessage() 結果メッセージを返します。
+ * @method string getToken() 発行した JWT 文字列を返します。
  */
 class GateIssueVo extends AbstractValueObject
 {
     use Getter;
 
-    private string $message = 'SUCCESS';
+    private string $token = '';
 }

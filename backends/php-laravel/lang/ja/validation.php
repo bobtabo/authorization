@@ -197,6 +197,8 @@ return [
         // Gate
         'member_required' => 'member を指定してください。',
         'token_required' => 'token を指定してください。',
+        'client_not_found' => 'クライアントが存在しません。',
+        'jwt_invalid' => 'JWT が無効です。',
     ],
 
     /*
