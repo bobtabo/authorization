@@ -1,22 +1,19 @@
 import type { Page } from "@playwright/test";
 
-/** VITE_API_URL=/function/php/api の URL パターン */
-const API = "**/function/php/api";
-
 /** auth/me・通知など、全ページ共通のモックを設定します。 */
-export async function mockCommon(page: Page): Promise<void> {
+export async function mockCommon(page: Page, apiPrefix: string): Promise<void> {
   // ログイン済みユーザー（管理者）
-  await page.route(`${API}/auth/me`, (route) =>
+  await page.route(`${apiPrefix}/auth/me`, (route) =>
     route.fulfill({
       json: { staff_id: 1, name: "テストスタッフ", avatar: null, role: 1 },
     }),
   );
 
   // 通知ヘッダー
-  await page.route(`${API}/notifications/counts`, (route) =>
+  await page.route(`${apiPrefix}/notifications/counts`, (route) =>
     route.fulfill({ json: { unread: 0, total: 0 } }),
   );
-  await page.route(`${API}/notifications*`, (route) =>
+  await page.route(`${apiPrefix}/notifications*`, (route) =>
     route.fulfill({ json: [] }),
   );
 }
@@ -62,21 +59,18 @@ export const mockClientDetail = {
 };
 
 /** ログアウトのモックを設定します。 */
-export async function mockLogout(page: Page): Promise<void> {
-  await page.route(`${API}/auth/logout`, (route) =>
+export async function mockLogout(page: Page, apiPrefix: string): Promise<void> {
+  await page.route(`${apiPrefix}/auth/logout`, (route) =>
     route.fulfill({ status: 200, json: {} }),
   );
 }
 
-/**
- * バックエンドランタイム定義。
- * 実装が完了したランタイムのコメントアウトを外してください。
- */
+/** バックエンドランタイム定義。 */
 export const BACKENDS = [
   { value: "php",    label: "PHP",        apiPrefix: "**/function/php/api" },
-  // { value: "go",     label: "Go",         apiPrefix: "**/function/go/api" },
-  // { value: "python", label: "Python",     apiPrefix: "**/function/python/api" },
-  // { value: "ts",     label: "TypeScript", apiPrefix: "**/function/ts/api" },
+  { value: "go",     label: "Go",         apiPrefix: "**/function/go/api" },
+  { value: "python", label: "Python",     apiPrefix: "**/function/python/api" },
+  { value: "ts",     label: "TypeScript", apiPrefix: "**/function/ts/api" },
 ] as const;
 
 /** スタッフ一覧のモックデータ */

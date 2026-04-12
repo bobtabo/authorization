@@ -1,15 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { mockCommon, mockLogout, mockClients, BACKENDS } from "./helpers";
 
-const API = "**/function/php/api";
+const PHP_API = "**/function/php/api";
 
 // ---------------------------------------------------------------------------
 // バックエンドランタイム切り替え
 // ---------------------------------------------------------------------------
 test.describe("ヘッダー / バックエンド切り替え", () => {
   test.beforeEach(async ({ page }) => {
-    await mockCommon(page);
-    await page.route(`${API}/clients*`, (route) =>
+    await mockCommon(page, PHP_API);
+    await page.route(`${PHP_API}/clients*`, (route) =>
       route.fulfill({ json: mockClients }),
     );
     await page.goto("/clients");
@@ -20,7 +20,7 @@ test.describe("ヘッダー / バックエンド切り替え", () => {
   });
 
   test("ランタイムを切り替えるとログアウトしてログインへ遷移する", async ({ page }) => {
-    await mockLogout(page);
+    await mockLogout(page, PHP_API);
 
     await page.getByLabel("Backend:").selectOption("go");
 
@@ -28,7 +28,7 @@ test.describe("ヘッダー / バックエンド切り替え", () => {
   });
 
   test("切り替え後にログインページが表示される", async ({ page }) => {
-    await mockLogout(page);
+    await mockLogout(page, PHP_API);
 
     await page.getByLabel("Backend:").selectOption("go");
     await expect(page.getByText("Googleで続行")).toBeVisible();
