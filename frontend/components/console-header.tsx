@@ -179,6 +179,33 @@ export function ConsoleHeader(): React.JSX.Element {
         </div>
 
         <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
+            <label
+              htmlFor="header-backend-runtime"
+              className="whitespace-nowrap text-xs font-medium tracking-wide text-gray-600 sm:text-sm"
+            >
+              Backend:
+            </label>
+            <div className="relative shrink-0">
+              <select
+                id="header-backend-runtime"
+                name="backend-runtime"
+                defaultValue="php"
+                className="h-9 min-w-[10rem] cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-1.5 pl-3 pr-9 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 sm:min-w-[11rem] sm:text-sm"
+              >
+                <option value="go">Go</option>
+                <option value="php">PHP</option>
+                <option value="python">Python</option>
+                <option value="ts">TypeScript</option>
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                strokeWidth={2}
+                aria-hidden
+              />
+            </div>
+          </div>
+
           {isAdmin && <div ref={settingsMenuRef} className="relative">
             <button
               type="button"
