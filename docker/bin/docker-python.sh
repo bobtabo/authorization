@@ -4,8 +4,8 @@
 #
 
 ARG="${1}"
-
-cd local/app-python
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${SCRIPT_DIR}/../local/app-python"
 
 if [ "${ARG}" = "up" ]; then
     if [ ! -f .env ]; then

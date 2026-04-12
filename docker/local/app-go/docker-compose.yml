@@ -32,6 +32,8 @@ services:
     ports:
       - '${GO_DEBUG_PORT}:2345'
     volumes:
-      - ./../../../backends/go:/var/www/${APP_NAME}
+      - ./../../../backends/go-gin:/var/www/${APP_NAME}
+    working_dir: /var/www/${APP_NAME}
+    command: go run ./cmd/main.go
     networks:
       - authorization

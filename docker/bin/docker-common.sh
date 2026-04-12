@@ -4,8 +4,8 @@
 #
 
 ARG="${1}"
-
-cd local/common
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${SCRIPT_DIR}/../local/common"
 
 if [ "${ARG}" = "up" ]; then
     docker network create --driver bridge authorization
