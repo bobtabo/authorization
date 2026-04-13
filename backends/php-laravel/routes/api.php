@@ -22,36 +22,48 @@ use Illuminate\Support\Facades\Route;
 */
 
 // --- auth ---
-Route::get('auth/me', [AuthController::class, 'getMyProfile']);
-Route::get('auth/login', [AuthController::class, 'login']);
-Route::get('auth/invitation/{token}', [AuthController::class, 'invitation']);
-Route::get('auth/logout', [AuthController::class, 'logout']);
+Route::prefix('auth')->controller(AuthController::class)->group(function () {
+    Route::get('me', 'getMyProfile');
+    Route::get('login', 'login');
+    Route::get('invitation/{token}', 'invitation');
+    Route::get('logout', 'logout');
+});
 
 // --- clients（/clients/store と {id} の衝突を避けるため store を先に定義）---
-Route::get('clients', [ClientController::class, 'index']);
-Route::post('clients/store', [ClientController::class, 'store']);
-Route::put('clients/{id}/update', [ClientController::class, 'update'])->whereNumber('id');
-Route::get('clients/{id}', [ClientController::class, 'show'])->whereNumber('id');
-Route::delete('clients/{id}/delete', [ClientController::class, 'destroy'])->whereNumber('id');
+Route::prefix('clients')->controller(ClientController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::post('store', 'store');
+    Route::put('{id}/update', 'update')->whereNumber('id');
+    Route::get('{id}', 'show')->whereNumber('id');
+    Route::delete('{id}/delete', 'destroy')->whereNumber('id');
+});
 
 // --- staffs ---
-Route::get('staffs', [StaffController::class, 'index']);
-Route::patch('staffs/{id}/updateRole', [StaffController::class, 'updateRole'])->whereNumber('id');
-Route::patch('staffs/{id}/restore', [StaffController::class, 'restore'])->whereNumber('id');
-Route::delete('staffs/{id}/delete', [StaffController::class, 'destroy'])->whereNumber('id');
+Route::prefix('staffs')->controller(StaffController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::patch('{id}/updateRole', 'updateRole')->whereNumber('id');
+    Route::patch('{id}/restore', 'restore')->whereNumber('id');
+    Route::delete('{id}/delete', 'destroy')->whereNumber('id');
+});
 
 // --- invitation（/invitation/issue を先に）---
-Route::get('invitation/issue', [InvitationController::class, 'issue']);
-Route::get('invitation', [InvitationController::class, 'index']);
+Route::prefix('invitation')->controller(InvitationController::class)->group(function () {
+    Route::get('issue', 'issue');
+    Route::get('/', 'index');
+});
 
 // --- gate（OpenAPI: issue のみ bearerAuth）---
-Route::get('gate/issue', [GateController::class, 'issue'])->middleware('client.token');
-Route::get('gate/client/{identifier}/verify', [GateController::class, 'verify'])
-    ->where('identifier', '[a-zA-Z0-9._-]+');
+Route::prefix('gate')->controller(GateController::class)->group(function () {
+    Route::get('issue', 'issue')->middleware('client.token');
+    Route::get('client/{identifier}/verify', 'verify')
+        ->where('identifier', '[a-zA-Z0-9._-]+');
+});
 
-// --- notifications（認証は X-Executor-Id ヘッダーでコントローラー側が処理）---
-Route::get('notifications/counts', [NotificationController::class, 'counts']);
-Route::get('notifications', [NotificationController::class, 'index']);
-Route::post('notifications', [NotificationController::class, 'store']);
-Route::patch('notifications', [NotificationController::class, 'readAll']);
-Route::patch('notifications/{id}', [NotificationController::class, 'read'])->whereNumber('id');
+// --- notifications（認証はコントローラー側で処理）---
+Route::prefix('notifications')->controller(NotificationController::class)->group(function () {
+    Route::get('counts', 'counts');
+    Route::get('/', 'index');
+    Route::post('/', 'store');
+    Route::patch('/', 'readAll');
+    Route::patch('{id}', 'read')->whereNumber('id');
+});
