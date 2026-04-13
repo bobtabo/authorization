@@ -43,7 +43,11 @@ var (
 func TestMain(m *testing.M) {
 	// プロジェクトルートの .env を明示的にロードしてから DB 名だけ上書き
 	// （godotenv.Load は既存の env var を上書きしないため、順番が重要）
-	_ = godotenv.Load("../.env")
+	envFile := os.Getenv("ENV_FILE")
+	if envFile == "" {
+		envFile = "../.env"
+	}
+	_ = godotenv.Load(envFile)
 	os.Setenv("DB_DATABASE", "authorization_test")
 
 	testCfg = config.Load()

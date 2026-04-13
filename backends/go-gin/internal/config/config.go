@@ -49,7 +49,11 @@ type JWTConfig struct {
 }
 
 func Load() *Config {
-	_ = godotenv.Load()
+	envFile := os.Getenv("ENV_FILE")
+	if envFile == "" {
+		envFile = ".env"
+	}
+	_ = godotenv.Load(envFile)
 
 	return &Config{
 		App: AppConfig{

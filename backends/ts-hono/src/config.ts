@@ -1,4 +1,7 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+
+const envFile = process.env.ENV_FILE || ".env";
+loadEnv({ path: envFile });
 
 function env(key: string, fallback = ""): string {
   return process.env[key] ?? fallback;
