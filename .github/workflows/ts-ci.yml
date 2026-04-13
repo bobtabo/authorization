@@ -55,19 +55,23 @@ jobs:
         run: npm install
         working-directory: backends/ts-hono
 
-      # .env ファイルをコピーしてCI環境に適応
-      - name: Prepare .env
+      # テスト用DBを作成
+      - name: Create test database
         run: |
-          cp .env .env.ci
-          sed -i 's/host\.docker\.internal/127.0.0.1/g' .env.ci
-        working-directory: backends/ts-hono
+          mysql -h 127.0.0.1 -u develop -p'docker#DOCKER1234' -e "CREATE DATABASE IF NOT EXISTS authorization_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-      # テストを実行
+      # テストを実行（env vars を直接設定。dotenv は既存の env vars を上書きしないため .env より優先される）
       - name: Run tests
         run: npm test
         working-directory: backends/ts-hono
         env:
-          ENV_FILE: .env.ci
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: authorization_test
+          DB_USERNAME: develop
+          DB_PASSWORD: "docker#DOCKER1234"
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
 
       # ビルドを実行
       - name: Build

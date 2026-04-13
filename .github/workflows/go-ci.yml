@@ -63,15 +63,14 @@ jobs:
           echo 'DB_DATABASE=authorization_test' >> .env.ci
         working-directory: backends/go-gin
 
-      # テスト用DBスキーマを作成
-      - name: Setup test database
+      # テスト用DBを作成（TestMain の runSchemaSql がテーブルを管理するためスキーマ投入は不要）
+      - name: Create test database
         run: |
-          mysql -h 127.0.0.1 -u develop -pdocker#DOCKER1234 authorization < tests/schema.sql
-        working-directory: backends/go-gin
+          mysql -h 127.0.0.1 -u develop -p'docker#DOCKER1234' -e "CREATE DATABASE IF NOT EXISTS authorization_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
       # テストを実行
       - name: Run tests
-        run: go test ./...
+        run: go test ./tests/...
         working-directory: backends/go-gin
         env:
           ENV_FILE: .env.ci

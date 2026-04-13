@@ -4,6 +4,7 @@ pytest 共通設定・フィクスチャ。
 authorization_test DB（MySQL）を使い、各テスト前にテーブルをクリアします。
 """
 
+import os
 import secrets
 
 import pytest
@@ -24,11 +25,11 @@ from app.routers.deps import get_redis_client
 # ---------------------------------------------------------------------------
 _db_url = URL.create(
     "mysql+pymysql",
-    username="develop",
-    password="docker#DOCKER1234",
-    host="host.docker.internal",
-    port=3306,
-    database="authorization_test",
+    username=os.getenv("DB_USERNAME", "develop"),
+    password=os.getenv("DB_PASSWORD", "docker#DOCKER1234"),
+    host=os.getenv("DB_HOST", "host.docker.internal"),
+    port=int(os.getenv("DB_PORT", "3306")),
+    database=os.getenv("DB_DATABASE", "authorization_test"),
     query={"charset": "utf8mb4"},
 )
 test_engine = create_engine(_db_url, echo=False)
