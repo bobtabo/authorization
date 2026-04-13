@@ -31,7 +31,7 @@ class GateControllerTest extends TestCase
      */
     public function testIssue(): void
     {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['status' => 2]);
 
         $response = $this->withToken($client->access_token)
             ->get('/api/gate/issue?member=member-001');
@@ -42,13 +42,31 @@ class GateControllerTest extends TestCase
     }
 
     /**
+     * JWT発行 利用中以外のクライアントテストです。
+     *
+     * @return void
+     */
+    public function testIssueWithNonActiveClient(): void
+    {
+        $client = Client::factory()->create(['status' => 3]);
+
+        $response = $this->withoutMiddleware()
+            ->withToken($client->access_token)
+            ->get('/api/gate/issue?member=member-001');
+
+        $response
+            ->assertStatus(401)
+            ->assertJson(['message' => 'クライアントが存在しません。']);
+    }
+
+    /**
      * JWT検証テストです。
      *
      * @return void
      */
     public function testVerify(): void
     {
-        $client = Client::factory()->create();
+        $client = Client::factory()->create(['status' => 2]);
         $identifier = $client->identifier;
 
         // issue で JWT を取得（キャッシュキーがテスト実行ごとに一意になるようランダム identifier を使用）
@@ -131,7 +149,7 @@ class GateControllerTest extends TestCase
      */
     public function testVerifyWithInvalidJwt(): void
     {
-        Client::factory()->create(['identifier' => 'test-client']);
+        Client::factory()->create(['identifier' => 'test-client', 'status' => 2]);
 
         $response = $this->get('/api/gate/client/test-client/verify?token=invalid.jwt.token');
         $response

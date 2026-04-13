@@ -1,4 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
+import os from "os";
+import path from "path";
 
 /**
  * E2E は専用ポートで起動し、手元の `npm run dev`（5173）と干渉しないようにする。
@@ -17,7 +19,27 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:5174",
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // 撮影用: 本物の Chrome + Retina + ライトモード（PHP バックエンドのみ）
+      // 実行: npx playwright test --project=screenshot
+      name: "screenshot",
+      grep: /\[PHP\]/,
+      outputDir: path.join(os.homedir(), "Downloads", "playwright-screenshots"),
+      use: {
+        ...devices["Desktop Chrome"],
+        channel: "chrome",
+        colorScheme: "light",
+        deviceScaleFactor: 2,
+        viewport: { width: 1280, height: 800 },
+        screenshot: { mode: "on", fullPage: true },
+      },
+    },
+  ],
   webServer: {
     command: "npm run dev -- --port 5174 --strictPort --host 127.0.0.1",
     url: "http://127.0.0.1:5174",

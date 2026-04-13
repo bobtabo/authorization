@@ -4,7 +4,7 @@
  * テスト用テーブルの作成とテスト間のクリーンアップを担当します。
  */
 import { beforeEach } from "vitest";
-import mysql from "mysql2/promise";
+import * as mysql from "mysql2/promise";
 
 // テスト用 DB 接続（テーブル作成・トランケート専用）
 const adminPool = mysql.createPool({

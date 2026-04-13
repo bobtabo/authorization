@@ -7,7 +7,7 @@ const app = createApp();
 describe("Gate", () => {
   describe("GET /api/gate/issue", () => {
     test("JWTが発行できる", async () => {
-      const c = await makeClientRecord();
+      const c = await makeClientRecord({ status: 2 });
       const res = await app.request("/api/gate/issue?member=member-001", {
         headers: { Authorization: `Bearer ${c.token}` },
       });
@@ -16,8 +16,16 @@ describe("Gate", () => {
       expect(body.token).toBeTruthy();
     });
 
+    test("利用中以外のクライアントで401が返る", async () => {
+      const c = await makeClientRecord({ identifier: `c-suspended-${Date.now()}`, status: 3 });
+      const res = await app.request("/api/gate/issue?member=member-001", {
+        headers: { Authorization: `Bearer ${c.token}` },
+      });
+      expect(res.status).toBe(401);
+    });
+
     test("memberパラメーター未指定で400が返る", async () => {
-      const c = await makeClientRecord({ identifier: `c-no-member-${Date.now()}` });
+      const c = await makeClientRecord({ identifier: `c-no-member-${Date.now()}`, status: 2 });
       const res = await app.request("/api/gate/issue", {
         headers: { Authorization: `Bearer ${c.token}` },
       });
@@ -35,7 +43,7 @@ describe("Gate", () => {
 
   describe("GET /api/gate/client/:identifier/verify", () => {
     test("JWTが検証できる", async () => {
-      const c = await makeClientRecord();
+      const c = await makeClientRecord({ status: 2 });
       // JWT を発行
       const issueRes = await app.request("/api/gate/issue?member=member-001", {
         headers: { Authorization: `Bearer ${c.token}` },
@@ -56,7 +64,7 @@ describe("Gate", () => {
     });
 
     test("無効なJWTで401が返る", async () => {
-      const c = await makeClientRecord({ identifier: `c-invalid-jwt-${Date.now()}` });
+      const c = await makeClientRecord({ identifier: `c-invalid-jwt-${Date.now()}`, status: 2 });
       const res = await app.request(
         `/api/gate/client/${c.identifier}/verify?token=invalid.jwt.token`,
       );
