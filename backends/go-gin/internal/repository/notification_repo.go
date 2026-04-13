@@ -55,13 +55,13 @@ func (r *NotificationRepository) ListPage(staffID uint, cursor *string, limit in
 
 func (r *NotificationRepository) Counts(staffID uint) (unread, total int64, err error) {
 	r.db.Model(&model.Notification{}).Where("staff_id = ?", staffID).Count(&total)
-	r.db.Model(&model.Notification{}).Where("staff_id = ? AND read = false", staffID).Count(&unread)
+	r.db.Model(&model.Notification{}).Where("staff_id = ? AND `read` = false", staffID).Count(&unread)
 	return
 }
 
 // BulkMarkRead は指定条件の通知を既読にして更新件数を返します。
 func (r *NotificationRepository) BulkMarkRead(staffID int64, ids []int64, all bool) (int64, error) {
-	q := r.db.Model(&model.Notification{}).Where("staff_id = ? AND read = false", staffID)
+	q := r.db.Model(&model.Notification{}).Where("staff_id = ? AND `read` = false", staffID)
 	if !all && len(ids) > 0 {
 		q = q.Where("id IN ?", ids)
 	}
