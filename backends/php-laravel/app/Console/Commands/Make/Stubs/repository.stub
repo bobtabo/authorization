@@ -8,19 +8,19 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Repositories;
+namespace App\Infrastructure\Repositories;
 
 use App\Domains\Entities\{{ class }} as Entity;
 use App\Models\{{ class }} as Model;
-use Sii\Selloop\Core\Repositories\AbstractRepository;
+use App\Support\Repositories\AbstractEloquentRepository;
 
 /**
  * Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domains\Repositories
+ * @package App\Infrastructure\Repositories
  */
-class {{ class }}Repository extends AbstractRepository
+class {{ class }}Repository extends AbstractEloquentRepository
 {
     /**
      * {@inheritdoc}

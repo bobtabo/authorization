@@ -37,14 +37,11 @@ class InvitationController extends Controller
     public function index(AppRequest $request, InvitationService $invitations): JsonResponse
     {
         $vo = $invitations->current(new InvitationDto());
-        if (!$vo->isFound()) {
-            return response()->json(['message' => '招待情報がありません。'], 404);
-        }
 
         $response = new InvitationIndexResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -63,6 +60,6 @@ class InvitationController extends Controller
         $response = new InvitationIssueResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 }

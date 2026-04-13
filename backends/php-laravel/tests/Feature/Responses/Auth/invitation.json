@@ -1,1 +1,1 @@
-{"url": "/auth/invitation/dummy-token", "token": "dummy-token"}
+{"url": "http://localhost:5173/invitation/dummy-token", "display_url": "http://localhost:5173/invitation/dummy-token", "token": "dummy-token"}

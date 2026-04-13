@@ -15,6 +15,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\Auth\AuthInvitationResponse;
 use App\Http\Responses\Auth\AuthLoginResponse;
 use App\Http\Responses\Auth\AuthMeResponse;
+use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
@@ -47,21 +48,18 @@ class AuthController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
-            return response()->json(['message' => '未認証です。'], 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $dto = new AuthUserDto();
         $dto->id = $staffId;
 
         $vo = $auth->findUser($dto);
-        if ($vo->getId() === null) {
-            return response()->json(['message' => 'ユーザーが存在しません。'], 404);
-        }
 
         $response = new AuthLoginResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -78,14 +76,11 @@ class AuthController extends Controller
         $dto->token = $request->route('token');
 
         $vo = $invitations->findByToken($dto);
-        if (!$vo->isFound()) {
-            return response()->json(['message' => '招待が無効です。'], 404);
-        }
 
         $response = new AuthInvitationResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -107,6 +102,8 @@ class AuthController extends Controller
      */
     public function googleCallback(AuthService $service
     ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
+        $appConfig = config('authorization.app');
+
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
@@ -125,11 +122,11 @@ class AuthController extends Controller
             });
 
             $secure = config('app.env') === 'production';
-            return redirect(config('authorization.app.frontend_url') . '/clients')
+            return redirect($appConfig['frontend_url'] . '/clients')
                 ->cookie(
                     'staff_id',
                     (string)$vo->getId(),
-                    config('authorization.app.staff_cookie_lifetime'),
+                    $appConfig['staff_cookie_lifetime'],
                     '/',
                     null,
                     $secure,
@@ -137,7 +134,7 @@ class AuthController extends Controller
                 );
         } catch (Exception $e) {
             Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect(config('authorization.app.frontend_url') . '/error?code=500');
+            return redirect($appConfig['frontend_url'] . '/error?code=500');
         }
     }
 
@@ -152,25 +149,23 @@ class AuthController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
-            return response()->json(['message' => '未認証です。'], 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $dto = new AuthUserDto();
         $dto->id = $staffId;
 
         $vo = $auth->findUser($dto);
-        if ($vo->getId() === null) {
-            return response()->json(['message' => 'ユーザーが存在しません。'], 404);
-        }
 
         $response = new AuthMeResponse();
         $response->assign([
             'staff_id' => $vo->getId(),
             'name' => $vo->getName(),
-            'avatar' => $vo->getAvatar()
+            'avatar' => $vo->getAvatar(),
+            'role' => $vo->getRole(),
         ]);
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -181,7 +176,6 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        return response()->json(['message' => 'SUCCESS'])
-            ->cookie(\Cookie::forget('staff_id'));
+        return response()->success()->cookie(\Cookie::forget('staff_id'));
     }
 }

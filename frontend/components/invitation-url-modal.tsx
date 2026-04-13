@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCopy, X, Loader2 } from "lucide-react";
 import { getInvitation, issueInvitation } from "@/src/api";
-import { formatInvitationUrlForDisplay } from "@/lib/format-invitation-url";
 
 /** API 未実装・500・CORS 等のときに見せる、それっぽいモックURL */
 function buildMockInvitationUrl(): string {
@@ -20,21 +19,32 @@ type Props = {
 
 export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element {
   const [url, setUrl] = useState<string>("");
+  const [displayUrl, setDisplayUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [reissuing, setReissuing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [isMock, setIsMock] = useState<boolean>(false);
 
+  const setUrls = (fullUrl: string, dispUrl: string) => {
+    setUrl(fullUrl);
+    setDisplayUrl(dispUrl);
+  };
+
   const loadUrl = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
       const data = await getInvitation();
-      setUrl(typeof data.url === "string" ? data.url : buildMockInvitationUrl());
+      const mockUrl = buildMockInvitationUrl();
+      setUrls(
+        typeof data.url === "string" ? data.url : mockUrl,
+        typeof data.display_url === "string" ? data.display_url : mockUrl,
+      );
       setIsMock(false);
     } catch {
-      setUrl(buildMockInvitationUrl());
+      const mockUrl = buildMockInvitationUrl();
+      setUrls(mockUrl, mockUrl);
       setIsMock(true);
     } finally {
       setLoading(false);
@@ -66,17 +76,20 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
     }
   };
 
-  const displayUrl = url ? formatInvitationUrlForDisplay(url) : "";
-
   const handleReissue = async () => {
     setError(null);
     setReissuing(true);
     try {
       const data = await issueInvitation();
-      setUrl(typeof data.url === "string" ? data.url : buildMockInvitationUrl());
+      const mockUrl = buildMockInvitationUrl();
+      setUrls(
+        typeof data.url === "string" ? data.url : mockUrl,
+        typeof data.display_url === "string" ? data.display_url : mockUrl,
+      );
       setIsMock(false);
     } catch {
-      setUrl(buildMockInvitationUrl());
+      const mockUrl = buildMockInvitationUrl();
+      setUrls(mockUrl, mockUrl);
       setIsMock(true);
     } finally {
       setReissuing(false);

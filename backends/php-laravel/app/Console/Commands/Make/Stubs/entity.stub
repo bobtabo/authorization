@@ -8,15 +8,15 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Entities;
+namespace App\Domain;
 
-use Sii\Selloop\Core\Entities\AbstractEntity;
+use App\Support\Entities\AbstractEntity;
 
 /**
  * Entityクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domains\Entities
+ * @package App\Domain
  */
 class DummyClass extends AbstractEntity
 {

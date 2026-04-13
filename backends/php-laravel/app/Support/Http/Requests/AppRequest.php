@@ -13,8 +13,8 @@ namespace App\Support\Http\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 use Jenssegers\Agent\Agent;
-use App\Support\Exceptions\ValidationException;
 
 /**
  * 共通Requestクラスです。

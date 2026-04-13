@@ -1,4 +1,5 @@
 <?php
+
 /**
  * アプリ設定
  */
@@ -14,6 +15,17 @@ return [
     'cache_prefix' => env('CACHE_PREFIX'),
     //クエリーキャッシュ
     'query_cache' => env('DB_QUERY_CACHE', false),
+    //JWT 設定
+    'jwt' => [
+        //発行者識別子（iss クレーム）
+        'issuer' => 'authorization',
+        //署名アルゴリズム
+        'algorithm' => 'RS256',
+        //JWT 有効期間（秒）
+        'ttl' => 1800,
+        //JWT キャッシュ有効期間（秒）。JWT の有効期限以下を推奨
+        'cache_ttl' => (int) env('GATE_JWT_CACHE_TTL', 1800),
+    ],
     //メール設定
     'mail' => [
         'host' => env('MAIL_HOST'),

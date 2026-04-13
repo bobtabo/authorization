@@ -11,11 +11,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Responses\Notification\BulkPatchResponse;
 use App\Http\Responses\Notification\CountsResponse;
 use App\Http\Responses\Notification\IndexResponse;
-use App\Http\Responses\Notification\IssueResponse;
-use App\Http\Responses\Notification\UpdateResponse;
+use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Notification\Dtos\NotificationDto;
 use App\UseCases\Notification\NotificationService;
@@ -41,7 +39,7 @@ class NotificationController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
-            return response()->json(['message' => '未認証です。'], 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $cursor = $request->query('cursor');
@@ -62,7 +60,7 @@ class NotificationController extends Controller
         $response = new IndexResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -75,13 +73,10 @@ class NotificationController extends Controller
     {
         $body = $request->all();
 
-        $response = new IssueResponse();
-        $response->assign([
-            'message' => '受理しました（非同期処理は未接続です）。',
+        return response()->success([
+            'message' => __('validation.custom.notification_accepted'),
             'received' => $body !== [] ? $body : null,
-        ]);
-
-        return response()->json($response->attributes(), 202);
+        ], 202);
     }
 
     /**
@@ -95,7 +90,7 @@ class NotificationController extends Controller
     {
         $staffId = $request->all()['executor_id'] ?? null;
         if (empty($staffId)) {
-            return response()->json(['message' => '未認証です。'], 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $validated = $request->validate([
@@ -110,7 +105,7 @@ class NotificationController extends Controller
         $all = (bool)($validated['all'] ?? false);
 
         if (($ids === null || $ids === []) && !$all) {
-            return response()->json(['message' => 'ids または all を指定してください。'], 400);
+            throw AppException::badRequest('ids_or_all_required');
         }
 
         $dto = new NotificationDto();
@@ -122,10 +117,7 @@ class NotificationController extends Controller
             return $notifications->bulkMarkRead($dto);
         });
 
-        $response = new BulkPatchResponse();
-        $response->assign($vo->attributes());
-
-        return response()->json($response->attributes());
+        return response()->success(['updated' => $vo->getUpdated()]);
     }
 
     /**
@@ -139,7 +131,7 @@ class NotificationController extends Controller
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
-            return response()->json(['message' => '未認証です。'], 401);
+            throw AppException::unauthorized('unauthenticated');
         }
 
         $dto = new NotificationDto();
@@ -150,7 +142,7 @@ class NotificationController extends Controller
         $response = new CountsResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -173,13 +165,6 @@ class NotificationController extends Controller
             return $notifications->patch($dto);
         });
 
-        if (!$vo->isOk()) {
-            return response()->json(['message' => '通知を更新できませんでした。'], 404);
-        }
-
-        $response = new UpdateResponse();
-        $response->assign($vo->attributes());
-
-        return response()->json($response->attributes());
+        return response()->success(['id' => $vo->getId()]);
     }
 }

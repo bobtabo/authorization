@@ -115,6 +115,18 @@ bin/docker-python.sh down
 bin/docker-ts.sh down
 ```
 
+### 全コンテナを起動する
+
+```bash
+bin/docker-backends.sh up
+```
+
+### コンテナを破棄する
+
+```bash
+bin/docker-backends.sh down
+```
+
 ## :fire: 注意
 
 - `docker-xxx-down.sh` は **データディレクトリやログを削除する**処理が入っています。実行前に内容を確認してください。

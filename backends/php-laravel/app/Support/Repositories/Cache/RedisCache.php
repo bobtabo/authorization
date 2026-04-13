@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\Support\Repositories\Cache;
 
 use Cache;
+use Illuminate\Cache\RedisStore;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -35,8 +36,18 @@ class RedisCache
             return;
         }
 
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
+        if (!(Cache::getStore() instanceof RedisStore)) {
+            Cache::put($cacheKey->tag[0] . '.' . $cacheKey->key, $value, $second);
+            return;
+        }
+
+        $prefix = (string)config('authorization.app.cache_prefix');
+        Cache::setPrefix($prefix);
         Cache::tags($cacheKey->tag)->put($cacheKey->key, $value, $second);
+
+        foreach ($cacheKey->tag as $tag) {
+            Redis::sadd(static::tagSetKey($tag, $prefix), $cacheKey->key);
+        }
     }
 
     /**
@@ -47,8 +58,12 @@ class RedisCache
      */
     public static function get(CacheKey $cacheKey): mixed
     {
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
-        return Cache::tags($cacheKey->tag)->get($cacheKey->key);
+        if (Cache::getStore() instanceof RedisStore) {
+            Cache::setPrefix((string)config('authorization.app.cache_prefix'));
+            return Cache::tags($cacheKey->tag)->get($cacheKey->key);
+        }
+
+        return Cache::get($cacheKey->tag[0] . '.' . $cacheKey->key);
     }
 
     /**
@@ -60,8 +75,18 @@ class RedisCache
      */
     public static function delete(CacheKey $cacheKey): void
     {
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
-        Cache::tags($cacheKey->tag)->delete($cacheKey->key);
+        if (!(Cache::getStore() instanceof RedisStore)) {
+            Cache::forget($cacheKey->tag[0] . '.' . $cacheKey->key);
+            return;
+        }
+
+        $prefix = (string)config('authorization.app.cache_prefix');
+        Cache::setPrefix($prefix);
+        Cache::tags($cacheKey->tag)->forget($cacheKey->key);
+
+        foreach ($cacheKey->tag as $tag) {
+            Redis::srem(static::tagSetKey($tag, $prefix), $cacheKey->key);
+        }
     }
 
     /**
@@ -72,11 +97,24 @@ class RedisCache
      */
     public static function flush(CacheKey $cacheKey): void
     {
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
-        foreach ($cacheKey->tag as $key) {
-            Cache::deleteMultiple(static::keys($key));
+        if (!(Cache::getStore() instanceof RedisStore)) {
+            Cache::flush();
+            return;
         }
-        Cache::tags($cacheKey->tag)->flush();
+
+        $prefix = (string)config('authorization.app.cache_prefix');
+        Cache::setPrefix($prefix);
+
+        foreach ($cacheKey->tag as $tag) {
+            $tagSetKey = static::tagSetKey($tag, $prefix);
+            $keys = Redis::smembers($tagSetKey);
+
+            foreach ($keys as $key) {
+                Cache::tags([$tag])->forget($key);
+            }
+
+            Redis::unlink($tagSetKey);
+        }
     }
 
     /**
@@ -87,29 +125,21 @@ class RedisCache
      */
     public static function getByKey(string $key): mixed
     {
-        Cache::setPrefix(config('authorization.app.cache_prefix'));
+        if (Cache::getStore() instanceof RedisStore) {
+            Cache::setPrefix((string)config('authorization.app.cache_prefix'));
+        }
+
         return Cache::get($key);
     }
 
     /**
-     * キャッシュキーをワイルドカードで取得します。
+     * タグ管理セットの Redis キーを返します。
      *
-     * @param string $key キャッシュキー
-     * @return array キャッシュキー配列
+     * @param string $tag タグ名
+     * @return string Redis キー
      */
-    private static function keys(string $key): array
+    private static function tagSetKey(string $tag, string $prefix): string
     {
-        $prefix = 'selloop_' . config('authorization.app.cache_prefix') . ':';
-        $keys = Redis::keys('*' . $key . '*');
-        if (empty($keys)) {
-            return [];
-        }
-
-        $result = [];
-        foreach ($keys as $keyName) {
-            $result[] = str($keyName)->replace($prefix, '')->value();
-        }
-
-        return $result;
+        return empty($prefix) ? "tag_keys:{$tag}" : "{$prefix}:tag_keys:{$tag}";
     }
 }

@@ -2,6 +2,8 @@ import { apiGet } from "./http";
 
 export type InvitationUrlResponse = {
   url: string;
+  display_url: string;
+  token: string;
 };
 
 /** GET /invitation */

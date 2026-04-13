@@ -8,17 +8,17 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Dtos;
+namespace App\UseCases;
 
-use Sii\Selloop\Core\Dtos\Dto;
+use App\Support\Dtos\AbstractDto;
 
 /**
  * Dtoクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domains\Dtos
+ * @package App\UseCases
  */
-class DummyClass implements Dto
+class DummyClass extends AbstractDto
 {
     //
 }

@@ -43,16 +43,32 @@ interface ClientRepository
      *
      * {@see \App\Support\Repositories\AbstractEloquentRepository::save} とは別シグネチャのため persist とします。
      *
-     * @param  Client  $entity  永続化するエンティティ（id 未設定で新規）
+     * @param Client $entity 永続化するエンティティ（id 未設定で新規）
      * @return Client 保存後のエンティティ
      */
     public function persist(Client $entity): Client;
 
     /**
+     * アクセストークンでクライアントを取得します。
+     *
+     * @param string $accessToken アクセストークン
+     * @return Client|null
+     */
+    public function findByAccessToken(string $accessToken): ?Client;
+
+    /**
+     * クライアント識別名でクライアントを取得します。
+     *
+     * @param string $identifier クライアント識別名
+     * @return Client|null
+     */
+    public function findByIdentifier(string $identifier): ?Client;
+
+    /**
      * クライアントを論理削除します。
      *
-     * @param  int  $id  クライアントID
-     * @param  int  $executorId  処理実行者ID
+     * @param int $id クライアントID
+     * @param int $executorId 処理実行者ID
      * @return bool 対象が存在して削除できた場合 true
      */
     public function deleteById(int $id, int $executorId): bool;

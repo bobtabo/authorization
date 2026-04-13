@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Infrastructure\Models\Client;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -26,43 +27,115 @@ class GateControllerTest extends TestCase
     /**
      * JWT発行テストです。
      *
-     * TODO: auth:sanctum が本実装されたら Sanctum トークンで認証すること。
-     *       現状は middleware をバイパスしてスタブ実装の動作のみ確認する。
-     *
      * @return void
      */
     public function testIssue(): void
     {
-        $params = $this->getRequestParams('Gate/issue.json');
-        $member = $params['member'];
-        // TODO: Sanctum 実装後（personal_access_tokens テーブル追加・Bearer トークン発行）は
-        //       withoutMiddleware() を削除し、正規の認証ヘッダーを付与すること
-        $response = $this->withoutMiddleware()
-            ->get("/api/gate/issue?member={$member}");
-        $data = $this->getResponseData('Gate/issue.json');
+        $client = Client::factory()->create();
+
+        $response = $this->withToken($client->access_token)
+            ->get('/api/gate/issue?member=member-001');
+
         $response
             ->assertStatus(200)
-            ->assertJson($data);
+            ->assertJsonStructure(['message', 'token']);
     }
 
     /**
      * JWT検証テストです。
      *
-     * TODO: JWT が本実装されたら実際のトークンで検証すること。
-     *       現状は StubJwtVerifier の固定レスポンスを確認するのみ。
-     *
      * @return void
      */
     public function testVerify(): void
     {
-        $params = $this->getRequestParams('Gate/verify.json');
-        $token = $params['token'];
-        $identifier = 'test-client';
-        // TODO: 実装後は正規 JWT を token に渡すこと
-        $response = $this->get("/api/gate/client/{$identifier}/verify?token={$token}");
-        $data = $this->getResponseData('Gate/verify.json');
+        $client = Client::factory()->create();
+        $identifier = $client->identifier;
+
+        // issue で JWT を取得（キャッシュキーがテスト実行ごとに一意になるようランダム identifier を使用）
+        $issueResponse = $this->withoutMiddleware()
+            ->withToken($client->access_token)
+            ->get("/api/gate/issue?member=member-001");
+        $jwt = $issueResponse->json('token');
+
+        // verify で Payload を確認
+        $response = $this->get("/api/gate/client/{$identifier}/verify?token={$jwt}");
         $response
             ->assertStatus(200)
-            ->assertJson($data);
+            ->assertJson([
+                'message' => 'SUCCESS',
+                'iss' => 'authorization',
+                'aud' => $identifier,
+                'sub' => 'member-001',
+            ]);
+    }
+
+    /**
+     * JWT発行 member パラメーター未指定テストです。
+     *
+     * @return void
+     */
+    public function testIssueWithoutMember(): void
+    {
+        $response = $this->withoutMiddleware()
+            ->get('/api/gate/issue');
+        $response
+            ->assertStatus(400)
+            ->assertJson(['message' => 'member を指定してください。']);
+    }
+
+    /**
+     * JWT発行 アクセストークン不一致テストです（クライアント未検出）。
+     *
+     * @return void
+     */
+    public function testIssueWithInvalidToken(): void
+    {
+        $response = $this->withoutMiddleware()
+            ->withToken('invalid-token')
+            ->get('/api/gate/issue?member=member-001');
+        $response
+            ->assertStatus(401)
+            ->assertJson(['message' => 'クライアントが存在しません。']);
+    }
+
+    /**
+     * JWT検証 token パラメーター未指定テストです。
+     *
+     * @return void
+     */
+    public function testVerifyWithoutToken(): void
+    {
+        $response = $this->get('/api/gate/client/test-client/verify');
+        $response
+            ->assertStatus(400)
+            ->assertJson(['message' => 'token を指定してください。']);
+    }
+
+    /**
+     * JWT検証 クライアント識別名不一致テストです。
+     *
+     * @return void
+     */
+    public function testVerifyWithUnknownIdentifier(): void
+    {
+        $response = $this->get('/api/gate/client/unknown-client/verify?token=dummy');
+        $response
+            ->assertStatus(403)
+            ->assertJson(['message' => 'クライアントが存在しません。']);
+    }
+
+    /**
+     * JWT検証 無効トークンテストです。
+     *
+     * @return void
+     */
+    public function testVerifyWithInvalidJwt(): void
+    {
+        Client::factory()->create(['identifier' => 'test-client']);
+
+        $response = $this->get('/api/gate/client/test-client/verify?token=invalid.jwt.token');
+        $response
+            ->assertStatus(401)
+            ->assertJson(['message' => 'JWT が無効です。']);
     }
 }

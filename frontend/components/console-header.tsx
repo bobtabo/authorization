@@ -20,6 +20,8 @@ import {
   readAllNotifications,
   readNotification,
 } from "@/src/api/notifications";
+import { getAuthLogout } from "@/src/api/auth";
+import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
 
 const TONE_MAP: Record<number, "info" | "warn" | "ok"> = { 1: "info", 2: "warn", 3: "ok" };
 
@@ -46,7 +48,11 @@ export function ConsoleHeader(): React.JSX.Element {
   const location = useLocation();
   const displayName = user?.name ?? "";
   const staffId = user?.staff_id ?? null;
+  const isAdmin = user?.role === 1;
 
+  const [backendRuntime, setBackendRuntime] = useState<string>(
+    () => localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php",
+  );
   const [accountMenuOpen, setAccountMenuOpen] = useState<boolean>(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState<boolean>(false);
   const [invitationModalOpen, setInvitationModalOpen] = useState<boolean>(false);
@@ -151,6 +157,16 @@ export function ConsoleHeader(): React.JSX.Element {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [settingsMenuOpen]);
 
+  const handleRuntimeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const next = e.target.value;
+    setBackendRuntime(next);
+    try {
+      await getAuthLogout();
+    } catch { /* ログアウト失敗でも切り替えを継続 */ }
+    localStorage.setItem(RUNTIME_STORAGE_KEY, next);
+    window.location.href = "/login";
+  };
+
   const navTabClass = ({ isActive }: { isActive: boolean }): string =>
     [
       "inline-block pb-2.5 pt-1 text-xs font-semibold tracking-wide transition-colors border-b-2 -mb-px",
@@ -173,12 +189,40 @@ export function ConsoleHeader(): React.JSX.Element {
             <ShieldCheck size={16} />
           </div>
           <span className="text-sm font-semibold text-gray-800">
-            Authorization Console
+            Authorization Gateway
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <div ref={settingsMenuRef} className="relative">
+          <div className="flex shrink-0 items-center gap-2">
+            <label
+              htmlFor="header-backend-runtime"
+              className="whitespace-nowrap text-xs font-medium tracking-wide text-gray-600 sm:text-sm"
+            >
+              Backend:
+            </label>
+            <div className="relative shrink-0">
+              <select
+                id="header-backend-runtime"
+                name="backend-runtime"
+                value={backendRuntime}
+                onChange={handleRuntimeChange}
+                className="h-9 min-w-[10rem] cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-1.5 pl-3 pr-9 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 sm:min-w-[11rem] sm:text-sm"
+              >
+                <option value="go">Go</option>
+                <option value="php">PHP</option>
+                <option value="python">Python</option>
+                <option value="ts">TypeScript</option>
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                strokeWidth={2}
+                aria-hidden
+              />
+            </div>
+          </div>
+
+          {isAdmin && <div ref={settingsMenuRef} className="relative">
             <button
               type="button"
               aria-label="設定メニューを開く"
@@ -217,7 +261,7 @@ export function ConsoleHeader(): React.JSX.Element {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </div>}
 
           <div ref={notificationRef} className="relative">
             <button
@@ -383,9 +427,11 @@ export function ConsoleHeader(): React.JSX.Element {
           <NavLink to="/clients" className={navTabClass} end={false}>
             クライアント
           </NavLink>
-          <NavLink to="/staffs" className={navTabClass} end>
-            スタッフ
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/staffs" className={navTabClass} end>
+              スタッフ
+            </NavLink>
+          )}
         </nav>
       </div>
     </header>

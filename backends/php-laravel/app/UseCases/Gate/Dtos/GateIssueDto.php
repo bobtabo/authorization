@@ -21,4 +21,6 @@ use App\Support\Dtos\AbstractDto;
 class GateIssueDto extends AbstractDto
 {
     public string $memberId = '';
+
+    public string $accessToken = '';
 }

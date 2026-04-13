@@ -39,10 +39,12 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
             return null;
         }
 
+        $url = $this->buildUrl($model->token);
         $entity = new Entity();
         $entity->assign([
             'token' => $model->token,
-            'url' => '/auth/invitation/' . $model->token,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
         ]);
 
         return $entity;
@@ -57,10 +59,12 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
     public function issue(): Entity
     {
         $token = bin2hex(random_bytes(16));
-        $invitation = new Entity;
+        $url = $this->buildUrl($token);
+        $invitation = new Entity();
         $invitation->assign([
             'token' => $token,
-            'url' => '/auth/invitation/' . $token,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
         ]);
 
         return $invitation;
@@ -77,13 +81,56 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
             return null;
         }
 
+        $url = $this->buildUrl($trimmed);
         $invitation = new Entity();
         $invitation->assign([
             'token' => $trimmed,
-            'url' => '/auth/invitation/' . $trimmed,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
         ]);
 
         return $invitation;
+    }
+
+    /**
+     * トークンから完全な招待 URL を生成します。
+     *
+     * @param string $token 招待トークン
+     * @return string 完全 URL
+     */
+    private function buildUrl(string $token): string
+    {
+        $base = rtrim((string)config('authorization.app.frontend_url'), '/');
+        return $base . '/invitation/' . $token;
+    }
+
+    /**
+     * 表示用に `/invitation/` 以降のトークンを省略した URL を返します。
+     *
+     * @param string $url 完全 URL
+     * @param int $head トークン先頭から表示する文字数
+     * @param int $tail トークン末尾から表示する文字数
+     * @return string 省略表示用 URL
+     */
+    private function buildDisplayUrl(string $url, int $head = 6, int $tail = 4): string
+    {
+        $segment = '/invitation/';
+        $idx = strpos($url, $segment);
+        if ($idx === false) {
+            return strlen($url) > 72 ? substr($url, 0, 68) . '...' : $url;
+        }
+
+        $base = substr($url, 0, $idx + strlen($segment));
+        $after = substr($url, $idx + strlen($segment));
+        $suffixLen = strcspn($after, '?#');
+        $token = substr($after, 0, $suffixLen);
+        $suffix = substr($after, $suffixLen);
+
+        if (strlen($token) <= $head + $tail + 3) {
+            return $url;
+        }
+
+        return $base . substr($token, 0, $head) . '...' . substr($token, -$tail) . $suffix;
     }
 
     /**

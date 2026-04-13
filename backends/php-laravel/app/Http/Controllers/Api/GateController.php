@@ -13,6 +13,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\Gate\GateIssueResponse;
 use App\Http\Responses\Gate\GateVerifyResponse;
+use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Gate\Dtos\GateIssueDto;
 use App\UseCases\Gate\Dtos\GateVerifyDto;
@@ -38,18 +39,19 @@ class GateController extends Controller
     {
         $member = $request->query('member');
         if (!is_string($member) || $member === '') {
-            return response()->json(['message' => 'member を指定してください。'], 400);
+            throw AppException::badRequest('member_required');
         }
 
         $dto = new GateIssueDto();
         $dto->memberId = $member;
+        $dto->accessToken = $request->bearerToken() ?? '';
 
         $vo = $gate->issueToken($dto);
 
         $response = new GateIssueResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 
     /**
@@ -64,7 +66,7 @@ class GateController extends Controller
     {
         $token = $request->query('token');
         if (!is_string($token) || $token === '') {
-            return response()->json(['message' => 'token を指定してください。'], 400);
+            throw AppException::badRequest('token_required');
         }
 
         $dto = new GateVerifyDto();
@@ -76,6 +78,6 @@ class GateController extends Controller
         $response = new GateVerifyResponse();
         $response->assign($vo->attributes());
 
-        return response()->json($response->attributes());
+        return response()->success($response->attributes());
     }
 }

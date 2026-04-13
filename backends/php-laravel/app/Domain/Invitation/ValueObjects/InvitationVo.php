@@ -20,7 +20,8 @@ use App\Support\ValueObjects\AbstractValueObject;
  * @package App\Domain\Invitation\ValueObjects
  *
  * @method bool isFound() 招待が見つかったかどうか
- * @method ?string getUrl() 招待 URL
+ * @method ?string getUrl() 招待 URL（完全）
+ * @method ?string getDisplayUrl() 招待 URL（省略表示用）
  * @method ?string getToken() 招待トークン
  */
 class InvitationVo extends AbstractValueObject
@@ -29,5 +30,6 @@ class InvitationVo extends AbstractValueObject
 
     private bool $found = false;
     private ?string $url = null;
+    private ?string $displayUrl = null;
     private ?string $token = null;
 }

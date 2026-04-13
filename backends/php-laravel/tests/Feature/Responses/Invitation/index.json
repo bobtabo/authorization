@@ -1,1 +1,1 @@
-{"url": "/auth/invitation/test-current-token", "token": "test-current-token"}
+{"url": "http://localhost:5173/invitation/test-current-token", "display_url": "http://localhost:5173/invitation/test-c...oken", "token": "test-current-token"}

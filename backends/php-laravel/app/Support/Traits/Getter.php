@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\Support\Traits;
 
+use App\Support\Exceptions\AppException;
 use App\Support\Exceptions\SystemException;
 
 /**
@@ -41,12 +42,7 @@ trait Getter
     public function __call(string $method, $args)
     {
         if (!empty($args)) {
-            throw new SystemException(
-                SystemException::GENERAL,
-                [
-                    '使用禁止'
-                ]
-            );
+            AppException::internal('general', ['使用禁止']);
         }
 
         $name = str($method)

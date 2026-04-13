@@ -4,8 +4,8 @@
 #
 
 ARG="${1}"
-
-cd local/app-php
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${SCRIPT_DIR}/../local/app-php"
 
 if [ "${ARG}" = "up" ]; then
     if [ ! -f .env ]; then

@@ -2,4 +2,7 @@
 /local/common/proxy/certs/default.key
 /local/common/data/
 /local/common/logs/
+/local/app-go/logs/
 /local/app-php/logs/
+/local/app-python/logs/
+/local/app-ts/logs/

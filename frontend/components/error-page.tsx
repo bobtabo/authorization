@@ -52,7 +52,7 @@ export function ErrorPage({
           </div>
 
           <h1 className="text-center text-2xl font-semibold tracking-tight text-[#1f2328]">
-            Authorization Console
+            Authorization Gateway
           </h1>
 
           <div className="mt-6 w-full rounded-xl border border-[#d0d7de] bg-white p-6 shadow-sm">
@@ -107,7 +107,7 @@ export function ErrorPage({
       </main>
 
       <footer className="border-t border-[#d0d7de] bg-white py-5 text-center text-xs text-[#656d76]">
-        © 2026 Authorization Console. All rights reserved.
+        © 2026 Authorization Gateway. All rights reserved.
       </footer>
     </div>
   );

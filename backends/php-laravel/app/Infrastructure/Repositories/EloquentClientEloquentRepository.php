@@ -40,7 +40,7 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
         }
 
         if (!empty($condition->startFrom) && !empty($condition->startTo)) {
-            $query->whereBetween('matters.start_at', [ $condition->startFrom, $condition->startTo ]);
+            $query->whereBetween('matters.start_at', [$condition->startFrom, $condition->startTo]);
         }
 
         if (!empty($condition->statuses)) {
@@ -69,6 +69,28 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
     {
         /** @var Entity $result */
         $result = $this->save($entity);
+        return $result;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function findByAccessToken(string $accessToken): ?Entity
+    {
+        /** @var Entity|null $result */
+        $result = $this->findByMap(['access_token' => $accessToken])->first();
+        return $result;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function findByIdentifier(string $identifier): ?Entity
+    {
+        /** @var Entity|null $result */
+        $result = $this->findByMap(['identifier' => $identifier])->first();
         return $result;
     }
 
