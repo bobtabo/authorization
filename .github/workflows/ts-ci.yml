@@ -55,10 +55,14 @@ jobs:
         run: npm install
         working-directory: backends/ts-hono
 
-      # テスト用DBを作成
+      # テスト用DBを作成（root で作成し develop に権限付与）
       - name: Create test database
         run: |
-          mysql -h 127.0.0.1 -u develop -p'docker#DOCKER1234' -e "CREATE DATABASE IF NOT EXISTS authorization_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          mysql -h 127.0.0.1 -u root -p'docker#DOCKER1234' -e "
+            CREATE DATABASE IF NOT EXISTS authorization_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            GRANT ALL PRIVILEGES ON authorization_test.* TO 'develop'@'%';
+            FLUSH PRIVILEGES;
+          "
 
       # テストを実行（env vars を直接設定。dotenv は既存の env vars を上書きしないため .env より優先される）
       - name: Run tests
