@@ -1,5 +1,4 @@
 import time
-from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 from jose import jwt, JWTError
 from app.config.settings import get_settings
 from app.exceptions import unauthorized, not_found, internal
@@ -38,8 +37,9 @@ class GateService:
             "iat": now,
             "exp": now + s.jwt_ttl,
         }
-        private_key = load_pem_private_key(private_key_pem.encode(), password=None)
-        return jwt.encode(claims, private_key, algorithm=s.jwt_algorithm)
+        # python-jose に PEM 文字列を直接渡す
+        # （cryptography 44.x の RSAPrivateKey オブジェクトは jose 3.4 で型判定NG）
+        return jwt.encode(claims, private_key_pem, algorithm=s.jwt_algorithm)
 
     def verify(self, identifier: str, token: str) -> dict:
         client = self.client_repo.find_by_identifier(identifier)
@@ -49,10 +49,9 @@ class GateService:
             raise internal("public_key_not_found")
 
         try:
-            public_key = load_pem_public_key(client.public_key.encode())
             payload = jwt.decode(
                 token,
-                public_key,
+                client.public_key,
                 algorithms=[self.settings.jwt_algorithm],
                 audience=identifier,
             )
