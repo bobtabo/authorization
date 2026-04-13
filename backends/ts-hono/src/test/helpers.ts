@@ -14,7 +14,7 @@ const pool = mysql.createPool({
   charset: "utf8mb4",
 });
 
-async function q(sql: string, params: unknown[] = []) {
+async function q(sql: string, params: mysql.ExecuteValues = []) {
   const [rows] = await pool.execute(sql, params);
   return rows as mysql.RowDataPacket[];
 }
