@@ -5,7 +5,7 @@ from tests.conftest import make_client_record
 
 class TestIssue:
     def test_JWTが発行できる(self, client, db_session):
-        c = make_client_record(db_session)
+        c = make_client_record(db_session, status=2)
         res = client.get(
             "/api/gate/issue?member=member-001",
             headers={"Authorization": f"Bearer {c.token}"},
@@ -13,8 +13,16 @@ class TestIssue:
         assert res.status_code == 200
         assert "token" in res.json()
 
+    def test_利用中以外のクライアントで401が返る(self, client, db_session):
+        c = make_client_record(db_session, identifier="suspended-client", status=3)
+        res = client.get(
+            "/api/gate/issue?member=member-001",
+            headers={"Authorization": f"Bearer {c.token}"},
+        )
+        assert res.status_code == 401
+
     def test_memberパラメーター未指定で422が返る(self, client, db_session):
-        c = make_client_record(db_session)
+        c = make_client_record(db_session, status=2)
         res = client.get(
             "/api/gate/issue",
             headers={"Authorization": f"Bearer {c.token}"},
@@ -31,7 +39,7 @@ class TestIssue:
 
 class TestVerify:
     def test_JWTが検証できる(self, client, db_session):
-        c = make_client_record(db_session)
+        c = make_client_record(db_session, status=2)
         # JWT を発行
         issue_res = client.get(
             "/api/gate/issue?member=member-001",
@@ -48,7 +56,7 @@ class TestVerify:
         assert data["member"] == "member-001"
 
     def test_tokenパラメーター未指定で422が返る(self, client, db_session):
-        c = make_client_record(db_session)
+        c = make_client_record(db_session, status=2)
         res = client.get(f"/api/gate/client/{c.identifier}/verify")
         assert res.status_code == 422
 
@@ -57,6 +65,6 @@ class TestVerify:
         assert res.status_code == 404
 
     def test_無効なJWTで401が返る(self, client, db_session):
-        make_client_record(db_session, identifier="test-client-jwt")
+        make_client_record(db_session, identifier="test-client-jwt", status=2)
         res = client.get("/api/gate/client/test-client-jwt/verify?token=invalid.jwt.token")
         assert res.status_code == 401

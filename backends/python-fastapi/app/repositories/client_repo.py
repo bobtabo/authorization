@@ -21,7 +21,11 @@ class ClientRepository:
         return self.db.query(Client).filter(Client.id == client_id, Client.deleted_at.is_(None)).first()
 
     def find_by_access_token(self, token: str) -> Optional[Client]:
-        return self.db.query(Client).filter(Client.token == token, Client.deleted_at.is_(None)).first()
+        return self.db.query(Client).filter(
+            Client.token == token,
+            Client.status == 2,  # Active のみ
+            Client.deleted_at.is_(None),
+        ).first()
 
     def find_by_identifier(self, identifier: str) -> Optional[Client]:
         return self.db.query(Client).filter(Client.identifier == identifier, Client.deleted_at.is_(None)).first()

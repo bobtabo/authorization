@@ -12,6 +12,7 @@ namespace App\Infrastructure\Repositories;
 
 use App\Domain\Client\Condition\ClientCondition;
 use App\Domain\Client\Entities\Client as Entity;
+use App\Domain\Client\Enums\ClientStatus;
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Infrastructure\Models\Client as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
@@ -79,7 +80,10 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
     public function findByAccessToken(string $accessToken): ?Entity
     {
         /** @var Entity|null $result */
-        $result = $this->findByMap(['access_token' => $accessToken])->first();
+        $result = $this->findByMap([
+            'access_token' => $accessToken,
+            'status'       => ClientStatus::Active->value,
+        ])->first();
         return $result;
     }
 

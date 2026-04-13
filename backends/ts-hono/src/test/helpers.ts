@@ -3,7 +3,7 @@
  * 直接 mysql2 で INSERT することでアプリの DB 依存なしに使えます。
  */
 import { generateKeyPairSync, randomBytes } from "crypto";
-import mysql from "mysql2/promise";
+import * as mysql from "mysql2/promise";
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST ?? "host.docker.internal",
@@ -62,7 +62,7 @@ export async function makeStaff(overrides: Partial<TestStaff & { email: string }
   return { id: result.insertId, name: data.name, email: data.email, role: data.role };
 }
 
-export async function makeClientRecord(overrides: Partial<{ identifier: string; email: string; name: string }> = {}): Promise<TestClient> {
+export async function makeClientRecord(overrides: Partial<{ identifier: string; email: string; name: string; status: number }> = {}): Promise<TestClient> {
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   const privatePem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
   const publicPem = publicKey.export({ type: "spki", format: "pem" }) as string;
@@ -72,6 +72,7 @@ export async function makeClientRecord(overrides: Partial<{ identifier: string; 
     name: "テストクライアント",
     identifier: `test-client-${Date.now()}`,
     email: `client-${Date.now()}@example.com`,
+    status: 2,
     ...overrides,
   };
 
@@ -79,7 +80,7 @@ export async function makeClientRecord(overrides: Partial<{ identifier: string; 
     `INSERT INTO clients (name, identifier, post_code, pref, city, address, tel, email, access_token, public_key, private_key, fingerprint, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.name, data.identifier, "100-0001", "東京都", "千代田区", "千代田1-1", "0312345678",
-     data.email, token, publicPem, privatePem, "SHA256:test", 1],
+     data.email, token, publicPem, privatePem, "SHA256:test", data.status],
   ) as mysql.ResultSetHeader[];
 
   return { id: result.insertId, name: data.name, identifier: data.identifier, token, privateKey: privatePem, publicKey: publicPem };

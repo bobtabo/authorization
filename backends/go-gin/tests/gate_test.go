@@ -10,7 +10,7 @@ func TestGate_Issue(t *testing.T) {
 	truncateTables(t)
 
 	t.Run("JWTが発行できる", func(t *testing.T) {
-		c := createClient(t, nil)
+		c := createClient(t, map[string]interface{}{"status": 2})
 		w := do(http.MethodGet, "/api/gate/issue?member=member-001", nil,
 			withBearer(c.AccessToken))
 		if w.Code != http.StatusOK {
@@ -22,8 +22,17 @@ func TestGate_Issue(t *testing.T) {
 		}
 	})
 
+	t.Run("利用中以外のクライアントで401が返る", func(t *testing.T) {
+		c := createClient(t, map[string]interface{}{"identifier": "c-suspended", "email": "suspended@example.com", "status": 3})
+		w := do(http.MethodGet, "/api/gate/issue?member=member-001", nil,
+			withBearer(c.AccessToken))
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("want 401, got %d", w.Code)
+		}
+	})
+
 	t.Run("memberパラメーター未指定で400が返る", func(t *testing.T) {
-		c := createClient(t, map[string]interface{}{"identifier": "c-for-member-test", "email": "mt@example.com"})
+		c := createClient(t, map[string]interface{}{"identifier": "c-for-member-test", "email": "mt@example.com", "status": 2})
 		w := do(http.MethodGet, "/api/gate/issue", nil,
 			withBearer(c.AccessToken))
 		if w.Code != http.StatusBadRequest {
@@ -51,7 +60,7 @@ func TestGate_Verify(t *testing.T) {
 	truncateTables(t)
 
 	t.Run("JWTが検証できる", func(t *testing.T) {
-		c := createClient(t, nil)
+		c := createClient(t, map[string]interface{}{"status": 2})
 
 		// JWT を発行
 		issueW := do(http.MethodGet, "/api/gate/issue?member=member-001", nil,
@@ -70,7 +79,7 @@ func TestGate_Verify(t *testing.T) {
 	})
 
 	t.Run("tokenパラメーター未指定で400が返る", func(t *testing.T) {
-		c := createClient(t, map[string]interface{}{"identifier": "c-verify", "email": "v@example.com"})
+		c := createClient(t, map[string]interface{}{"identifier": "c-verify", "email": "v@example.com", "status": 2})
 		w := do(http.MethodGet, fmt.Sprintf("/api/gate/client/%s/verify", c.Identifier), nil)
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("want 400, got %d", w.Code)
@@ -85,7 +94,7 @@ func TestGate_Verify(t *testing.T) {
 	})
 
 	t.Run("無効なJWTで401が返る", func(t *testing.T) {
-		createClient(t, map[string]interface{}{"identifier": "jwt-test-client", "email": "jwt@example.com"})
+		createClient(t, map[string]interface{}{"identifier": "jwt-test-client", "email": "jwt@example.com", "status": 2})
 		w := do(http.MethodGet, "/api/gate/client/jwt-test-client/verify?token=invalid.jwt.token", nil)
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("want 401, got %d", w.Code)

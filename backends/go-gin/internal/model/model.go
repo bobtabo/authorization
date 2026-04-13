@@ -6,6 +6,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// クライアントのステータス定数
+const (
+	ClientStatusInactive  = 1 // 準備中
+	ClientStatusActive    = 2 // 利用中
+	ClientStatusSuspended = 3 // 停止中
+	ClientStatusClosed    = 4 // アーカイブ
+)
+
 // Client はクライアント（顧客企業）テーブルを表します。
 type Client struct {
 	ID          uint64         `gorm:"primaryKey;autoIncrement;column:id"`

@@ -15,7 +15,9 @@ export async function findClientById(id: number): Promise<Client | undefined> {
 }
 
 export async function findClientByToken(token: string): Promise<Client | undefined> {
-  const rows = await db.select().from(clients).where(and(eq(clients.token, token), isNull(clients.deletedAt))).limit(1);
+  const rows = await db.select().from(clients).where(
+    and(eq(clients.token, token), eq(clients.status, 2), isNull(clients.deletedAt))
+  ).limit(1);
   return rows[0];
 }
 

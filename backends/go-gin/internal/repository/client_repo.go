@@ -54,7 +54,7 @@ func (r *ClientRepository) FindByID(id uint64) (*model.Client, error) {
 
 func (r *ClientRepository) FindByAccessToken(token string) (*model.Client, error) {
 	var c model.Client
-	if err := r.db.Where("access_token = ?", token).First(&c).Error; err != nil {
+	if err := r.db.Where("access_token = ? AND status = ?", token, model.ClientStatusActive).First(&c).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
