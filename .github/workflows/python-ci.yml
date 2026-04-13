@@ -44,11 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Python をセットアップ
+      # Python をセットアップ（本番環境に合わせて 3.13 を使用）
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.13'
 
       # Python 依存関係をインストール
       - name: Install dependencies

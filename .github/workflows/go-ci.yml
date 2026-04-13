@@ -55,26 +55,6 @@ jobs:
         run: go mod download
         working-directory: backends/go-gin
 
-      # CI用 .env を直接生成（.env はリポジトリに含まれないため cp は使わない）
-      - name: Generate .env.ci
-        working-directory: backends/go-gin
-        run: |
-          printf '%s\n' \
-            'DB_HOST=127.0.0.1' \
-            'DB_PORT=3306' \
-            'DB_DATABASE=authorization_test' \
-            'DB_USERNAME=develop' \
-            'DB_PASSWORD=docker#DOCKER1234' \
-            'REDIS_HOST=127.0.0.1' \
-            'REDIS_PORT=6379' \
-            'REDIS_PASSWORD=' \
-            'CACHE_PREFIX=' \
-            'JWT_ISSUER=authorization' \
-            'JWT_TTL=1800' \
-            'GATE_JWT_CACHE_TTL=1800' \
-            'APP_FRONTEND_URL=http://localhost:5173' \
-            > .env.ci
-
       # テスト用DBを作成（root で作成し develop に権限付与。TestMain の runSchemaSql がテーブルを管理）
       - name: Create test database
         run: |
@@ -84,9 +64,21 @@ jobs:
             FLUSH PRIVILEGES;
           "
 
-      # テストを実行
+      # テストを実行（env vars を直接設定。godotenv は既存 env vars を上書きしないため .env より優先される）
       - name: Run tests
         run: go test ./tests/...
         working-directory: backends/go-gin
         env:
-          ENV_FILE: .env.ci
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: authorization_test
+          DB_USERNAME: develop
+          DB_PASSWORD: "docker#DOCKER1234"
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          REDIS_PASSWORD: ""
+          CACHE_PREFIX: ""
+          JWT_ISSUER: authorization
+          JWT_TTL: "1800"
+          GATE_JWT_CACHE_TTL: "1800"
+          APP_FRONTEND_URL: "http://localhost:5173"

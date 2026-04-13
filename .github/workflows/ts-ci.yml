@@ -44,11 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Node.js をセットアップ
+      # Node.js をセットアップ（本番環境に合わせて 22 を使用）
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       # Node.js 依存関係をインストール
       - name: Install dependencies
