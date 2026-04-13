@@ -55,12 +55,23 @@ jobs:
         run: go mod download
         working-directory: backends/go-gin
 
-      # ビルドを実行
-      - name: Build
-        run: go build ./...
+      # .env ファイルをコピーしてCI環境に適応
+      - name: Prepare .env
+        run: |
+          cp .env .env.ci
+          sed -i 's/host\.docker\.internal/127.0.0.1/g' .env.ci
+          echo 'DB_DATABASE=authorization_test' >> .env.ci
         working-directory: backends/go-gin
 
-      # テストを実行（テストファイルがない場合はスキップ）
+      # テスト用DBスキーマを作成
+      - name: Setup test database
+        run: |
+          mysql -h 127.0.0.1 -u develop -pdocker#DOCKER1234 authorization < tests/schema.sql
+        working-directory: backends/go-gin
+
+      # テストを実行
       - name: Run tests
         run: go test ./...
         working-directory: backends/go-gin
+        env:
+          ENV_FILE: .env.ci

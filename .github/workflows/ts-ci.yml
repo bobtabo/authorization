@@ -55,6 +55,20 @@ jobs:
         run: npm install
         working-directory: backends/ts-hono
 
+      # .env ファイルをコピーしてCI環境に適応
+      - name: Prepare .env
+        run: |
+          cp .env .env.ci
+          sed -i 's/host\.docker\.internal/127.0.0.1/g' .env.ci
+        working-directory: backends/ts-hono
+
+      # テストを実行
+      - name: Run tests
+        run: npm test
+        working-directory: backends/ts-hono
+        env:
+          ENV_FILE: .env.ci
+
       # ビルドを実行
       - name: Build
         run: npm run build
