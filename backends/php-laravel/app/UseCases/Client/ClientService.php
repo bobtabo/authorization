@@ -143,6 +143,8 @@ class ClientService extends AbstractService
 
         $configs = config('authorization.app.mail');
         return new ClientStoreVo()->assign([
+            'id' => $saved->id,
+            'name' => $saved->name,
             'from' => $configs['from'],
             'to' => $saved->email,
             'subject' => get_mail_subject($configs['subject']['prefix'] . $configs['subject']['access_token']),

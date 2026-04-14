@@ -80,6 +80,7 @@ CREATE TABLE `notifications` (
     `message_type`  INT UNSIGNED    NOT NULL DEFAULT 1,
     `title`         VARCHAR(255)    NOT NULL,
     `message`       VARCHAR(512)    NOT NULL DEFAULT '',
+    `url`           VARCHAR(255)    NULL,
     `read`          TINYINT(1)      NOT NULL DEFAULT 0,
     `created_at`    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `created_by`    INT UNSIGNED,

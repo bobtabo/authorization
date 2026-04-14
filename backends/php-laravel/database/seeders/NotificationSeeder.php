@@ -8,22 +8,22 @@
 
 declare(strict_types=1);
 
-namespace Database\Seeders;
+namespace database\seeders;
 
 use App\Support\Database\Seeder;
 
 /**
- * 招待Seederクラスです。
+ * 通知Seederクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Seeders;
  */
-class InvitationSeeder extends Seeder
+class NotificationSeeder extends Seeder
 {
     /**
      * {@inheritdoc}
      */
-    protected ?string $target = 'invitations';
+    protected ?string $target = 'notifications';
 
     /**
      * {@inheritdoc}

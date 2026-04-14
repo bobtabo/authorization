@@ -87,6 +87,7 @@ type Notification struct {
 	MessageType int            `gorm:"not null;column:message_type"`
 	Title       string         `gorm:"not null;column:title"`
 	Message     string         `gorm:"not null;column:message"`
+	URL         *string        `gorm:"column:url"`
 	Read        bool           `gorm:"not null;default:false;column:read"`
 	CreatedAt   time.Time      `gorm:"column:created_at"`
 	CreatedBy   *uint          `gorm:"column:created_by"`

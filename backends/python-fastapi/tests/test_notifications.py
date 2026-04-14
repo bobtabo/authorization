@@ -32,6 +32,14 @@ class TestIndex:
         assert "items" in data
         assert len(data["items"]) == 2
 
+    def test_url付き通知がレスポンスに含まれる(self, client, db_session):
+        staff = make_staff(db_session)
+        make_notification(db_session, staff_id=staff.id, title="クライアント登録", url="/clients/show?id=1")
+        res = client.get("/api/notifications", cookies={"staff_id": str(staff.id)})
+        assert res.status_code == 200
+        item = res.json()["items"][0]
+        assert item["url"] == "/clients/show?id=1"
+
     def test_未認証で401が返る(self, client):
         res = client.get("/api/notifications")
         assert res.status_code == 401

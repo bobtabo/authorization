@@ -57,6 +57,28 @@ class NotificationControllerTest extends TestCase
     }
 
     /**
+     * url付き通知が一覧に含まれるテストです。
+     *
+     * @return void
+     */
+    public function testIndexWithUrl(): void
+    {
+        $staff = \App\Infrastructure\Models\Staff::factory()->create();
+        Notification::factory()->create([
+            'staff_id' => $staff->id,
+            'title'    => 'クライアント登録',
+            'url'      => '/clients/show?id=1',
+        ]);
+
+        $response = $this->withCookies($this->staffCookies($staff->id))
+            ->get('/api/notifications');
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonPath('items.0.url', '/clients/show?id=1');
+    }
+
+    /**
      * 通知トリガー受理テストです。
      *
      * @return void

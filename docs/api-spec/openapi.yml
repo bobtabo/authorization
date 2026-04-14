@@ -987,24 +987,48 @@ components:
 
     Notification:
       type: object
-      description: 通知1件（メタデータを含む。実フィールドは実装に依存）
+      description: 通知1件
+      required:
+        - id
+        - title
+        - message_type
+        - read
+        - created_at
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
+          format: int64
+          example: 1
+        staff_id:
+          type: integer
+          format: int64
+          example: 1
+        message_type:
+          type: integer
+          description: "1=info / 2=warn / 3=ok"
+          example: 1
         title:
           type: string
-        read_at:
+          example: "新しいクライアントが登録されました"
+        message:
+          type: string
+          example: "株式会社サンプル"
+        url:
+          type: string
+          nullable: true
+          description: 遷移先の相対URL。nullの場合はリンクなし
+          example: "/clients/show?id=21"
+        read:
+          type: boolean
+          example: false
+        created_at:
           type: string
           format: date-time
-          nullable: true
-        archived_at:
+          example: "2026-01-01 10:00"
+        updated_at:
           type: string
           format: date-time
-          nullable: true
-        metadata:
-          type: object
-          additionalProperties: true
+          example: "2026-01-01 10:00"
 
     NotificationListResponse:
       type: object

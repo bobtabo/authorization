@@ -57,6 +57,23 @@ func TestNotification_Index(t *testing.T) {
 		}
 	})
 
+	t.Run("url付き通知がレスポンスに含まれる", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "url-notif@example.com"})
+		createNotification(t, staff.ID, "クライアント登録", map[string]interface{}{"url": "/clients/show?id=1"})
+
+		w := do(http.MethodGet, "/api/notifications", nil,
+			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		items := body["items"].([]interface{})
+		item := items[0].(map[string]interface{})
+		if item["url"] != "/clients/show?id=1" {
+			t.Errorf("want url=/clients/show?id=1, got %v", item["url"])
+		}
+	})
+
 	t.Run("未認証で401が返る", func(t *testing.T) {
 		w := do(http.MethodGet, "/api/notifications", nil)
 		if w.Code != http.StatusUnauthorized {

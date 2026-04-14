@@ -36,13 +36,13 @@ func (s *NotificationService) BulkMarkRead(staffID int64, ids []int64, all bool)
 }
 
 // FanOut は全アクティブスタッフへ通知を配信します。
-func (s *NotificationService) FanOut(title, message string, messageType int, executorID uint) error {
+func (s *NotificationService) FanOut(title, message string, messageType int, executorID uint, url ...string) error {
 	staffs, err := s.staffRepo.FindAllActive()
 	if err != nil {
 		return err
 	}
 	for _, staff := range staffs {
-		_ = s.repo.Store(staff.ID, messageType, title, message, executorID)
+		_ = s.repo.Store(staff.ID, messageType, title, message, executorID, url...)
 	}
 	return nil
 }
@@ -66,6 +66,7 @@ func MapNotification(n *model.Notification) map[string]interface{} {
 		"message_type": n.MessageType,
 		"title":        n.Title,
 		"message":      n.Message,
+		"url":          n.URL,
 		"read":         n.Read,
 		"created_at":   n.CreatedAt.Format("2006-01-02 15:04"),
 		"updated_at":   n.UpdatedAt.Format("2006-01-02 15:04"),

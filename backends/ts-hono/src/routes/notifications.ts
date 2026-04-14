@@ -46,7 +46,7 @@ app.patch("/notifications/:id", async (c) => {
   await patch(id, {
     read: typeof body.read === "boolean" ? body.read : undefined,
     title: typeof body.title === "string" ? body.title : undefined,
-    body: typeof body.body === "string" ? body.body : undefined,
+    message: typeof body.message === "string" ? body.message : undefined,
   });
   return c.json({ id });
 });

@@ -49,11 +49,16 @@ export const invitations = mysqlTable("invitations", {
 export const notifications = mysqlTable("notifications", {
   id: bigint("id", { mode: "number", unsigned: true }).primaryKey().autoincrement(),
   staffId: bigint("staff_id", { mode: "number", unsigned: true }).notNull(),
+  messageType: int("message_type").notNull().default(1),
   title: varchar("title", { length: 255 }).notNull(),
-  body: text("body"),
+  message: varchar("message", { length: 512 }).notNull().default(""),
+  url: varchar("url", { length: 255 }),
   read: boolean("read").default(false),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  createdBy: int("created_by").notNull().default(0),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedBy: int("updated_by").notNull().default(0),
+  version: int("version").notNull().default(0),
 });
 
 export type Client = typeof clients.$inferSelect;

@@ -1,9 +1,13 @@
 <?php
+
 /**
  * This is a program developed by BobTabo.
  *
  * Copyright (c) 2026 BobTabo. All Rights Reserved.
  */
+
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Support\Database\Seeder;
@@ -19,7 +23,7 @@ class StaffSeeder extends Seeder
     /**
      * {@inheritdoc}
      */
-    protected ?string $target = 'campaign_options';
+    protected ?string $target = 'staffs';
 
     /**
      * {@inheritdoc}

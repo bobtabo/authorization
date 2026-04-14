@@ -179,7 +179,7 @@ def make_notification(db, staff_id: int, **kwargs) -> Notification:
     defaults = {
         "staff_id": staff_id,
         "title": "テスト通知",
-        "body": "通知本文",
+        "message": "通知本文",
         "read": False,
     }
     defaults.update(kwargs)

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"authorization-go/internal/model"
 	"fmt"
 	"net/http"
 	"testing"
@@ -71,6 +72,36 @@ func TestClient_Store(t *testing.T) {
 		body := parseBody(w)
 		if body["id"] == nil {
 			t.Error("id not found in response")
+		}
+	})
+
+	t.Run("登録時にURL付き通知が作成される", func(t *testing.T) {
+		truncateTables(t)
+		staff := createStaff(t, nil)
+		payload := map[string]string{
+			"name":       "通知テスト株式会社",
+			"identifier": "notif-client-001",
+			"post_code":  "100-0001",
+			"pref":       "東京都",
+			"city":       "千代田区",
+			"address":    "千代田1-1",
+			"tel":        "0312345678",
+			"email":      "notif@example.com",
+		}
+		w := do(http.MethodPost, "/api/clients/store", payload, withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		if w.Code != http.StatusCreated {
+			t.Errorf("want 201, got %d: %s", w.Code, w.Body.String())
+		}
+		clientBody := parseBody(w)
+		clientID := clientBody["id"].(float64)
+
+		var notif model.Notification
+		if err := testDB.Where("staff_id = ?", staff.ID).First(&notif).Error; err != nil {
+			t.Fatalf("notification not found: %v", err)
+		}
+		want := fmt.Sprintf("/clients/show?id=%d", int(clientID))
+		if notif.URL == nil || *notif.URL != want {
+			t.Errorf("want url=%s, got %v", want, notif.URL)
 		}
 	})
 
