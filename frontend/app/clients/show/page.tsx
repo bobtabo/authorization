@@ -12,6 +12,7 @@ type ClientStatus = "準備中" | "利用中" | "停止中" | "アーカイブ";
 
 type ClientDetail = {
   clientName: string;
+  identifier: string;
   postalCode: string;
   prefecture: string;
   city: string;
@@ -74,6 +75,7 @@ export default function ClientShowPage(): React.JSX.Element {
       const d = res as Record<string, unknown>;
       setDetail({
         clientName: d.name as string,
+        identifier: d.identifier as string ?? "",
         postalCode: d.post_code as string ?? "",
         prefecture: d.pref as string ?? "",
         city: d.city as string ?? "",
@@ -189,7 +191,7 @@ export default function ClientShowPage(): React.JSX.Element {
             className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
           >
             <div className="px-6 pt-6 pb-2">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-1">
                 <h2 className="text-lg font-semibold text-gray-900">
                   {detail.clientName}
                 </h2>
@@ -201,6 +203,10 @@ export default function ClientShowPage(): React.JSX.Element {
                   {detail.status}
                 </span>
               </div>
+              <p className="text-xs text-gray-400 mb-2">
+                <span className="font-medium text-gray-400">識別名：</span>
+                <span className="font-mono">{detail.identifier}</span>
+              </p>
             </div>
 
             <div className="px-6 pb-6">

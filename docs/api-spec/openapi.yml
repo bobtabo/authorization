@@ -829,10 +829,7 @@ components:
         - email
         - status
         - created_at
-        - created_name
         - updated_at
-        - updated_name
-        - version
       properties:
         id:
           type: integer
@@ -880,26 +877,10 @@ components:
           type: string
           format: date-time
           example: "2025-11-01T10:00:00Z"
-        created_name:
-          type: string
-          example: "長柴聡史"
         updated_at:
           type: string
           format: date-time
           example: "2025-11-01T10:00:00Z"
-        updated_name:
-          type: string
-          example: "長柴聡史"
-        deleted_at:
-          type: string
-          format: date-time
-          example: "2025-11-01T10:00:00Z"
-        deleted_name:
-          type: string
-          example: "長柴聡史"
-        version:
-          type: integer
-          example: "1"
 
     Clients:
       type: array

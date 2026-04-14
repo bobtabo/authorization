@@ -186,6 +186,7 @@ func mapClientDetail(c *model.Client) gin.H {
 	return gin.H{
 		"id":         c.ID,
 		"name":       c.Name,
+		"identifier": c.Identifier,
 		"post_code":  c.PostCode,
 		"pref":       c.Pref,
 		"city":       c.City,

@@ -1,8 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
+import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
+import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+
+const RUNTIME_LABEL: Record<string, string> = {
+  php:    "PHP",
+  go:     "Go",
+  python: "Python",
+  ts:     "TypeScript",
+};
 
 export type ErrorPageProps = {
   /** HTTP ステータス風のコード（表示用。未指定は 404） */
@@ -38,9 +47,24 @@ export function ErrorPage({
       : "しばらく時間をおいてから、もう一度お試しください。");
 
   const isNotFound = statusCode === 404;
+  const runtime = useMemo(() => localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php", []);
+  const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
+  const connectionDetail = useMemo(() => getBackendConnectionDetail(), []);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f8fa]">
+      <div className="shrink-0 border-b border-[#d0d7de] bg-white px-4 py-3 text-left shadow-sm">
+        <p className="text-xs font-semibold text-[#1f2328]">
+          Backend は {runtimeLabel} と通信しています
+        </p>
+        <p
+          className="mt-1.5 break-all font-mono text-[11px] leading-relaxed text-[#656d76]"
+          title={connectionDetail}
+        >
+          {connectionDetail}
+        </p>
+      </div>
+
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <div className="flex w-full max-w-[400px] flex-col items-center">
           {/* ログイン画面と同系のブランド */}
