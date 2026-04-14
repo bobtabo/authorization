@@ -5,6 +5,7 @@ import (
 	"authorization-go/internal/repository"
 	"authorization-go/internal/service"
 	"authorization-go/pkg/apperror"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -98,7 +99,8 @@ func (h *ClientHandler) Store(c *gin.Context) {
 	}
 
 	// 全スタッフへ通知配信
-	_ = h.notificationSvc.FanOut("新しいクライアントが登録されました", client.Name, 1, executorID)
+	notifURL := fmt.Sprintf("/clients/show?id=%d", client.ID)
+	_ = h.notificationSvc.FanOut("新しいクライアントが登録されました", client.Name, 1, executorID, notifURL)
 
 	c.JSON(http.StatusCreated, gin.H{"id": client.ID})
 }
@@ -186,6 +188,7 @@ func mapClientDetail(c *model.Client) gin.H {
 	return gin.H{
 		"id":         c.ID,
 		"name":       c.Name,
+		"identifier": c.Identifier,
 		"post_code":  c.PostCode,
 		"pref":       c.Pref,
 		"city":       c.City,

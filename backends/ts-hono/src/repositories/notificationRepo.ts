@@ -1,4 +1,4 @@
-import { and, count, eq, gt, lt, or } from "drizzle-orm";
+import { and, count, desc, eq, gt, lt, or } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { notifications, type Notification } from "../db/schema.js";
 
@@ -33,7 +33,7 @@ export async function listPage(staffId: number, cursor: string | undefined, limi
 
   const rows = await db.select().from(notifications)
     .where(cond)
-    .orderBy(notifications.createdAt, notifications.id)
+    .orderBy(desc(notifications.createdAt), desc(notifications.id))
     .limit(limit + 1);
 
   let nextCursor: string | null = null;
@@ -78,6 +78,6 @@ export async function findNotificationById(id: number): Promise<Notification | u
   return rows[0];
 }
 
-export async function patchNotification(id: number, data: Partial<Pick<Notification, "read" | "title" | "body">>): Promise<void> {
+export async function patchNotification(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>): Promise<void> {
   await db.update(notifications).set({ ...data, updatedAt: new Date() }).where(eq(notifications.id, id));
 }

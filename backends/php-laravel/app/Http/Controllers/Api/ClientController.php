@@ -108,6 +108,7 @@ class ClientController extends Controller
             message: $value->getName() ?? '',
             messageType: 1,
             executorId: $executorId ?? 0,
+            url: '/clients/show?id=' . $value->getId(),
         );
 
         //アクセストークンをメール送信します

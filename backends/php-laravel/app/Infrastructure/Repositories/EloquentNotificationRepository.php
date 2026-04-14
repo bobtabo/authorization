@@ -106,7 +106,7 @@ class EloquentNotificationRepository implements NotificationRepository
      * {@inheritdoc}
      */
     #[\Override]
-    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId): void
+    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId, ?string $url = null): void
     {
         $now = Carbon::now();
         $model = new Model();
@@ -115,6 +115,7 @@ class EloquentNotificationRepository implements NotificationRepository
             'message_type' => $messageType,
             'title' => $title,
             'message' => $message,
+            'url' => $url,
             'read' => false,
             'created_by' => $executorId,
             'updated_by' => $executorId,

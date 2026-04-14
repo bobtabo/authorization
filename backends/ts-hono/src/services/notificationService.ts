@@ -11,8 +11,10 @@ export function mapNotification(n: Notification): Record<string, unknown> {
   return {
     id: n.id,
     staff_id: n.staffId,
+    message_type: n.messageType,
     title: n.title,
-    body: n.body,
+    message: n.message,
+    url: n.url ?? null,
     read: n.read,
     created_at: formatTime(n.createdAt),
     updated_at: formatTime(n.updatedAt),
@@ -30,11 +32,11 @@ export async function bulkRead(executorId: number, ids: number[], allFlag: boole
 export async function fanOut(title: string, body?: string): Promise<void> {
   const staffs = await findAllActiveStaffs();
   for (const staff of staffs) {
-    await insertNotification({ staffId: staff.id, title, body: body ?? null, read: false });
+    await insertNotification({ staffId: staff.id, title, message: body ?? "", read: false });
   }
 }
 
-export async function patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "body">>): Promise<void> {
+export async function patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>): Promise<void> {
   const n = await findNotificationById(id);
   if (!n) throw notFound("notification_not_found");
   await patchNotification(id, data);

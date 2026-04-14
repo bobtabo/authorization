@@ -70,7 +70,7 @@ func (r *NotificationRepository) BulkMarkRead(staffID int64, ids []int64, all bo
 }
 
 // Store は新規通知を1件保存します。
-func (r *NotificationRepository) Store(staffID uint, messageType int, title, message string, createdBy uint) error {
+func (r *NotificationRepository) Store(staffID uint, messageType int, title, message string, createdBy uint, url ...string) error {
 	now := time.Now()
 	n := model.Notification{
 		StaffID:     staffID,
@@ -81,6 +81,9 @@ func (r *NotificationRepository) Store(staffID uint, messageType int, title, mes
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		CreatedBy:   &createdBy,
+	}
+	if len(url) > 0 && url[0] != "" {
+		n.URL = &url[0]
 	}
 	return r.db.Create(&n).Error
 }

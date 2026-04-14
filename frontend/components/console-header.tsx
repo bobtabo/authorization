@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Settings,
   Link2,
+  ExternalLink,
 } from "lucide-react";
 import { InvitationUrlModal } from "@/components/invitation-url-modal";
 import { UserAvatar } from "@/components/user-avatar";
@@ -31,21 +32,24 @@ interface NotificationItem {
   detail: string;
   tone: "info" | "warn" | "ok";
   unread: boolean;
+  url: string | null;
 }
 
 function mapNotification(row: Record<string, unknown>): NotificationItem {
   return {
     id: row.id as number,
     title: row.title as string,
-    detail: row.message as string,
+    detail: (row.message ?? row.body) as string,
     tone: TONE_MAP[row.message_type as number] ?? "info",
     unread: !(row.read as boolean),
+    url: (row.url as string | null) ?? null,
   };
 }
 
 export function ConsoleHeader(): React.JSX.Element {
   const { user } = useUser();
   const location = useLocation();
+  const navigate = useNavigate();
   const displayName = user?.name ?? "";
   const staffId = user?.staff_id ?? null;
   const isAdmin = user?.role === 1;
@@ -266,6 +270,7 @@ export function ConsoleHeader(): React.JSX.Element {
           <div ref={notificationRef} className="relative">
             <button
               type="button"
+              aria-label="通知"
               onClick={() => {
                 setSettingsMenuOpen(false);
                 setInvitationModalOpen(false);
@@ -330,7 +335,13 @@ export function ConsoleHeader(): React.JSX.Element {
                       visibleNotifications.map((item) => (
                         <div
                           key={item.id}
-                          onClick={() => item.unread && handleMarkRead(item.id)}
+                          onClick={() => {
+                            if (item.unread) handleMarkRead(item.id);
+                            if (item.url) {
+                              setNotificationOpen(false);
+                              navigate(item.url.startsWith("/") ? item.url : `/${item.url}`);
+                            }
+                          }}
                           className={`cursor-pointer px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${
                             item.unread ? "" : "opacity-60"
                           }`}
@@ -346,7 +357,12 @@ export function ConsoleHeader(): React.JSX.Element {
                               }`}
                             />
                             <div className="min-w-0">
-                              <p className="text-sm text-gray-800">{item.title}</p>
+                              <p className="text-sm text-gray-800 flex items-center gap-1">
+                                {item.title}
+                                {item.url && (
+                                  <ExternalLink size={14} className="shrink-0 text-gray-400" aria-hidden />
+                                )}
+                              </p>
                               <p className="text-xs text-gray-500 mt-1">{item.detail}</p>
                             </div>
                             {item.unread && (

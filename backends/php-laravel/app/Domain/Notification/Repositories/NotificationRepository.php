@@ -65,7 +65,8 @@ interface NotificationRepository
      * @param string $title タイトル
      * @param string $message メッセージ
      * @param int $executorId 登録者ID
+     * @param string|null $url 遷移先URL（省略可）
      * @return void
      */
-    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId): void;
+    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId, ?string $url = null): void;
 }

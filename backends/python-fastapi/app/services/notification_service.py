@@ -9,8 +9,10 @@ def map_notification(n: Notification) -> dict:
     return {
         "id": n.id,
         "staff_id": n.staff_id,
+        "message_type": n.message_type,
         "title": n.title,
-        "body": n.body,
+        "message": n.message,
+        "url": n.url,
         "read": n.read,
         "created_at": n.created_at.strftime("%Y-%m-%d %H:%M") if n.created_at else None,
         "updated_at": n.updated_at.strftime("%Y-%m-%d %H:%M") if n.updated_at else None,
@@ -34,7 +36,7 @@ class NotificationService:
     def fan_out(self, title: str, body: Optional[str]) -> None:
         staffs = self.staff_repo.find_all_active()
         for staff in staffs:
-            n = Notification(staff_id=staff.id, title=title, body=body, read=False)
+            n = Notification(staff_id=staff.id, title=title, message=body or "", read=False)
             self.notif_repo.store(n)
 
     def patch(self, nid: int, data: dict) -> None:

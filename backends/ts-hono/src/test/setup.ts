@@ -79,11 +79,16 @@ CREATE TABLE \`invitations\` (
 CREATE TABLE \`notifications\` (
   \`id\`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   \`staff_id\`      BIGINT UNSIGNED NOT NULL,
+  \`message_type\`  INT UNSIGNED    NOT NULL DEFAULT 1,
   \`title\`         VARCHAR(255)    NOT NULL,
-  \`body\`          TEXT,
+  \`message\`       VARCHAR(512)    NOT NULL DEFAULT '',
+  \`url\`           VARCHAR(255)    NULL,
   \`read\`          BOOLEAN         NOT NULL DEFAULT FALSE,
   \`created_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP,
+  \`created_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
   \`updated_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  \`updated_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
+  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 0,
   PRIMARY KEY (\`id\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 `;

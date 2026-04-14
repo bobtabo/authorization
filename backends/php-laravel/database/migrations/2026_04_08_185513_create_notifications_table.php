@@ -29,6 +29,7 @@ return new class extends Migration {
             $table->integer('message_type')->unsigned()->comment('メッセージ種類');
             $table->string('title', 255)->comment('タイトル');
             $table->string('message', 512)->comment('メッセージ');
+            $table->string('url', 255)->nullable()->comment('URL');
             $table->tinyInteger('read')->unsigned()->default(0)->comment('既読');
             $table->timestamp('created_at')->useCurrent()->comment('登録日時');
             $table->integer('created_by')->unsigned()->comment('登録者ID');

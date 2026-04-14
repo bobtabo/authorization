@@ -32,8 +32,32 @@ describe("Notifications", () => {
         headers: { Cookie: `staff_id=${staff.id}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json() as { items: unknown[] };
+      const body = await res.json() as { items: Array<Record<string, unknown>> };
       expect(body.items.length).toBe(1);
+      expect(typeof body.items[0].message).toBe("string");
+    });
+
+    test("新しい通知が先頭に来る", async () => {
+      const staff = await makeStaff();
+      await makeNotification(staff.id, "古い通知");
+      await makeNotification(staff.id, "新しい通知");
+      const res = await app.request("/api/notifications", {
+        headers: { Cookie: `staff_id=${staff.id}` },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json() as { items: Array<Record<string, unknown>> };
+      expect(body.items[0].title).toBe("新しい通知");
+    });
+
+    test("url付き通知がレスポンスに含まれる", async () => {
+      const staff = await makeStaff({ email: `url-notif-${Date.now()}@example.com` });
+      await makeNotification(staff.id, "クライアント登録", "/clients/show?id=1");
+      const res = await app.request("/api/notifications", {
+        headers: { Cookie: `staff_id=${staff.id}` },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json() as { items: Array<Record<string, unknown>> };
+      expect(body.items[0].url).toBe("/clients/show?id=1");
     });
 
     test("未認証で401が返る", async () => {

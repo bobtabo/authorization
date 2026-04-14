@@ -95,10 +95,10 @@ export async function makeInvitation(tokenStr?: string): Promise<TestInvitation>
   return { id: result.insertId, token: tok };
 }
 
-export async function makeNotification(staffId: number, title = "テスト通知"): Promise<TestNotification> {
+export async function makeNotification(staffId: number, title = "テスト通知", url?: string | null): Promise<TestNotification> {
   const [result] = await pool.execute(
-    "INSERT INTO notifications (staff_id, title, body) VALUES (?, ?, ?)",
-    [staffId, title, "通知本文"],
+    "INSERT INTO notifications (staff_id, message_type, title, message, url, created_by, updated_by, version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [staffId, 1, title, "通知本文", url ?? null, 0, 0, 0],
   ) as mysql.ResultSetHeader[];
   return { id: result.insertId, staffId, title };
 }

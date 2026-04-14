@@ -71,7 +71,7 @@ class NotificationRepository:
         return notification
 
     def patch(self, notification: Notification, data: dict) -> None:
-        allowed = {"read", "title", "body"}
+        allowed = {"read", "title", "message"}
         for key, val in data.items():
             if key in allowed:
                 setattr(notification, key, val)

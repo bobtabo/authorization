@@ -301,13 +301,19 @@ func createInvitation(t *testing.T, token string) *model.Invitation {
 	return inv
 }
 
-func createNotification(t *testing.T, staffID uint, title string) *model.Notification {
+func createNotification(t *testing.T, staffID uint, title string, overrides ...map[string]interface{}) *model.Notification {
 	t.Helper()
 	n := &model.Notification{
 		StaffID:     staffID,
 		MessageType: 1,
 		Title:       title,
 		Message:     "テスト通知本文",
+	}
+	if len(overrides) > 0 {
+		if v, ok := overrides[0]["url"]; ok {
+			s := v.(string)
+			n.URL = &s
+		}
 	}
 	if err := testDB.Create(n).Error; err != nil {
 		t.Fatalf("createNotification: %v", err)

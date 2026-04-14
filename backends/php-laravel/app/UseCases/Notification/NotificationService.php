@@ -84,13 +84,14 @@ class NotificationService extends AbstractService
      * @param string $message メッセージ
      * @param int $messageType メッセージ種類（1=info / 2=warn / 3=ok）
      * @param int $executorId 登録者ID
+     * @param string|null $url 遷移先URL（省略可）
      * @return void
      */
-    public function fanOut(string $title, string $message, int $messageType, int $executorId): void
+    public function fanOut(string $title, string $message, int $messageType, int $executorId, ?string $url = null): void
     {
         $staffs = $this->staffs->findAllActive();
         foreach ($staffs as $staff) {
-            $this->notifications->store($staff->id, $messageType, $title, $message, $executorId);
+            $this->notifications->store($staff->id, $messageType, $title, $message, $executorId, $url);
         }
     }
 
