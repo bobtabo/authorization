@@ -24,10 +24,7 @@
 
 認可サーバーの **UI フロー閲覧ツール** です。
 
-Figma で設計した画面フローを Web アプリとして確認できます。  
-Vercel にデプロイして利用します。
-
-> 元の Figma プロジェクト: [Authorization UI Flow](https://www.figma.com/design/poZ4dOYtKiRQS54ThDG8hr/Authorization-UI-Flow)
+画面フローを Vercel で Web アプリとしてデプロイしています。
 
 ---
 
