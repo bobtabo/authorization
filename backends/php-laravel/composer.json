@@ -10,7 +10,6 @@
         "firebase/php-jwt": "*",
         "jenssegers/agent": "^2.6",
         "laravel/framework": "^13.0",
-        "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.26",
         "laravel/tinker": "^3.0",
         "mark-gerarts/auto-mapper-plus": "^1.5",

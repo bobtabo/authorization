@@ -97,3 +97,20 @@ class TestDestroy:
     def test_存在しないIDで404が返る(self, client):
         res = client.delete("/api/clients/99999/delete")
         assert res.status_code == 404
+
+
+class TestSoftDelete:
+    def test_論理削除済みのクライアントが一覧に含まれる(self, client, db_session):
+        c = make_client_record(db_session)
+        client.delete(f"/api/clients/{c.id}/delete")
+        res = client.get("/api/clients")
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 1
+
+    def test_論理削除済みのクライアント詳細が取得できる(self, client, db_session):
+        c = make_client_record(db_session)
+        client.delete(f"/api/clients/{c.id}/delete")
+        res = client.get(f"/api/clients/{c.id}")
+        assert res.status_code == 200
+        assert res.json()["id"] == c.id

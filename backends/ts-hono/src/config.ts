@@ -15,7 +15,7 @@ export const config = {
   app: {
     env: env("APP_ENV", "local"),
     port: envInt("APP_PORT", 3000),
-    frontendUrl: env("FRONTEND_URL", "http://localhost:5173"),
+    frontendUrl: env("FRONTEND_URL", "http://localhost:3000"),
     staffCookieLifetime: envInt("STAFF_COOKIE_LIFETIME", 60),
     notificationDefaultLimit: envInt("NOTIFICATION_DEFAULT_LIMIT", 10),
     cachePrefix: env("CACHE_PREFIX", ""),

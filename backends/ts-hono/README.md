@@ -2,6 +2,8 @@
 <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" height="64" alt="TypeScript"></a>
 &nbsp;&nbsp;
 <a href="https://hono.dev/" target="_blank"><img src="https://hono.dev/images/logo.png" height="64" alt="Hono"></a>
+&nbsp;&nbsp;
+<a href="https://orm.drizzle.team/" target="_blank"><img src="https://cdn.simpleicons.org/drizzle" height="64" alt="Drizzle ORM"></a>
 </p>
 
 <p align="center">
@@ -12,7 +14,7 @@
 
 ---
 
-## 概要
+## :book: 概要
 
 認可サーバー API の **TypeScript / Hono** バックエンド実装です。
 
@@ -22,7 +24,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ---
 
-## アーキテクチャ
+## :building_construction: アーキテクチャ
 
 レイヤードアーキテクチャを採用しています。
 
@@ -58,7 +60,7 @@ MySQL / Redis
 
 ---
 
-## ディレクトリ構成
+## :file_folder: ディレクトリ構成
 
 ```
 backends/ts-hono/
@@ -81,7 +83,7 @@ backends/ts-hono/
 
 ---
 
-## 主要パッケージ
+## :package: 主要パッケージ
 
 | パッケージ | 用途 |
 |---|---|
@@ -95,7 +97,7 @@ backends/ts-hono/
 
 ---
 
-## セットアップ
+## :rocket: セットアップ
 
 ### 1. 依存パッケージのインストール
 
@@ -126,7 +128,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ---
 
-## Docker
+## :whale: Docker
 
 ```bash
 # docker/ ディレクトリから実行

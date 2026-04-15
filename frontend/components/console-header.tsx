@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -48,15 +49,18 @@ function mapNotification(row: Record<string, unknown>): NotificationItem {
 
 export function ConsoleHeader(): React.JSX.Element {
   const { user } = useUser();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const displayName = user?.name ?? "";
   const staffId = user?.staff_id ?? null;
   const isAdmin = user?.role === 1;
 
-  const [backendRuntime, setBackendRuntime] = useState<string>(
-    () => localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php",
-  );
+  const [backendRuntime, setBackendRuntime] = useState<string>("php");
+
+  useEffect(() => {
+    const stored = localStorage.getItem(RUNTIME_STORAGE_KEY);
+    if (stored) setBackendRuntime(stored);
+  }, []);
   const [accountMenuOpen, setAccountMenuOpen] = useState<boolean>(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState<boolean>(false);
   const [invitationModalOpen, setInvitationModalOpen] = useState<boolean>(false);
@@ -96,7 +100,7 @@ export function ConsoleHeader(): React.JSX.Element {
   // ページ遷移ごとに件数をリフレッシュ
   useEffect(() => {
     fetchCounts();
-  }, [fetchCounts, location.pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchCounts, pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // 通知パネルを開いたときに一覧を取得
   useEffect(() => {
@@ -171,10 +175,10 @@ export function ConsoleHeader(): React.JSX.Element {
     window.location.href = "/login";
   };
 
-  const navTabClass = ({ isActive }: { isActive: boolean }): string =>
+  const navTabClass = (href: string): string =>
     [
       "inline-block pb-2.5 pt-1 text-xs font-semibold tracking-wide transition-colors border-b-2 -mb-px",
-      isActive
+      pathname.startsWith(href)
         ? "text-violet-600 border-violet-600"
         : "text-gray-500 border-transparent hover:text-gray-700",
     ].join(" ");
@@ -339,7 +343,7 @@ export function ConsoleHeader(): React.JSX.Element {
                             if (item.unread) handleMarkRead(item.id);
                             if (item.url) {
                               setNotificationOpen(false);
-                              navigate(item.url.startsWith("/") ? item.url : `/${item.url}`);
+                              router.push(item.url.startsWith("/") ? item.url : `/${item.url}`);
                             }
                           }}
                           className={`cursor-pointer px-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 ${
@@ -422,7 +426,7 @@ export function ConsoleHeader(): React.JSX.Element {
                   className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden z-20"
                 >
                   <Link
-                    to="/login"
+                    href="/login"
                     onClick={() => setAccountMenuOpen(false)}
                     className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
                   >
@@ -440,13 +444,13 @@ export function ConsoleHeader(): React.JSX.Element {
           className="flex items-center gap-3 sm:gap-8"
           aria-label="メインナビゲーション"
         >
-          <NavLink to="/clients" className={navTabClass} end={false}>
+          <Link href="/clients" className={navTabClass("/clients")}>
             クライアント
-          </NavLink>
+          </Link>
           {isAdmin && (
-            <NavLink to="/staffs" className={navTabClass} end>
+            <Link href="/staffs" className={navTabClass("/staffs")}>
               スタッフ
-            </NavLink>
+            </Link>
           )}
         </nav>
       </div>

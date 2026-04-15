@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+<a href="https://react.dev/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original-wordmark.svg" height="72" alt="React"></a>
+&nbsp;&nbsp;
+<a href="https://nextjs.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original-wordmark.svg" height="72" alt="Next.js"></a>
+&nbsp;&nbsp;
+<a href="https://www.typescriptlang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" height="72" alt="TypeScript"></a>
+&nbsp;&nbsp;
+<a href="https://tailwindcss.com/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" height="72" alt="Tailwind CSS"></a>
+</p>
 
-## Getting Started
+<p align="center">
+<a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19"></a>
+<a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16"></a>
+<a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9"></a>
+<a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4"></a>
+</p>
 
-First, run the development server:
+---
+
+## :book: 概要
+
+認可サーバーの **フロントエンド** 実装です。
+
+スタッフ向けの管理コンソール（クライアント管理・スタッフ管理・通知）を提供します。  
+バックエンドとの通信は API Gateway エミュレータ経由で行います。  
+API 仕様は [`docs/api-spec/openapi.yml`](../docs/api-spec/openapi.yml) を参照してください。
+
+---
+
+## :building_construction: アーキテクチャ
+
+```
+ブラウザ
+    │
+    ▼
+Next.js App Router（app/）
+    │  ページルーティング
+    ▼
+Page / Component（app/ / components/）
+    │  UI レンダリング
+    ▼
+API クライアント（src/api/）
+    │  axios による HTTP リクエスト
+    ▼
+Next.js Rewrites（/function/*）
+    │  API Gateway エミュレータ（Port:8080）へ転送
+    ▼
+バックエンド API
+```
+
+---
+
+## :file_folder: ディレクトリ構成
+
+```
+frontend/
+├── app/                    # ページコンポーネント（App Router）
+│   ├── clients/            # クライアント管理
+│   ├── staffs/             # スタッフ管理
+│   ├── invitation/         # 招待
+│   ├── login/              # ログイン
+│   └── layout.tsx          # 共通レイアウト
+├── components/             # 共通 UI コンポーネント
+├── hooks/                  # カスタムフック
+├── lib/                    # ユーティリティ
+├── src/
+│   └── api/                # axios API クライアント
+├── e2e/                    # Playwright E2E テスト
+├── next.config.ts          # Next.js 設定（API Gateway プロキシ）
+└── tailwind.config.ts      # Tailwind CSS 設定
+```
+
+---
+
+## :package: 主要パッケージ
+
+| パッケージ | 用途 |
+|---|---|
+| `next` | フレームワーク（App Router・SSR） |
+| `react` | UI ライブラリ |
+| `axios` | HTTP クライアント |
+| `tailwindcss` | ユーティリティファースト CSS |
+| `framer-motion` | アニメーション |
+| `lucide-react` | アイコン |
+| `@playwright/test` | E2E テスト |
+
+---
+
+## :rocket: セットアップ
+
+### 1. 依存パッケージのインストール
+
+```bash
+npm install
+```
+
+### 2. 環境変数の設定
+
+```bash
+cp .env.example .env
+```
+
+### 3. 起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Docker 環境では `docker compose up -d` で自動起動します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## :test_tube: テスト
 
-## Learn More
+```bash
+# E2E テスト（Playwright）
+npm run test:e2e
 
-To learn more about Next.js, take a look at the following resources:
+# UI モードで実行
+npm run test:e2e:ui
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## :whale: Docker
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# docker/ ディレクトリから実行
+bin/docker-frontend.sh up    # 起動
+bin/docker-frontend.sh down  # 停止
+bin/docker-frontend.sh exec  # コンテナに入る
+```

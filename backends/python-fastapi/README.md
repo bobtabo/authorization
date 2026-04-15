@@ -1,7 +1,9 @@
 <p align="center">
 <a href="https://www.python.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" height="72" alt="Python"></a>
 &nbsp;&nbsp;
-<a href="https://fastapi.tiangolo.com/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original-wordmark.svg" height="72" alt="FastAPI"></a>
+<a href="https://fastapi.tiangolo.com/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original-wordmark.svg" height="96" alt="FastAPI"></a>
+&nbsp;&nbsp;
+<a href="https://www.sqlalchemy.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/SQLAlchemy.svg" height="72" alt="SQLAlchemy"></a>
 </p>
 
 <p align="center">
@@ -12,7 +14,7 @@
 
 ---
 
-## 概要
+## :book: 概要
 
 認可サーバー API の **Python / FastAPI** バックエンド実装です。
 
@@ -22,7 +24,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ---
 
-## アーキテクチャ
+## :building_construction: アーキテクチャ
 
 レイヤードアーキテクチャを採用しています。
 
@@ -58,7 +60,7 @@ MySQL / Redis
 
 ---
 
-## ディレクトリ構成
+## :file_folder: ディレクトリ構成
 
 ```
 backends/python-fastapi/
@@ -77,7 +79,7 @@ backends/python-fastapi/
 
 ---
 
-## 主要パッケージ
+## :package: 主要パッケージ
 
 | パッケージ | 用途 |
 |---|---|
@@ -93,7 +95,7 @@ backends/python-fastapi/
 
 ---
 
-## セットアップ
+## :rocket: セットアップ
 
 ### 1. 依存パッケージのインストール
 
@@ -124,7 +126,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ---
 
-## Docker
+## :whale: Docker
 
 ```bash
 # docker/ ディレクトリから実行

@@ -9,7 +9,7 @@ class ClientRepository:
         self.db = db
 
     def find_all(self, keyword: Optional[str] = None, status: Optional[int] = None) -> list[Client]:
-        q = self.db.query(Client).filter(Client.deleted_at.is_(None))
+        q = self.db.query(Client)
         if keyword:
             like = f"%{keyword}%"
             q = q.filter(or_(Client.name.like(like), Client.identifier.like(like)))
@@ -18,7 +18,7 @@ class ClientRepository:
         return q.order_by(Client.id).all()
 
     def find_by_id(self, client_id: int) -> Optional[Client]:
-        return self.db.query(Client).filter(Client.id == client_id, Client.deleted_at.is_(None)).first()
+        return self.db.query(Client).filter(Client.id == client_id).first()
 
     def find_by_access_token(self, token: str) -> Optional[Client]:
         return self.db.query(Client).filter(

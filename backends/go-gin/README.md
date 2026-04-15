@@ -2,6 +2,8 @@
 <a href="https://go.dev/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/go/go-original-wordmark.svg" height="72" alt="Go"></a>
 &nbsp;&nbsp;
 <a href="https://gin-gonic.com/" target="_blank"><img src="https://raw.githubusercontent.com/gin-gonic/logo/master/color.png" height="72" alt="Gin"></a>
+&nbsp;&nbsp;
+<a href="https://gorm.io/" target="_blank"><img src="https://gorm.io/gorm.svg" height="72" alt="GORM"></a>
 </p>
 
 <p align="center">
@@ -12,7 +14,7 @@
 
 ---
 
-## 概要
+## :book: 概要
 
 認可サーバー API の **Go / Gin** バックエンド実装です。
 
@@ -22,7 +24,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ---
 
-## アーキテクチャ
+## :building_construction: アーキテクチャ
 
 レイヤードアーキテクチャを採用しています。
 
@@ -58,7 +60,7 @@ MySQL / Redis
 
 ---
 
-## ディレクトリ構成
+## :file_folder: ディレクトリ構成
 
 ```
 backends/go-gin/
@@ -82,7 +84,7 @@ backends/go-gin/
 
 ---
 
-## 主要パッケージ
+## :package: 主要パッケージ
 
 | パッケージ | 用途 |
 |---|---|
@@ -96,7 +98,7 @@ backends/go-gin/
 
 ---
 
-## セットアップ
+## :rocket: セットアップ
 
 ### 1. 依存パッケージの取得
 
@@ -127,7 +129,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ---
 
-## Docker
+## :whale: Docker
 
 ```bash
 # docker/ ディレクトリから実行

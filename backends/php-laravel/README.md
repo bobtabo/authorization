@@ -1,7 +1,7 @@
 <p align="center">
 <a href="https://www.php.net/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/php/php-original.svg" height="72" alt="PHP"></a>
 &nbsp;&nbsp;
-<a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="380" alt="Laravel"></a>
+<a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/laravel-logo.png" height="72" alt="Laravel"></a>
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
 
 ---
 
-## 概要
+## :book: 概要
 
 認可サーバー API の **PHP / Laravel** バックエンド実装です。
 
@@ -20,7 +20,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ---
 
-## アーキテクチャ
+## :building_construction: アーキテクチャ
 
 ドメイン駆動設計 (DDD) に基づく階層構造を採用しています。
 
@@ -59,7 +59,7 @@ Eloquent Model (app/Infrastructure/Models/)
 
 ---
 
-## ディレクトリ構成
+## :file_folder: ディレクトリ構成
 
 ```
 app/
@@ -92,19 +92,19 @@ routes/
 
 ---
 
-## 主要パッケージ
+## :package: 主要パッケージ
 
 | パッケージ | 用途 |
 |---|---|
 | `firebase/php-jwt` | JWT 生成・検証 |
-| `laravel/sanctum` | API トークン認証 |
 | `laravel/socialite` | Google OAuth 2.0 連携 |
 | `mark-gerarts/auto-mapper-plus` | DTO ↔ Entity マッピング |
 | `mavinoo/laravel-batch` | Eloquent バッチ UPDATE |
+| `jenssegers/agent` | UA・デバイス情報取得（将来利用予定） |
 
 ---
 
-## セットアップ
+## :rocket: セットアップ
 
 ### 1. 依存パッケージのインストール
 
@@ -133,7 +133,7 @@ php artisan migrate --seed
 
 ---
 
-## テスト
+## :test_tube: テスト
 
 | 環境 | コマンド |
 |---|---|
@@ -150,7 +150,7 @@ tests/TestData/
 
 ---
 
-## ユーティリティスクリプト
+## :wrench: ユーティリティスクリプト
 
 | スクリプト | 内容 |
 |---|---|

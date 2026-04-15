@@ -8,7 +8,7 @@ class Settings(BaseSettings):
 
     app_env: str = "local"
     app_port: int = 8000
-    frontend_url: str = "http://localhost:5173"
+    frontend_url: str = "http://localhost:3000"
     staff_cookie_lifetime: int = 60          # 分
     notification_default_limit: int = 10
     cache_prefix: str = ""

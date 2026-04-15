@@ -6,7 +6,7 @@
 
 return [
     //フロントエンドURL
-    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
     //スタッフクッキー有効期間（分）
     'staff_cookie_lifetime' => (int)env('STAFF_COOKIE_LIFETIME', 60 * 24 * 7),
     //通知一覧デフォルト取得件数
@@ -24,7 +24,7 @@ return [
         //JWT 有効期間（秒）
         'ttl' => 1800,
         //JWT キャッシュ有効期間（秒）。JWT の有効期限以下を推奨
-        'cache_ttl' => (int) env('GATE_JWT_CACHE_TTL', 1800),
+        'cache_ttl' => (int)env('GATE_JWT_CACHE_TTL', 1800),
     ],
     //メール設定
     'mail' => [

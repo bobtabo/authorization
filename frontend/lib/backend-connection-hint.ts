@@ -6,10 +6,10 @@ import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
  * URL 内の `/function/{runtime}/` を localStorage の選択値で置き換えて返す。
  */
 export function getBackendConnectionDetail(): string {
-  const rawUrl = import.meta.env.VITE_API_URL?.trim() ?? "";
+  const rawUrl = process.env.NEXT_PUBLIC_API_URL?.trim() ?? "";
   const gateway =
-    import.meta.env.VITE_LAMBDA_PROXY_TARGET?.trim() ||
-    import.meta.env.VITE_API_PROXY_TARGET?.trim() ||
+    process.env.NEXT_PUBLIC_LAMBDA_PROXY_TARGET?.trim() ||
+    process.env.NEXT_PUBLIC_API_PROXY_TARGET?.trim() ||
     "";
 
   const runtime =
@@ -33,5 +33,5 @@ export function getBackendConnectionDetail(): string {
     return line;
   }
 
-  return apiUrl || "VITE_API_URL を設定してください";
+  return apiUrl || "NEXT_PUBLIC_API_URL を設定してください";
 }
