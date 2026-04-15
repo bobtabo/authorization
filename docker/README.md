@@ -10,7 +10,9 @@
     <span><img src="https://img.shields.io/badge/redis-stable-ff7964.svg?style=flat"></span>
 </p>
 
-## ディレクトリ構成
+---
+
+## :file_folder: ディレクトリ構成
 
 | パス                                                           | 内容                                                                 |
 |--------------------------------------------------------------|--------------------------------------------------------------------|
@@ -19,18 +21,18 @@
 | [`local/app-php/`](local/app-php/)       | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                    |
 | [`local/app-python/`](local/app-python/) | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                 |
 | [`local/app-ts/`](local/app-ts/)         | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。             |
-| [`local/common/`](local/common/)         | 共通インフラ（リバースプロキシ、DB、キャッシュ、メール検証用など）。複数バックエンドで共有する前提のスタック。 |
+| [`local/common/`](local/common/)         | 複数バックエンドで共有する共通インフラ。 |
 | [`production/`](./production/)                               | AWSの本番環境用を想定                                                       |
 | [`staging/`](./staging/)                                     | AWSの検証環境用を想定                                                       |
 
 `common` 側で Docker ネットワーク `authorization` を作成し、各 `docker-compose` はそのネットワークに参加します（`external: true`）。
 
-## 前提
+## :white_check_mark: 前提
 
 - Docker Engine および Docker Compose（`docker compose` または `docker-compose`）が使えること
 - ポート **443**（プロキシ）、**3306**（MySQL）、**6379**（Redis）などがローカルで空いていること（`.env` で変更可）
 
-## 共通コンテナ操作
+## :whale: 共通コンテナ操作
 
 ### 事前準備
 ```bash
@@ -63,7 +65,7 @@ bin/docker-common.sh start
 bin/docker-common.sh down
 ```
 
-## アプリコンテナ操作
+## :gear: アプリコンテナ操作
 
 `common` でネットワークとプロキシが立ち上がった状態で、各アプリ環境を起動します。
 
@@ -137,7 +139,3 @@ bin/docker-backends.sh down
 | ツール     | URL |
 |---------| ---- |
 | MailPit | http://localhost:8025/ |
-
-# 関連ドキュメント
-
-- リポジトリ全体: [../README.md](../README.md)
