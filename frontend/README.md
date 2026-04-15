@@ -6,16 +6,13 @@
 <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" height="72" alt="TypeScript"></a>
 &nbsp;&nbsp;
 <a href="https://tailwindcss.com/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" height="72" alt="Tailwind CSS"></a>
-&nbsp;&nbsp;
-<a href="https://vite.dev/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg" height="72" alt="Vite"></a>
 </p>
 
 <p align="center">
 <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19"></a>
-<a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white" alt="Next.js 15"></a>
+<a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16"></a>
 <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9"></a>
 <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4"></a>
-<a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite 7"></a>
 </p>
 
 ---
@@ -25,7 +22,7 @@
 認可サーバーの **フロントエンド** 実装です。
 
 スタッフ向けの管理コンソール（クライアント管理・スタッフ管理・通知）を提供します。  
-バックエンドとの通信は Lambda ローカルサーバー経由で行います。  
+バックエンドとの通信は API Gateway エミュレータ経由で行います。  
 API 仕様は [`docs/api-spec/openapi.yml`](../docs/api-spec/openapi.yml) を参照してください。
 
 ---
@@ -36,7 +33,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../docs/api-spec/openapi.yml) を参
 ブラウザ
     │
     ▼
-React Router（app/）
+Next.js App Router（app/）
     │  ページルーティング
     ▼
 Page / Component（app/ / components/）
@@ -45,8 +42,8 @@ Page / Component（app/ / components/）
 API クライアント（src/api/）
     │  axios による HTTP リクエスト
     ▼
-Vite Dev Proxy（/function/*）
-    │  Lambda ローカルサーバー（Port:9000）へ転送
+Next.js Rewrites（/function/*）
+    │  API Gateway エミュレータ（Port:8080）へ転送
     ▼
 バックエンド API
 ```
@@ -57,7 +54,7 @@ Vite Dev Proxy（/function/*）
 
 ```
 frontend/
-├── app/                    # ページコンポーネント（ルーティング）
+├── app/                    # ページコンポーネント（App Router）
 │   ├── clients/            # クライアント管理
 │   ├── staffs/             # スタッフ管理
 │   ├── invitation/         # 招待
@@ -67,10 +64,9 @@ frontend/
 ├── hooks/                  # カスタムフック
 ├── lib/                    # ユーティリティ
 ├── src/
-│   ├── api/                # axios API クライアント
-│   └── main.tsx            # エントリーポイント
+│   └── api/                # axios API クライアント
 ├── e2e/                    # Playwright E2E テスト
-├── vite.config.ts          # Vite 設定（Lambda プロキシ）
+├── next.config.ts          # Next.js 設定（API Gateway プロキシ）
 └── tailwind.config.ts      # Tailwind CSS 設定
 ```
 
@@ -80,8 +76,8 @@ frontend/
 
 | パッケージ | 用途 |
 |---|---|
-| `react` | UI フレームワーク |
-| `react-router-dom` | クライアントサイドルーティング |
+| `next` | フレームワーク（App Router・SSR） |
+| `react` | UI ライブラリ |
 | `axios` | HTTP クライアント |
 | `tailwindcss` | ユーティリティファースト CSS |
 | `framer-motion` | アニメーション |

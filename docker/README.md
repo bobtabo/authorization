@@ -1,13 +1,21 @@
 <p align="center">
-    <span style="margin-right:50px;"><img src="https://cdn.worldvectorlogo.com/logos/nginx.svg" width=120px /></span>
-    <span style="margin-right:50px;"><img src="https://cdn.cdnlogo.com/logos/m/10/mysql.svg" width=100px /></span>
-    <span><img src="https://www.vectorlogo.zone/logos/redis/redis-ar21.svg" width=100px /></span>
+<a href="https://www.docker.com/" target="_blank"><img src="https://findy-tools.io/public_images/tool_vendor/docker/logo_docker_square.png.png" height="72" alt="Docker"></a>
+&nbsp;&nbsp;
+<a href="https://nginx.org/" target="_blank"><img src="https://images.icon-icons.com/2699/PNG/512/nginx_logo_icon_169915.png" height="72" alt="nginx"></a>
+&nbsp;&nbsp;
+<a href="https://www.mysql.com/" target="_blank"><img src="https://cdn.cdnlogo.com/logos/m/10/mysql.svg" height="72" alt="MySQL"></a>
+&nbsp;&nbsp;
+<a href="https://redis.io/" target="_blank"><img src="https://media.ffycdn.net/us/redis/MAQLWqeBKmrz2TFQDmA7.svg" height="72" alt="Redis"></a>
+&nbsp;&nbsp;
+<a href="https://mailpit.axllent.org/" target="_blank"><img src="https://dimitri.codes/logos/mailpit.png" height="72" alt="Mailpit"></a>
 </p>
 
 <p align="center">
-    <span style="margin-right:10px;"><img src="https://img.shields.io/badge/nginx-v1.x-008000.svg?style=flat"></span>
-    <span style="margin-right:10px;"><img src="https://img.shields.io/badge/mysql-v8.x-1e90ff.svg?style=flat"></span>
-    <span><img src="https://img.shields.io/badge/redis-stable-ff7964.svg?style=flat"></span>
+<a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-latest-1D63ED?logo=docker&logoColor=white" alt="Docker"></a>
+<a href="https://nginx.org/"><img src="https://img.shields.io/badge/nginx_proxy-latest-009639?logo=nginx&logoColor=white" alt="nginx proxy"></a>
+<a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8.0-00758F?logo=mysql&logoColor=white" alt="MySQL 8.0"></a>
+<a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7.0-FF4438?logo=redis&logoColor=white" alt="Redis 7.0"></a>
+<a href="https://mailpit.axllent.org/"><img src="https://img.shields.io/badge/Mailpit-latest-00B786?logoColor=white" alt="Mailpit"></a>
 </p>
 
 ---
@@ -17,10 +25,10 @@
 | パス                                                           | 内容                                                                 |
 |--------------------------------------------------------------|--------------------------------------------------------------------|
 | [`develop/`](./develop/)                                     | AWSの開発環境用を想定                                                       |
-| [`local/app-go/`](local/app-go/)         | Go 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                     |
-| [`local/app-php/`](local/app-php/)       | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                    |
-| [`local/app-python/`](local/app-python/) | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。                 |
-| [`local/app-ts/`](local/app-ts/)         | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける想定。             |
+| [`local/app-go/`](local/app-go/)         | Go 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                     |
+| [`local/app-php/`](local/app-php/)       | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                    |
+| [`local/app-python/`](local/app-python/) | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
+| [`local/app-ts/`](local/app-ts/)         | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/common/`](local/common/)         | 複数バックエンドで共有する共通インフラ。 |
 | [`production/`](./production/)                               | AWSの本番環境用を想定                                                       |
 | [`staging/`](./staging/)                                     | AWSの検証環境用を想定                                                       |
