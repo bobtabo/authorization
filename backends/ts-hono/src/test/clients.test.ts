@@ -100,4 +100,24 @@ describe("Clients", () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe("論理削除済みレコードの可視性", () => {
+    test("論理削除済みのクライアントが一覧に含まれる", async () => {
+      const c = await makeClientRecord({ identifier: "soft-del-001" });
+      await app.request(`/api/clients/${c.id}/delete`, { method: "DELETE" });
+      const res = await app.request("/api/clients");
+      expect(res.status).toBe(200);
+      const body = await res.json() as unknown[];
+      expect(body.length).toBe(1);
+    });
+
+    test("論理削除済みのクライアント詳細が取得できる", async () => {
+      const c = await makeClientRecord({ identifier: "soft-del-002" });
+      await app.request(`/api/clients/${c.id}/delete`, { method: "DELETE" });
+      const res = await app.request(`/api/clients/${c.id}`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as Record<string, unknown>;
+      expect(body.id).toBe(c.id);
+    });
+  });
 });

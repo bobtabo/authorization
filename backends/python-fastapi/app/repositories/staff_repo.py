@@ -22,7 +22,6 @@ class StaffRepository:
         return self.db.query(Staff).filter(
             Staff.provider == provider,
             Staff.provider_id == provider_id,
-            Staff.deleted_at.is_(None),
         ).first()
 
     def find_by_id(self, staff_id: int) -> Optional[Staff]:

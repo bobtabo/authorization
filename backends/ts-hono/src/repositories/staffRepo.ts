@@ -11,7 +11,7 @@ export async function findAllStaffs(keyword?: string, roles?: number[]): Promise
 
 export async function findStaffByProvider(provider: number, providerId: string): Promise<Staff | undefined> {
   const rows = await db.select().from(staffs)
-    .where(and(eq(staffs.provider, provider), eq(staffs.providerId, providerId), isNull(staffs.deletedAt)))
+    .where(and(eq(staffs.provider, provider), eq(staffs.providerId, providerId)))
     .limit(1);
   return rows[0];
 }

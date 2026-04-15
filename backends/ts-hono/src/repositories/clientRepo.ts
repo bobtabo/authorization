@@ -3,14 +3,14 @@ import { db } from "../db/client.js";
 import { clients, type Client } from "../db/schema.js";
 
 export async function findAllClients(keyword?: string, status?: number): Promise<Client[]> {
-  const conds = [isNull(clients.deletedAt)];
+  const conds = [];
   if (keyword) conds.push(or(like(clients.name, `%${keyword}%`), like(clients.identifier, `%${keyword}%`))!);
   if (status !== undefined) conds.push(eq(clients.status, status));
-  return db.select().from(clients).where(and(...conds)).orderBy(clients.id);
+  return db.select().from(clients).where(conds.length ? and(...conds) : undefined).orderBy(clients.id);
 }
 
 export async function findClientById(id: number): Promise<Client | undefined> {
-  const rows = await db.select().from(clients).where(and(eq(clients.id, id), isNull(clients.deletedAt))).limit(1);
+  const rows = await db.select().from(clients).where(eq(clients.id, id)).limit(1);
   return rows[0];
 }
 

@@ -59,7 +59,7 @@ func Load() *Config {
 		App: AppConfig{
 			Env:                      getEnv("APP_ENV", "local"),
 			Port:                     getEnv("APP_PORT", "8080"),
-			FrontendURL:              getEnv("FRONTEND_URL", "http://localhost:5173"),
+			FrontendURL:              getEnv("FRONTEND_URL", "http://localhost:3000"),
 			StaffCookieLifetime:      getEnvInt("STAFF_COOKIE_LIFETIME", 60),
 			NotificationDefaultLimit: getEnvInt("NOTIFICATION_DEFAULT_LIMIT", 10),
 			CachePrefix:              getEnv("CACHE_PREFIX", ""),

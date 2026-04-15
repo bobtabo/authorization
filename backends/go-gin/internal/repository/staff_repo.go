@@ -49,7 +49,7 @@ func (r *StaffRepository) FindByID(id uint) (*model.Staff, error) {
 
 func (r *StaffRepository) FindByProvider(provider int, providerID string) (*model.Staff, error) {
 	var s model.Staff
-	if err := r.db.Where("provider = ? AND provider_id = ?", provider, providerID).First(&s).Error; err != nil {
+	if err := r.db.Unscoped().Where("provider = ? AND provider_id = ?", provider, providerID).First(&s).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

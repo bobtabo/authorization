@@ -24,7 +24,7 @@ type ClientFilter struct {
 }
 
 func (r *ClientRepository) FindByCondition(f ClientFilter) ([]*model.Client, error) {
-	q := r.db.Order("id ASC")
+	q := r.db.Unscoped().Order("id ASC")
 	if f.Keyword != nil && *f.Keyword != "" {
 		q = q.Where("name LIKE ?", "%"+*f.Keyword+"%")
 	}
@@ -43,7 +43,7 @@ func (r *ClientRepository) FindByCondition(f ClientFilter) ([]*model.Client, err
 
 func (r *ClientRepository) FindByID(id uint64) (*model.Client, error) {
 	var c model.Client
-	if err := r.db.First(&c, id).Error; err != nil {
+	if err := r.db.Unscoped().First(&c, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

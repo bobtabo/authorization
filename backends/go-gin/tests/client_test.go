@@ -2,6 +2,7 @@ package tests
 
 import (
 	"authorization-go/internal/model"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -154,6 +155,34 @@ func TestClient_Destroy(t *testing.T) {
 		w := do(http.MethodDelete, "/api/clients/99999/delete", nil)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
+		}
+	})
+}
+
+func TestClient_SoftDelete(t *testing.T) {
+	truncateTables(t)
+
+	t.Run("論理削除済みのクライアントが一覧に含まれる", func(t *testing.T) {
+		c := createClient(t, nil)
+		do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID), nil)
+		w := do(http.MethodGet, "/api/clients", nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d", w.Code)
+		}
+		var list []map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &list)
+		if len(list) != 1 {
+			t.Errorf("want 1 item (including soft-deleted), got %d", len(list))
+		}
+	})
+
+	t.Run("論理削除済みのクライアント詳細が取得できる", func(t *testing.T) {
+		truncateTables(t)
+		c := createClient(t, nil)
+		do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID), nil)
+		w := do(http.MethodGet, fmt.Sprintf("/api/clients/%d", c.ID), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200 for soft-deleted client, got %d: %s", w.Code, w.Body.String())
 		}
 	})
 }
