@@ -1,7 +1,9 @@
 <p align="center">
 <a href="https://www.python.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original-wordmark.svg" height="72" alt="Python"></a>
 &nbsp;&nbsp;
-<a href="https://fastapi.tiangolo.com/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original-wordmark.svg" height="72" alt="FastAPI"></a>
+<a href="https://fastapi.tiangolo.com/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/fastapi/fastapi-original-wordmark.svg" height="96" alt="FastAPI"></a>
+&nbsp;&nbsp;
+<a href="https://www.sqlalchemy.org/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/SQLAlchemy.svg" height="72" alt="SQLAlchemy"></a>
 </p>
 
 <p align="center">

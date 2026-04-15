@@ -2,6 +2,8 @@
 <a href="https://go.dev/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/go/go-original-wordmark.svg" height="72" alt="Go"></a>
 &nbsp;&nbsp;
 <a href="https://gin-gonic.com/" target="_blank"><img src="https://raw.githubusercontent.com/gin-gonic/logo/master/color.png" height="72" alt="Gin"></a>
+&nbsp;&nbsp;
+<a href="https://gorm.io/" target="_blank"><img src="https://gorm.io/gorm.svg" height="72" alt="GORM"></a>
 </p>
 
 <p align="center">

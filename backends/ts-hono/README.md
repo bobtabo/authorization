@@ -2,6 +2,8 @@
 <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" height="64" alt="TypeScript"></a>
 &nbsp;&nbsp;
 <a href="https://hono.dev/" target="_blank"><img src="https://hono.dev/images/logo.png" height="64" alt="Hono"></a>
+&nbsp;&nbsp;
+<a href="https://orm.drizzle.team/" target="_blank"><img src="https://cdn.simpleicons.org/drizzle" height="64" alt="Drizzle ORM"></a>
 </p>
 
 <p align="center">
