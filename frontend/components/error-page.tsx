@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
@@ -47,19 +47,20 @@ export function ErrorPage({
       : "しばらく時間をおいてから、もう一度お試しください。");
 
   const isNotFound = statusCode === 404;
-  const runtime = useMemo(() => localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php", []);
+  const runtime = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem(RUNTIME_STORAGE_KEY) : null) ?? "php", []);
   const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
   const connectionDetail = useMemo(() => getBackendConnectionDetail(), []);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f8fa]">
       <div className="shrink-0 border-b border-[#d0d7de] bg-white px-4 py-3 text-left shadow-sm">
-        <p className="text-xs font-semibold text-[#1f2328]">
+        <p className="text-xs font-semibold text-[#1f2328]" suppressHydrationWarning>
           Backend は {runtimeLabel} と通信しています
         </p>
         <p
           className="mt-1.5 break-all font-mono text-[11px] leading-relaxed text-[#656d76]"
           title={connectionDetail}
+          suppressHydrationWarning
         >
           {connectionDetail}
         </p>
@@ -110,14 +111,14 @@ export function ErrorPage({
 
               <div className="mt-6 flex w-full flex-col gap-2.5 sm:flex-row sm:justify-center">
                 <Link
-                  to={primaryTo}
+                  href={primaryTo}
                   className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
                   {primaryLabel}
                 </Link>
                 {secondaryTo ? (
                   <Link
-                    to={secondaryTo}
+                    href={secondaryTo}
                     className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[#d0d7de] bg-white px-4 py-2.5 text-sm font-medium text-[#24292f] shadow-sm transition hover:bg-gray-50 hover:border-[#b6bcc3]"
                   >
                     <ArrowLeft className="h-4 w-4" aria-hidden />

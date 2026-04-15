@@ -1,15 +1,11 @@
 "use client";
 
-import React from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ErrorPage } from "@/components/error-page";
 
-/**
- * 明示的に `/error` を開いたとき用（クエリで種類を切り替え可能）。
- * 例: `/error?code=500`
- */
-export default function ErrorRoutePage(): React.JSX.Element {
-  const [params] = useSearchParams();
+function ErrorRoutePageContent(): React.JSX.Element {
+  const params = useSearchParams();
   const raw = params.get("code");
   const code = raw ? Number.parseInt(raw, 10) : Number.NaN;
   const statusCode = Number.isFinite(code) && code >= 400 && code < 600 ? code : 500;
@@ -24,5 +20,17 @@ export default function ErrorRoutePage(): React.JSX.Element {
           : "処理を完了できませんでした。時間をおいて再度お試しください。"
       }
     />
+  );
+}
+
+/**
+ * 明示的に `/error` を開いたとき用（クエリで種類を切り替え可能）。
+ * 例: `/error?code=500`
+ */
+export default function ErrorRoutePage(): React.JSX.Element {
+  return (
+    <Suspense>
+      <ErrorRoutePageContent />
+    </Suspense>
   );
 }

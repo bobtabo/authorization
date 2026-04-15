@@ -1,10 +1,14 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import Link from "next/link";
 import { formatInvitationTokenForDisplay } from "@/lib/format-invitation-url";
 
 /** 招待リンクの着地（登録フローは API 連携後に実装） */
-export default function InvitationLandingPage(): React.JSX.Element {
-  const { token: tokenParam } = useParams<{ token: string }>();
+export default async function InvitationLandingPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<React.JSX.Element> {
+  const { token: tokenParam } = await params;
   let raw = tokenParam ?? "";
   try {
     raw = decodeURIComponent(raw);
@@ -25,7 +29,7 @@ export default function InvitationLandingPage(): React.JSX.Element {
           この画面はプレースホルダーです。登録フォームは今後ここに配置します。
         </p>
         <Link
-          to="/login"
+          href="/login"
           className="mt-6 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
         >
           ログインへ

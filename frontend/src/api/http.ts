@@ -2,7 +2,7 @@ import type { AxiosRequestConfig } from "axios";
 import { apiClient } from "./client";
 
 /**
- * `apiClient`（baseURL = VITE_API_URL）経由で Laravel `routes/api.php` のエンドポイントへリクエストする薄いラッパーです。
+ * `apiClient`（baseURL = NEXT_PUBLIC_API_URL）経由で Laravel `routes/api.php` のエンドポイントへリクエストする薄いラッパーです。
  */
 export async function apiGet<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
   const { data } = await apiClient.get<T>(url, config);

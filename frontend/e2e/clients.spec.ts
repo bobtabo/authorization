@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mockCommon, mockClients, mockClientDetail, BACKENDS } from "./helpers";
+import { mockCommon, mockClients, mockClientDetail, mockClientsWithDeleted, mockSoftDeletedClientDetail, BACKENDS } from "./helpers";
 
 for (const backend of BACKENDS) {
   const API = backend.apiPrefix;
@@ -113,6 +113,30 @@ for (const backend of BACKENDS) {
 
       test("一覧へ戻るリンクが表示される", async ({ page }) => {
         await expect(page.getByText("一覧へ戻る")).toBeVisible();
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // 論理削除済みレコードの表示
+    // -----------------------------------------------------------------------
+    test.describe("論理削除済みレコードの表示", () => {
+      test.beforeEach(async ({ page }) => {
+        await page.route(`${API}/clients*`, (route) =>
+          route.fulfill({ json: mockClientsWithDeleted }),
+        );
+        await page.goto("/clients");
+      });
+
+      test("論理削除済みのクライアントが一覧に表示される", async ({ page }) => {
+        await expect(page.getByText("アーカイブ商事")).toBeVisible();
+      });
+
+      test("論理削除済みクライアントの詳細が表示される", async ({ page }) => {
+        await page.route(`${API}/clients/3`, (route) =>
+          route.fulfill({ json: mockSoftDeletedClientDetail }),
+        );
+        await page.goto("/clients/show?id=3");
+        await expect(page.getByText("アーカイブ商事")).toBeVisible();
       });
     });
 

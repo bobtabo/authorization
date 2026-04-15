@@ -17,7 +17,7 @@ export function usePostcodeJpLookup(postalCode: string): {
 
   useEffect(() => {
     const digits = postalCode.replace(/\D/g, "");
-    const apiKey = import.meta.env.POSTCODE_API_KEY ?? "";
+    const apiKey = process.env.NEXT_PUBLIC_POSTCODE_API_KEY ?? "";
 
     if (digits.length !== 7) {
       setLoading(false);

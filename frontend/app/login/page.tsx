@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
@@ -14,21 +14,22 @@ const RUNTIME_LABEL: Record<string, string> = {
 };
 
 export default function LoginPage(): React.JSX.Element {
-  const navigate = useNavigate();
-  const e2eLogin = import.meta.env.VITE_E2E === "1";
-  const runtime = useMemo(() => localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php", []);
+  const router = useRouter();
+  const e2eLogin = process.env.NEXT_PUBLIC_E2E === "1";
+  const runtime = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem(RUNTIME_STORAGE_KEY) : null) ?? "php", []);
   const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
   const connectionDetail = useMemo(() => getBackendConnectionDetail(), []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
       <div className="shrink-0 border-b border-[#d0d7de] bg-white px-4 py-3 text-left shadow-sm">
-        <p className="text-xs font-semibold text-[#1f2328]">
+        <p className="text-xs font-semibold text-[#1f2328]" suppressHydrationWarning>
           Backend は {runtimeLabel} と通信しています
         </p>
         <p
           className="mt-1.5 break-all font-mono text-[11px] leading-relaxed text-[#656d76]"
           title={connectionDetail}
+          suppressHydrationWarning
         >
           {connectionDetail}
         </p>
@@ -62,7 +63,7 @@ export default function LoginPage(): React.JSX.Element {
               type="button"
               onClick={() => {
                 if (e2eLogin) {
-                  navigate("/clients");
+                  router.push("/clients");
                   return;
                 }
                 window.location.href = `/function/${runtime}/auth/google/redirect`;

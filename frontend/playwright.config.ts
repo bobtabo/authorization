@@ -3,8 +3,8 @@ import os from "os";
 import path from "path";
 
 /**
- * E2E は専用ポートで起動し、手元の `npm run dev`（5173）と干渉しないようにする。
- * VITE_E2E=1 でログイン画面の「Googleで続行」がモック遷移する。
+ * E2E は専用ポートで起動し、手元の `npm run dev`（3000）と干渉しないようにする。
+ * NEXT_PUBLIC_E2E=1 でログイン画面の「Googleで続行」がモック遷移する。
  *
  * ブラウザが見つからない場合: `PLAYWRIGHT_BROWSERS_PATH` が壊れたキャッシュを指していることがある。
  * そのときは `env -u PLAYWRIGHT_BROWSERS_PATH npx playwright install chromium` のあと再実行。
@@ -16,7 +16,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"]],
   use: {
-    baseURL: "http://127.0.0.1:5174",
+    baseURL: "http://127.0.0.1:3001",
     trace: "on-first-retry",
   },
   projects: [
@@ -41,10 +41,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --port 5174 --strictPort --host 127.0.0.1",
-    url: "http://127.0.0.1:5174",
+    // dev サーバーと共存できるよう、E2E 専用に build → start する。
+    // NEXT_PUBLIC_E2E=1 はビルド時にインライン化されるため build にも渡す。
+    command: "NEXT_PUBLIC_E2E=1 npm run build && npm run start -- -p 3001 -H 127.0.0.1",
+    url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: { ...process.env, VITE_E2E: "1" },
+    timeout: 300_000,
+    env: { ...process.env, NEXT_PUBLIC_E2E: "1" },
   },
 });

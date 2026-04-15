@@ -15,6 +15,7 @@ interface UserContextValue {
 const USER_CACHE_KEY = "cachedUser";
 
 function loadCachedUser(): User | null {
+  if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(USER_CACHE_KEY);
     return raw ? (JSON.parse(raw) as User) : null;
@@ -30,8 +31,14 @@ export function useUser(): UserContextValue {
 }
 
 export function UserProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  // localStorage キャッシュで初期表示を即座に行い、API で最新値に更新する
-  const [user, setUser] = useState<User | null>(loadCachedUser);
+  // SSR との hydration mismatch を避けるため初期値は null に固定し、
+  // マウント後に localStorage キャッシュを読み込んで API で最新値に更新する
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const cached = loadCachedUser();
+    if (cached) setUser(cached);
+  }, []);
 
   useEffect(() => {
     getAuthMe()

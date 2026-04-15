@@ -40,6 +40,40 @@ export const mockClients = [
   },
 ];
 
+/** 論理削除済みクライアントを含むモックデータ */
+export const mockClientsWithDeleted = [
+  ...mockClients,
+  {
+    id: 3,
+    name: "アーカイブ商事",
+    status: 4,
+    start_at: "2025-01-01 09:00",
+    stop_at: "2025-12-31 18:00",
+    created_at: "2025-01-01 00:00",
+    updated_at: "2026-01-01 00:00",
+    deleted_at: "2026-01-01 00:00",
+  },
+];
+
+/** 論理削除済みクライアントの詳細モックデータ */
+export const mockSoftDeletedClientDetail = {
+  id: 3,
+  name: "アーカイブ商事",
+  post_code: "1000001",
+  pref: "東京都",
+  city: "千代田区",
+  address: "千代田1-1",
+  building: "",
+  tel: "0312345678",
+  email: "archive@example.com",
+  status: 4,
+  start_at: "2025-01-01 09:00",
+  stop_at: "2025-12-31 18:00",
+  created_at: "2025-01-01 00:00",
+  updated_at: "2026-01-01 00:00",
+  deleted_at: "2026-01-01 00:00",
+};
+
 /** クライアント詳細のモックデータ（edit ページの d.post_code / d.pref / d.address に合わせる） */
 export const mockClientDetail = {
   id: 1,
