@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"authorization-go/internal/model"
+	"authorization-go/internal/infrastructure/model"
 	"encoding/json"
 	"fmt"
 	"net/http"

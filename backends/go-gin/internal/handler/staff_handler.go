@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"authorization-go/internal/model"
-	"authorization-go/internal/repository"
-	"authorization-go/internal/service"
+	domstaff "authorization-go/internal/domain/staff"
+	ustaff "authorization-go/internal/usecase/staff"
 	"authorization-go/pkg/apperror"
 	"net/http"
 	"strconv"
@@ -13,23 +12,23 @@ import (
 )
 
 type StaffHandler struct {
-	staffSvc *service.StaffService
+	staffUC *ustaff.Interactor
 }
 
-func NewStaffHandler(staffSvc *service.StaffService) *StaffHandler {
-	return &StaffHandler{staffSvc: staffSvc}
+func NewStaffHandler(staffUC *ustaff.Interactor) *StaffHandler {
+	return &StaffHandler{staffUC: staffUC}
 }
 
 // GET /api/staffs
 func (h *StaffHandler) Index(c *gin.Context) {
-	f := repository.StaffFilter{}
+	cond := domstaff.Condition{}
 
 	if kw := c.Query("keyword"); kw != "" {
-		f.Keyword = &kw
+		cond.Keyword = &kw
 	}
-	f.Roles = parseIntList(c.QueryArray("roles"))
+	cond.Roles = parseIntList(c.QueryArray("roles"))
 
-	staffs, err := h.staffSvc.FindByCondition(f)
+	staffs, err := h.staffUC.FindByCondition(cond)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -54,7 +53,11 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 	}
 
 	executorID := staffIDFromCookie(c)
-	if err = h.staffSvc.UpdateRole(id, body.Role, executorID); err != nil {
+	if err = h.staffUC.UpdateRole(ustaff.UpdateRoleDto{
+		ID:         id,
+		Role:       body.Role,
+		ExecutorID: executorID,
+	}); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -68,7 +71,7 @@ func (h *StaffHandler) Restore(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	if err = h.staffSvc.Restore(id); err != nil {
+	if err = h.staffUC.Restore(id); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -83,7 +86,10 @@ func (h *StaffHandler) Destroy(c *gin.Context) {
 		return
 	}
 	executorID := staffIDFromCookie(c)
-	if err = h.staffSvc.Destroy(id, executorID); err != nil {
+	if err = h.staffUC.Destroy(ustaff.DestroyDto{
+		ID:         id,
+		ExecutorID: executorID,
+	}); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -92,7 +98,7 @@ func (h *StaffHandler) Destroy(c *gin.Context) {
 
 // ---------- 変換ヘルパー ----------
 
-func mapStaffList(staffs []*model.Staff) []gin.H {
+func mapStaffList(staffs []*domstaff.Staff) []gin.H {
 	out := make([]gin.H, 0, len(staffs))
 	for _, s := range staffs {
 		out = append(out, gin.H{
@@ -100,7 +106,7 @@ func mapStaffList(staffs []*model.Staff) []gin.H {
 			"name":       s.Name,
 			"email":      s.Email,
 			"role":       s.Role,
-			"status":     service.StaffStatus(s),
+			"status":     ustaff.Status(s),
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})

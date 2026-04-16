@@ -6,15 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// クライアントのステータス定数
-const (
-	ClientStatusInactive  = 1 // 準備中
-	ClientStatusActive    = 2 // 利用中
-	ClientStatusSuspended = 3 // 停止中
-	ClientStatusClosed    = 4 // アーカイブ
-)
-
-// Client はクライアント（顧客企業）テーブルを表します。
+// Client は clients テーブルの GORM モデルです。
 type Client struct {
 	ID          uint64         `gorm:"primaryKey;autoIncrement;column:id"`
 	Name        string         `gorm:"not null;column:name"`
@@ -44,7 +36,7 @@ type Client struct {
 
 func (Client) TableName() string { return "clients" }
 
-// Staff はスタッフ（管理ユーザー）テーブルを表します。
+// Staff は staffs テーブルの GORM モデルです。
 type Staff struct {
 	ID          uint           `gorm:"primaryKey;autoIncrement;column:id"`
 	Name        string         `gorm:"not null;column:name"`
@@ -65,7 +57,7 @@ type Staff struct {
 
 func (Staff) TableName() string { return "staffs" }
 
-// Invitation は招待テーブルを表します。
+// Invitation は invitations テーブルの GORM モデルです。
 type Invitation struct {
 	ID        uint           `gorm:"primaryKey;autoIncrement;column:id"`
 	Token     string         `gorm:"not null;uniqueIndex;column:token"`
@@ -80,7 +72,7 @@ type Invitation struct {
 
 func (Invitation) TableName() string { return "invitations" }
 
-// Notification は通知テーブルを表します。
+// Notification は notifications テーブルの GORM モデルです。
 type Notification struct {
 	ID          uint64         `gorm:"primaryKey;autoIncrement;column:id"`
 	StaffID     uint           `gorm:"not null;index;column:staff_id"`

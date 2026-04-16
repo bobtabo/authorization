@@ -7,10 +7,15 @@ import (
 	"authorization-go/internal/handler"
 	"authorization-go/internal/infrastructure/cache"
 	"authorization-go/internal/infrastructure/db"
+	"authorization-go/internal/infrastructure/model"
+	"authorization-go/internal/infrastructure/persistence"
 	"authorization-go/internal/middleware"
-	"authorization-go/internal/model"
-	"authorization-go/internal/repository"
-	"authorization-go/internal/service"
+	uclient "authorization-go/internal/usecase/client"
+	uauth "authorization-go/internal/usecase/auth"
+	ugate "authorization-go/internal/usecase/gate"
+	uinvitation "authorization-go/internal/usecase/invitation"
+	unotification "authorization-go/internal/usecase/notification"
+	ustaff "authorization-go/internal/usecase/staff"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -74,25 +79,25 @@ func TestMain(m *testing.M) {
 func buildRouter() *gin.Engine {
 	rdb := cache.New(testCfg)
 
-	clientRepo := repository.NewClientRepository(testDB)
-	staffRepo := repository.NewStaffRepository(testDB)
-	invitationRepo := repository.NewInvitationRepository(testDB, testCfg.App.FrontendURL)
-	notificationRepo := repository.NewNotificationRepository(testDB)
-	gateCacheRepo := repository.NewGateCacheRepository(rdb, testCfg)
+	clientRepo := persistence.NewGormClientRepository(testDB)
+	staffRepo := persistence.NewGormStaffRepository(testDB)
+	invitationRepo := persistence.NewGormInvitationRepository(testDB, testCfg.App.FrontendURL)
+	notificationRepo := persistence.NewGormNotificationRepository(testDB)
+	gateCacheRepo := cache.NewGateCacheRepository(rdb, testCfg)
 
-	authSvc := service.NewAuthService(staffRepo)
-	clientSvc := service.NewClientService(clientRepo)
-	staffSvc := service.NewStaffService(staffRepo)
-	invitationSvc := service.NewInvitationService(invitationRepo)
-	gateSvc := service.NewGateService(clientRepo, gateCacheRepo, testCfg)
-	notificationSvc := service.NewNotificationService(notificationRepo, staffRepo)
+	authUC := uauth.NewInteractor(staffRepo)
+	clientUC := uclient.NewInteractor(clientRepo)
+	staffUC := ustaff.NewInteractor(staffRepo)
+	invitationUC := uinvitation.NewInteractor(invitationRepo)
+	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, testCfg)
+	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
 
-	authH := handler.NewAuthHandler(authSvc, invitationSvc, testCfg)
-	clientH := handler.NewClientHandler(clientSvc, notificationSvc)
-	staffH := handler.NewStaffHandler(staffSvc)
-	invitationH := handler.NewInvitationHandler(invitationSvc)
-	gateH := handler.NewGateHandler(gateSvc)
-	notificationH := handler.NewNotificationHandler(notificationSvc, testCfg)
+	authH := handler.NewAuthHandler(authUC, invitationUC, testCfg)
+	clientH := handler.NewClientHandler(clientUC, notificationUC)
+	staffH := handler.NewStaffHandler(staffUC)
+	invitationH := handler.NewInvitationHandler(invitationUC)
+	gateH := handler.NewGateHandler(gateUC)
+	notificationH := handler.NewNotificationHandler(notificationUC, testCfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -122,7 +127,7 @@ func buildRouter() *gin.Engine {
 		api.GET("/invitation/issue", invitationH.Issue)
 		api.GET("/invitation", invitationH.Index)
 
-		api.GET("/gate/issue", middleware.ClientTokenAuth(clientSvc), gateH.Issue)
+		api.GET("/gate/issue", middleware.ClientTokenAuth(clientUC), gateH.Issue)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)
 
 		api.GET("/notifications/counts", notificationH.Counts)

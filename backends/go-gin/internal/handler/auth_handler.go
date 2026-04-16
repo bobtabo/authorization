@@ -2,7 +2,8 @@ package handler
 
 import (
 	"authorization-go/internal/config"
-	"authorization-go/internal/service"
+	uauth "authorization-go/internal/usecase/auth"
+	uinvitation "authorization-go/internal/usecase/invitation"
 	"authorization-go/pkg/apperror"
 	"context"
 	"encoding/json"
@@ -17,15 +18,15 @@ import (
 )
 
 type AuthHandler struct {
-	authSvc       *service.AuthService
-	invitationSvc *service.InvitationService
-	cfg           *config.Config
-	oauthConfig   *oauth2.Config
+	authUC       *uauth.Interactor
+	invitationUC *uinvitation.Interactor
+	cfg          *config.Config
+	oauthConfig  *oauth2.Config
 }
 
 func NewAuthHandler(
-	authSvc *service.AuthService,
-	invitationSvc *service.InvitationService,
+	authUC *uauth.Interactor,
+	invitationUC *uinvitation.Interactor,
 	cfg *config.Config,
 ) *AuthHandler {
 	oauthCfg := &oauth2.Config{
@@ -39,10 +40,10 @@ func NewAuthHandler(
 		Endpoint: google.Endpoint,
 	}
 	return &AuthHandler{
-		authSvc:       authSvc,
-		invitationSvc: invitationSvc,
-		cfg:           cfg,
-		oauthConfig:   oauthCfg,
+		authUC:       authUC,
+		invitationUC: invitationUC,
+		cfg:          cfg,
+		oauthConfig:  oauthCfg,
 	}
 }
 
@@ -53,7 +54,7 @@ func (h *AuthHandler) GetMyProfile(c *gin.Context) {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	staff, err := h.authSvc.FindUser(staffID)
+	staff, err := h.authUC.FindUser(staffID)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -73,7 +74,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	staff, err := h.authSvc.FindUser(staffID)
+	staff, err := h.authUC.FindUser(staffID)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -96,7 +97,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // GET /api/auth/invitation/:token
 func (h *AuthHandler) Invitation(c *gin.Context) {
 	token := c.Param("token")
-	result, err := h.invitationSvc.FindByToken(token)
+	result, err := h.invitationUC.FindByToken(uinvitation.FindByTokenDto{Token: token})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -140,7 +141,13 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		avatar = &pic
 	}
 
-	staff, err := h.authSvc.Login(1 /* Google */, userInfo["id"], userInfo["name"], userInfo["email"], avatar)
+	staff, err := h.authUC.Login(uauth.LoginDto{
+		Provider:   1, // Google
+		ProviderID: userInfo["id"],
+		Name:       userInfo["name"],
+		Email:      userInfo["email"],
+		Avatar:     avatar,
+	})
 	if err != nil {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 		return

@@ -2,7 +2,7 @@ package handler
 
 import (
 	"authorization-go/internal/config"
-	"authorization-go/internal/service"
+	unotification "authorization-go/internal/usecase/notification"
 	"authorization-go/pkg/apperror"
 	"net/http"
 	"strconv"
@@ -11,11 +11,11 @@ import (
 )
 
 type NotificationHandler struct {
-	svc *service.NotificationService
+	svc *unotification.Interactor
 	cfg *config.Config
 }
 
-func NewNotificationHandler(svc *service.NotificationService, cfg *config.Config) *NotificationHandler {
+func NewNotificationHandler(svc *unotification.Interactor, cfg *config.Config) *NotificationHandler {
 	return &NotificationHandler{svc: svc, cfg: cfg}
 }
 
@@ -62,7 +62,7 @@ func (h *NotificationHandler) Index(c *gin.Context) {
 
 	items := make([]map[string]interface{}, 0, len(page.Items))
 	for _, n := range page.Items {
-		items = append(items, service.MapNotification(n))
+		items = append(items, unotification.MapNotification(n))
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items, "next_cursor": page.NextCursor})
 }
@@ -97,7 +97,11 @@ func (h *NotificationHandler) ReadAll(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.svc.BulkMarkRead(body.ExecutorID, body.IDs, body.All)
+	updated, err := h.svc.BulkMarkRead(unotification.BulkMarkReadDto{
+		StaffID: body.ExecutorID,
+		IDs:     body.IDs,
+		All:     body.All,
+	})
 	if err != nil {
 		_ = c.Error(err)
 		return

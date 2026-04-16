@@ -1,8 +1,9 @@
-package service
+package gate
 
 import (
+	domclient "authorization-go/internal/domain/client"
+	domgate "authorization-go/internal/domain/gate"
 	"authorization-go/internal/config"
-	"authorization-go/internal/repository"
 	"authorization-go/pkg/apperror"
 	"crypto/rsa"
 	"crypto/x509"
@@ -14,53 +15,54 @@ import (
 	"github.com/google/uuid"
 )
 
-type GateService struct {
-	clientRepo *repository.ClientRepository
-	cache      *repository.GateCacheRepository
+// Interactor は Gate のユースケースを実装します。
+type Interactor struct {
+	clientRepo domclient.Repository
+	cache      domgate.CacheRepository
 	cfg        *config.Config
 }
 
-func NewGateService(
-	clientRepo *repository.ClientRepository,
-	cache *repository.GateCacheRepository,
+func NewInteractor(
+	clientRepo domclient.Repository,
+	cache domgate.CacheRepository,
 	cfg *config.Config,
-) *GateService {
-	return &GateService{clientRepo: clientRepo, cache: cache, cfg: cfg}
+) *Interactor {
+	return &Interactor{clientRepo: clientRepo, cache: cache, cfg: cfg}
 }
 
 // IssueToken はクライアント会員向け JWT を発行します（キャッシュ付き）。
-func (s *GateService) IssueToken(accessToken, memberID string) (string, error) {
-	client, err := s.clientRepo.FindByAccessToken(accessToken)
-	if err != nil || client == nil {
+func (uc *Interactor) IssueToken(dto IssueDto) (string, error) {
+	c, err := uc.clientRepo.FindByAccessToken(dto.AccessToken)
+	if err != nil || c == nil {
 		return "", apperror.Unauthorized("client_not_found")
 	}
 
-	identifier := client.Identifier
-	cached, err := s.cache.GetJwt(identifier, memberID)
+	identifier := c.Identifier
+	cached, err := uc.cache.GetJwt(identifier, dto.MemberID)
 	if err == nil && cached != "" {
 		return cached, nil
 	}
 
-	token, err := s.issueJwt(memberID, identifier, client.PrivateKey, client.Fingerprint)
+	token, err := uc.issueJwt(dto.MemberID, identifier, c.PrivateKey, c.Fingerprint)
 	if err != nil {
 		return "", err
 	}
 
-	_ = s.cache.PutJwt(identifier, memberID, token, s.cfg.JWT.CacheTTL)
+	_ = uc.cache.PutJwt(identifier, dto.MemberID, token, uc.cfg.JWT.CacheTTL)
 	return token, nil
 }
 
 // Verify は JWT を検証してペイロードを返します。
-func (s *GateService) Verify(identifier, tokenStr string) (map[string]interface{}, error) {
-	client, err := s.clientRepo.FindByIdentifier(identifier)
-	if err != nil || client == nil {
+func (uc *Interactor) Verify(dto VerifyDto) (map[string]interface{}, error) {
+	c, err := uc.clientRepo.FindByIdentifier(dto.Identifier)
+	if err != nil || c == nil {
 		return nil, apperror.Forbidden("client_not_found")
 	}
 
-	return s.verifyJwt(identifier, tokenStr, client.PublicKey)
+	return uc.verifyJwt(dto.Identifier, dto.Token, c.PublicKey)
 }
 
-func (s *GateService) issueJwt(memberID, identifier, privateKeyPEM, fingerprint string) (string, error) {
+func (uc *Interactor) issueJwt(memberID, identifier, privateKeyPEM, fingerprint string) (string, error) {
 	privKey, err := parseRSAPrivateKey(privateKeyPEM)
 	if err != nil {
 		return "", fmt.Errorf("parse private key: %w", err)
@@ -68,10 +70,10 @@ func (s *GateService) issueJwt(memberID, identifier, privateKeyPEM, fingerprint 
 
 	now := time.Now()
 	claims := jwt.MapClaims{
-		"iss": s.cfg.JWT.Issuer,
+		"iss": uc.cfg.JWT.Issuer,
 		"sub": memberID,
 		"aud": []string{identifier},
-		"exp": now.Add(time.Duration(s.cfg.JWT.TTL) * time.Second).Unix(),
+		"exp": now.Add(time.Duration(uc.cfg.JWT.TTL) * time.Second).Unix(),
 		"iat": now.Unix(),
 		"nbf": now.Unix(),
 		"jti": uuid.New().String(),
@@ -82,7 +84,7 @@ func (s *GateService) issueJwt(memberID, identifier, privateKeyPEM, fingerprint 
 	return token.SignedString(privKey)
 }
 
-func (s *GateService) verifyJwt(identifier, tokenStr, publicKeyPEM string) (map[string]interface{}, error) {
+func (uc *Interactor) verifyJwt(identifier, tokenStr, publicKeyPEM string) (map[string]interface{}, error) {
 	pubKey, err := parseRSAPublicKey(publicKeyPEM)
 	if err != nil {
 		return nil, apperror.Unauthorized("jwt_invalid")
@@ -105,7 +107,7 @@ func (s *GateService) verifyJwt(identifier, tokenStr, publicKeyPEM string) (map[
 	}
 
 	iss, _ := claims["iss"].(string)
-	if iss != s.cfg.JWT.Issuer {
+	if iss != uc.cfg.JWT.Issuer {
 		return nil, apperror.Unauthorized("jwt_invalid")
 	}
 

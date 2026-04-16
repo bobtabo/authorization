@@ -1,17 +1,17 @@
 package handler
 
 import (
-	"authorization-go/internal/service"
+	uinvitation "authorization-go/internal/usecase/invitation"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type InvitationHandler struct {
-	svc *service.InvitationService
+	svc *uinvitation.Interactor
 }
 
-func NewInvitationHandler(svc *service.InvitationService) *InvitationHandler {
+func NewInvitationHandler(svc *uinvitation.Interactor) *InvitationHandler {
 	return &InvitationHandler{svc: svc}
 }
 

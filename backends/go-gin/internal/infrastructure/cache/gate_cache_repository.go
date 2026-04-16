@@ -1,4 +1,4 @@
-package repository
+package cache
 
 import (
 	"authorization-go/internal/config"
@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// GateCacheRepository は gate JWT の Redis キャッシュリポジトリです。
 type GateCacheRepository struct {
 	rdb *redis.Client
 	cfg *config.Config

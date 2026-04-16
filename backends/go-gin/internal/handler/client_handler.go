@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"authorization-go/internal/model"
-	"authorization-go/internal/repository"
-	"authorization-go/internal/service"
+	domclient "authorization-go/internal/domain/client"
+	uclient "authorization-go/internal/usecase/client"
+	unotification "authorization-go/internal/usecase/notification"
 	"authorization-go/pkg/apperror"
 	"fmt"
 	"net/http"
@@ -14,33 +14,33 @@ import (
 )
 
 type ClientHandler struct {
-	clientSvc       *service.ClientService
-	notificationSvc *service.NotificationService
+	clientUC       *uclient.Interactor
+	notificationUC *unotification.Interactor
 }
 
-func NewClientHandler(clientSvc *service.ClientService, notificationSvc *service.NotificationService) *ClientHandler {
-	return &ClientHandler{clientSvc: clientSvc, notificationSvc: notificationSvc}
+func NewClientHandler(clientUC *uclient.Interactor, notificationUC *unotification.Interactor) *ClientHandler {
+	return &ClientHandler{clientUC: clientUC, notificationUC: notificationUC}
 }
 
 // GET /api/clients
 func (h *ClientHandler) Index(c *gin.Context) {
-	f := repository.ClientFilter{}
+	cond := domclient.Condition{}
 
 	if kw := c.Query("keyword"); kw != "" {
-		f.Keyword = &kw
+		cond.Keyword = &kw
 	}
 	if v := c.Query("start_from"); v != "" {
 		if t, err := time.Parse("2006-01-02", v); err == nil {
-			f.StartFrom = &t
+			cond.StartFrom = &t
 		}
 	}
 	if v := c.Query("start_to"); v != "" {
 		if t, err := time.Parse("2006-01-02", v); err == nil {
-			f.StartTo = &t
+			cond.StartTo = &t
 		}
 	}
 
-	clients, err := h.clientSvc.FindByCondition(f)
+	clients, err := h.clientUC.FindByCondition(cond)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -55,7 +55,7 @@ func (h *ClientHandler) Show(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	client, err := h.clientSvc.FindByID(id)
+	client, err := h.clientUC.FindByID(id)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -82,7 +82,7 @@ func (h *ClientHandler) Store(c *gin.Context) {
 
 	executorID := staffIDFromCookie(c)
 
-	client, err := h.clientSvc.Store(service.StoreClientInput{
+	client, err := h.clientUC.Store(uclient.StoreDto{
 		Name:       body.Name,
 		PostCode:   body.PostCode,
 		Pref:       body.Pref,
@@ -100,7 +100,13 @@ func (h *ClientHandler) Store(c *gin.Context) {
 
 	// 全スタッフへ通知配信
 	notifURL := fmt.Sprintf("/clients/show?id=%d", client.ID)
-	_ = h.notificationSvc.FanOut("新しいクライアントが登録されました", client.Name, 1, executorID, notifURL)
+	_ = h.notificationUC.FanOut(unotification.FanOutDto{
+		Title:       "新しいクライアントが登録されました",
+		Message:     client.Name,
+		MessageType: 1,
+		ExecutorID:  executorID,
+		URL:         notifURL,
+	})
 
 	c.JSON(http.StatusCreated, gin.H{"id": client.ID})
 }
@@ -131,7 +137,7 @@ func (h *ClientHandler) Update(c *gin.Context) {
 
 	executorID := staffIDFromCookie(c)
 
-	client, err := h.clientSvc.Update(service.UpdateClientInput{
+	client, err := h.clientUC.Update(uclient.UpdateDto{
 		ID:         id,
 		Name:       body.Name,
 		PostCode:   body.PostCode,
@@ -159,7 +165,7 @@ func (h *ClientHandler) Destroy(c *gin.Context) {
 		return
 	}
 	executorID := staffIDFromCookie(c)
-	if err = h.clientSvc.Destroy(id, executorID); err != nil {
+	if err = h.clientUC.Destroy(id, executorID); err != nil {
 		_ = c.Error(err)
 		return
 	}
@@ -168,7 +174,7 @@ func (h *ClientHandler) Destroy(c *gin.Context) {
 
 // ---------- 変換ヘルパー ----------
 
-func mapClientList(clients []*model.Client) []gin.H {
+func mapClientList(clients []*domclient.Client) []gin.H {
 	out := make([]gin.H, 0, len(clients))
 	for _, c := range clients {
 		out = append(out, gin.H{
@@ -184,7 +190,7 @@ func mapClientList(clients []*model.Client) []gin.H {
 	return out
 }
 
-func mapClientDetail(c *model.Client) gin.H {
+func mapClientDetail(c *domclient.Client) gin.H {
 	return gin.H{
 		"id":         c.ID,
 		"name":       c.Name,
