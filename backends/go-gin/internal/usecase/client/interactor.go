@@ -113,6 +113,7 @@ func (uc *Interactor) Store(dto StoreDto) (*domclient.Client, error) {
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		CreatedBy:   &dto.ExecutorID,
+		UpdatedBy:   &dto.ExecutorID,
 	}
 
 	return uc.repo.Save(c)
