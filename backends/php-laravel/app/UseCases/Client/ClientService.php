@@ -38,12 +38,15 @@ class ClientService extends AbstractService
     /**
      * アクセストークンでクライアントを認証します。
      *
-     * @param string $token Bearer アクセストークン
+     * @param ClientDto $dto クライアントDTO
      * @return bool 認証成功の場合 true
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
-    public function authenticateByToken(string $token): bool
+    public function authenticateByToken(ClientDto $dto): bool
     {
-        return $this->clientRepository->findByAccessToken($token) !== null;
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+
+        return $this->clientRepository->findByAccessToken($condition) !== null;
     }
 
     /**
@@ -162,13 +165,13 @@ class ClientService extends AbstractService
      */
     public function update(ClientDto $dto): ClientStoreVo
     {
-        $dto->statuses = [];
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
         $entity = $this->clientRepository->findById($condition);
         // identifier は登録時に自動生成するため更新不可
         // status は遷移ロジックで個別に制御するため assign から除外
-        $entity->assign($dto->attributes(), [], ['identifier', 'status']);
+        // accessToken は不変のため assign から除外
+        $entity->assign($dto->attributes(), [], ['identifier', 'status', 'accessToken']);
 
         // ステータス遷移に応じた利用開始・停止日時を自動設定
         if ($dto->status !== null) {

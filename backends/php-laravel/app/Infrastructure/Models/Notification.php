@@ -32,6 +32,14 @@ class Notification extends AppTransactionModel
     ];
 
     /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function staff()
+    {
+        return $this->belongsTo(Staff::class);
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected static function newFactory()

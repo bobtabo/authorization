@@ -24,40 +24,19 @@ use App\Support\Dtos\AbstractDto;
 class ClientDto extends AbstractDto
 {
     public ?int $id = null;
-
     public ?string $keyword = null;
-
     public ?string $startFrom = null;
-
     public ?string $startTo = null;
-
-    /**
-     * 一覧検索用の状態コード（複数）。空配列は無条件。
-     *
-     * @var list<int>
-     */
     public array $statuses = [];
-
     public ?string $name = null;
-
     public ?string $identifier = null;
-
     public ?string $postCode = null;
-
     public ?string $pref = null;
-
     public ?string $city = null;
-
     public ?string $address = null;
-
     public ?string $building = null;
-
     public ?string $tel = null;
-
     public ?string $email = null;
-
-    /**
-     * 更新時の状態（リクエストの整数は {@see assign} で Enum に変換されます）。
-     */
+    public ?string $accessToken = null;
     public ?ClientStatus $status = null;
 }

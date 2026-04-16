@@ -77,12 +77,12 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
      * {@inheritdoc}
      */
     #[\Override]
-    public function findByAccessToken(string $accessToken): ?Entity
+    public function findByAccessToken(ClientCondition $condition): ?Entity
     {
         /** @var Entity|null $result */
         $result = $this->findByMap([
-            'access_token' => $accessToken,
-            'status'       => ClientStatus::Active->value,
+            'access_token' => $condition->accessToken,
+            'status' => ClientStatus::Active->value,
         ])->first();
         return $result;
     }
@@ -91,10 +91,10 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
      * {@inheritdoc}
      */
     #[\Override]
-    public function findByIdentifier(string $identifier): ?Entity
+    public function findByIdentifier(ClientCondition $condition): ?Entity
     {
         /** @var Entity|null $result */
-        $result = $this->findByMap(['identifier' => $identifier])->first();
+        $result = $this->findByMap(['identifier' => $condition->identifier])->first();
         return $result;
     }
 
