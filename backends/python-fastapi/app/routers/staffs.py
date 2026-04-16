@@ -1,8 +1,9 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from app.routers.deps import get_staff_service, get_staff_id_from_cookie
-from app.services.staff_service import StaffService, staff_status
+from app.routers.deps import get_staff_interactor, get_staff_id_from_cookie
+from app.usecase.staff.interactor import StaffInteractor, staff_status
+from app.usecase.staff.dto import StaffUpdateRoleDto, StaffDestroyDto
 
 router = APIRouter()
 
@@ -23,9 +24,9 @@ def _map_staff(s) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     roles: Optional[list[int]] = Query(default=None),
-    svc: StaffService = Depends(get_staff_service),
+    interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    staffs = svc.find_by_condition(keyword=keyword, roles=roles or [])
+    staffs = interactor.find_by_condition(keyword=keyword, roles=roles or [])
     return {"items": [_map_staff(s) for s in staffs]}
 
 
@@ -38,15 +39,16 @@ def update_role(
     staff_id: int,
     body: UpdateRoleBody,
     executor_id: int = Depends(get_staff_id_from_cookie),
-    svc: StaffService = Depends(get_staff_service),
+    interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    svc.update_role(staff_id, body.role, executor_id)
+    dto = StaffUpdateRoleDto(staff_id=staff_id, role=body.role, executor_id=executor_id)
+    interactor.update_role(dto)
     return {"id": staff_id}
 
 
 @router.patch("/staffs/{staff_id}/restore")
-def restore(staff_id: int, svc: StaffService = Depends(get_staff_service)):
-    svc.restore(staff_id)
+def restore(staff_id: int, interactor: StaffInteractor = Depends(get_staff_interactor)):
+    interactor.restore(staff_id)
     return {"id": staff_id}
 
 
@@ -54,7 +56,8 @@ def restore(staff_id: int, svc: StaffService = Depends(get_staff_service)):
 def destroy(
     staff_id: int,
     executor_id: int = Depends(get_staff_id_from_cookie),
-    svc: StaffService = Depends(get_staff_service),
+    interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    svc.destroy(staff_id, executor_id)
+    dto = StaffDestroyDto(staff_id=staff_id, executor_id=executor_id)
+    interactor.destroy(dto)
     return {"id": staff_id}

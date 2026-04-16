@@ -8,7 +8,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class Client(Base):
+class ClientModel(Base):
     __tablename__ = "clients"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -33,7 +33,7 @@ class Client(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
-class Staff(Base):
+class StaffModel(Base):
     __tablename__ = "staffs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -48,7 +48,7 @@ class Staff(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
-class Invitation(Base):
+class InvitationModel(Base):
     __tablename__ = "invitations"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -57,7 +57,7 @@ class Invitation(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
-class Notification(Base):
+class NotificationModel(Base):
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)

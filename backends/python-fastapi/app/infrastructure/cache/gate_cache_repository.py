@@ -4,6 +4,8 @@ from app.config.settings import get_settings
 
 
 class GateCacheRepository:
+    """Gate JWT の Redis キャッシュリポジトリ。"""
+
     def __init__(self, rdb: redis.Redis):
         self.rdb = rdb
         self.settings = get_settings()

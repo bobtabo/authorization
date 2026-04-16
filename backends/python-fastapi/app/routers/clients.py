@@ -2,8 +2,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED
 from pydantic import BaseModel
-from app.routers.deps import get_client_service
-from app.services.client_service import ClientService
+from app.routers.deps import get_client_interactor
+from app.usecase.client.interactor import ClientInteractor
+from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto
 
 router = APIRouter()
 
@@ -34,15 +35,15 @@ def _map_client(c) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     status: Optional[int] = Query(default=None),
-    svc: ClientService = Depends(get_client_service),
+    interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    clients = svc.find_all(keyword=keyword, status=status)
+    clients = interactor.find_all(keyword=keyword, status=status)
     return [_map_client(c) for c in clients]
 
 
 @router.get("/clients/{client_id}")
-def show(client_id: int, svc: ClientService = Depends(get_client_service)):
-    return _map_client(svc.find_by_id(client_id))
+def show(client_id: int, interactor: ClientInteractor = Depends(get_client_interactor)):
+    return _map_client(interactor.find_by_id(client_id))
 
 
 class StoreBody(BaseModel):
@@ -58,8 +59,9 @@ class StoreBody(BaseModel):
 
 
 @router.post("/clients/store", status_code=HTTP_201_CREATED)
-def store(body: StoreBody, svc: ClientService = Depends(get_client_service)):
-    client = svc.store(**body.model_dump())
+def store(body: StoreBody, interactor: ClientInteractor = Depends(get_client_interactor)):
+    dto = ClientStoreDto(**body.model_dump())
+    client = interactor.store(dto)
     return _map_client(client)
 
 
@@ -76,12 +78,13 @@ class UpdateBody(BaseModel):
 
 
 @router.put("/clients/{client_id}/update")
-def update(client_id: int, body: UpdateBody, svc: ClientService = Depends(get_client_service)):
-    client = svc.update(client_id, **body.model_dump(exclude_none=True))
+def update(client_id: int, body: UpdateBody, interactor: ClientInteractor = Depends(get_client_interactor)):
+    dto = ClientUpdateDto(client_id=client_id, **body.model_dump(exclude_none=True))
+    client = interactor.update(dto)
     return _map_client(client)
 
 
 @router.delete("/clients/{client_id}/delete")
-def destroy(client_id: int, svc: ClientService = Depends(get_client_service)):
-    svc.destroy(client_id)
+def destroy(client_id: int, interactor: ClientInteractor = Depends(get_client_interactor)):
+    interactor.destroy(client_id)
     return {"id": client_id}

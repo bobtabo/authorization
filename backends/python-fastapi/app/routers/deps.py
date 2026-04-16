@@ -5,17 +5,19 @@ from app.config.settings import get_settings, Settings
 from app.exceptions import unauthorized
 from app.infrastructure.db import get_db
 from app.infrastructure.redis_client import get_redis
-from app.repositories.client_repo import ClientRepository
-from app.repositories.gate_cache_repo import GateCacheRepository
-from app.repositories.invitation_repo import InvitationRepository
-from app.repositories.notification_repo import NotificationRepository
-from app.repositories.staff_repo import StaffRepository
-from app.services.auth_service import AuthService
-from app.services.client_service import ClientService
-from app.services.gate_service import GateService
-from app.services.invitation_service import InvitationService
-from app.services.notification_service import NotificationService
-from app.services.staff_service import StaffService
+from app.infrastructure.persistence.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from app.infrastructure.persistence.sqlalchemy_staff_repository import SqlAlchemyStaffRepository
+from app.infrastructure.persistence.sqlalchemy_invitation_repository import SqlAlchemyInvitationRepository
+from app.infrastructure.persistence.sqlalchemy_notification_repository import SqlAlchemyNotificationRepository
+from app.infrastructure.cache.gate_cache_repository import GateCacheRepository
+from app.domain.client.repository import ClientRepository
+from app.domain.staff.repository import StaffRepository
+from app.usecase.auth.interactor import AuthInteractor
+from app.usecase.client.interactor import ClientInteractor
+from app.usecase.staff.interactor import StaffInteractor
+from app.usecase.invitation.interactor import InvitationInteractor
+from app.usecase.gate.interactor import GateInteractor
+from app.usecase.notification.interactor import NotificationInteractor
 import redis as redis_lib
 
 
@@ -23,48 +25,48 @@ def get_redis_client() -> redis_lib.Redis:
     return get_redis()
 
 
-def get_staff_repo(db: Session = Depends(get_db)) -> StaffRepository:
-    return StaffRepository(db)
-
-
 def get_client_repo(db: Session = Depends(get_db)) -> ClientRepository:
-    return ClientRepository(db)
+    return SqlAlchemyClientRepository(db)
 
 
-def get_auth_service(staff_repo: StaffRepository = Depends(get_staff_repo)) -> AuthService:
-    return AuthService(staff_repo)
+def get_staff_repo(db: Session = Depends(get_db)) -> StaffRepository:
+    return SqlAlchemyStaffRepository(db)
 
 
-def get_client_service(client_repo: ClientRepository = Depends(get_client_repo)) -> ClientService:
-    return ClientService(client_repo)
+def get_auth_interactor(staff_repo: StaffRepository = Depends(get_staff_repo)) -> AuthInteractor:
+    return AuthInteractor(staff_repo)
 
 
-def get_staff_service(staff_repo: StaffRepository = Depends(get_staff_repo)) -> StaffService:
-    return StaffService(staff_repo)
+def get_client_interactor(client_repo: ClientRepository = Depends(get_client_repo)) -> ClientInteractor:
+    return ClientInteractor(client_repo)
 
 
-def get_invitation_service(
+def get_staff_interactor(staff_repo: StaffRepository = Depends(get_staff_repo)) -> StaffInteractor:
+    return StaffInteractor(staff_repo)
+
+
+def get_invitation_interactor(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
-) -> InvitationService:
-    repo = InvitationRepository(db, settings.frontend_url)
-    return InvitationService(repo)
+) -> InvitationInteractor:
+    repo = SqlAlchemyInvitationRepository(db, settings.frontend_url)
+    return InvitationInteractor(repo)
 
 
-def get_gate_service(
+def get_gate_interactor(
     client_repo: ClientRepository = Depends(get_client_repo),
     rdb: redis_lib.Redis = Depends(get_redis_client),
-) -> GateService:
+) -> GateInteractor:
     cache_repo = GateCacheRepository(rdb)
-    return GateService(client_repo, cache_repo)
+    return GateInteractor(client_repo, cache_repo)
 
 
-def get_notification_service(
+def get_notification_interactor(
     db: Session = Depends(get_db),
     staff_repo: StaffRepository = Depends(get_staff_repo),
-) -> NotificationService:
-    notif_repo = NotificationRepository(db)
-    return NotificationService(notif_repo, staff_repo)
+) -> NotificationInteractor:
+    notif_repo = SqlAlchemyNotificationRepository(db)
+    return NotificationInteractor(notif_repo, staff_repo)
 
 
 def get_staff_id_from_cookie(cookie_sid: Optional[str] = Cookie(default=None, alias="staff_id")) -> int:
@@ -90,9 +92,9 @@ def get_bearer_token(authorization: Optional[str] = Header(default=None)) -> str
 
 def require_client_token(
     token: str = Depends(get_bearer_token),
-    client_service: ClientService = Depends(get_client_service),
+    client_interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    client = client_service.authenticate_by_token(token)
+    client = client_interactor.authenticate_by_token(token)
     if client is None:
         raise unauthorized("invalid_token")
     return client

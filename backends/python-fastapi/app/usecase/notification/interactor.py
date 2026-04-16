@@ -1,8 +1,11 @@
 from typing import Optional
+
+from app.domain.notification.entity import Notification
+from app.domain.notification.value_objects import NotificationPage
+from app.domain.notification.repository import NotificationRepository
+from app.domain.staff.repository import StaffRepository
 from app.exceptions import not_found
-from app.models.models import Notification
-from app.repositories.notification_repo import NotificationRepository, NotificationPage
-from app.repositories.staff_repo import StaffRepository
+from app.usecase.notification.dto import NotificationBulkReadDto, NotificationPatchDto
 
 
 def map_notification(n: Notification) -> dict:
@@ -19,7 +22,9 @@ def map_notification(n: Notification) -> dict:
     }
 
 
-class NotificationService:
+class NotificationInteractor:
+    """通知のユースケース実装。"""
+
     def __init__(self, notif_repo: NotificationRepository, staff_repo: StaffRepository):
         self.notif_repo = notif_repo
         self.staff_repo = staff_repo
@@ -30,17 +35,24 @@ class NotificationService:
     def counts(self, staff_id: int) -> tuple[int, int]:
         return self.notif_repo.counts(staff_id)
 
-    def bulk_mark_read(self, executor_id: int, ids: list[int], all_flag: bool) -> int:
-        return self.notif_repo.bulk_mark_read(executor_id, ids, all_flag)
+    def bulk_mark_read(self, dto: NotificationBulkReadDto) -> int:
+        return self.notif_repo.bulk_mark_read(dto.executor_id, dto.ids, dto.all_flag)
 
     def fan_out(self, title: str, body: Optional[str]) -> None:
-        staffs = self.staff_repo.find_all_active()
+        staffs = self.staff_repo.find_all_active_staffs()
         for staff in staffs:
             n = Notification(staff_id=staff.id, title=title, message=body or "", read=False)
             self.notif_repo.store(n)
 
-    def patch(self, nid: int, data: dict) -> None:
-        notif = self.notif_repo.find_by_id(nid)
+    def patch(self, dto: NotificationPatchDto) -> None:
+        notif = self.notif_repo.find_by_id(dto.notification_id)
         if notif is None:
             raise not_found("notification_not_found")
+        data = {}
+        if dto.read is not None:
+            data["read"] = dto.read
+        if dto.title is not None:
+            data["title"] = dto.title
+        if dto.message is not None:
+            data["message"] = dto.message
         self.notif_repo.patch(notif, data)

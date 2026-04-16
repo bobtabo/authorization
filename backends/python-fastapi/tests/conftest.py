@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.infrastructure.db import get_db
 from app.main import app
-from app.models.models import Base, Client, Invitation, Notification, Staff
+from app.infrastructure.model.model import Base, ClientModel, InvitationModel, NotificationModel, StaffModel
 from app.routers.deps import get_redis_client
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,7 @@ def db_session():
 # ---------------------------------------------------------------------------
 # テストデータ生成ヘルパー
 # ---------------------------------------------------------------------------
-def make_staff(db, **kwargs) -> Staff:
+def make_staff(db, **kwargs) -> StaffModel:
     defaults = {
         "name": "テストスタッフ",
         "email": "staff@example.com",
@@ -121,14 +121,14 @@ def make_staff(db, **kwargs) -> Staff:
         "role": 1,
     }
     defaults.update(kwargs)
-    staff = Staff(**defaults)
+    staff = StaffModel(**defaults)
     db.add(staff)
     db.commit()
     db.refresh(staff)
     return staff
 
 
-def make_client_record(db, **kwargs) -> Client:
+def make_client_record(db, **kwargs) -> ClientModel:
     """RSA キーペア付きのクライアントレコードを作成します（2048bit: テスト用）。"""
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     pub_pem = private_key.public_key().public_bytes(
@@ -158,24 +158,24 @@ def make_client_record(db, **kwargs) -> Client:
         "status": 1,
     }
     defaults.update(kwargs)
-    c = Client(**defaults)
+    c = ClientModel(**defaults)
     db.add(c)
     db.commit()
     db.refresh(c)
     return c
 
 
-def make_invitation(db, **kwargs) -> Invitation:
+def make_invitation(db, **kwargs) -> InvitationModel:
     defaults = {"token": secrets.token_hex(16)}
     defaults.update(kwargs)
-    inv = Invitation(**defaults)
+    inv = InvitationModel(**defaults)
     db.add(inv)
     db.commit()
     db.refresh(inv)
     return inv
 
 
-def make_notification(db, staff_id: int, **kwargs) -> Notification:
+def make_notification(db, staff_id: int, **kwargs) -> NotificationModel:
     defaults = {
         "staff_id": staff_id,
         "title": "テスト通知",
@@ -183,7 +183,7 @@ def make_notification(db, staff_id: int, **kwargs) -> Notification:
         "read": False,
     }
     defaults.update(kwargs)
-    n = Notification(**defaults)
+    n = NotificationModel(**defaults)
     db.add(n)
     db.commit()
     db.refresh(n)

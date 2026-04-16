@@ -2,8 +2,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from starlette.status import HTTP_202_ACCEPTED
-from app.routers.deps import get_notification_service, require_staff_id, get_staff_id_from_cookie
-from app.services.notification_service import NotificationService, map_notification
+from app.routers.deps import get_notification_interactor, require_staff_id, get_staff_id_from_cookie
+from app.usecase.notification.interactor import NotificationInteractor, map_notification
+from app.usecase.notification.dto import NotificationBulkReadDto, NotificationPatchDto
 from app.config.settings import get_settings, Settings
 
 router = APIRouter()
@@ -12,9 +13,9 @@ router = APIRouter()
 @router.get("/notifications/counts")
 def counts(
     staff_id: int = Depends(require_staff_id),
-    svc: NotificationService = Depends(get_notification_service),
+    interactor: NotificationInteractor = Depends(get_notification_interactor),
 ):
-    unread, total = svc.counts(staff_id)
+    unread, total = interactor.counts(staff_id)
     return {"unread": unread, "total": total}
 
 
@@ -23,11 +24,11 @@ def index(
     cursor: Optional[str] = Query(default=None),
     limit: Optional[int] = Query(default=None),
     staff_id: int = Depends(require_staff_id),
-    svc: NotificationService = Depends(get_notification_service),
+    interactor: NotificationInteractor = Depends(get_notification_interactor),
     settings: Settings = Depends(get_settings),
 ):
     lim = limit if (limit and limit > 0) else settings.notification_default_limit
-    page = svc.list_page(staff_id, cursor, lim)
+    page = interactor.list_page(staff_id, cursor, lim)
     return {
         "items": [map_notification(n) for n in page.items],
         "next_cursor": page.next_cursor,
@@ -51,13 +52,14 @@ class ReadAllBody(BaseModel):
 
 
 @router.patch("/notifications")
-def read_all(body: ReadAllBody, svc: NotificationService = Depends(get_notification_service)):
+def read_all(body: ReadAllBody, interactor: NotificationInteractor = Depends(get_notification_interactor)):
     from app.exceptions import unauthorized, bad_request
     if body.executor_id == 0:
         raise unauthorized("unauthenticated")
     if not body.ids and not body.all:
         raise bad_request("ids_or_all_required")
-    updated = svc.bulk_mark_read(body.executor_id, body.ids, body.all)
+    dto = NotificationBulkReadDto(executor_id=body.executor_id, ids=body.ids, all_flag=body.all)
+    updated = interactor.bulk_mark_read(dto)
     return {"updated": updated}
 
 
@@ -71,7 +73,14 @@ class PatchBody(BaseModel):
 def read(
     notification_id: int,
     body: PatchBody,
-    svc: NotificationService = Depends(get_notification_service),
+    interactor: NotificationInteractor = Depends(get_notification_interactor),
 ):
-    svc.patch(notification_id, body.model_dump(exclude_none=True))
+    data = body.model_dump(exclude_none=True)
+    dto = NotificationPatchDto(
+        notification_id=notification_id,
+        read=data.get("read"),
+        title=data.get("title"),
+        message=data.get("body"),
+    )
+    interactor.patch(dto)
     return {"id": notification_id}

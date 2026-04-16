@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
-from app.routers.deps import get_gate_service, get_bearer_token
-from app.services.gate_service import GateService
+from app.routers.deps import get_gate_interactor, get_bearer_token
+from app.usecase.gate.interactor import GateInteractor
+from app.usecase.gate.dto import GateIssueDto, GateVerifyDto
 
 router = APIRouter()
 
@@ -9,9 +10,10 @@ router = APIRouter()
 def issue(
     member: str = Query(...),
     token: str = Depends(get_bearer_token),
-    svc: GateService = Depends(get_gate_service),
+    interactor: GateInteractor = Depends(get_gate_interactor),
 ):
-    jwt_token = svc.issue_token(token, member)
+    dto = GateIssueDto(access_token=token, member=member)
+    jwt_token = interactor.issue_token(dto)
     return {"token": jwt_token}
 
 
@@ -19,6 +21,7 @@ def issue(
 def verify(
     identifier: str,
     token: str = Query(...),
-    svc: GateService = Depends(get_gate_service),
+    interactor: GateInteractor = Depends(get_gate_interactor),
 ):
-    return svc.verify(identifier, token)
+    dto = GateVerifyDto(identifier=identifier, token=token)
+    return interactor.verify(dto)

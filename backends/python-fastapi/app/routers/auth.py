@@ -4,10 +4,11 @@ from fastapi.responses import RedirectResponse
 from app.config.settings import Settings, get_settings
 from app.exceptions import unauthorized, bad_request
 from app.routers.deps import (
-    get_auth_service, get_invitation_service, get_staff_id_from_cookie,
+    get_auth_interactor, get_invitation_interactor, get_staff_id_from_cookie,
 )
-from app.services.auth_service import AuthService
-from app.services.invitation_service import InvitationService
+from app.usecase.auth.interactor import AuthInteractor
+from app.usecase.auth.dto import AuthLoginDto
+from app.usecase.invitation.interactor import InvitationInteractor
 
 router = APIRouter()
 
@@ -22,11 +23,11 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 @router.get("/auth/me")
 def get_my_profile(
     staff_id: int = Depends(get_staff_id_from_cookie),
-    auth_svc: AuthService = Depends(get_auth_service),
+    interactor: AuthInteractor = Depends(get_auth_interactor),
 ):
     if staff_id == 0:
         raise unauthorized("unauthenticated")
-    staff = auth_svc.find_user(staff_id)
+    staff = interactor.find_user(staff_id)
     if staff is None:
         raise unauthorized("unauthenticated")
     return {
@@ -51,9 +52,9 @@ def logout(response: Response):
 @router.get("/auth/invitation/{token}")
 def invitation(
     token: str,
-    invitation_svc: InvitationService = Depends(get_invitation_service),
+    invitation_interactor: InvitationInteractor = Depends(get_invitation_interactor),
 ):
-    inv = invitation_svc.find_by_token(token)
+    inv = invitation_interactor.find_by_token(token)
     return {"token": inv.token}
 
 
@@ -74,7 +75,7 @@ def google_redirect(settings: Settings = Depends(get_settings)):
 def google_callback(
     code: str = "",
     settings: Settings = Depends(get_settings),
-    auth_svc: AuthService = Depends(get_auth_service),
+    interactor: AuthInteractor = Depends(get_auth_interactor),
 ):
     if not code:
         raise bad_request("code_required")
@@ -95,13 +96,14 @@ def google_callback(
         user_resp = client.get(GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token}"})
         user_info = user_resp.json()
 
-    staff = auth_svc.login(
+    dto = AuthLoginDto(
         provider=1,  # Provider::Google
         provider_id=user_info["id"],
         name=user_info.get("name", ""),
         email=user_info.get("email", ""),
         avatar=user_info.get("picture"),
     )
+    staff = interactor.login(dto)
 
     max_age = settings.staff_cookie_lifetime * 60
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
