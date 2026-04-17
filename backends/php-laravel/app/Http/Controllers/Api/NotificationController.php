@@ -93,28 +93,13 @@ class NotificationController extends Controller
             throw AppException::unauthorized('unauthenticated');
         }
 
-        $validated = $request->validate([
-            'ids' => 'sometimes|array',
-            'ids.*' => 'integer',
-            'all' => 'sometimes|boolean',
+        $dto = new NotificationDto();
+        $dto->assign([
+            'staffId' => $staffId,
         ]);
 
-        $ids = isset($validated['ids']) && is_array($validated['ids'])
-            ? array_values(array_filter(array_map('intval', $validated['ids']), static fn($v) => $v > 0))
-            : null;
-        $all = (bool)($validated['all'] ?? false);
-
-        if (($ids === null || $ids === []) && !$all) {
-            throw AppException::badRequest('ids_or_all_required');
-        }
-
-        $dto = new NotificationDto();
-        $dto->staffId = (int)$staffId;
-        $dto->ids = $ids ?? [];
-        $dto->all = $all;
-
         $vo = DB::transaction(function () use ($service, $dto) {
-            return $service->bulkMarkRead($dto);
+            return $service->reads($dto);
         });
 
         return response()->success(['updated' => $vo->getUpdated()]);
@@ -150,19 +135,17 @@ class NotificationController extends Controller
      *
      * @param AppRequest $request HTTP リクエスト
      * @param NotificationService $service 通知Service
-     * @param int $id 通知ID
      * @return JsonResponse JSON レスポンス
      */
-    public function read(AppRequest $request, NotificationService $service, int $id): JsonResponse
+    public function read(AppRequest $request, NotificationService $service): JsonResponse
     {
-        $attributes = $request->all();
-
         $dto = new NotificationDto();
-        $dto->notificationId = $id;
-        $dto->attributes = is_array($attributes) ? $attributes : [];
+        $dto->assign($request->all(), [
+            'id' => 'notificationId',
+        ]);
 
         $vo = DB::transaction(function () use ($service, $dto) {
-            return $service->patch($dto);
+            return $service->read($dto);
         });
 
         return response()->success(['id' => $vo->getId()]);

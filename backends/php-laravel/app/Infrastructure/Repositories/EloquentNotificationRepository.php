@@ -74,19 +74,26 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
      * {@inheritdoc}
      */
     #[\Override]
-    public function bulkMarkRead(int $staffId, array $ids, bool $all): int
+    public function updateRead(NotificationCondition $condition): int
     {
-        $query = Model::query()
-            ->where('staff_id', $staffId)
+        if ($condition->id !== null) {
+            $entity = $this->findByPk($condition->id);
+            $condition->staffId = $entity->staffId;
+            $condition->ids[] = $entity->id;
+        }
+
+        $query = $this->getModel()->newQuery()
+            ->where('staff_id', $condition->staffId)
             ->where('read', false);
 
-        if (!$all && $ids !== []) {
-            $query->whereIn('id', $ids);
+        if ($condition->ids !== []) {
+            $query->whereIn('id', $condition->ids);
         }
 
         return $query->update([
             'read' => true,
             'updated_at' => Carbon::now(),
+            'updated_by' => $condition->staffId
         ]);
     }
 
@@ -97,29 +104,6 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
     public function persist(Entity $entity): void
     {
         $this->save($entity);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function patch(int $id, array $attributes): bool
-    {
-        $model = Model::query()->find($id);
-        if ($model === null) {
-            return false;
-        }
-
-        $allowed = ['read'];
-        $filtered = array_intersect_key($attributes, array_flip($allowed));
-        if (empty($filtered)) {
-            return false;
-        }
-
-        $filtered['updated_at'] = Carbon::now();
-        $model->fill($filtered)->save();
-
-        return true;
     }
 
     /**

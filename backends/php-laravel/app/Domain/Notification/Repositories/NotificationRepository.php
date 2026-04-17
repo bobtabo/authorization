@@ -39,23 +39,12 @@ interface NotificationRepository
     public function counts(NotificationCondition $condition): int;
 
     /**
-     * 指定 ID の通知を一括で既読などの状態に更新します。
+     * 通知を既読更新します。
      *
-     * @param int $staffId 対象スタッフID
-     * @param list<int> $ids 対象 ID（空配列は未使用）
-     * @param bool $all 全件対象
+     * @param NotificationCondition $condition 検索条件
      * @return int 更新件数
      */
-    public function bulkMarkRead(int $staffId, array $ids, bool $all): int;
-
-    /**
-     * 単一通知を部分更新します。
-     *
-     * @param int $id 通知 ID
-     * @param array<string, mixed> $attributes 更新属性（read 等）
-     * @return bool 成功時 true
-     */
-    public function patch(int $id, array $attributes): bool;
+    public function updateRead(NotificationCondition $condition): int;
 
     /**
      * 通知を登録します。

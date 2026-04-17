@@ -28,4 +28,6 @@ class NotificationCondition extends AbstractCondition
     public bool $countUnread = false;
     public ?string $cursor;
     public int $limit = 1;
+    public array $ids = [];
+    public bool $all = false;
 }

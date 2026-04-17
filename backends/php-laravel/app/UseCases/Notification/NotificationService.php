@@ -104,11 +104,12 @@ class NotificationService extends AbstractService
      * @param NotificationDto $dto 通知DTO
      * @return NotificationBulkPatchVo 通知一括更新ValueObject
      */
-    public function bulkMarkRead(NotificationDto $dto): NotificationBulkPatchVo
+    public function reads(NotificationDto $dto): NotificationBulkPatchVo
     {
-        $updated = $this->notificationRepository->bulkMarkRead((int)$dto->staffId, $dto->ids, $dto->all);
+        $condition = SimpleMapper::map($dto, NotificationCondition::class);
+        $updated = $this->notificationRepository->updateRead($condition);
 
-        return (new NotificationBulkPatchVo())->assign(['updated' => $updated]);
+        return new NotificationBulkPatchVo()->assign(['updated' => $updated]);
     }
 
     /**
@@ -141,14 +142,20 @@ class NotificationService extends AbstractService
      * @param NotificationDto $dto 通知DTO
      * @return NotificationPatchVo 通知更新ValueObject
      */
-    public function patch(NotificationDto $dto): NotificationPatchVo
+    public function read(NotificationDto $dto): NotificationPatchVo
     {
-        $id = $dto->notificationId;
-        $ok = $this->notificationRepository->patch((int)$id, $dto->attributes);
-        if (!$ok) {
+        $condition = SimpleMapper::mapSpecific($dto, NotificationCondition::class, [
+            'notificationId' => 'id',
+        ]);
+
+        $result = $this->notificationRepository->updateRead($condition);
+        if (!$result) {
             throw AppException::notFound('notification_not_found');
         }
 
-        return (new NotificationPatchVo())->assign(['ok' => true, 'id' => $id]);
+        return new NotificationPatchVo()->assign([
+            'ok' => true,
+            'id' => $dto->notificationId
+        ]);
     }
 }
