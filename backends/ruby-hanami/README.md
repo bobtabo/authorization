@@ -111,7 +111,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ```bash
 # docker/ ディレクトリから実行
-bin/docker-hanamirb.sh up    # 起動
-bin/docker-hanamirb.sh down  # 停止
-bin/docker-hanamirb.sh exec  # コンテナに入る
+bin/docker-rb-hanami.sh up    # 起動
+bin/docker-rb-hanami.sh down  # 停止
+bin/docker-rb-hanami.sh exec  # コンテナに入る
 ```

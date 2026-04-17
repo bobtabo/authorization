@@ -108,7 +108,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ```bash
 # docker/ ディレクトリから実行
-bin/docker-railsrb.sh up    # 起動
-bin/docker-railsrb.sh down  # 停止
-bin/docker-railsrb.sh exec  # コンテナに入る
+bin/docker-rb-rails.sh up    # 起動
+bin/docker-rb-rails.sh down  # 停止
+bin/docker-rb-rails.sh exec  # コンテナに入る
 ```

@@ -146,7 +146,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ```bash
 # docker/ ディレクトリから実行
-bin/docker-go.sh up    # 起動
-bin/docker-go.sh down  # 停止
-bin/docker-go.sh exec  # コンテナに入る
+bin/docker-kotlin.sh up    # 起動
+bin/docker-kotlin.sh down  # 停止
+bin/docker-kotlin.sh exec  # コンテナに入る
 ```
