@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
 # Delve（デバッガー）のインストール
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
+# Air（ホットリロード）のインストール
+RUN go install github.com/air-verse/air@v1.61.7
+
 # ユーザーを作成
 ARG DOCKER_UID=1000
 ARG DOCKER_USER=docker
