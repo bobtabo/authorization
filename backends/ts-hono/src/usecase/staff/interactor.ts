@@ -1,34 +1,33 @@
-import { badRequest, notFound } from "../lib/errors.js";
-import {
-  findAllStaffs, findStaffById, findStaffByIdUnscoped,
-  updateStaffRole, softDeleteStaff, restoreStaff,
-} from "../repositories/staffRepo.js";
-import type { Staff } from "../db/schema.js";
+import { badRequest, notFound } from "../../lib/errors.js";
+import { DrizzleStaffRepository } from "../../infrastructure/persistence/drizzleStaffRepository.js";
+import type { Staff } from "../../domain/staff/entity.js";
+
+const repo = new DrizzleStaffRepository();
 
 export function staffStatus(staff: Staff): number {
   return staff.deletedAt ? 0 : 1;
 }
 
 export async function findByCondition(keyword?: string, roles?: number[]): Promise<Staff[]> {
-  return findAllStaffs(keyword, roles);
+  return repo.findAll(keyword, roles);
 }
 
 export async function updateRole(staffId: number, role: number, executorId: number): Promise<void> {
   if (staffId === executorId) throw badRequest("cannot_update_own_role");
-  const staff = await findStaffById(staffId);
+  const staff = await repo.findById(staffId);
   if (!staff) throw notFound("staff_not_found");
-  await updateStaffRole(staffId, role);
+  await repo.updateRole(staffId, role);
 }
 
 export async function restore(staffId: number): Promise<void> {
-  const staff = await findStaffByIdUnscoped(staffId);
+  const staff = await repo.findByIdUnscoped(staffId);
   if (!staff) throw notFound("staff_not_found");
-  await restoreStaff(staffId);
+  await repo.restore(staffId);
 }
 
 export async function destroy(staffId: number, executorId: number): Promise<void> {
   if (staffId === executorId) throw badRequest("cannot_delete_self");
-  const staff = await findStaffById(staffId);
+  const staff = await repo.findById(staffId);
   if (!staff) throw notFound("staff_not_found");
-  await softDeleteStaff(staffId);
+  await repo.softDelete(staffId);
 }

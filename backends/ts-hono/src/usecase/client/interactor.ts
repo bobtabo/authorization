@@ -1,26 +1,15 @@
-import { createHash, generateKeyPairSync } from "crypto";
-import { randomBytes } from "crypto";
-import { conflict, notFound } from "../lib/errors.js";
-import {
-  findAllClients, findClientById, findClientByToken, findClientByIdentifier,
-  insertClient, updateClient, softDeleteClient,
-} from "../repositories/clientRepo.js";
-import type { Client } from "../db/schema.js";
+import { createHash, generateKeyPairSync, randomBytes } from "crypto";
+import { conflict, notFound } from "../../lib/errors.js";
+import { DrizzleClientRepository } from "../../infrastructure/persistence/drizzleClientRepository.js";
+import type { Client } from "../../domain/client/entity.js";
+import type { ClientStoreInput, ClientUpdateInput } from "./dto.js";
 
-function rsaFingerprint(publicKeyDer: Buffer): string {
-  // SSH wire format: ssh-rsa | exponent | modulus
-  // Node's generateKeyPairSync gives us the key object — re-export as DER to extract n/e
-  // 簡易実装: publicKey の DER から n/e を取り出すのは複雑なため、
-  // crypto.createPublicKey で KeyObject を使って spki DER → parseASN1 で指数・係数を抽出する
-  // ここでは jose/forge の代わりに node の KeyObject を使う
-  throw new Error("use rsaFingerprintFromPem instead");
-}
+const repo = new DrizzleClientRepository();
 
 function writeSSHMPInt(val: bigint): Buffer {
   let hex = val.toString(16);
   if (hex.length % 2 !== 0) hex = "0" + hex;
   const bytes = Buffer.from(hex, "hex");
-  // SSH MPI: 先頭ビットが1なら0x00を付加
   const needPad = bytes[0]! & 0x80 ? Buffer.from([0x00]) : Buffer.alloc(0);
   const data = Buffer.concat([needPad, bytes]);
   const len = Buffer.allocUnsafe(4);
@@ -36,7 +25,6 @@ function writeSSHStr(s: string): Buffer {
 }
 
 function rsaFingerprintFromKeyObject(pubKey: ReturnType<typeof generateKeyPairSync>["publicKey"]): string {
-  // jwk から n/e を取得
   const jwk = pubKey.export({ format: "jwk" }) as { n: string; e: string };
   const nBytes = Buffer.from(jwk.n, "base64url");
   const eBytes = Buffer.from(jwk.e, "base64url");
@@ -57,24 +45,21 @@ export function staffStatus(staff: { deletedAt: Date | null }): number {
 }
 
 export async function authenticateByToken(token: string): Promise<Client | undefined> {
-  return findClientByToken(token);
+  return repo.findByToken(token);
 }
 
 export async function getAllClients(keyword?: string, status?: number): Promise<Client[]> {
-  return findAllClients(keyword, status);
+  return repo.findAll(keyword, status);
 }
 
 export async function getClientById(id: number): Promise<Client> {
-  const c = await findClientById(id);
+  const c = await repo.findById(id);
   if (!c) throw notFound("client_not_found");
   return c;
 }
 
-export async function storeClient(data: {
-  name: string; identifier: string; postCode?: string; pref?: string;
-  city?: string; address?: string; building?: string; tel?: string; email?: string;
-}): Promise<Client> {
-  const existing = await findClientByIdentifier(data.identifier);
+export async function storeClient(data: ClientStoreInput): Promise<Client> {
+  const existing = await repo.findByIdentifier(data.identifier);
   if (existing) throw conflict("identifier_already_exists");
 
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 4096 });
@@ -83,20 +68,20 @@ export async function storeClient(data: {
   const publicPem = publicKey.export({ type: "spki", format: "pem" }) as string;
   const token = randomBytes(32).toString("hex");
 
-  return insertClient({
+  return repo.insert({
     ...data,
     token,
     publicKey: publicPem,
     privateKey: privatePem,
     fingerprint,
     status: 0,
+    startedAt: null,
+    stoppedAt: null,
+    deletedAt: null,
   });
 }
 
-export async function updateClientData(id: number, data: {
-  name?: string; postCode?: string; pref?: string; city?: string;
-  address?: string; building?: string; tel?: string; email?: string; status?: number;
-}): Promise<Client> {
+export async function updateClientData(id: number, data: ClientUpdateInput): Promise<Client> {
   const client = await getClientById(id);
   const patch: Record<string, unknown> = { ...data };
 
@@ -106,12 +91,12 @@ export async function updateClientData(id: number, data: {
     else if (data.status === 2) patch.stoppedAt = now;
   }
 
-  await updateClient(id, patch);
+  await repo.update(id, patch);
   return getClientById(id);
 }
 
 export async function destroyClient(id: number): Promise<void> {
   await getClientById(id);
-  await updateClient(id, { status: 4 });
-  await softDeleteClient(id);
+  await repo.update(id, { status: 4 });
+  await repo.softDelete(id);
 }

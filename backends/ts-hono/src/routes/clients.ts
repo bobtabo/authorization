@@ -3,8 +3,8 @@ import { formatTime } from "../lib/cookie.js";
 import { badRequest } from "../lib/errors.js";
 import {
   getAllClients, getClientById, storeClient, updateClientData, destroyClient,
-} from "../services/clientService.js";
-import type { Client } from "../db/schema.js";
+} from "../usecase/client/interactor.js";
+import type { Client } from "../domain/client/entity.js";
 
 const app = new Hono();
 

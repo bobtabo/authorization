@@ -1,20 +1,22 @@
-import { createPrivateKey, createPublicKey } from "crypto";
-import { SignJWT, jwtVerify, importPKCS8, importSPKI } from "jose";
-import { config } from "../config.js";
-import { unauthorized, notFound, internal } from "../lib/errors.js";
-import { findClientByToken, findClientByIdentifier } from "../repositories/clientRepo.js";
-import { getJwt, putJwt } from "../repositories/gateCacheRepo.js";
+import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
+import { config } from "../../config.js";
+import { unauthorized, notFound, internal } from "../../lib/errors.js";
+import { DrizzleClientRepository } from "../../infrastructure/persistence/drizzleClientRepository.js";
+import { GateCacheRepository } from "../../infrastructure/cache/gateCacheRepository.js";
+
+const clientRepo = new DrizzleClientRepository();
+const cacheRepo = new GateCacheRepository();
 
 export async function issueToken(accessToken: string, member: string): Promise<string> {
-  const client = await findClientByToken(accessToken);
+  const client = await clientRepo.findByToken(accessToken);
   if (!client) throw unauthorized("invalid_token");
   if (!client.privateKey) throw internal("private_key_not_found");
 
-  const cached = await getJwt(client.identifier, member);
+  const cached = await cacheRepo.getJwt(client.identifier, member);
   if (cached) return cached;
 
   const token = await issueJwt(client.privateKey, client.identifier, member);
-  await putJwt(client.identifier, member, token);
+  await cacheRepo.putJwt(client.identifier, member, token);
   return token;
 }
 
@@ -30,7 +32,7 @@ async function issueJwt(privateKeyPem: string, identifier: string, member: strin
 }
 
 export async function verify(identifier: string, token: string): Promise<Record<string, unknown>> {
-  const client = await findClientByIdentifier(identifier);
+  const client = await clientRepo.findByIdentifier(identifier);
   if (!client) throw notFound("client_not_found");
   if (!client.publicKey) throw internal("public_key_not_found");
 

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { current, issue } from "../services/invitationService.js";
+import { current, issue } from "../usecase/invitation/interactor.js";
 
 const app = new Hono();
 

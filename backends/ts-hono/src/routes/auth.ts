@@ -3,8 +3,8 @@ import { setCookie, deleteCookie } from "hono/cookie";
 import { config } from "../config.js";
 import { badRequest, unauthorized } from "../lib/errors.js";
 import { getStaffIdFromCookie } from "../lib/cookie.js";
-import { findUser, login } from "../services/authService.js";
-import { findByToken } from "../services/invitationService.js";
+import { findUser, login } from "../usecase/auth/interactor.js";
+import { findByToken } from "../usecase/invitation/interactor.js";
 
 const app = new Hono();
 

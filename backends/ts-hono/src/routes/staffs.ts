@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { badRequest } from "../lib/errors.js";
 import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
-import { findByCondition, updateRole, restore, destroy, staffStatus } from "../services/staffService.js";
-import type { Staff } from "../db/schema.js";
+import { findByCondition, updateRole, restore, destroy, staffStatus } from "../usecase/staff/interactor.js";
+import type { Staff } from "../domain/staff/entity.js";
 
 const app = new Hono();
 

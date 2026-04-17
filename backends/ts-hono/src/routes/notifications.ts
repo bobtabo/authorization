@@ -4,7 +4,7 @@ import { getStaffIdFromCookie } from "../lib/cookie.js";
 import { config } from "../config.js";
 import {
   listPage, countNotifications, bulkRead, patch, mapNotification,
-} from "../services/notificationService.js";
+} from "../usecase/notification/interactor.js";
 
 const app = new Hono();
 

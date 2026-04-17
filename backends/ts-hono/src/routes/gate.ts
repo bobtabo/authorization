@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { badRequest, unauthorized } from "../lib/errors.js";
-import { issueToken, verify } from "../services/gateService.js";
-import { authenticateByToken } from "../services/clientService.js";
+import { issueToken, verify } from "../usecase/gate/interactor.js";
+import { authenticateByToken } from "../usecase/client/interactor.js";
 
 const app = new Hono();
 
