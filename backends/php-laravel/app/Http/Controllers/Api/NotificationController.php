@@ -88,7 +88,7 @@ class NotificationController extends Controller
      */
     public function readAll(AppRequest $request, NotificationService $service): JsonResponse
     {
-        $staffId = $request->all()['executor_id'] ?? null;
+        $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
             throw AppException::unauthorized('unauthenticated');
         }

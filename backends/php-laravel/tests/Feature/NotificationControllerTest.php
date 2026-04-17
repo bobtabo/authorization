@@ -100,7 +100,7 @@ class NotificationControllerTest extends TestCase
      */
     public function testBulkPatch(): void
     {
-        $response = $this->withHeader('X-Executor-Id', '1')
+        $response = $this->withCookies($this->staffCookies(1))
             ->patch('/api/notifications');
         $data = $this->getResponseData('Notification/bulkPatch.json');
         $response
