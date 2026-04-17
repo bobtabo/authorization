@@ -10,9 +10,11 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Repositories;
 
+use App\Domain\Notification\Entities\Notification;
 use App\Domain\Notification\Entities\Notification as Entity;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Infrastructure\Models\Notification as Model;
+use App\Support\Repositories\AbstractEloquentRepository;
 use Carbon\Carbon;
 
 /**
@@ -21,7 +23,7 @@ use Carbon\Carbon;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentNotificationRepository implements NotificationRepository
+class EloquentNotificationRepository extends AbstractEloquentRepository implements NotificationRepository
 {
     /**
      * {@inheritdoc}
@@ -106,24 +108,9 @@ class EloquentNotificationRepository implements NotificationRepository
      * {@inheritdoc}
      */
     #[\Override]
-    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId, ?string $url = null): void
+    public function persist(Notification $entity): void
     {
-        $now = Carbon::now();
-        $model = new Model();
-        $model->fill([
-            'staff_id' => $staffId,
-            'message_type' => $messageType,
-            'title' => $title,
-            'message' => $message,
-            'url' => $url,
-            'read' => false,
-            'created_by' => $executorId,
-            'updated_by' => $executorId,
-            'version' => 1,
-        ]);
-        $model->created_at = $now;
-        $model->updated_at = $now;
-        $model->save();
+        $this->save($entity);
     }
 
     /**
@@ -147,5 +134,23 @@ class EloquentNotificationRepository implements NotificationRepository
         $model->fill($filtered)->save();
 
         return true;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    protected function getModel(): Model
+    {
+        return new Model();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    protected function getEntity(): Entity
+    {
+        return new Entity();
     }
 }

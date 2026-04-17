@@ -47,7 +47,7 @@ class ServiceMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getStub()
     {
-        return __DIR__.'/Stubs/service.stub';
+        return __DIR__ . '/Stubs/service.stub';
     }
 
     /**
@@ -56,6 +56,6 @@ class ServiceMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Domains\Services';
+        return $rootNamespace . '\UseCases';
     }
 }

@@ -47,7 +47,7 @@ class DtoMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getStub()
     {
-        return __DIR__.'/Stubs/dto.stub';
+        return __DIR__ . '/Stubs/dto.stub';
     }
 
     /**
@@ -56,6 +56,6 @@ class DtoMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Domains\Dtos';
+        return $rootNamespace . '\UseCases';
     }
 }

@@ -58,15 +58,10 @@ interface NotificationRepository
     public function patch(int $id, array $attributes): bool;
 
     /**
-     * 通知を1件登録します。
+     * 通知を登録します。
      *
-     * @param int $staffId 対象スタッフID
-     * @param int $messageType メッセージ種類
-     * @param string $title タイトル
-     * @param string $message メッセージ
-     * @param int $executorId 登録者ID
-     * @param string|null $url 遷移先URL（省略可）
+     * @param Notification $entity エンティティ
      * @return void
      */
-    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId, ?string $url = null): void;
+    public function persist(Notification $entity): void;
 }

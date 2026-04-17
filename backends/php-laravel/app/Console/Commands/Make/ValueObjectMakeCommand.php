@@ -47,7 +47,7 @@ class ValueObjectMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getStub()
     {
-        return __DIR__.'/Stubs/value-object.stub';
+        return __DIR__ . '/Stubs/value-object.stub';
     }
 
     /**
@@ -56,6 +56,6 @@ class ValueObjectMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Domains\ValueObjects';
+        return $rootNamespace . '\Domain';
     }
 }

@@ -48,7 +48,7 @@ class EnumMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getStub()
     {
-        return __DIR__.'/Stubs/enum.stub';
+        return __DIR__ . '/Stubs/enum.stub';
     }
 
     /**
@@ -57,7 +57,7 @@ class EnumMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Enums';
+        return $rootNamespace . '\Domain';
     }
 
     /**
@@ -68,7 +68,11 @@ class EnumMakeCommand extends GeneratorCommand
     {
         return [
             [
-                'value', 'value', InputOption::VALUE_REQUIRED, 'Enum値の型', null,
+                'value',
+                'value',
+                InputOption::VALUE_REQUIRED,
+                'Enum値の型',
+                null,
             ],
         ];
     }

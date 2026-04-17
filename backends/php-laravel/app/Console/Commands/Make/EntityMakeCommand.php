@@ -47,7 +47,7 @@ class EntityMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getStub()
     {
-        return __DIR__.'/Stubs/entity.stub';
+        return __DIR__ . '/Stubs/entity.stub';
     }
 
     /**
@@ -56,6 +56,6 @@ class EntityMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Domains\Entities';
+        return $rootNamespace . '\Domain';
     }
 }

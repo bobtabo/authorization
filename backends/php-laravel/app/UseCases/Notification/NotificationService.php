@@ -10,14 +10,18 @@ declare(strict_types=1);
 
 namespace App\UseCases\Notification;
 
+use App\Domain\Notification\Entities\Notification;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Notification\ValueObjects\NotificationBulkPatchVo;
 use App\Domain\Notification\ValueObjects\NotificationCountsVo;
 use App\Domain\Notification\ValueObjects\NotificationListVo;
 use App\Domain\Notification\ValueObjects\NotificationPatchVo;
+use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Support\Exceptions\AppException;
 use App\Support\Services\AbstractService;
+use App\Support\Traits\EnumValue;
+use app\UseCases\Notification\Dtos\NotificationCreateDto;
 use App\UseCases\Notification\Dtos\NotificationDto;
 
 /**
@@ -28,13 +32,15 @@ use App\UseCases\Notification\Dtos\NotificationDto;
  */
 class NotificationService extends AbstractService
 {
+    use EnumValue;
+
     /**
-     * @param NotificationRepository $notifications 通知Repository
-     * @param StaffRepository $staffs スタッフRepository
+     * @param NotificationRepository $notificationRepository 通知Repository
+     * @param StaffRepository $staffRepository スタッフRepository
      */
     public function __construct(
-        private readonly NotificationRepository $notifications,
-        private readonly StaffRepository $staffs,
+        private readonly NotificationRepository $notificationRepository,
+        private readonly StaffRepository $staffRepository,
     ) {
     }
 
@@ -48,7 +54,7 @@ class NotificationService extends AbstractService
     {
         $limit = max(1, min(100, $dto->limit));
 
-        $page = $this->notifications->listPage((int)$dto->staffId, $dto->cursor, $limit);
+        $page = $this->notificationRepository->listPage((int)$dto->staffId, $dto->cursor, $limit);
 
         return (new NotificationListVo())->assign($page);
     }
@@ -61,7 +67,7 @@ class NotificationService extends AbstractService
      */
     public function counts(NotificationDto $dto): NotificationCountsVo
     {
-        return (new NotificationCountsVo())->assign($this->notifications->counts((int)$dto->staffId));
+        return (new NotificationCountsVo())->assign($this->notificationRepository->counts((int)$dto->staffId));
     }
 
     /**
@@ -72,7 +78,7 @@ class NotificationService extends AbstractService
      */
     public function bulkMarkRead(NotificationDto $dto): NotificationBulkPatchVo
     {
-        $updated = $this->notifications->bulkMarkRead((int)$dto->staffId, $dto->ids, $dto->all);
+        $updated = $this->notificationRepository->bulkMarkRead((int)$dto->staffId, $dto->ids, $dto->all);
 
         return (new NotificationBulkPatchVo())->assign(['updated' => $updated]);
     }
@@ -80,19 +86,25 @@ class NotificationService extends AbstractService
     /**
      * 有効なスタッフ全員へ通知を配信します（ファンアウト）。
      *
-     * @param string $title タイトル
-     * @param string $message メッセージ
-     * @param int $messageType メッセージ種類（1=info / 2=warn / 3=ok）
-     * @param int $executorId 登録者ID
-     * @param string|null $url 遷移先URL（省略可）
+     * @param NotificationCreateDto $dto 通知登録DTO
      * @return void
      */
-    public function fanOut(string $title, string $message, int $messageType, int $executorId, ?string $url = null): void
+    public function fanOut(NotificationCreateDto $dto): void
     {
-        $staffs = $this->staffs->findAllActive();
-        foreach ($staffs as $staff) {
-            $this->notifications->store($staff->id, $messageType, $title, $message, $executorId, $url);
-        }
+        $staffs = $this->staffRepository->findAllActive();
+
+        $notifications = $staffs->map(function (Staff $row) use ($dto) {
+            $entity = new Notification();
+            $entity->staffId = $row->id;
+            $entity->messageType = $dto->messageType;
+            $entity->title = $dto->title;
+            $entity->message = $dto->message;
+            $entity->url = $dto->url;
+            $entity->assignCreated($dto->executorId);
+            return $this->toValues($entity->attributesBySnake());
+        });
+
+        $this->notificationRepository->insertBatch($notifications->all());
     }
 
     /**
@@ -104,7 +116,7 @@ class NotificationService extends AbstractService
     public function patch(NotificationDto $dto): NotificationPatchVo
     {
         $id = $dto->notificationId;
-        $ok = $this->notifications->patch((int)$id, $dto->attributes);
+        $ok = $this->notificationRepository->patch((int)$id, $dto->attributes);
         if (!$ok) {
             throw AppException::notFound('notification_not_found');
         }

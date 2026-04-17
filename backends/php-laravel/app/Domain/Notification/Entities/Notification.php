@@ -27,7 +27,7 @@ class Notification extends AbstractEntity
     public ?string $title = null;
     public ?string $message = null;
     public ?string $url = null;
-    public ?bool $read = null;
+    public bool $read = false;
 
     //Relation
     public ?Staff $staff = null;

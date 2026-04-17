@@ -8,13 +8,13 @@
 
 declare(strict_types=1);
 
-namespace App\Enums;
+namespace App\Domain;
 
 /**
  * Enumクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Enums
+ * @package App\Domain
  */
 enum DummyClass: {{ value }}
 {

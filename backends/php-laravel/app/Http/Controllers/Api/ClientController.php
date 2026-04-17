@@ -20,6 +20,7 @@ use App\Support\Http\Requests\AppRequest;
 use App\Support\Mails\DefaultMail;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Client\Dtos\ClientDto;
+use App\UseCases\Notification\Dtos\NotificationCreateDto;
 use App\UseCases\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -97,21 +98,25 @@ class ClientController extends Controller
         $dto->assign($request->input());
         $dto->executorId = $executorId;
 
-        $value = DB::transaction(function () use ($clientService, $dto) {
-            return $clientService->store($dto);
+        $value = DB::transaction(function () use ($clientService, $notificationService, $dto) {
+            $vo = $clientService->store($dto);
+
+            // 全スタッフへ通知を配信
+            $notificationDto = new NotificationCreateDto();
+            $notificationDto->assign([
+                'messageType' => 1,
+                'title' => '新しいクライアントが登録されました',
+                'message' => $vo->getName() ?? '',
+                'url' => '/clients/show?id=' . $vo->getId(),
+                'executorId' => $executorId ?? 0,
+            ]);
+            $notificationService->fanOut($notificationDto);
+
+            return $vo;
         });
 
         $response = new StoreResponse();
         $response->assign($value->attributes());
-
-        // 全スタッフへ通知を配信
-        $notificationService->fanOut(
-            title: '新しいクライアントが登録されました',
-            message: $value->getName() ?? '',
-            messageType: 1,
-            executorId: $executorId ?? 0,
-            url: '/clients/show?id=' . $value->getId(),
-        );
 
         //アクセストークンをメール送信します
         send_mail($value->getTo(), new DefaultMail($value));
