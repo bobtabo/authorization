@@ -79,29 +79,12 @@ func (h *NotificationHandler) Store(c *gin.Context) {
 
 // PATCH /api/notifications  (一括既読)
 func (h *NotificationHandler) ReadAll(c *gin.Context) {
-	var body struct {
-		IDs        []int64 `json:"ids"`
-		All        bool    `json:"all"`
-		ExecutorID int64   `json:"executor_id"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		_ = c.Error(apperror.BadRequest("invalid_request"))
-		return
-	}
-	if body.ExecutorID == 0 {
+	staffID := staffIDFromCookie(c)
+	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	if len(body.IDs) == 0 && !body.All {
-		_ = c.Error(apperror.BadRequest("ids_or_all_required"))
-		return
-	}
-
-	updated, err := h.svc.BulkMarkRead(unotification.BulkMarkReadDto{
-		StaffID: body.ExecutorID,
-		IDs:     body.IDs,
-		All:     body.All,
-	})
+	updated, err := h.svc.BulkMarkRead(staffID)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -116,14 +99,7 @@ func (h *NotificationHandler) Read(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-
-	var body map[string]interface{}
-	if err = c.ShouldBindJSON(&body); err != nil {
-		_ = c.Error(apperror.BadRequest("invalid_request"))
-		return
-	}
-
-	if err = h.svc.Patch(id, body); err != nil {
+	if err = h.svc.MarkRead(id); err != nil {
 		_ = c.Error(err)
 		return
 	}

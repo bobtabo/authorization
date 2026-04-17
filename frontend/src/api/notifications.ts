@@ -1,9 +1,5 @@
 import { apiGet, apiPatch, apiPost } from "./http";
 
-function executorHeader(executorId?: number | null): Record<string, string> {
-  return executorId != null ? { "X-Executor-Id": String(executorId) } : {};
-}
-
 /** GET /notifications */
 export async function getNotifications(params?: {
   cursor?: string;
@@ -23,18 +19,11 @@ export async function postNotificationTrigger(body: unknown): Promise<unknown> {
 }
 
 /** PATCH /notifications（全既読） */
-export async function readAllNotifications(
-  body: unknown,
-  executorId?: number | null,
-): Promise<unknown> {
-  return apiPatch("/notifications", body, { headers: executorHeader(executorId) });
+export async function readAllNotifications(): Promise<unknown> {
+  return apiPatch("/notifications", undefined);
 }
 
 /** PATCH /notifications/{id}（既読） */
-export async function readNotification(
-  id: number,
-  body: unknown,
-  executorId?: number | null,
-): Promise<unknown> {
-  return apiPatch(`/notifications/${id}`, body, { headers: executorHeader(executorId) });
+export async function readNotification(id: number): Promise<unknown> {
+  return apiPatch(`/notifications/${id}`, undefined);
 }

@@ -77,14 +77,27 @@ describe("Notifications", () => {
     });
   });
 
+  describe("PATCH /api/notifications", () => {
+    test("一括既読が成功する", async () => {
+      const staff = await makeStaff();
+      await makeNotification(staff.id, "通知A");
+      await makeNotification(staff.id, "通知B");
+      const res = await app.request("/api/notifications", {
+        method: "PATCH",
+        headers: { Cookie: `staff_id=${staff.id}` },
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json() as { updated: number };
+      expect(data.updated).toBeGreaterThanOrEqual(0);
+    });
+  });
+
   describe("PATCH /api/notifications/:id", () => {
     test("単一通知が既読になる", async () => {
       const staff = await makeStaff();
       const n = await makeNotification(staff.id);
       const res = await app.request(`/api/notifications/${n.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ read: true }),
       });
       expect(res.status).toBe(200);
     });

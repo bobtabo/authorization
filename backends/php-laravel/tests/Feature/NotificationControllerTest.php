@@ -100,9 +100,8 @@ class NotificationControllerTest extends TestCase
      */
     public function testBulkPatch(): void
     {
-        $params = $this->getRequestParams('Notification/bulkPatch.json');
         $response = $this->withHeader('X-Executor-Id', '1')
-            ->patch('/api/notifications', $params);
+            ->patch('/api/notifications');
         $data = $this->getResponseData('Notification/bulkPatch.json');
         $response
             ->assertStatus(200)
@@ -118,9 +117,8 @@ class NotificationControllerTest extends TestCase
     {
         $staff = Staff::factory()->create();
         $notification = Notification::factory()->create(['staff_id' => $staff->id]);
-        $params = $this->getRequestParams('Notification/update.json');
         $id = $notification->id;
-        $response = $this->patch("/api/notifications/{$id}", $params);
+        $response = $this->patch("/api/notifications/{$id}");
         $data = $this->getResponseData('Notification/update.json');
         $response
             ->assertStatus(200)

@@ -52,7 +52,6 @@ export function ConsoleHeader(): React.JSX.Element {
   const pathname = usePathname();
   const router = useRouter();
   const displayName = user?.name ?? "";
-  const staffId = user?.staff_id ?? null;
   const isAdmin = user?.role === 1;
 
   const [backendRuntime, setBackendRuntime] = useState<string>("php");
@@ -111,8 +110,8 @@ export function ConsoleHeader(): React.JSX.Element {
   }, [notificationOpen, fetchNotifications]);
 
   const handleMarkAllRead = () => {
-    if (!staffId || unreadCount === 0) return;
-    readAllNotifications({ all: true }, staffId)
+    if (unreadCount === 0) return;
+    readAllNotifications()
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
         setUnreadCount(0);
@@ -121,8 +120,7 @@ export function ConsoleHeader(): React.JSX.Element {
   };
 
   const handleMarkRead = (id: number) => {
-    if (!staffId) return;
-    readNotification(id, { read: true }, staffId)
+    readNotification(id)
       .then(() => {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, unread: false } : n))

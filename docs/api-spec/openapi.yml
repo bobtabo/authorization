@@ -641,23 +641,14 @@ paths:
       operationId: readAllNotifications
       summary: 全通知を既読にする
       description: |
-        複数通知を一括で既読などの状態に更新する。
-        複数 ID 指定や `all: true` を Body で受け取る。
+        ログイン中スタッフの全通知を一括で既読にする。
       tags:
         - notifications
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationBulkPatchRequest'
       responses:
         '200':
           description: 更新成功
-        '400':
-          description: リクエストが不正
         '401':
           description: 未認証
         '500':
@@ -704,12 +695,6 @@ paths:
         - notifications
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationPatchRequest'
       responses:
         '200':
           description: 更新成功
@@ -1048,30 +1033,6 @@ components:
       example:
         unread: 3
         total: 42
-
-    NotificationPatchRequest:
-      type: object
-      description: 単一通知の差分更新（送ったフィールドのみ更新）
-      properties:
-        read:
-          type: boolean
-        archived:
-          type: boolean
-
-    NotificationBulkPatchRequest:
-      type: object
-      description: 一括更新。ids または all のいずれかを指定
-      properties:
-        ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        all:
-          type: boolean
-          description: true のとき対象を一括指定（運用上の制約は実装側）
-        read:
-          type: boolean
 
     NotificationTriggerRequest:
       type: object

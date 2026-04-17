@@ -31,9 +31,9 @@ func (uc *Interactor) Counts(staffID uint) (unread, total int64, err error) {
 	return uc.repo.Counts(staffID)
 }
 
-// BulkMarkRead は指定条件の通知を既読にして更新件数を返します。
-func (uc *Interactor) BulkMarkRead(dto BulkMarkReadDto) (int64, error) {
-	return uc.repo.BulkMarkRead(dto.StaffID, dto.IDs, dto.All)
+// BulkMarkRead はスタッフの全通知を既読にして更新件数を返します。
+func (uc *Interactor) BulkMarkRead(staffID uint) (int64, error) {
+	return uc.repo.BulkMarkRead(int64(staffID), nil, true)
 }
 
 // FanOut は全アクティブスタッフへ通知を配信します。
@@ -48,9 +48,9 @@ func (uc *Interactor) FanOut(dto FanOutDto) error {
 	return nil
 }
 
-// Patch は通知を部分更新します。
-func (uc *Interactor) Patch(id int64, attrs map[string]interface{}) error {
-	_, err := uc.repo.Patch(id, attrs)
+// MarkRead は通知を既読にします。
+func (uc *Interactor) MarkRead(id int64) error {
+	_, err := uc.repo.Patch(id, map[string]interface{}{"read": true})
 	return err
 }
 

@@ -9,9 +9,3 @@ type FanOutDto struct {
 	URL         string
 }
 
-// BulkMarkReadDto は一括既読更新のユースケース入力です。
-type BulkMarkReadDto struct {
-	StaffID int64
-	IDs     []int64
-	All     bool
-}

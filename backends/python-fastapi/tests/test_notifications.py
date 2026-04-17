@@ -57,11 +57,11 @@ class TestStore:
 class TestBulkRead:
     def test_一括既読が成功する(self, client, db_session):
         staff = make_staff(db_session)
-        n1 = make_notification(db_session, staff_id=staff.id)
-        n2 = make_notification(db_session, staff_id=staff.id)
+        make_notification(db_session, staff_id=staff.id)
+        make_notification(db_session, staff_id=staff.id)
         res = client.patch(
             "/api/notifications",
-            json={"ids": [n1.id, n2.id], "executor_id": staff.id},
+            cookies={"staff_id": str(staff.id)},
         )
         assert res.status_code == 200
         assert "updated" in res.json()
@@ -71,6 +71,6 @@ class TestRead:
     def test_単一通知が既読になる(self, client, db_session):
         staff = make_staff(db_session)
         n = make_notification(db_session, staff_id=staff.id)
-        res = client.patch(f"/api/notifications/{n.id}", json={"read": True})
+        res = client.patch(f"/api/notifications/{n.id}")
         assert res.status_code == 200
         assert res.json()["id"] == n.id

@@ -5,7 +5,7 @@ from app.domain.notification.value_objects import NotificationPage
 from app.domain.notification.repository import NotificationRepository
 from app.domain.staff.repository import StaffRepository
 from app.exceptions import not_found
-from app.usecase.notification.dto import NotificationBulkReadDto, NotificationPatchDto
+from app.usecase.notification.dto import NotificationStoreDto
 
 
 def map_notification(n: Notification) -> dict:
@@ -35,24 +35,17 @@ class NotificationInteractor:
     def counts(self, staff_id: int) -> tuple[int, int]:
         return self.notif_repo.counts(staff_id)
 
-    def bulk_mark_read(self, dto: NotificationBulkReadDto) -> int:
-        return self.notif_repo.bulk_mark_read(dto.executor_id, dto.ids, dto.all_flag)
+    def bulk_mark_read(self, staff_id: int) -> int:
+        return self.notif_repo.bulk_mark_read(staff_id, [], True)
+
+    def mark_read(self, notification_id: int) -> None:
+        notif = self.notif_repo.find_by_id(notification_id)
+        if notif is None:
+            raise not_found("notification_not_found")
+        self.notif_repo.patch(notif, {"read": True})
 
     def fan_out(self, title: str, body: Optional[str]) -> None:
         staffs = self.staff_repo.find_all_active_staffs()
         for staff in staffs:
             n = Notification(staff_id=staff.id, title=title, message=body or "", read=False)
             self.notif_repo.store(n)
-
-    def patch(self, dto: NotificationPatchDto) -> None:
-        notif = self.notif_repo.find_by_id(dto.notification_id)
-        if notif is None:
-            raise not_found("notification_not_found")
-        data = {}
-        if dto.read is not None:
-            data["read"] = dto.read
-        if dto.title is not None:
-            data["title"] = dto.title
-        if dto.message is not None:
-            data["message"] = dto.message
-        self.notif_repo.patch(notif, data)
