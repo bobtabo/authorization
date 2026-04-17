@@ -573,7 +573,8 @@ paths:
     get:
       summary: 通知一覧（メタデータ含む）
       description: |
-        通知の一覧を返す。各アイテムにメタデータを含む。cursor ベースのページネーションを採用する。
+        通知の一覧を返す。各アイテムにメタデータを含む。
+        cursor ベースのページネーションを採用する。
       tags:
         - notifications
       security:
@@ -609,7 +610,8 @@ paths:
     post:
       summary: 通知のトリガー（内部/システム）
       description: |
-        内部ジョブや連携システムから通知を発火する。利用者向け一覧取得とは用途が異なる。べき等キー（`Idempotency-Key`）を許容する。
+        内部ジョブや連携システムから通知を発火する。利用者向け一覧取得とは用途が異なる。
+        べき等キー（`Idempotency-Key`）を許容する。
       tags:
         - notifications
       parameters:
@@ -639,7 +641,8 @@ paths:
       operationId: readAllNotifications
       summary: 全通知を既読にする
       description: |
-        複数通知を一括で既読などの状態に更新する。複数 ID 指定や `all: true` を Body で受け取る。
+        複数通知を一括で既読などの状態に更新する。
+        複数 ID 指定や `all: true` を Body で受け取る。
       tags:
         - notifications
       security:
@@ -664,7 +667,8 @@ paths:
     get:
       summary: 未読・全件などのサマリー
       description: |
-        未読件数・全件数など、通知まわりの集計を返す。複数種類のカウントを一度に返す。
+        未読件数・全件数など、通知まわりの集計を返す。
+        複数種類のカウントを一度に返す。
       tags:
         - notifications
       security:
