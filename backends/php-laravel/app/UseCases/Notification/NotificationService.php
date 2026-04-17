@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\UseCases\Notification;
 
+use App\Domain\Notification\Condition\NotificationCondition;
 use App\Domain\Notification\Entities\Notification;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Notification\ValueObjects\NotificationBulkPatchVo;
@@ -19,6 +20,7 @@ use App\Domain\Notification\ValueObjects\NotificationPatchVo;
 use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Support\Exceptions\AppException;
+use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\Support\Traits\EnumValue;
 use app\UseCases\Notification\Dtos\NotificationCreateDto;
@@ -52,11 +54,27 @@ class NotificationService extends AbstractService
      */
     public function listPage(NotificationDto $dto): NotificationListVo
     {
-        $limit = max(1, min(100, $dto->limit));
+        $condition = SimpleMapper::map($dto, NotificationCondition::class);
 
-        $page = $this->notificationRepository->listPage((int)$dto->staffId, $dto->cursor, $limit);
+        $list = $this->notificationRepository->listPage($condition);
+        $condition->limit = max(1, min(100, $dto->limit));
+        $hasNext = $list->count() > $condition->limit;
+        $items = $hasNext ? $list->slice(0, $condition->limit) : $list;
 
-        return (new NotificationListVo())->assign($page);
+        $nextCursor = null;
+        if ($hasNext) {
+            $last = $items->last();
+            $nextCursor = base64_encode($last->created_at->format('Y-m-d H:i:s') . ',' . $last->id);
+        }
+
+        $values = $list->map(function (Notification $row) use ($dto) {
+            return $this->toValues($row->attributesBySnake());
+        });
+
+        return new NotificationListVo()->assign([
+            'items' => $values->all(),
+            'nextCursor' => $nextCursor,
+        ]);
     }
 
     /**
@@ -67,7 +85,17 @@ class NotificationService extends AbstractService
      */
     public function counts(NotificationDto $dto): NotificationCountsVo
     {
-        return (new NotificationCountsVo())->assign($this->notificationRepository->counts((int)$dto->staffId));
+        /** @var NotificationCondition $condition */
+        $condition = SimpleMapper::map($dto, NotificationCondition::class);
+        $total = $this->notificationRepository->counts($condition);
+
+        $condition->countUnread = true;
+        $unread = $this->notificationRepository->counts($condition);
+
+        return new NotificationCountsVo()->assign([
+            'total' => $total,
+            'unread' => $unread,
+        ]);
     }
 
     /**

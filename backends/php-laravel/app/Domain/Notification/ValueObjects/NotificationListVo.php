@@ -10,7 +10,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Notification\ValueObjects;
 
-use App\Domain\Notification\Entities\Notification;
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 
@@ -25,5 +24,5 @@ class NotificationListVo extends AbstractValueObject
     use Getter;
 
     private array $items = [];
-    private ?string $next_cursor = null;
+    private ?string $nextCursor = null;
 }

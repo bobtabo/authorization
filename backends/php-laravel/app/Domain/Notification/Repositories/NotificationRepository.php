@@ -10,7 +10,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Notification\Repositories;
 
+use App\Domain\Notification\Condition\NotificationCondition;
 use App\Domain\Notification\Entities\Notification;
+use Illuminate\Support\Collection;
 
 /**
  * 通知一覧のページング取得と件数集計・更新を担うRepositoryのインターフェースです。
@@ -23,20 +25,18 @@ interface NotificationRepository
     /**
      * カーソル付きで通知一覧ページを取得します。
      *
-     * @param int $staffId 対象スタッフID
-     * @param string|null $cursor 次ページカーソル（先頭は null）
-     * @param int $limit 1ページあたりの最大件数
-     * @return array{items: list<Notification>, next_cursor: ?string} 一覧と次カーソル
+     * @param NotificationCondition $condition 検索条件
+     * @return Collection コレクション
      */
-    public function listPage(int $staffId, ?string $cursor, int $limit): array;
+    public function listPage(NotificationCondition $condition): Collection;
 
     /**
      * 通知件数の集計を取得します。
      *
-     * @param int $staffId 対象スタッフID
-     * @return array<string, int> 種別ごとの件数
+     * @param NotificationCondition $condition 検索条件
+     * @return int 件数
      */
-    public function counts(int $staffId): array;
+    public function counts(NotificationCondition $condition): int;
 
     /**
      * 指定 ID の通知を一括で既読などの状態に更新します。

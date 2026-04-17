@@ -24,5 +24,8 @@ class NotificationCondition extends AbstractCondition
     public ?int $messageType = null;
     public ?string $title = null;
     public ?string $message = null;
-    public ?bool $read = null;
+    public bool $read = false;
+    public bool $countUnread = false;
+    public ?string $cursor;
+    public int $limit = 1;
 }
