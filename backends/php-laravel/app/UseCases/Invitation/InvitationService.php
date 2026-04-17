@@ -28,10 +28,10 @@ use Random\RandomException;
 class InvitationService extends AbstractService
 {
     /**
-     * @param InvitationRepository $invitations 招待Repository
+     * @param InvitationRepository $repository 招待Repository
      */
     public function __construct(
-        private readonly InvitationRepository $invitations,
+        private readonly InvitationRepository $repository,
     ) {
     }
 
@@ -44,7 +44,7 @@ class InvitationService extends AbstractService
     public function current(InvitationDto $dto): InvitationVo
     {
         unset($dto);
-        $entity = $this->invitations->getCurrent();
+        $entity = $this->repository->getCurrent();
         if ($entity === null) {
             throw AppException::notFound('invitation_not_found');
         }
@@ -66,7 +66,7 @@ class InvitationService extends AbstractService
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
-        $entity = $this->invitations->issue();
+        $entity = $this->repository->issue();
 
         return new InvitationVo()->assign([
             'found' => true,
@@ -90,7 +90,7 @@ class InvitationService extends AbstractService
         }
 
         $condition = SimpleMapper::map($dto, InvitationCondition::class);
-        $entity = $this->invitations->findByToken($condition);
+        $entity = $this->repository->findByToken($condition);
         if ($entity === null) {
             throw AppException::badRequest('invitation_invalid');
         }

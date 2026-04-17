@@ -31,7 +31,7 @@ use Carbon\Carbon;
 class ClientService extends AbstractService
 {
     public function __construct(
-        private readonly ClientRepository $clientRepository,
+        private readonly ClientRepository $repository,
     ) {
     }
 
@@ -46,7 +46,7 @@ class ClientService extends AbstractService
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        return $this->clientRepository->findByAccessToken($condition) !== null;
+        return $this->repository->findByAccessToken($condition) !== null;
     }
 
     /**
@@ -66,7 +66,7 @@ class ClientService extends AbstractService
             'statuses' => 'statuses',
         ]);
 
-        $list = $this->clientRepository->findByCondition($condition);
+        $list = $this->repository->findByCondition($condition);
 
         $result = new ClientListVo();
         $result->assignClients($list);
@@ -87,7 +87,7 @@ class ClientService extends AbstractService
         $dto->statuses = [];
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clientRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
 
         $vo = new ClientDetailVo();
         if ($entity === null) {
@@ -142,7 +142,7 @@ class ClientService extends AbstractService
         // アクセストークンの生成
         $entity->accessToken = bin2hex(random_bytes(32));
 
-        $saved = $this->clientRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
         $configs = config('authorization.app.mail');
         return new ClientStoreVo()->assign([
@@ -167,7 +167,7 @@ class ClientService extends AbstractService
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clientRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
         // identifier は登録時に自動生成するため更新不可
         // status は遷移ロジックで個別に制御するため assign から除外
         // accessToken は不変のため assign から除外
@@ -187,7 +187,7 @@ class ClientService extends AbstractService
 
         $entity->assignUpdated($dto->executorId ?? 0);
 
-        $saved = $this->clientRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
         return new ClientStoreVo()->assign($saved->attributes());
     }
@@ -202,13 +202,13 @@ class ClientService extends AbstractService
     public function destroy(ClientDto $dto): void
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
-        $entity = $this->clientRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
 
         $entity->status = ClientStatus::Closed;
         $entity->assignUpdated($dto->executorId ?? 0);
-        $saved = $this->clientRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
         $saved->assignDeleted($dto->executorId ?? 0);
-        $this->clientRepository->deleteById($saved);
+        $this->repository->deleteById($saved);
     }
 }

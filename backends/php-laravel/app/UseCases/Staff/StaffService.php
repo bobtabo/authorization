@@ -33,10 +33,10 @@ use Illuminate\Database\QueryException;
 class StaffService extends AbstractService
 {
     /**
-     * @param StaffRepository $staffRepository スタッフRepository
+     * @param StaffRepository $repository スタッフRepository
      */
     public function __construct(
-        private readonly StaffRepository $staffRepository,
+        private readonly StaffRepository $repository,
     ) {
     }
 
@@ -57,7 +57,7 @@ class StaffService extends AbstractService
         $condition = new StaffCondition();
         $condition->id = $dto->id;
 
-        $entity = $this->staffRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
         if ($entity === null) {
             return $vo;
         }
@@ -81,7 +81,7 @@ class StaffService extends AbstractService
         $condition->roles = $dto->roles;
         $condition->statuses = $dto->statuses;
 
-        $list = $this->staffRepository->findByCondition($condition);
+        $list = $this->repository->findByCondition($condition);
 
         $vo = new StaffListVo();
         $vo->assignStaff($list);
@@ -103,7 +103,7 @@ class StaffService extends AbstractService
         }
 
         $condition = SimpleMapper::map($dto, StaffCondition::class);
-        $entity = $this->staffRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
 
         if ($entity === null) {
             throw AppException::notFound('staff_not_found');
@@ -111,7 +111,7 @@ class StaffService extends AbstractService
 
         $entity->role = $dto->role;
         $entity->assignUpdated($dto->executorId);
-        $saved = $this->staffRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
         return new StaffMutationVo()->assign([
             'ok' => true,
@@ -131,7 +131,7 @@ class StaffService extends AbstractService
         /** @var Staff $entity */
         $entity = SimpleMapper::map($dto, Staff::class);
         $entity->assignDeleted($dto->executorId);
-        $result = $this->staffRepository->deleteById($entity);
+        $result = $this->repository->deleteById($entity);
         if (!$result) {
             throw AppException::notFound('staff_not_found');
         }
@@ -153,7 +153,7 @@ class StaffService extends AbstractService
     {
         /** @var Staff $entity */
         $entity = SimpleMapper::map($dto, Staff::class);
-        $result = $this->staffRepository->restoreById($entity);
+        $result = $this->repository->restoreById($entity);
         if (!$result) {
             throw AppException::notFound('staff_not_found');
         }

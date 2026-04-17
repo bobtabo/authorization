@@ -31,7 +31,7 @@ use Carbon\Carbon;
 class AuthService extends AbstractService
 {
     public function __construct(
-        private readonly StaffRepository $staffRepository,
+        private readonly StaffRepository $repository,
     ) {
     }
 
@@ -46,7 +46,7 @@ class AuthService extends AbstractService
         $condition = new StaffCondition();
         $condition->id = $dto->id;
 
-        $entity = $this->staffRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
         if (empty($entity)) {
             throw AppException::notFound('user_not_found');
         }
@@ -65,7 +65,7 @@ class AuthService extends AbstractService
     {
         /** @var StaffCondition $condition */
         $condition = SimpleMapper::map($dto, StaffCondition::class);
-        $entity = $this->staffRepository->findByProvider($condition);
+        $entity = $this->repository->findByProvider($condition);
 
         $vo = new StaffVo();
         if (empty($entity)) {
@@ -74,12 +74,12 @@ class AuthService extends AbstractService
             $newEntity->role = StaffRole::Member;
             $newEntity->lastLoginAt = Carbon::now();
             $newEntity->assignCreated(0);
-            $saved = $this->staffRepository->persist($newEntity);
+            $saved = $this->repository->persist($newEntity);
         } else {
             $entity->avatar = $dto->avatar;
             $entity->lastLoginAt = Carbon::now();
             $entity->assignUpdated($entity->id);
-            $saved = $this->staffRepository->persist($entity);
+            $saved = $this->repository->persist($entity);
         }
         $vo->assign($saved->attributes());
 

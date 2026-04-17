@@ -35,11 +35,11 @@ class GateService extends AbstractService
 {
     /**
      * @param ClientRepository $clientRepository クライアントリポジトリ
-     * @param GateCacheRepository $cache JWT キャッシュリポジトリ
+     * @param GateCacheRepository $cacheRepository JWT キャッシュリポジトリ
      */
     public function __construct(
         private readonly ClientRepository $clientRepository,
-        private readonly GateCacheRepository $cache,
+        private readonly GateCacheRepository $cacheRepository,
     ) {
     }
 
@@ -61,7 +61,7 @@ class GateService extends AbstractService
         /** @var array{issuer: string, algorithm: string, ttl: int, cache_ttl: int} $jwt */
         $jwt = config('authorization.app.jwt');
         $identifier = (string)$client->identifier;
-        $token = $this->cache->getJwt($identifier, $dto->memberId);
+        $token = $this->cacheRepository->getJwt($identifier, $dto->memberId);
 
         if ($token === null) {
             $token = $this->issueJwt(
@@ -71,7 +71,7 @@ class GateService extends AbstractService
                 (string)$client->privateKey,
                 (string)$client->fingerprint,
             );
-            $this->cache->putJwt($identifier, $dto->memberId, $token, $jwt['cache_ttl']);
+            $this->cacheRepository->putJwt($identifier, $dto->memberId, $token, $jwt['cache_ttl']);
         }
 
         $vo = new GateIssueVo();
