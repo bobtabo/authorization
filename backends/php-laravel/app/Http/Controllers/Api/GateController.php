@@ -32,10 +32,10 @@ class GateController extends Controller
      * クライアント会員向け JWT を発行する応答を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param GateService $gate ゲートユースケース
+     * @param GateService $service 認可Service
      * @return JsonResponse JSON レスポンス
      */
-    public function issue(AppRequest $request, GateService $gate): JsonResponse
+    public function issue(AppRequest $request, GateService $service): JsonResponse
     {
         $member = $request->query('member');
         if (!is_string($member) || $member === '') {
@@ -46,7 +46,7 @@ class GateController extends Controller
         $dto->memberId = $member;
         $dto->accessToken = $request->bearerToken() ?? '';
 
-        $vo = $gate->issueToken($dto);
+        $vo = $service->issueToken($dto);
 
         $response = new GateIssueResponse();
         $response->assign($vo->attributes());
@@ -58,11 +58,11 @@ class GateController extends Controller
      * JWT を検証し Payload 相当の応答を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param GateService $gate ゲートユースケース
+     * @param GateService $service 認可Service
      * @param string $identifier クライアント識別名
      * @return JsonResponse JSON レスポンス
      */
-    public function verify(AppRequest $request, GateService $gate, string $identifier): JsonResponse
+    public function verify(AppRequest $request, GateService $service, string $identifier): JsonResponse
     {
         $token = $request->query('token');
         if (!is_string($token) || $token === '') {
@@ -73,7 +73,7 @@ class GateController extends Controller
         $dto->identifier = $identifier;
         $dto->token = $token;
 
-        $vo = $gate->verify($dto);
+        $vo = $service->verify($dto);
 
         $response = new GateVerifyResponse();
         $response->assign($vo->attributes());

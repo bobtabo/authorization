@@ -31,12 +31,12 @@ class InvitationController extends Controller
      * 現在の招待 URL を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param InvitationService $invitations 招待ユースケース
+     * @param InvitationService $service 招待Service
      * @return JsonResponse JSON レスポンス
      */
-    public function index(AppRequest $request, InvitationService $invitations): JsonResponse
+    public function index(AppRequest $request, InvitationService $service): JsonResponse
     {
-        $vo = $invitations->current(new InvitationDto());
+        $vo = $service->current(new InvitationDto());
 
         $response = new InvitationIndexResponse();
         $response->assign($vo->attributes());
@@ -48,13 +48,13 @@ class InvitationController extends Controller
      * 招待 URL を発行します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param InvitationService $invitations 招待ユースケース
+     * @param InvitationService $service 招待Service
      * @return JsonResponse JSON レスポンス
      */
-    public function issue(AppRequest $request, InvitationService $invitations): JsonResponse
+    public function issue(AppRequest $request, InvitationService $service): JsonResponse
     {
-        $vo = DB::transaction(function () use ($invitations) {
-            return $invitations->issue(new InvitationDto());
+        $vo = DB::transaction(function () use ($service) {
+            return $service->issue(new InvitationDto());
         });
 
         $response = new InvitationIssueResponse();

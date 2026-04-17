@@ -11,8 +11,7 @@ declare(strict_types=1);
 namespace App\Domain\Staff\Repositories;
 
 use App\Domain\Staff\Condition\StaffCondition;
-use App\Domain\Staff\Entities\Staff as Entity;
-use App\Domain\Staff\Enums\StaffRole;
+use App\Domain\Staff\Entities\Staff;
 use Illuminate\Support\Collection;
 
 /**
@@ -26,7 +25,7 @@ interface StaffRepository
     /**
      * スタッフリストを検索します。
      *
-     * @param  StaffCondition  $condition  検索条件
+     * @param StaffCondition $condition 検索条件
      * @return Collection コレクション
      */
     public function findByCondition(StaffCondition $condition): Collection;
@@ -34,53 +33,42 @@ interface StaffRepository
     /**
      * ID でスタッフを取得します。
      *
-     * @param  StaffCondition  $condition  検索条件（id を設定すること）
-     * @return Entity|null エンティティ
+     * @param StaffCondition $condition 検索条件（id を設定すること）
+     * @return Staff|null エンティティ
      */
-    public function findById(StaffCondition $condition): ?Entity;
+    public function findById(StaffCondition $condition): ?Staff;
 
     /**
      * プロバイダー情報でスタッフを取得します。
      *
-     * @param  StaffCondition  $condition  検索条件
-     * @return Entity|null エンティティ
+     * @param StaffCondition $condition 検索条件
+     * @return Staff|null エンティティ
      */
-    public function findByProvider(StaffCondition $condition): ?Entity;
+    public function findByProvider(StaffCondition $condition): ?Staff;
 
     /**
      * スタッフを新規登録または更新して永続化します。
      *
-     * @param  Entity  $entity  永続化するエンティティ（id 未設定で新規）
-     * @return Entity 保存後のエンティティ
+     * @param Staff $entity 永続化するエンティティ（id 未設定で新規）
+     * @return Staff 保存後のエンティティ
      */
-    public function persist(Entity $entity): Entity;
-
-    /**
-     * スタッフの権限を更新します。
-     *
-     * @param  int  $id  スタッフID
-     * @param  StaffRole  $role  更新する権限
-     * @param  int  $executorId  処理実行者ID
-     * @return bool 対象が存在して更新できた場合 true
-     */
-    public function updateRole(int $id, StaffRole $role, int $executorId): bool;
+    public function persist(Staff $entity): Staff;
 
     /**
      * スタッフを論理削除します。
      *
-     * @param  int  $id  スタッフID
-     * @param  int  $executorId  処理実行者ID
+     * @param Staff $entity エンティティ
      * @return bool 対象が存在して削除できた場合 true
      */
-    public function deleteById(int $id, int $executorId): bool;
+    public function deleteById(Staff $entity): bool;
 
     /**
      * スタッフの論理削除を復元します。
      *
-     * @param  int  $id  スタッフID
+     * @param Staff $entity エンティティ
      * @return bool 対象が存在して復元できた場合 true
      */
-    public function restoreById(int $id): bool;
+    public function restoreById(Staff $entity): bool;
 
     /**
      * 有効なスタッフ全件を取得します（論理削除済み除外）。

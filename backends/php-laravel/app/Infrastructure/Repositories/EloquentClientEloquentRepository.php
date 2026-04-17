@@ -102,9 +102,9 @@ class EloquentClientEloquentRepository extends AbstractEloquentRepository implem
      * {@inheritdoc}
      */
     #[\Override]
-    public function deleteById(int $id, int $executorId): bool
+    public function deleteById(Entity $entity): bool
     {
-        return $this->delete($id, $executorId);
+        return $this->delete($entity->id, $entity->createdBy);
     }
 
     /**

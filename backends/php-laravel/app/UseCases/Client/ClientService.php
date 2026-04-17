@@ -206,8 +206,9 @@ class ClientService extends AbstractService
 
         $entity->status = ClientStatus::Closed;
         $entity->assignUpdated($dto->executorId ?? 0);
-        $this->clientRepository->persist($entity);
+        $saved = $this->clientRepository->persist($entity);
 
-        $this->clientRepository->deleteById($dto->id, $dto->executorId ?? 0);
+        $saved->assignDeleted($dto->executorId ?? 0);
+        $this->clientRepository->deleteById($saved);
     }
 }

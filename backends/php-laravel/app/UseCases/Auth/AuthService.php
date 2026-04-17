@@ -48,7 +48,7 @@ class AuthService extends AbstractService
 
         $entity = $this->staffRepository->findById($condition);
         if (empty($entity)) {
-            throw AppException::noFound('user_not_found');
+            throw AppException::notFound('user_not_found');
         }
 
         return (new StaffVo())->assign($entity->attributes());

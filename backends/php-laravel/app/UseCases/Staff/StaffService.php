@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace App\UseCases\Staff;
 
 use App\Domain\Staff\Condition\StaffCondition;
-use App\Domain\Staff\Enums\StaffRole;
+use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Mappers\StaffApiMapper;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Domain\Staff\ValueObjects\StaffListVo;
@@ -19,6 +19,7 @@ use App\Domain\Staff\ValueObjects\StaffMutationVo;
 use App\Domain\Staff\ValueObjects\StaffRemoveVo;
 use App\Domain\Staff\ValueObjects\StaffResourceVo;
 use App\Support\Exceptions\AppException;
+use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Staff\Dtos\StaffDto;
 use Illuminate\Database\QueryException;
@@ -93,21 +94,29 @@ class StaffService extends AbstractService
      *
      * @param StaffDto $dto スタッフDTO
      * @return StaffMutationVo スタッフ権限更新ValueObject
-     * @throws QueryException 永続化層のクエリに失敗した場合
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function updateRole(StaffDto $dto): StaffMutationVo
     {
-        $role = StaffRole::tryFrom((int)$dto->role);
-        if ($role === null) {
+        if ($dto->role === null) {
             throw AppException::badRequest('role_invalid');
         }
 
-        $ok = $this->staffRepository->updateRole((int)$dto->id, $role, $dto->executorId);
-        if (!$ok) {
-            throw AppException::noFound('staff_not_found');
+        $condition = SimpleMapper::map($dto, StaffCondition::class);
+        $entity = $this->staffRepository->findById($condition);
+
+        if ($entity === null) {
+            throw AppException::notFound('staff_not_found');
         }
 
-        return (new StaffMutationVo())->assign(['ok' => true, 'id' => $dto->id]);
+        $entity->role = $dto->role;
+        $entity->assignUpdated($dto->executorId);
+        $saved = $this->staffRepository->persist($entity);
+
+        return new StaffMutationVo()->assign([
+            'ok' => true,
+            'id' => $saved->id
+        ]);
     }
 
     /**
@@ -115,16 +124,22 @@ class StaffService extends AbstractService
      *
      * @param StaffDto $dto スタッフDTO
      * @return StaffRemoveVo スタッフ削除ValueObject
-     * @throws QueryException 永続化層のクエリに失敗した場合
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
     public function destroy(StaffDto $dto): StaffRemoveVo
     {
-        $ok = $this->staffRepository->deleteById((int)$dto->id, $dto->executorId);
-        if (!$ok) {
-            throw AppException::noFound('staff_not_found');
+        /** @var Staff $entity */
+        $entity = SimpleMapper::map($dto, Staff::class);
+        $entity->assignDeleted($dto->executorId);
+        $result = $this->staffRepository->deleteById($entity);
+        if (!$result) {
+            throw AppException::notFound('staff_not_found');
         }
 
-        return (new StaffRemoveVo())->assign(['ok' => true, 'id' => $dto->id]);
+        return new StaffRemoveVo()->assign([
+            'ok' => true,
+            'id' => $dto->id
+        ]);
     }
 
     /**
@@ -136,9 +151,11 @@ class StaffService extends AbstractService
      */
     public function restore(StaffDto $dto): StaffRemoveVo
     {
-        $ok = $this->staffRepository->restoreById((int)$dto->id);
-        if (!$ok) {
-            throw AppException::noFound('staff_not_found');
+        /** @var Staff $entity */
+        $entity = SimpleMapper::map($dto, Staff::class);
+        $result = $this->staffRepository->restoreById($entity);
+        if (!$result) {
+            throw AppException::notFound('staff_not_found');
         }
 
         return (new StaffRemoveVo())->assign(['ok' => true, 'id' => $dto->id]);

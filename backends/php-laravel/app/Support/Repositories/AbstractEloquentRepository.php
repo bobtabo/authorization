@@ -12,7 +12,6 @@ namespace App\Support\Repositories;
 
 use App\Support\Entity;
 use App\Support\Exceptions\AppException;
-use App\Support\Exceptions\SystemException;
 use App\Support\Models\AppModel;
 use App\Support\Repositories\Cache\CacheKey;
 use App\Support\Repositories\Cache\RedisModelCache;
@@ -437,13 +436,13 @@ abstract class AbstractEloquentRepository
             /** @var Entity $relationEntity */
             if ($relationModel instanceof Collection) {
                 $relationEntities = $relationModel->map(function (AppModel $model) use ($relationClass) {
-                    $relationEntity = new $relationClass;
+                    $relationEntity = new $relationClass();
                     return $relationEntity->assign($model->toArray());
                 });
                 $entity->$relation = $relationEntities;
             } else {
                 if (!empty($relationModel)) {
-                    $relationEntity = new $relationClass;
+                    $relationEntity = new $relationClass();
                     $relationEntity->assignModel($relationModel);
                     $modelName = str((new ReflectionClass($relationModel))->getShortName())->camel()->value();
                     if ($modelName === $relation) {

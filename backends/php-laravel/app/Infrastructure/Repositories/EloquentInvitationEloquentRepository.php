@@ -10,8 +10,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Repositories;
 
+use App\Domain\Invitation\Condition\InvitationCondition;
 use App\Domain\Invitation\Entities\Invitation as Entity;
-use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Infrastructure\Models\Invitation as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
 use Random\RandomException;
@@ -22,7 +23,7 @@ use Random\RandomException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentInvitationEloquentRepository extends AbstractEloquentRepository implements InvitationRepositoryInterface
+class EloquentInvitationEloquentRepository extends AbstractEloquentRepository implements InvitationRepository
 {
     /**
      * {@inheritdoc}
@@ -74,17 +75,17 @@ class EloquentInvitationEloquentRepository extends AbstractEloquentRepository im
      * {@inheritdoc}
      */
     #[\Override]
-    public function findByToken(string $token): ?Entity
+    public function findByToken(InvitationCondition $condition): ?Entity
     {
-        $trimmed = trim($token);
-        if ($trimmed === '') {
+        $token = trim($condition->token);
+        if ($token === '') {
             return null;
         }
 
-        $url = $this->buildUrl($trimmed);
+        $url = $this->buildUrl($token);
         $invitation = new Entity();
         $invitation->assign([
-            'token' => $trimmed,
+            'token' => $token,
             'url' => $url,
             'displayUrl' => $this->buildDisplayUrl($url),
         ]);

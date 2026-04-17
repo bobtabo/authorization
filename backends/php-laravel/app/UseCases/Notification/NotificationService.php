@@ -106,7 +106,7 @@ class NotificationService extends AbstractService
         $id = $dto->notificationId;
         $ok = $this->notifications->patch((int)$id, $dto->attributes);
         if (!$ok) {
-            throw AppException::noFound('notification_not_found');
+            throw AppException::notFound('notification_not_found');
         }
 
         return (new NotificationPatchVo())->assign(['ok' => true, 'id' => $id]);

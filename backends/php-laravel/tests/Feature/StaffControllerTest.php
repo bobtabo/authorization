@@ -46,8 +46,9 @@ class StaffControllerTest extends TestCase
      */
     public function testUpdateRole(): void
     {
+        $staff = Staff::factory()->create();
         $params = $this->getRequestParams('Staff/updateRole.json');
-        $id = 1;
+        $id = $staff->id;
         $response = $this->withHeader('X-Executor-Id', '1')
             ->patch("/api/staffs/{$id}/updateRole", $params);
         $data = $this->getResponseData('Staff/updateRole.json');

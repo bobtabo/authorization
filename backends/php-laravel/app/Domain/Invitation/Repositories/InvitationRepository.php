@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Invitation\Repositories;
 
+use App\Domain\Invitation\Condition\InvitationCondition;
 use App\Domain\Invitation\Entities\Invitation;
 
 /**
@@ -18,7 +19,7 @@ use App\Domain\Invitation\Entities\Invitation;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Invitation\Repositories
  */
-interface InvitationRepositoryInterface
+interface InvitationRepository
 {
     /**
      * 現在の招待情報を取得します。
@@ -37,8 +38,8 @@ interface InvitationRepositoryInterface
     /**
      * トークンから招待情報を解決します（未登録・不正なら null）。
      *
-     * @param  string  $token  招待トークン
+     * @param InvitationCondition $condition 検索条件
      * @return Invitation|null 該当がなければ null
      */
-    public function findByToken(string $token): ?Invitation;
+    public function findByToken(InvitationCondition $condition): ?Invitation;
 }

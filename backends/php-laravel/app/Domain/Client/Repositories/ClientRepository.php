@@ -41,7 +41,7 @@ interface ClientRepository
     /**
      * クライアントを新規登録または更新して永続化します。
      *
-     * @param Client $entity 永続化するエンティティ（id 未設定で新規）
+     * @param Client $entity エンティティ（id 未設定で新規）
      * @return Client 保存後のエンティティ
      */
     public function persist(Client $entity): Client;
@@ -65,9 +65,8 @@ interface ClientRepository
     /**
      * クライアントを論理削除します。
      *
-     * @param int $id クライアントID
-     * @param int $executorId 処理実行者ID
+     * @param Client $entity エンティティ
      * @return bool 対象が存在して削除できた場合 true
      */
-    public function deleteById(int $id, int $executorId): bool;
+    public function deleteById(Client $entity): bool;
 }

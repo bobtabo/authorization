@@ -10,9 +10,11 @@ declare(strict_types=1);
 
 namespace App\UseCases\Invitation;
 
-use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use App\Domain\Invitation\Condition\InvitationCondition;
+use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Domain\Invitation\ValueObjects\InvitationVo;
 use App\Support\Exceptions\AppException;
+use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Invitation\Dtos\InvitationDto;
 use Random\RandomException;
@@ -26,10 +28,10 @@ use Random\RandomException;
 class InvitationService extends AbstractService
 {
     /**
-     * @param InvitationRepositoryInterface $invitations 招待Repository
+     * @param InvitationRepository $invitations 招待Repository
      */
     public function __construct(
-        private readonly InvitationRepositoryInterface $invitations,
+        private readonly InvitationRepository $invitations,
     ) {
     }
 
@@ -44,7 +46,7 @@ class InvitationService extends AbstractService
         unset($dto);
         $entity = $this->invitations->getCurrent();
         if ($entity === null) {
-            throw AppException::noFound('invitation_not_found');
+            throw AppException::notFound('invitation_not_found');
         }
 
         return (new InvitationVo())->assign([
@@ -64,10 +66,9 @@ class InvitationService extends AbstractService
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
-        unset($dto);
         $entity = $this->invitations->issue();
 
-        return (new InvitationVo())->assign([
+        return new InvitationVo()->assign([
             'found' => true,
             'url' => $entity->url,
             'displayUrl' => $entity->displayUrl,
@@ -88,7 +89,8 @@ class InvitationService extends AbstractService
             throw AppException::badRequest('invitation_invalid');
         }
 
-        $entity = $this->invitations->findByToken($token);
+        $condition = SimpleMapper::map($dto, InvitationCondition::class);
+        $entity = $this->invitations->findByToken($condition);
         if ($entity === null) {
             throw AppException::badRequest('invitation_invalid');
         }

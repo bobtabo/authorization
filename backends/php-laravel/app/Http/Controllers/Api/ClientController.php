@@ -36,7 +36,7 @@ class ClientController extends Controller
      * クライアント一覧を検索して返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントユースケース
+     * @param ClientService $service クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function index(AppRequest $request, ClientService $service): JsonResponse
@@ -56,7 +56,7 @@ class ClientController extends Controller
      * クライアント詳細を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントユースケース
+     * @param ClientService $service クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function show(AppRequest $request, ClientService $service): JsonResponse
@@ -81,13 +81,15 @@ class ClientController extends Controller
      * クライアントを登録します。
      *
      * @param StoreClientRequest $request 登録内容
-     * @param ClientService $service クライアントユースケース
+     * @param ClientService $clientService クライアントService
+     * @param NotificationService $notificationService 通知Service
      * @return JsonResponse JSON レスポンス
+     * @throws \Throwable 例外
      */
     public function store(
         StoreClientRequest $request,
-        ClientService $service,
-        NotificationService $notifications
+        ClientService $clientService,
+        NotificationService $notificationService
     ): JsonResponse {
         $executorId = $this->staffIdFromCookie($request);
 
@@ -95,15 +97,15 @@ class ClientController extends Controller
         $dto->assign($request->input());
         $dto->executorId = $executorId;
 
-        $value = DB::transaction(function () use ($service, $dto) {
-            return $service->store($dto);
+        $value = DB::transaction(function () use ($clientService, $dto) {
+            return $clientService->store($dto);
         });
 
         $response = new StoreResponse();
         $response->assign($value->attributes());
 
         // 全スタッフへ通知を配信
-        $notifications->fanOut(
+        $notificationService->fanOut(
             title: '新しいクライアントが登録されました',
             message: $value->getName() ?? '',
             messageType: 1,
@@ -121,7 +123,7 @@ class ClientController extends Controller
      * クライアントを更新します。
      *
      * @param UpdateClientRequest $request 更新内容
-     * @param ClientService $service クライアントユースケース
+     * @param ClientService $service クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function update(UpdateClientRequest $request, ClientService $service): JsonResponse
@@ -149,7 +151,7 @@ class ClientController extends Controller
      * クライアントを論理削除します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントユースケース
+     * @param ClientService $service クライアントService
      * @param int $id クライアントID
      * @return JsonResponse JSON レスポンス
      */
