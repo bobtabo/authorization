@@ -20,7 +20,7 @@ use App\UseCases\Invitation\Dtos\InvitationDto;
 use Random\RandomException;
 
 /**
- * 招待の取得・発行のユースケースをまとめるサービスです。
+ * 招待Serviceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Invitation

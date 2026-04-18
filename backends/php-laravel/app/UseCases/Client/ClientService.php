@@ -23,7 +23,7 @@ use App\UseCases\Client\Dtos\ClientDto;
 use Carbon\Carbon;
 
 /**
- * クライアントのユースケースをまとめるサービスです。
+ * クライアントServiceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Client

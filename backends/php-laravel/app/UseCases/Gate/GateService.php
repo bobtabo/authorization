@@ -26,7 +26,7 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * JWT の発行・検証のユースケースをまとめるサービスです。
+ * 認可Serviceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Gate

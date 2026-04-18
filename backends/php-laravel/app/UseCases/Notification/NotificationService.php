@@ -13,10 +13,9 @@ namespace App\UseCases\Notification;
 use App\Domain\Notification\Condition\NotificationCondition;
 use App\Domain\Notification\Entities\Notification;
 use App\Domain\Notification\Repositories\NotificationRepository;
-use App\Domain\Notification\ValueObjects\NotificationBulkPatchVo;
 use App\Domain\Notification\ValueObjects\NotificationCountsVo;
 use App\Domain\Notification\ValueObjects\NotificationListVo;
-use App\Domain\Notification\ValueObjects\NotificationPatchVo;
+use App\Domain\Notification\ValueObjects\NotificationSaveVo;
 use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Support\Exceptions\AppException;
@@ -27,7 +26,7 @@ use app\UseCases\Notification\Dtos\NotificationCreateDto;
 use App\UseCases\Notification\Dtos\NotificationDto;
 
 /**
- * 通知一覧・件数取得・更新のユースケースをまとめるサービスです。
+ * 通知Serviceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Notification
@@ -102,14 +101,14 @@ class NotificationService extends AbstractService
      * 一括既読などの更新を行います。
      *
      * @param NotificationDto $dto 通知DTO
-     * @return NotificationBulkPatchVo 通知一括更新ValueObject
+     * @return NotificationSaveVo 通知更新ValueObject
      */
-    public function reads(NotificationDto $dto): NotificationBulkPatchVo
+    public function reads(NotificationDto $dto): NotificationSaveVo
     {
         $condition = SimpleMapper::map($dto, NotificationCondition::class);
         $updated = $this->notificationRepository->updateRead($condition);
 
-        return new NotificationBulkPatchVo()->assign(['updated' => $updated]);
+        return new NotificationSaveVo()->assign(['updated' => $updated]);
     }
 
     /**
@@ -140,9 +139,9 @@ class NotificationService extends AbstractService
      * 単一通知を部分更新します。
      *
      * @param NotificationDto $dto 通知DTO
-     * @return NotificationPatchVo 通知更新ValueObject
+     * @return NotificationSaveVo 通知更新ValueObject
      */
-    public function read(NotificationDto $dto): NotificationPatchVo
+    public function read(NotificationDto $dto): NotificationSaveVo
     {
         $condition = SimpleMapper::mapSpecific($dto, NotificationCondition::class, [
             'notificationId' => 'id',
@@ -153,7 +152,7 @@ class NotificationService extends AbstractService
             throw AppException::notFound('notification_not_found');
         }
 
-        return new NotificationPatchVo()->assign([
+        return new NotificationSaveVo()->assign([
             'ok' => true,
             'id' => $dto->notificationId
         ]);

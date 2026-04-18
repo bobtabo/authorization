@@ -14,16 +14,17 @@ use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 
 /**
- * 単一通知更新の結果 ValueObject です。
+ * 通知更新ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Notification\ValueObjects
  */
-class NotificationPatchVo extends AbstractValueObject
+class NotificationSaveVo extends AbstractValueObject
 {
     use Getter;
 
     private bool $ok = false;
     private string $message = 'SUCCESS';
     private int $id = 0;
+    private int $updated = 0;
 }

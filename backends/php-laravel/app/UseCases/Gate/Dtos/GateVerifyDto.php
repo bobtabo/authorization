@@ -13,7 +13,7 @@ namespace App\UseCases\Gate\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * JWT 検証リクエスト用 DTO です。
+ * JWT検証DTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Gate\Dtos
@@ -21,6 +21,5 @@ use App\Support\Dtos\AbstractDto;
 class GateVerifyDto extends AbstractDto
 {
     public string $identifier = '';
-
     public string $token = '';
 }

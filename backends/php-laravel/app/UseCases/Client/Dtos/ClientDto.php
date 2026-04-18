@@ -14,7 +14,7 @@ use App\Domain\Client\Enums\ClientStatus;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * クライアント API 用の入力 DTO です（一覧・詳細・登録・更新・削除で共用します）。
+ * クライアントDTOクラスです。
  *
  * 一覧のクエリ `statuses` は {@see statusesFromRequestInput} で `statuses` プロパティに設定してください。
  *

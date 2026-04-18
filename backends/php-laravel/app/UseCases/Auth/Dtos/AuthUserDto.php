@@ -13,7 +13,7 @@ namespace App\UseCases\Auth\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * 認証ユーザー取得用 DTO です。
+ * 認証ユーザーDTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Auth\Dtos

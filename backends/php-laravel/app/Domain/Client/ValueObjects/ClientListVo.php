@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 use ReflectionClass;
 
 /**
- * クライアント一覧の結果 ValueObject です。
+ * クライアント一覧ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\ValueObjects
@@ -54,13 +54,13 @@ class ClientListVo extends AbstractValueObject
     /**
      * クライアント Entity のリストを一覧行に設定します。
      *
-     * @param  iterable<int, Client>  $list  Entity の配列または Collection
+     * @param iterable<int, Client> $list Entity の配列または Collection
      */
     public function assignClients(iterable $list): void
     {
         foreach ($list as $entity) {
             $this->clients->add(
-                new class($entity) {
+                new class ($entity) {
                     private ?int $id = null;
                     private ?string $name = null;
                     private ?string $identifier = null;
@@ -72,16 +72,17 @@ class ClientListVo extends AbstractValueObject
                     private ?string $tel = null;
                     private ?string $email = null;
                     private ?int $status = null;
-                    private ?Carbon $startAt = null;
-                    private ?Carbon $stopAt = null;
-                    private ?Carbon $createdAt = null;
-                    private ?Carbon $updatedAt = null;
+                    private ?string $startAt = null;
+                    private ?string $stopAt = null;
+                    private ?string $createdAt = null;
+                    private ?string $updatedAt = null;
 
                     public function __construct(Client $entity)
                     {
                         $this->id = $entity->id;
                         $this->name = $entity->name;
                         $this->identifier = $entity->identifier;
+                        $this->postCode = $entity->postCode;
                         $this->pref = $entity->pref;
                         $this->city = $entity->city;
                         $this->address = $entity->address;
@@ -89,10 +90,10 @@ class ClientListVo extends AbstractValueObject
                         $this->tel = $entity->tel;
                         $this->email = $entity->email;
                         $this->status = $entity->status?->value;
-                        $this->startAt = $entity->startAt;
-                        $this->stopAt = $entity->stopAt;
-                        $this->createdAt = $entity->createdAt;
-                        $this->updatedAt = $entity->updatedAt;
+                        $this->startAt = $entity->startAt?->toIso8601String();
+                        $this->stopAt = $entity->stopAt?->toIso8601String();
+                        $this->createdAt = $entity->createdAt?->toIso8601String();
+                        $this->updatedAt = $entity->updatedAt?->toIso8601String();
                     }
                 }
             );

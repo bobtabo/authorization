@@ -14,7 +14,7 @@ use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 
 /**
- * 招待 URL・トークンをまとめたスナップショット ValueObject です。
+ * 招待ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Invitation\ValueObjects

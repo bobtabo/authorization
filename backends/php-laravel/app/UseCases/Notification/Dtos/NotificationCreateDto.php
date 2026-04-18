@@ -13,7 +13,7 @@ namespace App\UseCases\Notification\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * 通知登録Dtoクラスです。
+ * 通知登録DTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Notification\Dtos

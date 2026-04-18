@@ -14,7 +14,7 @@ use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 
 /**
- * 通知件数集計の結果 ValueObject です。
+ * 通知件数ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Notification\ValueObjects
