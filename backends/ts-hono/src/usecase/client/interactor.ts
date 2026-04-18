@@ -59,8 +59,7 @@ export async function getClientById(id: number): Promise<Client> {
 }
 
 export async function storeClient(data: ClientStoreInput): Promise<Client> {
-  const existing = await repo.findByIdentifier(data.identifier);
-  if (existing) throw conflict("identifier_already_exists");
+  const identifier = randomBytes(8).toString("hex");
 
   const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 4096 });
   const fingerprint = rsaFingerprintFromKeyObject(publicKey);
@@ -68,15 +67,19 @@ export async function storeClient(data: ClientStoreInput): Promise<Client> {
   const publicPem = publicKey.export({ type: "spki", format: "pem" }) as string;
   const token = randomBytes(32).toString("hex");
 
+  const executorId = data.executorId ?? 0;
   return repo.insert({
     ...data,
+    identifier,
     token,
     publicKey: publicPem,
     privateKey: privatePem,
     fingerprint,
-    status: 0,
+    status: 1,
     startedAt: null,
     stoppedAt: null,
+    createdBy: executorId,
+    updatedBy: executorId,
     deletedAt: null,
   });
 }
@@ -87,8 +90,8 @@ export async function updateClientData(id: number, data: ClientUpdateInput): Pro
 
   if (data.status !== undefined && data.status !== client.status) {
     const now = new Date();
-    if (data.status === 1) patch.startedAt = now;
-    else if (data.status === 2) patch.stoppedAt = now;
+    if (data.status === 2) patch.startedAt = now;
+    else if (data.status === 3) patch.stoppedAt = now;
   }
 
   await repo.update(id, patch);

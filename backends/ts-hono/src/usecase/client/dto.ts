@@ -1,6 +1,5 @@
 export interface ClientStoreInput {
   name: string;
-  identifier: string;
   postCode?: string;
   pref?: string;
   city?: string;
@@ -8,6 +7,7 @@ export interface ClientStoreInput {
   building?: string;
   tel?: string;
   email?: string;
+  executorId?: number;
 }
 
 export interface ClientUpdateInput {

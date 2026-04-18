@@ -87,7 +87,7 @@ type Notification struct {
 	UpdatedBy   *uint          `gorm:"column:updated_by"`
 	DeletedAt   gorm.DeletedAt `gorm:"index;column:deleted_at"`
 	DeletedBy   *uint          `gorm:"column:deleted_by"`
-	Version     int            `gorm:"default:0;column:version"`
+	Version     int            `gorm:"default:1;column:version"`
 }
 
 func (Notification) TableName() string { return "notifications" }

@@ -21,7 +21,7 @@ class ClientModel(Base):
     building: Mapped[str] = mapped_column(String(255), default="")
     tel: Mapped[str] = mapped_column(String(255), default="")
     email: Mapped[str] = mapped_column(String(255), default="")
-    status: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[int] = mapped_column(Integer, default=1)
     token: Mapped[Optional[str]] = mapped_column(String(512), name="access_token", nullable=True)
     public_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     private_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -29,8 +29,12 @@ class ClientModel(Base):
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, name="start_at", nullable=True)
     stopped_at: Mapped[Optional[datetime]] = mapped_column(DateTime, name="stop_at", nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class StaffModel(Base):
@@ -71,4 +75,4 @@ class NotificationModel(Base):
     created_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

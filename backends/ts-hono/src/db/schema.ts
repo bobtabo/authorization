@@ -14,7 +14,7 @@ export const clients = mysqlTable("clients", {
   building: varchar("building", { length: 255 }).default(""),
   tel: varchar("tel", { length: 255 }).default(""),
   email: varchar("email", { length: 255 }).default(""),
-  status: int("status").default(0),
+  status: int("status").default(1),
   token: varchar("access_token", { length: 512 }),
   publicKey: text("public_key"),
   privateKey: text("private_key"),
@@ -58,7 +58,7 @@ export const notifications = mysqlTable("notifications", {
   createdBy: int("created_by").notNull().default(0),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP`),
   updatedBy: int("updated_by").notNull().default(0),
-  version: int("version").notNull().default(0),
+  version: int("version").notNull().default(1),
 });
 
 export type Client = typeof clients.$inferSelect;

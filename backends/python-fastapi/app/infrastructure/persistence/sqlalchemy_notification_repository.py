@@ -89,6 +89,8 @@ class SqlAlchemyNotificationRepository(NotificationRepository):
             message=notification.message,
             url=notification.url,
             read=notification.read,
+            created_by=notification.created_by,
+            updated_by=notification.updated_by,
         )
         self.db.add(m)
         self.db.commit()

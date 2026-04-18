@@ -16,7 +16,7 @@ class Client:
     building: str = ""
     tel: str = ""
     email: str = ""
-    status: int = 0
+    status: int = 1
     token: Optional[str] = None
     public_key: Optional[str] = None
     private_key: Optional[str] = None
@@ -26,3 +26,4 @@ class Client:
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
+    executor_id: int = 0

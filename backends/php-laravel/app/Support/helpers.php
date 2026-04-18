@@ -35,7 +35,7 @@ if (!function_exists('get_mail_subject')) {
     function get_mail_subject(string $subject): string
     {
         $environment = app()->display();
-        return empty($environment) ? $subject : '【' . $environment . '】' . $subject;
+        return empty($environment) ? $subject : '[' . $environment . ']' . $subject;
     }
 }
 

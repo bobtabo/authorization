@@ -1,9 +1,11 @@
 import { Hono } from "hono";
-import { formatTime } from "../lib/cookie.js";
+import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
 import { badRequest } from "../lib/errors.js";
 import {
   getAllClients, getClientById, storeClient, updateClientData, destroyClient,
 } from "../usecase/client/interactor.js";
+import { fanOut } from "../usecase/notification/interactor.js";
+import { sendAccessToken } from "../infrastructure/mail/mailer.js";
 import type { Client } from "../domain/client/entity.js";
 
 const app = new Hono();
@@ -14,7 +16,7 @@ function mapClient(c: Client) {
     post_code: c.postCode, pref: c.pref, city: c.city,
     address: c.address, building: c.building, tel: c.tel, email: c.email,
     status: c.status, token: c.token, fingerprint: c.fingerprint,
-    started_at: formatTime(c.startedAt), stopped_at: formatTime(c.stoppedAt),
+    start_at: formatTime(c.startedAt), stop_at: formatTime(c.stoppedAt),
     created_at: formatTime(c.createdAt), updated_at: formatTime(c.updatedAt),
   };
 }
@@ -34,12 +36,19 @@ app.get("/clients/:id", async (c) => {
 
 app.post("/clients/store", async (c) => {
   const body = await c.req.json<Record<string, string>>();
-  if (!body.name || !body.identifier) throw badRequest("name_and_identifier_required");
+  if (!body.name) throw badRequest("name_required");
+  const executorId = getStaffIdFromCookie(c);
   const client = await storeClient({
-    name: body.name, identifier: body.identifier,
+    name: body.name,
     postCode: body.post_code, pref: body.pref, city: body.city,
     address: body.address, building: body.building, tel: body.tel, email: body.email,
+    executorId,
   });
+
+  const notifUrl = `/clients/show?id=${client.id}`;
+  fanOut("新しいクライアントが登録されました", client.name, notifUrl, executorId, 1).catch(err => console.error("[fanOut]", err));
+  sendAccessToken(client.email ?? "", client.name, client.token ?? "").catch(err => console.error("[sendAccessToken]", err));
+
   return c.json(mapClient(client), 201);
 });
 

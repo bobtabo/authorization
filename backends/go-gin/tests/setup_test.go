@@ -7,6 +7,7 @@ import (
 	"authorization-go/internal/handler"
 	"authorization-go/internal/infrastructure/cache"
 	"authorization-go/internal/infrastructure/db"
+	"authorization-go/internal/infrastructure/mail"
 	"authorization-go/internal/infrastructure/model"
 	"authorization-go/internal/infrastructure/persistence"
 	"authorization-go/internal/middleware"
@@ -92,8 +93,9 @@ func buildRouter() *gin.Engine {
 	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, testCfg)
 	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
 
+	mailer := mail.NewMailer(testCfg.Mail)
 	authH := handler.NewAuthHandler(authUC, invitationUC, testCfg)
-	clientH := handler.NewClientHandler(clientUC, notificationUC)
+	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
 	staffH := handler.NewStaffHandler(staffUC)
 	invitationH := handler.NewInvitationHandler(invitationUC)
 	gateH := handler.NewGateHandler(gateUC)

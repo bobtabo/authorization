@@ -53,7 +53,7 @@ CREATE TABLE \`clients\` (
   \`building\`      VARCHAR(255)    DEFAULT '',
   \`tel\`           VARCHAR(255)    DEFAULT '',
   \`email\`         VARCHAR(255)    DEFAULT '',
-  \`status\`        INT             DEFAULT 0,
+  \`status\`        INT             DEFAULT 1,
   \`access_token\`  VARCHAR(512),
   \`public_key\`    TEXT,
   \`private_key\`   TEXT,
@@ -88,7 +88,7 @@ CREATE TABLE \`notifications\` (
   \`created_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
   \`updated_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   \`updated_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
-  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 0,
+  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 1,
   PRIMARY KEY (\`id\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 `;

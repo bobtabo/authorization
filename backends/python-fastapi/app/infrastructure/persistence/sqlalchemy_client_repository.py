@@ -93,6 +93,9 @@ class SqlAlchemyClientRepository(ClientRepository):
         m.started_at = client.started_at
         m.stopped_at = client.stopped_at
         m.deleted_at = client.deleted_at
+        if not client.id:
+            m.created_by = client.executor_id
+        m.updated_by = client.executor_id
 
         self.db.add(m)
         self.db.commit()

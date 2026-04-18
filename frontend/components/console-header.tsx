@@ -22,7 +22,6 @@ import {
   readAllNotifications,
   readNotification,
 } from "@/src/api/notifications";
-import { getAuthLogout } from "@/src/api/auth";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
 
 const TONE_MAP: Record<number, "info" | "warn" | "ok"> = { 1: "info", 2: "warn", 3: "ok" };
@@ -163,14 +162,11 @@ export function ConsoleHeader(): React.JSX.Element {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [settingsMenuOpen]);
 
-  const handleRuntimeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleRuntimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = e.target.value;
     setBackendRuntime(next);
-    try {
-      await getAuthLogout();
-    } catch { /* ログアウト失敗でも切り替えを継続 */ }
     localStorage.setItem(RUNTIME_STORAGE_KEY, next);
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const navTabClass = (href: string): string =>

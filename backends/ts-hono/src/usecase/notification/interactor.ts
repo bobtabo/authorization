@@ -36,10 +36,26 @@ export async function bulkRead(executorId: number, ids: number[], allFlag: boole
   return repo.bulkMarkRead(executorId, ids, allFlag);
 }
 
-export async function fanOut(title: string, body?: string): Promise<void> {
+export async function fanOut(
+  title: string,
+  body?: string,
+  url?: string,
+  executorId = 0,
+  messageType = 1,
+): Promise<void> {
   const staffs = await staffRepo.findAllActive();
   for (const staff of staffs) {
-    await repo.insert({ staffId: staff.id, messageType: 1, title, message: body ?? "", read: false });
+    await repo.insert({
+      staffId: staff.id,
+      messageType,
+      title,
+      message: body ?? "",
+      url: url ?? null,
+      read: false,
+      createdBy: executorId,
+      updatedBy: executorId,
+      version: 1,
+    });
   }
 }
 

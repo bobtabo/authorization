@@ -5,6 +5,7 @@ import (
 	"authorization-go/internal/handler"
 	"authorization-go/internal/infrastructure/cache"
 	"authorization-go/internal/infrastructure/db"
+	"authorization-go/internal/infrastructure/mail"
 	"authorization-go/internal/infrastructure/persistence"
 	"authorization-go/internal/middleware"
 	uclient "authorization-go/internal/usecase/client"
@@ -46,9 +47,12 @@ func main() {
 	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, cfg)
 	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
 
+	// --- Mail ---
+	mailer := mail.NewMailer(cfg.Mail)
+
 	// --- Handlers ---
 	authH := handler.NewAuthHandler(authUC, invitationUC, cfg)
-	clientH := handler.NewClientHandler(clientUC, notificationUC)
+	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
 	staffH := handler.NewStaffHandler(staffUC)
 	invitationH := handler.NewInvitationHandler(invitationUC)
 	gateH := handler.NewGateHandler(gateUC)

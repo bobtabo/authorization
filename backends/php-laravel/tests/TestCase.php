@@ -75,7 +75,7 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * テスト用 staff_id クッキーを生成します。
-     * テストフレームワークが withCookies 送信前に encrypt() するため、平文で渡します。
+     * staff_id は EncryptCookies の除外対象のためプレーンテキストで渡します。
      *
      * @param int $staffId スタッフID
      * @return array<string, string> クッキー配列

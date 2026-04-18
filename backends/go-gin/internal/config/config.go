@@ -14,6 +14,7 @@ type Config struct {
 	Redis RedisConfig
 	OAuth OAuthConfig
 	JWT   JWTConfig
+	Mail  MailConfig
 }
 
 type AppConfig struct {
@@ -46,6 +47,16 @@ type JWTConfig struct {
 	Algorithm string
 	TTL       int // 秒
 	CacheTTL  int // 秒
+}
+
+type MailConfig struct {
+	Host        string
+	Port        string
+	Username    string
+	Password    string
+	FromAddress string
+	AppName     string
+	AppEnv      string
 }
 
 func Load() *Config {
@@ -83,6 +94,15 @@ func Load() *Config {
 			TTL:       1800,
 			CacheTTL:  getEnvInt("GATE_JWT_CACHE_TTL", 1800),
 		},
+		Mail: MailConfig{
+			Host:        getEnv("MAIL_HOST", "localhost"),
+			Port:        getEnv("MAIL_PORT", "1025"),
+			Username:    getEnv("MAIL_USERNAME", ""),
+			Password:    getEnv("MAIL_PASSWORD", ""),
+			FromAddress: getEnv("MAIL_FROM_ADDRESS", "no-reply@example.com"),
+			AppName:     getEnv("APP_NAME", "Authorization Gateway"),
+			AppEnv:      getEnv("APP_ENV", "local"),
+		},
 	}
 }
 
@@ -92,7 +112,7 @@ func buildDSN() string {
 	user := getEnv("DB_USERNAME", "root")
 	pass := getEnv("DB_PASSWORD", "")
 	name := getEnv("DB_DATABASE", "authorization")
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Asia%%2FTokyo",
 		user, pass, host, port, name)
 }
 

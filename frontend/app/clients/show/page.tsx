@@ -7,6 +7,7 @@ import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
 import { getClient, updateClient, deleteClient } from "@/src/api/clients";
 import { formatTimestamp } from "@/lib/format-datetime";
+import { extractApiError } from "@/lib/api-error";
 
 type ClientStatus = "準備中" | "利用中" | "停止中" | "アーカイブ";
 
@@ -123,10 +124,10 @@ export default function ClientShowPage(): React.JSX.Element {
     setDeleting(true);
     deleteClient(clientId).then(() => {
       window.location.href = "/clients";
-    }).catch(() => {
+    }).catch((err: unknown) => {
       setDeleting(false);
       setDeleteOpen(false);
-      setToast("削除に失敗しました。");
+      setToast(extractApiError(err, "削除に失敗しました。"));
     });
   };
 
@@ -139,9 +140,9 @@ export default function ClientShowPage(): React.JSX.Element {
         setStarting(false);
         setStartOpen(false);
         setToast("利用を開始しました。");
-      }).catch(() => {
+      }).catch((err: unknown) => {
         setStarting(false);
-        setToast("利用開始に失敗しました。");
+        setToast(extractApiError(err, "利用開始に失敗しました。"));
       });
   };
 
@@ -154,9 +155,9 @@ export default function ClientShowPage(): React.JSX.Element {
         setStopping(false);
         setStopOpen(false);
         setToast("利用を停止しました。");
-      }).catch(() => {
+      }).catch((err: unknown) => {
         setStopping(false);
-        setToast("利用停止に失敗しました。");
+        setToast(extractApiError(err, "利用停止に失敗しました。"));
       });
   };
 

@@ -82,6 +82,7 @@ func (r *GormNotificationRepository) Store(staffID uint, messageType int, title,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		CreatedBy:   &createdBy,
+		UpdatedBy:   &createdBy,
 	}
 	if len(url) > 0 && url[0] != "" {
 		m.URL = &url[0]

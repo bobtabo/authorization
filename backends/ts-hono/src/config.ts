@@ -44,4 +44,12 @@ export const config = {
     ttl: 1800,
     cacheTtl: envInt("GATE_JWT_CACHE_TTL", 1800),
   },
+  mail: {
+    host: env("MAIL_HOST", "localhost"),
+    port: envInt("MAIL_PORT", 1025),
+    username: env("MAIL_USERNAME", ""),
+    password: env("MAIL_PASSWORD", ""),
+    fromAddress: env("MAIL_FROM_ADDRESS", "no-reply@example.com"),
+    appName: env("APP_NAME", "Authorization Gateway"),
+  },
 } as const;

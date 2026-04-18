@@ -1,10 +1,13 @@
+import threading
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED
 from pydantic import BaseModel
-from app.routers.deps import get_client_interactor
+from app.routers.deps import get_client_interactor, get_notification_interactor, get_staff_id_from_cookie
 from app.usecase.client.interactor import ClientInteractor
 from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto
+from app.usecase.notification.interactor import NotificationInteractor
+from app.infrastructure.mail.mailer import send_access_token
 
 router = APIRouter()
 
@@ -24,8 +27,8 @@ def _map_client(c) -> dict:
         "status": c.status,
         "token": c.token,
         "fingerprint": c.fingerprint,
-        "started_at": c.started_at.strftime("%Y-%m-%d %H:%M") if c.started_at else None,
-        "stopped_at": c.stopped_at.strftime("%Y-%m-%d %H:%M") if c.stopped_at else None,
+        "start_at": c.started_at.strftime("%Y-%m-%d %H:%M") if c.started_at else None,
+        "stop_at": c.stopped_at.strftime("%Y-%m-%d %H:%M") if c.stopped_at else None,
         "created_at": c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else None,
         "updated_at": c.updated_at.strftime("%Y-%m-%d %H:%M") if c.updated_at else None,
     }
@@ -48,7 +51,6 @@ def show(client_id: int, interactor: ClientInteractor = Depends(get_client_inter
 
 class StoreBody(BaseModel):
     name: str
-    identifier: str
     post_code: str = ""
     pref: str = ""
     city: str = ""
@@ -59,9 +61,32 @@ class StoreBody(BaseModel):
 
 
 @router.post("/clients/store", status_code=HTTP_201_CREATED)
-def store(body: StoreBody, interactor: ClientInteractor = Depends(get_client_interactor)):
-    dto = ClientStoreDto(**body.model_dump())
+def store(
+    body: StoreBody,
+    interactor: ClientInteractor = Depends(get_client_interactor),
+    notification_interactor: NotificationInteractor = Depends(get_notification_interactor),
+    executor_id: int = Depends(get_staff_id_from_cookie),
+):
+    dto = ClientStoreDto(name=body.name, post_code=body.post_code, pref=body.pref,
+                         city=body.city, address=body.address, building=body.building,
+                         tel=body.tel, email=body.email, executor_id=executor_id)
     client = interactor.store(dto)
+
+    notif_url = f"/clients/show?id={client.id}"
+    notification_interactor.fan_out(
+        title="新しいクライアントが登録されました",
+        body=client.name,
+        url=notif_url,
+        executor_id=executor_id,
+        message_type=1,
+    )
+
+    threading.Thread(
+        target=send_access_token,
+        args=(client.email, client.name, client.token),
+        daemon=True,
+    ).start()
+
     return _map_client(client)
 
 

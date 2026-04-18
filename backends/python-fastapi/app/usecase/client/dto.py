@@ -5,7 +5,6 @@ from typing import Optional
 @dataclass
 class ClientStoreDto:
     name: str
-    identifier: str
     post_code: str = ""
     pref: str = ""
     city: str = ""
@@ -13,6 +12,7 @@ class ClientStoreDto:
     building: str = ""
     tel: str = ""
     email: str = ""
+    executor_id: int = 0
 
 
 @dataclass

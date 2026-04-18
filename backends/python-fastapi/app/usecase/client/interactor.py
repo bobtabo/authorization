@@ -53,9 +53,7 @@ class ClientInteractor:
         return client
 
     def store(self, dto: ClientStoreDto) -> Client:
-        existing = self.repo.find_client_by_identifier(dto.identifier)
-        if existing:
-            raise conflict("identifier_already_exists")
+        identifier = secrets.token_hex(8)
 
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
         fingerprint = _rsa_fingerprint(private_key)
@@ -71,7 +69,7 @@ class ClientInteractor:
 
         client = Client(
             name=dto.name,
-            identifier=dto.identifier,
+            identifier=identifier,
             post_code=dto.post_code,
             pref=dto.pref,
             city=dto.city,
@@ -83,6 +81,7 @@ class ClientInteractor:
             public_key=pub_pem,
             private_key=priv_pem,
             fingerprint=fingerprint,
+            executor_id=dto.executor_id,
         )
         return self.repo.save_client(client)
 
@@ -108,9 +107,9 @@ class ClientInteractor:
 
         if dto.status is not None and dto.status != client.status:
             now = datetime.now(timezone.utc)
-            if dto.status == 1:   # Active
+            if dto.status == 2:   # Active
                 client.started_at = now
-            elif dto.status == 2:  # Suspended
+            elif dto.status == 3:  # Suspended
                 client.stopped_at = now
             client.status = dto.status
 

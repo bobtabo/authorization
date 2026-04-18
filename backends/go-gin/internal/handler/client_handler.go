@@ -2,6 +2,7 @@ package handler
 
 import (
 	domclient "authorization-go/internal/domain/client"
+	"authorization-go/internal/infrastructure/mail"
 	uclient "authorization-go/internal/usecase/client"
 	unotification "authorization-go/internal/usecase/notification"
 	"authorization-go/pkg/apperror"
@@ -16,10 +17,11 @@ import (
 type ClientHandler struct {
 	clientUC       *uclient.Interactor
 	notificationUC *unotification.Interactor
+	mailer         *mail.Mailer
 }
 
-func NewClientHandler(clientUC *uclient.Interactor, notificationUC *unotification.Interactor) *ClientHandler {
-	return &ClientHandler{clientUC: clientUC, notificationUC: notificationUC}
+func NewClientHandler(clientUC *uclient.Interactor, notificationUC *unotification.Interactor, mailer *mail.Mailer) *ClientHandler {
+	return &ClientHandler{clientUC: clientUC, notificationUC: notificationUC, mailer: mailer}
 }
 
 // GET /api/clients
@@ -107,6 +109,9 @@ func (h *ClientHandler) Store(c *gin.Context) {
 		ExecutorID:  executorID,
 		URL:         notifURL,
 	})
+
+	// アクセストークンメール送信
+	go h.mailer.SendAccessToken(client.Email, client.Name, client.AccessToken)
 
 	c.JSON(http.StatusCreated, gin.H{"id": client.ID})
 }

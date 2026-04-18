@@ -44,8 +44,19 @@ class NotificationInteractor:
             raise not_found("notification_not_found")
         self.notif_repo.patch(notif, {"read": True})
 
-    def fan_out(self, title: str, body: Optional[str]) -> None:
+    def fan_out(self, title: str, body: Optional[str] = None,
+                url: Optional[str] = None, executor_id: int = 0,
+                message_type: int = 1) -> None:
         staffs = self.staff_repo.find_all_active_staffs()
         for staff in staffs:
-            n = Notification(staff_id=staff.id, title=title, message=body or "", read=False)
+            n = Notification(
+                staff_id=staff.id,
+                message_type=message_type,
+                title=title,
+                message=body or "",
+                url=url,
+                read=False,
+                created_by=executor_id,
+                updated_by=executor_id,
+            )
             self.notif_repo.store(n)
