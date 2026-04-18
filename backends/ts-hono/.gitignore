@@ -1,4 +1,5 @@
 .env
+.env.testing.local
 node_modules/
 dist/
 *.log

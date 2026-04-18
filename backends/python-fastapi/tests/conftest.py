@@ -7,6 +7,13 @@ authorization_test DB（MySQL）を使い、各テスト前にテーブルをク
 import os
 import secrets
 
+from dotenv import load_dotenv
+
+# ローカルコンテナ用（host.docker.internal）を優先、なければ CI 用（127.0.0.1）
+# load_dotenv は既存の env var を上書きしないため CI の env vars が最優先される
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.testing.local"), override=False)
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env.testing"), override=False)
+
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa

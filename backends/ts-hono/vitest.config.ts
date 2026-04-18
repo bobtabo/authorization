@@ -1,8 +1,13 @@
 import { defineConfig } from "vitest/config";
+import { config as loadDotenv } from "dotenv";
+
+// ローカル優先（host.docker.internal など）、なければ testing（CI 用: 127.0.0.1）
+loadDotenv({ path: ".env.testing.local" });
+loadDotenv({ path: ".env.testing" });
 
 export default defineConfig({
   test: {
-    // テスト用 DB に向ける（dotenv/config より先に設定されるため上書きされない）
+    // dotenv より後に設定されるため上書き保証
     env: {
       DB_DATABASE: "authorization_test",
     },

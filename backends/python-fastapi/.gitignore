@@ -1,4 +1,5 @@
 .env
+.env.testing.local
 __pycache__/
 *.pyc
 *.pyo

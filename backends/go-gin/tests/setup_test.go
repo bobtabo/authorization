@@ -47,14 +47,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	// プロジェクトルートの .env を明示的にロードしてから DB 名だけ上書き
-	// （godotenv.Load は既存の env var を上書きしないため、順番が重要）
-	envFile := os.Getenv("ENV_FILE")
-	if envFile == "" {
-		envFile = "../.env"
-	}
-	_ = godotenv.Load(envFile)
-	os.Setenv("DB_DATABASE", "authorization_test")
+	// ローカルコンテナ用（host.docker.internal）を優先、なければ CI 用（127.0.0.1）
+	// godotenv.Load は既存の env var を上書きしないため CI の env vars が最優先される
+	_ = godotenv.Load("../.env.testing.local")
+	_ = godotenv.Load("../.env.testing")
 
 	testCfg = config.Load()
 

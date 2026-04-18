@@ -64,7 +64,7 @@ jobs:
             FLUSH PRIVILEGES;
           "
 
-      # テストを実行（env vars を直接設定。dotenv は既存の env vars を上書きしないため .env より優先される）
+      # テストを実行（CI 用 env vars を設定。dotenv は既存 env vars を上書きしないため .env.testing より優先される）
       - name: Run tests
         run: npm test
         working-directory: backends/ts-hono
@@ -76,6 +76,7 @@ jobs:
           DB_PASSWORD: "docker#DOCKER1234"
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: 6379
+          APP_ENV: testing
 
       # ビルドを実行
       - name: Build
