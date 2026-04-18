@@ -66,17 +66,6 @@ describe("Notifications", () => {
     });
   });
 
-  describe("POST /api/notifications", () => {
-    test("通知トリガーが受け付けられる", async () => {
-      const res = await app.request("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "新規通知", body: "通知本文" }),
-      });
-      expect(res.status).toBe(202);
-    });
-  });
-
   describe("PATCH /api/notifications", () => {
     test("一括既読が成功する", async () => {
       const staff = await makeStaff();

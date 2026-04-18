@@ -82,16 +82,6 @@ func TestNotification_Index(t *testing.T) {
 	})
 }
 
-func TestNotification_Store(t *testing.T) {
-	t.Run("通知トリガーが受け付けられる", func(t *testing.T) {
-		payload := map[string]string{"title": "新規通知", "body": "通知本文"}
-		w := do(http.MethodPost, "/api/notifications", payload)
-		if w.Code != http.StatusAccepted {
-			t.Errorf("want 202, got %d: %s", w.Code, w.Body.String())
-		}
-	})
-}
-
 func TestNotification_ReadAll(t *testing.T) {
 	truncateTables(t)
 

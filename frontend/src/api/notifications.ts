@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "./http";
+import { apiGet, apiPatch } from "./http";
 
 /** GET /notifications */
 export async function getNotifications(params?: {
@@ -11,11 +11,6 @@ export async function getNotifications(params?: {
 /** GET /notifications/counts */
 export async function getNotificationCounts(): Promise<unknown> {
   return apiGet("/notifications/counts");
-}
-
-/** POST /notifications（通知トリガー） */
-export async function postNotificationTrigger(body: unknown): Promise<unknown> {
-  return apiPost("/notifications", body);
 }
 
 /** PATCH /notifications（全既読） */

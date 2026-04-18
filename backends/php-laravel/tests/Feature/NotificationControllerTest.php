@@ -79,21 +79,6 @@ class NotificationControllerTest extends TestCase
     }
 
     /**
-     * 通知トリガー受理テストです。
-     *
-     * @return void
-     */
-    public function testStore(): void
-    {
-        $params = $this->getRequestParams('Notification/store.json');
-        $response = $this->post('/api/notifications', $params);
-        $data = $this->getResponseData('Notification/store.json');
-        $response
-            ->assertStatus(202)
-            ->assertJson($data);
-    }
-
-    /**
      * 通知一括既読テストです。
      *
      * @return void

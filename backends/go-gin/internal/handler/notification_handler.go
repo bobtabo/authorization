@@ -67,16 +67,6 @@ func (h *NotificationHandler) Index(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": items, "next_cursor": page.NextCursor})
 }
 
-// POST /api/notifications
-func (h *NotificationHandler) Store(c *gin.Context) {
-	var body interface{}
-	_ = c.ShouldBindJSON(&body)
-	c.JSON(http.StatusAccepted, gin.H{
-		"message":  "notification_accepted",
-		"received": body,
-	})
-}
-
 // PATCH /api/notifications  (一括既読)
 func (h *NotificationHandler) ReadAll(c *gin.Context) {
 	staffID := staffIDFromCookie(c)

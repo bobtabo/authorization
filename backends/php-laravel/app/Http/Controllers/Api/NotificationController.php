@@ -64,22 +64,6 @@ class NotificationController extends Controller
     }
 
     /**
-     * 通知トリガーを受理する応答を返します。
-     *
-     * @param AppRequest $request HTTP リクエスト
-     * @return JsonResponse JSON レスポンス（202）
-     */
-    public function store(AppRequest $request): JsonResponse
-    {
-        $body = $request->all();
-
-        return response()->success([
-            'message' => __('validation.custom.notification_accepted'),
-            'received' => $body !== [] ? $body : null,
-        ], 202);
-    }
-
-    /**
      * 通知の一括更新（既読など）の応答を返します。
      *
      * @param AppRequest $request HTTP リクエスト

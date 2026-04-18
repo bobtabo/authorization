@@ -45,15 +45,6 @@ class TestIndex:
         assert res.status_code == 401
 
 
-class TestStore:
-    def test_通知トリガーが受け付けられる(self, client):
-        payload = {"title": "新規通知", "body": "通知本文"}
-        res = client.post("/api/notifications", json=payload)
-        assert res.status_code == 202
-        data = res.json()
-        assert data["message"] == "notification_accepted"
-
-
 class TestBulkRead:
     def test_一括既読が成功する(self, client, db_session):
         staff = make_staff(db_session)

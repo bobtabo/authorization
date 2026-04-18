@@ -115,7 +115,6 @@ func main() {
 		// --- notifications ---
 		api.GET("/notifications/counts", notificationH.Counts)
 		api.GET("/notifications", notificationH.Index)
-		api.POST("/notifications", notificationH.Store)
 		api.PATCH("/notifications", notificationH.ReadAll)
 		api.PATCH("/notifications/:id", notificationH.Read)
 	}

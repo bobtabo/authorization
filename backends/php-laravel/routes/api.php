@@ -63,7 +63,6 @@ Route::prefix('gate')->controller(GateController::class)->group(function () {
 Route::prefix('notifications')->controller(NotificationController::class)->group(function () {
     Route::get('counts', 'counts');
     Route::get('/', 'index');
-    Route::post('/', 'store');
     Route::patch('/', 'readAll');
     Route::patch('{id}', 'read')->whereNumber('id');
 });

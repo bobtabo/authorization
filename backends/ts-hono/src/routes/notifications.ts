@@ -25,11 +25,6 @@ app.get("/notifications", async (c) => {
   return c.json({ items: page.items.map(mapNotification), next_cursor: page.nextCursor });
 });
 
-app.post("/notifications", async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  return c.json({ message: "notification_accepted", received: body }, 202);
-});
-
 app.patch("/notifications", async (c) => {
   const staffId = getStaffIdFromCookie(c);
   if (!staffId) throw unauthorized("unauthenticated");

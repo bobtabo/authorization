@@ -607,36 +607,6 @@ paths:
         '500':
           description: サーバーエラー
 
-    post:
-      summary: 通知のトリガー（内部/システム）
-      description: |
-        内部ジョブや連携システムから通知を発火する。利用者向け一覧取得とは用途が異なる。
-        べき等キー（`Idempotency-Key`）を許容する。
-      tags:
-        - notifications
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          schema:
-            type: string
-          description: 同一キーでの重複送信を冪等に扱う
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationTriggerRequest'
-      responses:
-        '200':
-          description: 受理・作成結果
-        '202':
-          description: 非同期受理
-        '409':
-          description: べき等キー競合など
-        '500':
-          description: サーバーエラー
-
     patch:
       operationId: readAllNotifications
       summary: 全通知を既読にする
@@ -1033,16 +1003,6 @@ components:
       example:
         unread: 3
         total: 42
-
-    NotificationTriggerRequest:
-      type: object
-      description: 内部/システムからの通知発火ペイロード（詳細は実装に依存）
-      properties:
-        type:
-          type: string
-        payload:
-          type: object
-          additionalProperties: true
 
   securitySchemes:
     bearerAuth:
