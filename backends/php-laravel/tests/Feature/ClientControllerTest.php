@@ -98,7 +98,7 @@ class ClientControllerTest extends TestCase
         $staff = Staff::factory()->create();
         $client = Client::factory()->create();
         $id = $client->id;
-        $response = $this->withCookies($this->staffCookies($staff->id))
+        $response = $this->withStaffCookie($staff->id)
             ->delete("/api/clients/{$id}/delete");
         $data = $this->getResponseData('Client/destroy.json');
         $response

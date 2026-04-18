@@ -34,7 +34,7 @@ class AuthControllerTest extends TestCase
     public function testLogin(): void
     {
         $staff = Staff::factory()->create();
-        $response = $this->withCookies($this->staffCookies($staff->id))
+        $response = $this->withStaffCookie($staff->id)
             ->get('/api/auth/login');
         $response
             ->assertStatus(200)

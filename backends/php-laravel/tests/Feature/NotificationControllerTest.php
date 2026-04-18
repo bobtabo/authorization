@@ -32,7 +32,7 @@ class NotificationControllerTest extends TestCase
      */
     public function testCounts(): void
     {
-        $response = $this->withCookies($this->staffCookies(1))
+        $response = $this->withStaffCookie(1)
             ->get('/api/notifications/counts');
         $data = $this->getResponseData('Notification/counts.json');
         $response
@@ -48,7 +48,7 @@ class NotificationControllerTest extends TestCase
     public function testIndex(): void
     {
         $params = $this->getRequestParams('Notification/index.json');
-        $response = $this->withCookies($this->staffCookies(1))
+        $response = $this->withStaffCookie(1)
             ->get('/api/notifications', $params);
         $data = $this->getResponseData('Notification/index.json');
         $response
@@ -70,7 +70,7 @@ class NotificationControllerTest extends TestCase
             'url'      => '/clients/show?id=1',
         ]);
 
-        $response = $this->withCookies($this->staffCookies($staff->id))
+        $response = $this->withStaffCookie($staff->id)
             ->get('/api/notifications');
 
         $response
@@ -85,7 +85,7 @@ class NotificationControllerTest extends TestCase
      */
     public function testBulkPatch(): void
     {
-        $response = $this->withCookies($this->staffCookies(1))
+        $response = $this->withStaffCookie(1)
             ->patch('/api/notifications');
         $data = $this->getResponseData('Notification/bulkPatch.json');
         $response
