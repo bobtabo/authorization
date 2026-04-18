@@ -63,7 +63,7 @@ class NotificationService extends AbstractService
         $nextCursor = null;
         if ($hasNext) {
             $last = $items->last();
-            $nextCursor = base64_encode($last->created_at->format('Y-m-d H:i:s') . ',' . $last->id);
+            $nextCursor = base64_encode($last->createdAt->format('Y-m-d H:i:s') . ',' . $last->id);
         }
 
         $values = $list->map(function (Notification $row) use ($dto) {

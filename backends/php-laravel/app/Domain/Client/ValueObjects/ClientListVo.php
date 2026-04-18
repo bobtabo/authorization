@@ -10,13 +10,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Client\ValueObjects;
 
-use App\Domain\Client\Entities\Client;
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use ReflectionClass;
 
 /**
  * クライアント一覧ValueObjectクラスです。
@@ -38,64 +34,19 @@ class ClientListVo extends AbstractValueObject
     #[\Override]
     public function attributes(): array
     {
-        $items = [];
-        foreach ($this->clients as $row) {
-            $ref = new ReflectionClass($row);
-            $item = [];
-            foreach ($ref->getProperties() as $prop) {
-                $prop->setAccessible(true);
-                $item[Str::snake($prop->getName())] = $prop->getValue($row);
-            }
-            $items[] = $item;
-        }
-        return ['items' => $items];
+        return ['items' => $this->clients->all()];
     }
 
     /**
-     * クライアント Entity のリストを一覧行に設定します。
+     * クライアントリストを設定します。
      *
-     * @param iterable<int, Client> $list Entity の配列または Collection
+     * @param Collection $list エンティティのコレクション
      */
-    public function assignClients(iterable $list): void
+    public function assignClients(Collection $list): void
     {
         foreach ($list as $entity) {
             $this->clients->add(
-                new class ($entity) {
-                    private ?int $id = null;
-                    private ?string $name = null;
-                    private ?string $identifier = null;
-                    private ?string $postCode = null;
-                    private ?string $pref = null;
-                    private ?string $city = null;
-                    private ?string $address = null;
-                    private ?string $building = null;
-                    private ?string $tel = null;
-                    private ?string $email = null;
-                    private ?int $status = null;
-                    private ?string $startAt = null;
-                    private ?string $stopAt = null;
-                    private ?string $createdAt = null;
-                    private ?string $updatedAt = null;
-
-                    public function __construct(Client $entity)
-                    {
-                        $this->id = $entity->id;
-                        $this->name = $entity->name;
-                        $this->identifier = $entity->identifier;
-                        $this->postCode = $entity->postCode;
-                        $this->pref = $entity->pref;
-                        $this->city = $entity->city;
-                        $this->address = $entity->address;
-                        $this->building = $entity->building;
-                        $this->tel = $entity->tel;
-                        $this->email = $entity->email;
-                        $this->status = $entity->status?->value;
-                        $this->startAt = $entity->startAt?->toIso8601String();
-                        $this->stopAt = $entity->stopAt?->toIso8601String();
-                        $this->createdAt = $entity->createdAt?->toIso8601String();
-                        $this->updatedAt = $entity->updatedAt?->toIso8601String();
-                    }
-                }
+                $entity->attributesBySnake()
             );
         }
     }
