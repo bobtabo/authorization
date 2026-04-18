@@ -17,6 +17,10 @@ export interface Client {
   startedAt: Date | null;
   stoppedAt: Date | null;
   createdAt: Date | null;
+  createdBy: number;
   updatedAt: Date | null;
+  updatedBy: number;
   deletedAt: Date | null;
+  deletedBy: number | null;
+  version: number;
 }
