@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"authorization-go/internal/service"
+	ugate "authorization-go/internal/usecase/gate"
 	"authorization-go/pkg/apperror"
 	"net/http"
 	"strings"
@@ -10,11 +10,11 @@ import (
 )
 
 type GateHandler struct {
-	gateSvc *service.GateService
+	gateUC *ugate.Interactor
 }
 
-func NewGateHandler(gateSvc *service.GateService) *GateHandler {
-	return &GateHandler{gateSvc: gateSvc}
+func NewGateHandler(gateUC *ugate.Interactor) *GateHandler {
+	return &GateHandler{gateUC: gateUC}
 }
 
 // GET /api/gate/issue   (client.token ミドルウェア適用済み)
@@ -28,7 +28,10 @@ func (h *GateHandler) Issue(c *gin.Context) {
 	auth := c.GetHeader("Authorization")
 	accessToken := strings.TrimPrefix(auth, "Bearer ")
 
-	token, err := h.gateSvc.IssueToken(accessToken, member)
+	token, err := h.gateUC.IssueToken(ugate.IssueDto{
+		AccessToken: accessToken,
+		MemberID:    member,
+	})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -45,7 +48,10 @@ func (h *GateHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	payload, err := h.gateSvc.Verify(identifier, token)
+	payload, err := h.gateUC.Verify(ugate.VerifyDto{
+		Identifier: identifier,
+		Token:      token,
+	})
 	if err != nil {
 		_ = c.Error(err)
 		return

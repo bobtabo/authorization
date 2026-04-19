@@ -75,7 +75,7 @@ abstract class TestCase extends BaseTestCase
 
     /**
      * テスト用 staff_id クッキーを生成します。
-     * テストフレームワークが withCookies 送信前に encrypt() するため、平文で渡します。
+     * staff_id は EncryptCookies の除外対象のため withUnencryptedCookies() で渡します。
      *
      * @param int $staffId スタッフID
      * @return array<string, string> クッキー配列
@@ -83,6 +83,17 @@ abstract class TestCase extends BaseTestCase
     protected function staffCookies(int $staffId): array
     {
         return ['staff_id' => (string)$staffId];
+    }
+
+    /**
+     * テストリクエストに staff_id クッキーを設定します（非暗号化）。
+     *
+     * @param int $staffId スタッフID
+     * @return static
+     */
+    protected function withStaffCookie(int $staffId): static
+    {
+        return $this->withUnencryptedCookies($this->staffCookies($staffId));
     }
 
     /**

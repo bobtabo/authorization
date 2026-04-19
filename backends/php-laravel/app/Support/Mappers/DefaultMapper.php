@@ -32,9 +32,9 @@ class DefaultMapper
     /**
      * コンストラクタ
      *
-     * @param  string  $sourceClassName  マッピング元クラス
-     * @param  string  $destinationClassName  マッピング先クラス
-     * @param  AutoMapperConfig|null  $config  マッピング設定
+     * @param string $sourceClassName マッピング元クラス
+     * @param string $destinationClassName マッピング先クラス
+     * @param AutoMapperConfig|null $config マッピング設定
      * @return void
      */
     public function __construct(string $sourceClassName, string $destinationClassName, ?AutoMapperConfig $config = null)
@@ -82,7 +82,7 @@ class DefaultMapper
      */
     protected function getDefaultConfig(): AutoMapperConfig
     {
-        $result = new AutoMapperConfig;
+        $result = new AutoMapperConfig();
         $result->getOptions()->dontIgnoreNullProperties();
 
         return $result;

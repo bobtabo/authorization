@@ -25,19 +25,6 @@ class InvitationControllerTest extends TestCase
     use DatabaseMigrations;
 
     /**
-     * 招待URL発行テストです。
-     *
-     * @return void
-     */
-    public function testIssue(): void
-    {
-        $response = $this->get('/api/invitation/issue');
-        $response
-            ->assertStatus(200)
-            ->assertJsonStructure(['url', 'token']);
-    }
-
-    /**
      * 現在の招待URL取得テストです。
      *
      * @return void

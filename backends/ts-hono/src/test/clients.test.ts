@@ -44,7 +44,6 @@ describe("Clients", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: "新規テスト株式会社",
-          identifier: "new-client-ts-001",
           post_code: "100-0001",
           pref: "東京都",
           city: "千代田区",
@@ -56,7 +55,7 @@ describe("Clients", () => {
       expect(res.status).toBe(201);
     });
 
-    test("nameとidentifier未指定で400が返る", async () => {
+    test("name未指定で400が返る", async () => {
       const res = await app.request("/api/clients/store", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -22,7 +22,6 @@ import {
   readAllNotifications,
   readNotification,
 } from "@/src/api/notifications";
-import { getAuthLogout } from "@/src/api/auth";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
 
 const TONE_MAP: Record<number, "info" | "warn" | "ok"> = { 1: "info", 2: "warn", 3: "ok" };
@@ -52,7 +51,6 @@ export function ConsoleHeader(): React.JSX.Element {
   const pathname = usePathname();
   const router = useRouter();
   const displayName = user?.name ?? "";
-  const staffId = user?.staff_id ?? null;
   const isAdmin = user?.role === 1;
 
   const [backendRuntime, setBackendRuntime] = useState<string>("php");
@@ -111,8 +109,8 @@ export function ConsoleHeader(): React.JSX.Element {
   }, [notificationOpen, fetchNotifications]);
 
   const handleMarkAllRead = () => {
-    if (!staffId || unreadCount === 0) return;
-    readAllNotifications({ all: true }, staffId)
+    if (unreadCount === 0) return;
+    readAllNotifications()
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
         setUnreadCount(0);
@@ -121,8 +119,7 @@ export function ConsoleHeader(): React.JSX.Element {
   };
 
   const handleMarkRead = (id: number) => {
-    if (!staffId) return;
-    readNotification(id, { read: true }, staffId)
+    readNotification(id)
       .then(() => {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
@@ -165,14 +162,11 @@ export function ConsoleHeader(): React.JSX.Element {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [settingsMenuOpen]);
 
-  const handleRuntimeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleRuntimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = e.target.value;
     setBackendRuntime(next);
-    try {
-      await getAuthLogout();
-    } catch { /* ログアウト失敗でも切り替えを継続 */ }
     localStorage.setItem(RUNTIME_STORAGE_KEY, next);
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const navTabClass = (href: string): string =>

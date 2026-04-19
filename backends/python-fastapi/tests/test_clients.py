@@ -46,7 +46,6 @@ class TestStore:
     def test_クライアントが登録できる(self, client):
         payload = {
             "name": "新規テスト株式会社",
-            "identifier": "new-test-client",
             "post_code": "100-0001",
             "pref": "東京都",
             "city": "千代田区",
@@ -58,21 +57,11 @@ class TestStore:
         assert res.status_code == 201
         data = res.json()
         assert data["name"] == payload["name"]
-        assert data["identifier"] == payload["identifier"]
+        assert data["identifier"] is not None
 
     def test_name必須バリデーション(self, client):
-        payload = {"identifier": "no-name"}
-        res = client.post("/api/clients/store", json=payload)
+        res = client.post("/api/clients/store", json={})
         assert res.status_code == 422
-
-    def test_既存identifierで409が返る(self, client, db_session):
-        make_client_record(db_session, identifier="duplicate-id")
-        payload = {
-            "name": "重複クライアント",
-            "identifier": "duplicate-id",
-        }
-        res = client.post("/api/clients/store", json=payload)
-        assert res.status_code == 409
 
 
 class TestUpdate:

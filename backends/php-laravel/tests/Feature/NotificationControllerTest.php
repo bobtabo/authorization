@@ -32,7 +32,7 @@ class NotificationControllerTest extends TestCase
      */
     public function testCounts(): void
     {
-        $response = $this->withCookies($this->staffCookies(1))
+        $response = $this->withStaffCookie(1)
             ->get('/api/notifications/counts');
         $data = $this->getResponseData('Notification/counts.json');
         $response
@@ -48,7 +48,7 @@ class NotificationControllerTest extends TestCase
     public function testIndex(): void
     {
         $params = $this->getRequestParams('Notification/index.json');
-        $response = $this->withCookies($this->staffCookies(1))
+        $response = $this->withStaffCookie(1)
             ->get('/api/notifications', $params);
         $data = $this->getResponseData('Notification/index.json');
         $response
@@ -70,27 +70,12 @@ class NotificationControllerTest extends TestCase
             'url'      => '/clients/show?id=1',
         ]);
 
-        $response = $this->withCookies($this->staffCookies($staff->id))
+        $response = $this->withStaffCookie($staff->id)
             ->get('/api/notifications');
 
         $response
             ->assertStatus(200)
             ->assertJsonPath('items.0.url', '/clients/show?id=1');
-    }
-
-    /**
-     * 通知トリガー受理テストです。
-     *
-     * @return void
-     */
-    public function testStore(): void
-    {
-        $params = $this->getRequestParams('Notification/store.json');
-        $response = $this->post('/api/notifications', $params);
-        $data = $this->getResponseData('Notification/store.json');
-        $response
-            ->assertStatus(202)
-            ->assertJson($data);
     }
 
     /**
@@ -100,9 +85,8 @@ class NotificationControllerTest extends TestCase
      */
     public function testBulkPatch(): void
     {
-        $params = $this->getRequestParams('Notification/bulkPatch.json');
-        $response = $this->withHeader('X-Executor-Id', '1')
-            ->patch('/api/notifications', $params);
+        $response = $this->withStaffCookie(1)
+            ->patch('/api/notifications');
         $data = $this->getResponseData('Notification/bulkPatch.json');
         $response
             ->assertStatus(200)
@@ -118,9 +102,8 @@ class NotificationControllerTest extends TestCase
     {
         $staff = Staff::factory()->create();
         $notification = Notification::factory()->create(['staff_id' => $staff->id]);
-        $params = $this->getRequestParams('Notification/update.json');
         $id = $notification->id;
-        $response = $this->patch("/api/notifications/{$id}", $params);
+        $response = $this->patch("/api/notifications/{$id}");
         $data = $this->getResponseData('Notification/update.json');
         $response
             ->assertStatus(200)

@@ -13,7 +13,7 @@ namespace App\UseCases\Gate\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * JWT 発行リクエスト用 DTO です。
+ * JWT発行DTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Gate\Dtos
@@ -21,6 +21,5 @@ use App\Support\Dtos\AbstractDto;
 class GateIssueDto extends AbstractDto
 {
     public string $memberId = '';
-
     public string $accessToken = '';
 }

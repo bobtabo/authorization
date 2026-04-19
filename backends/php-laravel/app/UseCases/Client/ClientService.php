@@ -23,7 +23,7 @@ use App\UseCases\Client\Dtos\ClientDto;
 use Carbon\Carbon;
 
 /**
- * クライアントのユースケースをまとめるサービスです。
+ * クライアントServiceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Client
@@ -31,19 +31,22 @@ use Carbon\Carbon;
 class ClientService extends AbstractService
 {
     public function __construct(
-        private readonly ClientRepository $clientRepository,
+        private readonly ClientRepository $repository,
     ) {
     }
 
     /**
      * アクセストークンでクライアントを認証します。
      *
-     * @param string $token Bearer アクセストークン
+     * @param ClientDto $dto クライアントDTO
      * @return bool 認証成功の場合 true
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
-    public function authenticateByToken(string $token): bool
+    public function authenticateByToken(ClientDto $dto): bool
     {
-        return $this->clientRepository->findByAccessToken($token) !== null;
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+
+        return $this->repository->findByAccessToken($condition) !== null;
     }
 
     /**
@@ -63,7 +66,7 @@ class ClientService extends AbstractService
             'statuses' => 'statuses',
         ]);
 
-        $list = $this->clientRepository->findByCondition($condition);
+        $list = $this->repository->findByCondition($condition);
 
         $result = new ClientListVo();
         $result->assignClients($list);
@@ -84,7 +87,7 @@ class ClientService extends AbstractService
         $dto->statuses = [];
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clientRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
 
         $vo = new ClientDetailVo();
         if ($entity === null) {
@@ -139,7 +142,7 @@ class ClientService extends AbstractService
         // アクセストークンの生成
         $entity->accessToken = bin2hex(random_bytes(32));
 
-        $saved = $this->clientRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
         $configs = config('authorization.app.mail');
         return new ClientStoreVo()->assign([
@@ -162,13 +165,13 @@ class ClientService extends AbstractService
      */
     public function update(ClientDto $dto): ClientStoreVo
     {
-        $dto->statuses = [];
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
-        $entity = $this->clientRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
         // identifier は登録時に自動生成するため更新不可
         // status は遷移ロジックで個別に制御するため assign から除外
-        $entity->assign($dto->attributes(), [], ['identifier', 'status']);
+        // accessToken は不変のため assign から除外
+        $entity->assign($dto->attributes(), [], ['identifier', 'status', 'accessToken']);
 
         // ステータス遷移に応じた利用開始・停止日時を自動設定
         if ($dto->status !== null) {
@@ -184,7 +187,7 @@ class ClientService extends AbstractService
 
         $entity->assignUpdated($dto->executorId ?? 0);
 
-        $saved = $this->clientRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
         return new ClientStoreVo()->assign($saved->attributes());
     }
@@ -199,12 +202,13 @@ class ClientService extends AbstractService
     public function destroy(ClientDto $dto): void
     {
         $condition = SimpleMapper::map($dto, ClientCondition::class);
-        $entity = $this->clientRepository->findById($condition);
+        $entity = $this->repository->findById($condition);
 
         $entity->status = ClientStatus::Closed;
         $entity->assignUpdated($dto->executorId ?? 0);
-        $this->clientRepository->persist($entity);
+        $saved = $this->repository->persist($entity);
 
-        $this->clientRepository->deleteById($dto->id, $dto->executorId ?? 0);
+        $saved->assignDeleted($dto->executorId ?? 0);
+        $this->repository->deleteById($saved);
     }
 }

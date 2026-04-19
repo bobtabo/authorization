@@ -26,7 +26,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ## :building_construction: アーキテクチャ
 
-レイヤードアーキテクチャを採用しています。
+DDD + クリーンアーキテクチャを採用しています。
 
 ```
 HTTP Request
@@ -35,14 +35,15 @@ HTTP Request
 Route (src/routes/)
     │  リクエスト解析・レスポンス整形
     ▼
-Service (src/services/)
+UseCase / Interactor (src/usecase/)
     │  ビジネスロジック・鍵ペア生成・JWT 操作
+    │  Domain Repository インターフェースに依存（依存性逆転）
     ▼
-Repository (src/repositories/)
-    │  データアクセス抽象化
+Domain (src/domain/)
+    │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-Drizzle ORM
-    │  MySQL2 ドライバー
+Infrastructure (src/infrastructure/)
+    │  Drizzle ORM 実装リポジトリ・Redis キャッシュ
     ▼
 MySQL / Redis
 ```
@@ -66,17 +67,32 @@ MySQL / Redis
 backends/ts-hono/
 ├── src/
 │   ├── db/
-│   │   ├── client.ts       # Drizzle + mysql2 接続
-│   │   └── schema.ts       # テーブルスキーマ定義
+│   │   └── client.ts           # Drizzle + mysql2 接続
+│   ├── domain/                 # ドメイン層
+│   │   ├── client/             # entity, repository, valueObjects, enums, condition
+│   │   ├── staff/              # entity, repository, valueObjects, enums, condition
+│   │   ├── invitation/         # entity, repository, valueObjects
+│   │   ├── notification/       # entity, repository, valueObjects
+│   │   └── gate/               # valueObjects
+│   ├── infrastructure/         # インフラ層
+│   │   ├── model/
+│   │   │   └── schema.ts       # Drizzle テーブルスキーマ定義
+│   │   ├── persistence/        # Drizzle ORM リポジトリ実装
+│   │   └── cache/              # Redis キャッシュリポジトリ実装
 │   ├── lib/
-│   │   ├── cookie.ts       # Cookie ヘルパー・時刻フォーマット
-│   │   ├── errors.ts       # AppError 定義
-│   │   └── redis.ts        # ioredis クライアント
-│   ├── repositories/       # データアクセス実装
-│   ├── routes/             # Hono ルーター
-│   ├── services/           # ビジネスロジック実装
-│   ├── config.ts           # 環境変数管理
-│   └── index.ts            # エントリーポイント・サーバー起動
+│   │   ├── cookie.ts           # Cookie ヘルパー・時刻フォーマット
+│   │   ├── errors.ts           # AppError 定義
+│   │   └── redis.ts            # ioredis クライアント
+│   ├── routes/                 # Hono ルーター
+│   ├── usecase/                # ユースケース層
+│   │   ├── client/             # dto, interactor
+│   │   ├── staff/              # dto, interactor
+│   │   ├── auth/               # dto, interactor
+│   │   ├── invitation/         # dto, interactor
+│   │   ├── notification/       # dto, interactor
+│   │   └── gate/               # dto, interactor
+│   ├── config.ts               # 環境変数管理
+│   └── index.ts                # エントリーポイント・サーバー起動
 ├── package.json
 └── tsconfig.json
 ```

@@ -47,7 +47,7 @@ class RepositoryMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getStub()
     {
-        return __DIR__.'/Stubs/repository.stub';
+        return __DIR__ . '/Stubs/repository.stub';
     }
 
     /**
@@ -56,7 +56,7 @@ class RepositoryMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Domains\Repositories';
+        return $rootNamespace . '\Infrastructure\Repositories';
     }
 
     /**
@@ -65,6 +65,6 @@ class RepositoryMakeCommand extends GeneratorCommand
     #[\Override]
     protected function getPath($name)
     {
-        return parent::getPath($name.'Repository');
+        return parent::getPath($name . 'Repository');
     }
 }

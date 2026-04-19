@@ -14,7 +14,7 @@ use App\Support\Http\Responses\AbstractResponse;
 use App\Support\Traits\Getter;
 
 /**
- * 自分自身のプロフィールResponseクラスです。
+ * 自分のプロフィールResponseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Auth

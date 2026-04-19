@@ -30,6 +30,13 @@ class Settings(BaseSettings):
 
     gate_jwt_cache_ttl: int = 1800
 
+    mail_host: str = "localhost"
+    mail_port: int = 1025
+    mail_username: str = ""
+    mail_password: str = ""
+    mail_from_address: str = "no-reply@example.com"
+    app_name: str = "Authorization Gateway"
+
     # JWT固定値
     jwt_issuer: str = "authorization"
     jwt_algorithm: str = "RS256"

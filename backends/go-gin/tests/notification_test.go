@@ -82,29 +82,15 @@ func TestNotification_Index(t *testing.T) {
 	})
 }
 
-func TestNotification_Store(t *testing.T) {
-	t.Run("通知トリガーが受け付けられる", func(t *testing.T) {
-		payload := map[string]string{"title": "新規通知", "body": "通知本文"}
-		w := do(http.MethodPost, "/api/notifications", payload)
-		if w.Code != http.StatusAccepted {
-			t.Errorf("want 202, got %d: %s", w.Code, w.Body.String())
-		}
-	})
-}
-
 func TestNotification_ReadAll(t *testing.T) {
 	truncateTables(t)
 
 	t.Run("一括既読が成功する", func(t *testing.T) {
 		staff := createStaff(t, nil)
-		n1 := createNotification(t, staff.ID, "通知A")
-		n2 := createNotification(t, staff.ID, "通知B")
+		createNotification(t, staff.ID, "通知A")
+		createNotification(t, staff.ID, "通知B")
 
-		payload := map[string]interface{}{
-			"ids":         []uint64{n1.ID, n2.ID},
-			"executor_id": staff.ID,
-		}
-		w := do(http.MethodPatch, "/api/notifications", payload)
+		w := do(http.MethodPatch, "/api/notifications", nil, withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -118,8 +104,7 @@ func TestNotification_Read(t *testing.T) {
 		staff := createStaff(t, nil)
 		n := createNotification(t, staff.ID, "個別通知")
 
-		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID),
-			map[string]bool{"read": true})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}

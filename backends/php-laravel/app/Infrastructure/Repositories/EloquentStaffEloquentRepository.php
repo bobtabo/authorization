@@ -12,7 +12,6 @@ namespace App\Infrastructure\Repositories;
 
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff as Entity;
-use App\Domain\Staff\Enums\StaffRole;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Models\Staff as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
@@ -60,8 +59,11 @@ class EloquentStaffEloquentRepository extends AbstractEloquentRepository impleme
     #[\Override]
     public function findById(StaffCondition $condition): ?Entity
     {
+        $query = Model::withTrashed()->newQuery();
+
         /** @var Entity $result */
-        $result = $this->findByPk($condition->id);
+        $result = $this->findByPk($condition->id, $query);
+
         return $result;
     }
 
@@ -96,32 +98,22 @@ class EloquentStaffEloquentRepository extends AbstractEloquentRepository impleme
      * {@inheritdoc}
      */
     #[\Override]
-    public function updateRole(int $id, StaffRole $role, int $executorId): bool
+    public function deleteById(Entity $entity): bool
     {
-        // TODO: Implement updateRole() method.
-        return true;
+        return $this->delete($entity->id, $entity->deletedBy);
     }
 
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function deleteById(int $id, int $executorId): bool
+    public function restoreById(Entity $entity): bool
     {
-        return $this->delete($id, $executorId);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function restoreById(int $id): bool
-    {
-        $model = Model::withTrashed()->find($id);
+        $model = Model::withTrashed()->find($entity->id);
         if ($model === null || !$model->trashed()) {
             return false;
         }
-        return (bool) $model->restore();
+        return $model->restore();
     }
 
     /**

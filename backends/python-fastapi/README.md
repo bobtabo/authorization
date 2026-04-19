@@ -26,7 +26,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ## :building_construction: アーキテクチャ
 
-レイヤードアーキテクチャを採用しています。
+DDD + クリーンアーキテクチャを採用しています。
 
 ```
 HTTP Request
@@ -35,14 +35,15 @@ HTTP Request
 Router (app/routers/)
     │  リクエスト解析・レスポンス整形・FastAPI DI
     ▼
-Service (app/services/)
+UseCase / Interactor (app/usecase/)
     │  ビジネスロジック・鍵ペア生成・JWT 操作
+    │  Domain Repository インターフェースに依存（依存性逆転）
     ▼
-Repository (app/repositories/)
-    │  データアクセス抽象化
+Domain (app/domain/)
+    │  エンティティ・リポジトリインターフェース（ABC）・値オブジェクト
     ▼
-SQLAlchemy ORM
-    │  MySQL ドライバー（PyMySQL）
+Infrastructure (app/infrastructure/)
+    │  SQLAlchemy 実装リポジトリ・Redis キャッシュ
     ▼
 MySQL / Redis
 ```
@@ -65,15 +66,28 @@ MySQL / Redis
 ```
 backends/python-fastapi/
 ├── app/
-│   ├── config/             # pydantic-settings による環境変数管理
-│   ├── infrastructure/     # DB（SQLAlchemy エンジン）/ Redis クライアント
-│   ├── middleware/         # エラーハンドリング
-│   ├── models/             # SQLAlchemy ORM モデル（DB スキーマ定義）
-│   ├── repositories/       # データアクセス実装
-│   ├── routers/            # FastAPI ルーター・依存性注入（DI）
-│   ├── services/           # ビジネスロジック実装
-│   ├── exceptions.py       # AppError 定義
-│   └── main.py             # FastAPI アプリ組み立て・ルーター登録
+│   ├── domain/                  # ドメイン層
+│   │   ├── client/              # エンティティ・リポジトリ IF（ABC）・値オブジェクト・条件・列挙
+│   │   ├── staff/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/                # 値オブジェクト
+│   ├── usecase/                 # ユースケース層
+│   │   ├── client/              # DTO・インタラクター
+│   │   ├── staff/
+│   │   ├── auth/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── infrastructure/          # インフラ層
+│   │   ├── model/               # SQLAlchemy ORM モデル（DB スキーマ定義）
+│   │   ├── persistence/         # SQLAlchemy リポジトリ実装
+│   │   ├── cache/               # Redis キャッシュリポジトリ実装
+│   │   └── db.py                # DB（SQLAlchemy エンジン）/ Redis クライアント
+│   ├── routers/                 # FastAPI ルーター・依存性注入（DI）
+│   ├── middleware/              # エラーハンドリング
+│   ├── exceptions.py            # AppError 定義
+│   └── main.py                  # FastAPI アプリ組み立て・ルーター登録
 └── requirements.txt
 ```
 

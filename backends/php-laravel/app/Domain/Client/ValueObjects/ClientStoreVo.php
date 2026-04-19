@@ -14,7 +14,7 @@ use App\Support\Mails\MailSend;
 use Carbon\Carbon;
 
 /**
- * クライアント登録・更新の結果 ValueObject です。
+ * クライアント登録・更新ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\ValueObjects

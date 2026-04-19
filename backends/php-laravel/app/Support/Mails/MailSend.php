@@ -34,13 +34,13 @@ class MailSend extends AbstractValueObject
 {
     use Getter;
 
-    protected ?String $host = null;
-    protected ?String $from = null;
-    protected ?String $fromName = null;
-    protected ?String $to = null;
+    protected ?string $host = null;
+    protected ?string $from = null;
+    protected ?string $fromName = null;
+    protected ?string $to = null;
     protected array $cc = [];
     protected array $bcc = [];
-    protected ?String $subject = null;
+    protected ?string $subject = null;
     protected ?int $port = null;
     protected ?string $template = null;
     protected bool $send = true;

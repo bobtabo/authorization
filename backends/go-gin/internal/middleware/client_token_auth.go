@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"authorization-go/internal/service"
+	uclient "authorization-go/internal/usecase/client"
 	"authorization-go/pkg/apperror"
 	"net/http"
 	"strings"
@@ -10,7 +10,7 @@ import (
 )
 
 // ClientTokenAuth はBearerトークンでクライアントを認証します。
-func ClientTokenAuth(clientSvc *service.ClientService) gin.HandlerFunc {
+func ClientTokenAuth(clientUC *uclient.Interactor) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		token := ""
@@ -23,7 +23,7 @@ func ClientTokenAuth(clientSvc *service.ClientService) gin.HandlerFunc {
 			return
 		}
 
-		ok, err := clientSvc.AuthenticateByToken(token)
+		ok, err := clientUC.AuthenticateByToken(token)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "internal_server_error"})
 			c.Abort()

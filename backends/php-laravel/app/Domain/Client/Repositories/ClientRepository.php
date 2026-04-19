@@ -25,25 +25,23 @@ interface ClientRepository
     /**
      * クライアントリストを検索します。
      *
-     * @param ClientCondition $condition
-     * @return Collection
+     * @param ClientCondition $condition 検索条件
+     * @return Collection エンティティ
      */
     public function findByCondition(ClientCondition $condition): Collection;
 
     /**
      * クライアントを取得します。
      *
-     * @param ClientCondition $condition
-     * @return Client|null
+     * @param ClientCondition $condition 検索条件
+     * @return Client|null エンティティ
      */
     public function findById(ClientCondition $condition): ?Client;
 
     /**
      * クライアントを新規登録または更新して永続化します。
      *
-     * {@see \App\Support\Repositories\AbstractEloquentRepository::save} とは別シグネチャのため persist とします。
-     *
-     * @param Client $entity 永続化するエンティティ（id 未設定で新規）
+     * @param Client $entity エンティティ（id 未設定で新規）
      * @return Client 保存後のエンティティ
      */
     public function persist(Client $entity): Client;
@@ -51,25 +49,24 @@ interface ClientRepository
     /**
      * アクセストークンでクライアントを取得します。
      *
-     * @param string $accessToken アクセストークン
+     * @param ClientCondition $condition 検索条件
      * @return Client|null
      */
-    public function findByAccessToken(string $accessToken): ?Client;
+    public function findByAccessToken(ClientCondition $condition): ?Client;
 
     /**
      * クライアント識別名でクライアントを取得します。
      *
-     * @param string $identifier クライアント識別名
-     * @return Client|null
+     * @param ClientCondition $condition 検索条件
+     * @return Client|null エンティティ
      */
-    public function findByIdentifier(string $identifier): ?Client;
+    public function findByIdentifier(ClientCondition $condition): ?Client;
 
     /**
      * クライアントを論理削除します。
      *
-     * @param int $id クライアントID
-     * @param int $executorId 処理実行者ID
+     * @param Client $entity エンティティ
      * @return bool 対象が存在して削除できた場合 true
      */
-    public function deleteById(int $id, int $executorId): bool;
+    public function deleteById(Client $entity): bool;
 }

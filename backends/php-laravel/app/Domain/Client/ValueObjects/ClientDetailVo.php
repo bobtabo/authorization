@@ -14,7 +14,7 @@ use App\Support\ValueObjects\AbstractValueObject;
 use Carbon\Carbon;
 
 /**
- * クライアント詳細の結果 ValueObject です。
+ * クライアント詳細ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\ValueObjects

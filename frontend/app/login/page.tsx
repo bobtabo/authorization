@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
@@ -16,9 +16,16 @@ const RUNTIME_LABEL: Record<string, string> = {
 export default function LoginPage(): React.JSX.Element {
   const router = useRouter();
   const e2eLogin = process.env.NEXT_PUBLIC_E2E === "1";
-  const runtime = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem(RUNTIME_STORAGE_KEY) : null) ?? "php", []);
+  const [runtime, setRuntime] = useState<string>("php");
+  const [connectionDetail, setConnectionDetail] = useState<string>("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php";
+    setRuntime(stored);
+    setConnectionDetail(getBackendConnectionDetail());
+  }, []);
+
   const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
-  const connectionDetail = useMemo(() => getBackendConnectionDetail(), []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f8fa]">

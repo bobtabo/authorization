@@ -22,6 +22,7 @@ enum ClientStatus: int
 {
     use Values;
 
+    case Pending = 0;
     case Inactive = 1;
     case Active = 2;
     case Suspended = 3;

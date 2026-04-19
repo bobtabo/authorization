@@ -4,3 +4,4 @@
 /generated/prisma
 .aider*
 .env
+.claude/

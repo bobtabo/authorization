@@ -34,6 +34,6 @@ services:
     volumes:
       - ./../../../backends/go-gin:/var/www/${APP_NAME}
     working_dir: /var/www/${APP_NAME}
-    command: go run ./cmd/main.go
+    command: air
     networks:
       - authorization

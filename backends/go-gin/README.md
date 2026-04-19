@@ -26,7 +26,7 @@ API 仕様は [`docs/api-spec/openapi.yml`](../../docs/api-spec/openapi.yml) を
 
 ## :building_construction: アーキテクチャ
 
-レイヤードアーキテクチャを採用しています。
+DDD + クリーンアーキテクチャを採用しています。
 
 ```
 HTTP Request
@@ -35,14 +35,15 @@ HTTP Request
 Handler (internal/handler/)
     │  リクエスト解析・レスポンス整形
     ▼
-Service (internal/service/)
+UseCase / Interactor (internal/usecase/)
     │  ビジネスロジック・鍵ペア生成・JWT 操作
+    │  Domain Repository インターフェースに依存（依存性逆転）
     ▼
-Repository (internal/repository/)
-    │  データアクセス抽象化
+Domain (internal/domain/)
+    │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-GORM (gorm.io/gorm)
-    │  ORM / MySQL ドライバー
+Infrastructure (internal/infrastructure/)
+    │  GORM 実装リポジトリ・Redis キャッシュ
     ▼
 MySQL / Redis
 ```
@@ -65,19 +66,31 @@ MySQL / Redis
 ```
 backends/go-gin/
 ├── cmd/
-│   └── main.go             # エントリーポイント・DI 組み立て・ルーティング
+│   └── main.go                  # エントリーポイント・DI 組み立て・ルーティング
 ├── internal/
-│   ├── config/             # 環境変数読み込み（godotenv）
-│   ├── handler/            # Gin ハンドラー層
-│   ├── infrastructure/
-│   │   ├── cache/          # Redis クライアント
-│   │   └── db/             # GORM 接続
-│   ├── middleware/         # 認証・エラーハンドリングミドルウェア
-│   ├── model/              # GORM モデル（DB スキーマ定義）
-│   ├── repository/         # データアクセス実装
-│   └── service/            # ビジネスロジック実装
+│   ├── config/                  # 環境変数読み込み（godotenv）
+│   ├── domain/                  # ドメイン層
+│   │   ├── client/              # エンティティ・リポジトリ IF・値オブジェクト・条件・列挙
+│   │   ├── staff/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/                # 値オブジェクト・キャッシュリポジトリ IF
+│   ├── usecase/                 # ユースケース層
+│   │   ├── client/              # DTO・インタラクター
+│   │   ├── staff/
+│   │   ├── auth/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── infrastructure/          # インフラ層
+│   │   ├── model/               # GORM モデル（DB スキーマ定義）
+│   │   ├── persistence/         # GORM リポジトリ実装
+│   │   ├── cache/               # Redis キャッシュリポジトリ実装
+│   │   └── db/                  # GORM 接続
+│   ├── handler/                 # Gin ハンドラー層
+│   └── middleware/              # 認証・エラーハンドリングミドルウェア
 ├── pkg/
-│   └── apperror/           # アプリケーションエラー定義
+│   └── apperror/                # アプリケーションエラー定義
 ├── go.mod
 └── go.sum
 ```

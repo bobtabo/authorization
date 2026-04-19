@@ -10,12 +10,11 @@ declare(strict_types=1);
 
 namespace App\Domain\Notification\ValueObjects;
 
-use App\Domain\Notification\Entities\Notification;
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 
 /**
- * 通知一覧ページの結果 ValueObject です。
+ * 通知一覧ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Notification\ValueObjects
@@ -25,5 +24,5 @@ class NotificationListVo extends AbstractValueObject
     use Getter;
 
     private array $items = [];
-    private ?string $next_cursor = null;
+    private ?string $nextCursor = null;
 }

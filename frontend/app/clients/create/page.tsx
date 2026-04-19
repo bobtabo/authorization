@@ -8,6 +8,7 @@ import { ConsoleFooter } from "@/components/console-footer";
 import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
 import { formatCityWard } from "@/lib/postcode-jp";
 import { createClient } from "@/src/api/clients";
+import { extractApiError } from "@/lib/api-error";
 
 export default function ClientCreatePage(): React.JSX.Element {
   const [clientName, setClientName] = useState<string>("");
@@ -79,9 +80,9 @@ export default function ClientCreatePage(): React.JSX.Element {
       setConfirmOpen(false);
       sessionStorage.setItem("flashMessage", "クライアントを登録しました。");
       window.location.href = "/clients";
-    }).catch(() => {
+    }).catch((err: unknown) => {
       setConfirmOpen(false);
-      setMessage("登録に失敗しました。");
+      setMessage(extractApiError(err, "登録に失敗しました。"));
     }).finally(() => {
       setSaving(false);
     });

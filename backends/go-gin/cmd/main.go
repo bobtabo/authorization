@@ -5,9 +5,15 @@ import (
 	"authorization-go/internal/handler"
 	"authorization-go/internal/infrastructure/cache"
 	"authorization-go/internal/infrastructure/db"
+	"authorization-go/internal/infrastructure/mail"
+	"authorization-go/internal/infrastructure/persistence"
 	"authorization-go/internal/middleware"
-	"authorization-go/internal/repository"
-	"authorization-go/internal/service"
+	uclient "authorization-go/internal/usecase/client"
+	uauth "authorization-go/internal/usecase/auth"
+	ugate "authorization-go/internal/usecase/gate"
+	uinvitation "authorization-go/internal/usecase/invitation"
+	unotification "authorization-go/internal/usecase/notification"
+	ustaff "authorization-go/internal/usecase/staff"
 	"log"
 	"net/http"
 
@@ -26,28 +32,32 @@ func main() {
 	// --- Redis ---
 	rdb := cache.New(cfg)
 
-	// --- Repositories ---
-	clientRepo := repository.NewClientRepository(database)
-	staffRepo := repository.NewStaffRepository(database)
-	invitationRepo := repository.NewInvitationRepository(database, cfg.App.FrontendURL)
-	notificationRepo := repository.NewNotificationRepository(database)
-	gateCacheRepo := repository.NewGateCacheRepository(rdb, cfg)
+	// --- Infrastructure Repositories ---
+	clientRepo := persistence.NewGormClientRepository(database)
+	staffRepo := persistence.NewGormStaffRepository(database)
+	invitationRepo := persistence.NewGormInvitationRepository(database, cfg.App.FrontendURL)
+	notificationRepo := persistence.NewGormNotificationRepository(database)
+	gateCacheRepo := cache.NewGateCacheRepository(rdb, cfg)
 
-	// --- Services ---
-	authSvc := service.NewAuthService(staffRepo)
-	clientSvc := service.NewClientService(clientRepo)
-	staffSvc := service.NewStaffService(staffRepo)
-	invitationSvc := service.NewInvitationService(invitationRepo)
-	gateSvc := service.NewGateService(clientRepo, gateCacheRepo, cfg)
-	notificationSvc := service.NewNotificationService(notificationRepo, staffRepo)
+	// --- Usecases ---
+	authUC := uauth.NewInteractor(staffRepo)
+	clientUC := uclient.NewInteractor(clientRepo)
+	staffUC := ustaff.NewInteractor(staffRepo)
+	invitationUC := uinvitation.NewInteractor(invitationRepo)
+	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, cfg)
+	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
+
+	// --- Mail ---
+	mailer := mail.NewMailer(cfg.Mail)
 
 	// --- Handlers ---
-	authH := handler.NewAuthHandler(authSvc, invitationSvc, cfg)
-	clientH := handler.NewClientHandler(clientSvc, notificationSvc)
-	staffH := handler.NewStaffHandler(staffSvc)
-	invitationH := handler.NewInvitationHandler(invitationSvc)
-	gateH := handler.NewGateHandler(gateSvc)
-	notificationH := handler.NewNotificationHandler(notificationSvc, cfg)
+	authH := handler.NewAuthHandler(authUC, invitationUC, cfg)
+	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
+	staffH := handler.NewStaffHandler(staffUC)
+	invitationH := handler.NewInvitationHandler(invitationUC)
+	adminInvitationH := handler.NewAdminInvitationHandler(invitationUC)
+	gateH := handler.NewGateHandler(gateUC)
+	notificationH := handler.NewNotificationHandler(notificationUC, cfg)
 
 	// --- Router ---
 	if cfg.App.Env == "production" {
@@ -97,12 +107,14 @@ func main() {
 		api.DELETE("/staffs/:id/delete", staffH.Destroy)
 
 		// --- invitation ---
-		api.GET("/invitation/issue", invitationH.Issue)
 		api.GET("/invitation", invitationH.Index)
+
+		// --- admin ---
+		api.GET("/admin/invitation/issue", adminInvitationH.Issue)
 
 		// --- gate ---
 		api.GET("/gate/issue",
-			middleware.ClientTokenAuth(clientSvc),
+			middleware.ClientTokenAuth(clientUC),
 			gateH.Issue,
 		)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)
@@ -110,7 +122,6 @@ func main() {
 		// --- notifications ---
 		api.GET("/notifications/counts", notificationH.Counts)
 		api.GET("/notifications", notificationH.Index)
-		api.POST("/notifications", notificationH.Store)
 		api.PATCH("/notifications", notificationH.ReadAll)
 		api.PATCH("/notifications/:id", notificationH.Read)
 	}

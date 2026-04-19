@@ -487,11 +487,11 @@ paths:
         '404':
           description: スタッフが存在しない場合のエラー
 
-  /invitation/issue:
+  /admin/invitation/issue:
     get:
       summary: 招待URLを発行します
       tags:
-        - invitation
+        - admin
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -574,8 +574,7 @@ paths:
       summary: 通知一覧（メタデータ含む）
       description: |
         通知の一覧を返す。各アイテムにメタデータを含む。
-
-        **モダンな点:** cursor ベースのページネーションを採用する。
+        cursor ベースのページネーションを採用する。
       tags:
         - notifications
       security:
@@ -608,59 +607,18 @@ paths:
         '500':
           description: サーバーエラー
 
-    post:
-      summary: 通知のトリガー（内部/システム）
-      description: |
-        内部ジョブや連携システムから通知を発火する。利用者向け一覧取得とは用途が異なる。
-
-        **モダンな点:** べき等キー（`Idempotency-Key`）を許容する。
-      tags:
-        - notifications
-      parameters:
-        - name: Idempotency-Key
-          in: header
-          required: false
-          schema:
-            type: string
-          description: 同一キーでの重複送信を冪等に扱う
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationTriggerRequest'
-      responses:
-        '200':
-          description: 受理・作成結果
-        '202':
-          description: 非同期受理
-        '409':
-          description: べき等キー競合など
-        '500':
-          description: サーバーエラー
-
     patch:
       operationId: readAllNotifications
       summary: 全通知を既読にする
       description: |
-        複数通知を一括で既読などの状態に更新する。
-
-        **モダンな点:** 複数 ID 指定や `all: true` を Body で受け取る。
+        ログイン中スタッフの全通知を一括で既読にする。
       tags:
         - notifications
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationBulkPatchRequest'
       responses:
         '200':
           description: 更新成功
-        '400':
-          description: リクエストが不正
         '401':
           description: 未認証
         '500':
@@ -671,8 +629,7 @@ paths:
       summary: 未読・全件などのサマリー
       description: |
         未読件数・全件数など、通知まわりの集計を返す。
-
-        **モダンな点:** 複数種類のカウントを一度に返す。
+        複数種類のカウントを一度に返す。
       tags:
         - notifications
       security:
@@ -708,12 +665,6 @@ paths:
         - notifications
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationPatchRequest'
       responses:
         '200':
           description: 更新成功
@@ -1053,40 +1004,6 @@ components:
         unread: 3
         total: 42
 
-    NotificationPatchRequest:
-      type: object
-      description: 単一通知の差分更新（送ったフィールドのみ更新）
-      properties:
-        read:
-          type: boolean
-        archived:
-          type: boolean
-
-    NotificationBulkPatchRequest:
-      type: object
-      description: 一括更新。ids または all のいずれかを指定
-      properties:
-        ids:
-          type: array
-          items:
-            type: string
-            format: uuid
-        all:
-          type: boolean
-          description: true のとき対象を一括指定（運用上の制約は実装側）
-        read:
-          type: boolean
-
-    NotificationTriggerRequest:
-      type: object
-      description: 内部/システムからの通知発火ペイロード（詳細は実装に依存）
-      properties:
-        type:
-          type: string
-        payload:
-          type: object
-          additionalProperties: true
-
   securitySchemes:
     bearerAuth:
       type: http
@@ -1106,3 +1023,5 @@ tags:
     description: 認可API
   - name: notifications
     description: 通知API
+  - name: admin
+    description: 管理API

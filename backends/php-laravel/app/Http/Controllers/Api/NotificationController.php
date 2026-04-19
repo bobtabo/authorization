@@ -32,10 +32,10 @@ class NotificationController extends Controller
      * 通知一覧（カーソルページング）を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param NotificationService $notifications 通知ユースケース
+     * @param NotificationService $service 通知ユースケース
      * @return JsonResponse JSON レスポンス
      */
-    public function index(AppRequest $request, NotificationService $notifications): JsonResponse
+    public function index(AppRequest $request, NotificationService $service): JsonResponse
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
@@ -55,7 +55,7 @@ class NotificationController extends Controller
         $dto->cursor = $cursor;
         $dto->limit = $limit;
 
-        $vo = $notifications->listPage($dto);
+        $vo = $service->listPage($dto);
 
         $response = new IndexResponse();
         $response->assign($vo->attributes());
@@ -64,57 +64,26 @@ class NotificationController extends Controller
     }
 
     /**
-     * 通知トリガーを受理する応答を返します。
-     *
-     * @param AppRequest $request HTTP リクエスト
-     * @return JsonResponse JSON レスポンス（202）
-     */
-    public function store(AppRequest $request): JsonResponse
-    {
-        $body = $request->all();
-
-        return response()->success([
-            'message' => __('validation.custom.notification_accepted'),
-            'received' => $body !== [] ? $body : null,
-        ], 202);
-    }
-
-    /**
      * 通知の一括更新（既読など）の応答を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param NotificationService $notifications 通知ユースケース
+     * @param NotificationService $service 通知Service
      * @return JsonResponse JSON レスポンス
      */
-    public function readAll(AppRequest $request, NotificationService $notifications): JsonResponse
+    public function readAll(AppRequest $request, NotificationService $service): JsonResponse
     {
-        $staffId = $request->all()['executor_id'] ?? null;
+        $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
             throw AppException::unauthorized('unauthenticated');
         }
 
-        $validated = $request->validate([
-            'ids' => 'sometimes|array',
-            'ids.*' => 'integer',
-            'all' => 'sometimes|boolean',
+        $dto = new NotificationDto();
+        $dto->assign([
+            'staffId' => $staffId,
         ]);
 
-        $ids = isset($validated['ids']) && is_array($validated['ids'])
-            ? array_values(array_filter(array_map('intval', $validated['ids']), static fn($v) => $v > 0))
-            : null;
-        $all = (bool)($validated['all'] ?? false);
-
-        if (($ids === null || $ids === []) && !$all) {
-            throw AppException::badRequest('ids_or_all_required');
-        }
-
-        $dto = new NotificationDto();
-        $dto->staffId = (int)$staffId;
-        $dto->ids = $ids ?? [];
-        $dto->all = $all;
-
-        $vo = DB::transaction(function () use ($notifications, $dto) {
-            return $notifications->bulkMarkRead($dto);
+        $vo = DB::transaction(function () use ($service, $dto) {
+            return $service->reads($dto);
         });
 
         return response()->success(['updated' => $vo->getUpdated()]);
@@ -124,10 +93,10 @@ class NotificationController extends Controller
      * 通知件数の集計を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param NotificationService $notifications 通知ユースケース
+     * @param NotificationService $service 通知Service
      * @return JsonResponse JSON レスポンス
      */
-    public function counts(AppRequest $request, NotificationService $notifications): JsonResponse
+    public function counts(AppRequest $request, NotificationService $service): JsonResponse
     {
         $staffId = $this->staffIdFromCookie($request);
         if (empty($staffId)) {
@@ -137,7 +106,7 @@ class NotificationController extends Controller
         $dto = new NotificationDto();
         $dto->staffId = (int)$staffId;
 
-        $vo = $notifications->counts($dto);
+        $vo = $service->counts($dto);
 
         $response = new CountsResponse();
         $response->assign($vo->attributes());
@@ -149,20 +118,18 @@ class NotificationController extends Controller
      * 単一通知を更新する応答を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param NotificationService $notifications 通知ユースケース
-     * @param int $id 通知ID
+     * @param NotificationService $service 通知Service
      * @return JsonResponse JSON レスポンス
      */
-    public function read(AppRequest $request, NotificationService $notifications, int $id): JsonResponse
+    public function read(AppRequest $request, NotificationService $service): JsonResponse
     {
-        $attributes = $request->all();
-
         $dto = new NotificationDto();
-        $dto->notificationId = $id;
-        $dto->attributes = is_array($attributes) ? $attributes : [];
+        $dto->assign($request->all(), [
+            'id' => 'notificationId',
+        ]);
 
-        $vo = DB::transaction(function () use ($notifications, $dto) {
-            return $notifications->patch($dto);
+        $vo = DB::transaction(function () use ($service, $dto) {
+            return $service->read($dto);
         });
 
         return response()->success(['id' => $vo->getId()]);

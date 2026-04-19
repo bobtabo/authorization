@@ -12,6 +12,7 @@ namespace App\Http\Middleware;
 
 use App\Support\Exceptions\AppException;
 use App\UseCases\Client\ClientService;
+use App\UseCases\Client\Dtos\ClientDto;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,9 +40,10 @@ class ClientTokenAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->bearerToken() ?? '';
+        $dto = new ClientDto();
+        $dto->accessToken = $request->bearerToken() ?? '';
 
-        if (!$this->clientService->authenticateByToken($token)) {
+        if (!$this->clientService->authenticateByToken($dto)) {
             throw AppException::unauthorized('client_not_found');
         }
 

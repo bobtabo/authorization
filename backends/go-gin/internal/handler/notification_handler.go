@@ -2,7 +2,7 @@ package handler
 
 import (
 	"authorization-go/internal/config"
-	"authorization-go/internal/service"
+	unotification "authorization-go/internal/usecase/notification"
 	"authorization-go/pkg/apperror"
 	"net/http"
 	"strconv"
@@ -11,11 +11,11 @@ import (
 )
 
 type NotificationHandler struct {
-	svc *service.NotificationService
+	svc *unotification.Interactor
 	cfg *config.Config
 }
 
-func NewNotificationHandler(svc *service.NotificationService, cfg *config.Config) *NotificationHandler {
+func NewNotificationHandler(svc *unotification.Interactor, cfg *config.Config) *NotificationHandler {
 	return &NotificationHandler{svc: svc, cfg: cfg}
 }
 
@@ -62,42 +62,19 @@ func (h *NotificationHandler) Index(c *gin.Context) {
 
 	items := make([]map[string]interface{}, 0, len(page.Items))
 	for _, n := range page.Items {
-		items = append(items, service.MapNotification(n))
+		items = append(items, unotification.MapNotification(n))
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items, "next_cursor": page.NextCursor})
 }
 
-// POST /api/notifications
-func (h *NotificationHandler) Store(c *gin.Context) {
-	var body interface{}
-	_ = c.ShouldBindJSON(&body)
-	c.JSON(http.StatusAccepted, gin.H{
-		"message":  "notification_accepted",
-		"received": body,
-	})
-}
-
 // PATCH /api/notifications  (一括既読)
 func (h *NotificationHandler) ReadAll(c *gin.Context) {
-	var body struct {
-		IDs        []int64 `json:"ids"`
-		All        bool    `json:"all"`
-		ExecutorID int64   `json:"executor_id"`
-	}
-	if err := c.ShouldBindJSON(&body); err != nil {
-		_ = c.Error(apperror.BadRequest("invalid_request"))
-		return
-	}
-	if body.ExecutorID == 0 {
+	staffID := staffIDFromCookie(c)
+	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	if len(body.IDs) == 0 && !body.All {
-		_ = c.Error(apperror.BadRequest("ids_or_all_required"))
-		return
-	}
-
-	updated, err := h.svc.BulkMarkRead(body.ExecutorID, body.IDs, body.All)
+	updated, err := h.svc.BulkMarkRead(staffID)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -112,14 +89,7 @@ func (h *NotificationHandler) Read(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-
-	var body map[string]interface{}
-	if err = c.ShouldBindJSON(&body); err != nil {
-		_ = c.Error(apperror.BadRequest("invalid_request"))
-		return
-	}
-
-	if err = h.svc.Patch(id, body); err != nil {
+	if err = h.svc.MarkRead(id); err != nil {
 		_ = c.Error(err)
 		return
 	}

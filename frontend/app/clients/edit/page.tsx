@@ -8,6 +8,7 @@ import { ConsoleFooter } from "@/components/console-footer";
 import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
 import { formatCityWard } from "@/lib/postcode-jp";
 import { getClient, updateClient } from "@/src/api/clients";
+import { extractApiError } from "@/lib/api-error";
 
 export default function ClientEditPage(): React.JSX.Element {
   const [clientId, setClientId] = useState<number | null>(null);
@@ -101,9 +102,9 @@ export default function ClientEditPage(): React.JSX.Element {
       setConfirmOpen(false);
       sessionStorage.setItem("flashMessage", "クライアントを更新しました。");
       window.location.href = "/clients";
-    }).catch(() => {
+    }).catch((err: unknown) => {
       setConfirmOpen(false);
-      setMessage("更新に失敗しました。");
+      setMessage(extractApiError(err, "更新に失敗しました。"));
     }).finally(() => {
       setSaving(false);
     });

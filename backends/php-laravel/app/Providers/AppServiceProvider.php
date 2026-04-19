@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Domain\Client\Repositories\ClientRepository;
-use App\Domain\Invitation\Repositories\InvitationRepositoryInterface;
+use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Repositories\EloquentClientEloquentRepository;
@@ -46,7 +46,7 @@ class AppServiceProvider extends ServiceProvider
         // Domain ポート → Infrastructure 実装（DIP）
         $this->app->bind(ClientRepository::class, EloquentClientEloquentRepository::class);
         $this->app->bind(StaffRepository::class, EloquentStaffEloquentRepository::class);
-        $this->app->bind(InvitationRepositoryInterface::class, EloquentInvitationEloquentRepository::class);
+        $this->app->bind(InvitationRepository::class, EloquentInvitationEloquentRepository::class);
         $this->app->bind(NotificationRepository::class, EloquentNotificationRepository::class);
 
         // アプリケーションサービス（ユースケース）

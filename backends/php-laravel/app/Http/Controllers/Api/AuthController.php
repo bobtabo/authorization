@@ -24,7 +24,9 @@ use App\UseCases\Invitation\Dtos\InvitationDto;
 use App\UseCases\Invitation\InvitationService;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
@@ -41,10 +43,10 @@ class AuthController extends Controller
      * ログイン情報を返します（セッション／トークンで認証済みのユーザー）。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param AuthService $auth 認証ユースケース
+     * @param AuthService $service 認証Service
      * @return JsonResponse JSON レスポンス
      */
-    public function login(Request $request, AuthService $auth): JsonResponse
+    public function login(Request $request, AuthService $service): JsonResponse
     {
         $staffId = $this->staffIdFromCookie($request);
         if ($staffId === null) {
@@ -54,7 +56,7 @@ class AuthController extends Controller
         $dto = new AuthUserDto();
         $dto->id = $staffId;
 
-        $vo = $auth->findUser($dto);
+        $vo = $service->findUser($dto);
 
         $response = new AuthLoginResponse();
         $response->assign($vo->attributes());
@@ -66,16 +68,16 @@ class AuthController extends Controller
      * 招待トークンを検証し、招待情報を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param InvitationService $invitations 招待ユースケース
+     * @param InvitationService $service 招待Service
      * @return JsonResponse JSON レスポンス
      */
-    public function invitation(AppRequest $request, InvitationService $invitations): JsonResponse
+    public function invitation(AppRequest $request, InvitationService $service): JsonResponse
     {
         $dto = new InvitationDto();
         $dto->assign($request->input());
         $dto->token = $request->route('token');
 
-        $vo = $invitations->findByToken($dto);
+        $vo = $service->findByToken($dto);
 
         $response = new AuthInvitationResponse();
         $response->assign($vo->attributes());
@@ -88,8 +90,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function googleRedirect(
-    ): \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+    public function googleRedirect(): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         return Socialite::driver('google')->stateless()->redirect();
     }
@@ -97,11 +98,11 @@ class AuthController extends Controller
     /**
      * Google からのコールバックを処理します。
      *
-     * @param AuthService $auth 認証ユースケース
+     * @param AuthService $service 認証Service
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $service
-    ): \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector {
+    public function googleCallback(AuthService $service): RedirectResponse|Redirector
+    {
         $appConfig = config('authorization.app');
 
         try {
@@ -142,7 +143,7 @@ class AuthController extends Controller
      * 自分自身のプロフィールを返します（staff_id クッキーで認証済みのユーザー）。
      *
      * @param Request $request HTTP リクエスト
-     * @param AuthService $auth 認証ユースケース
+     * @param AuthService $auth 認証Service
      * @return JsonResponse JSON レスポンス
      */
     public function getMyProfile(Request $request, AuthService $auth): JsonResponse

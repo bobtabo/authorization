@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\Services;
+namespace App\UseCases;
 
 use App\Support\Services\AbstractService;
 
@@ -16,7 +16,7 @@ use App\Support\Services\AbstractService;
  * Serviceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domains\Services
+ * @package App\UseCases
  */
 class DummyClass extends AbstractService
 {

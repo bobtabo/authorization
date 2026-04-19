@@ -10,31 +10,38 @@ declare(strict_types=1);
 
 namespace App\UseCases\Notification;
 
+use App\Domain\Notification\Condition\NotificationCondition;
+use App\Domain\Notification\Entities\Notification;
 use App\Domain\Notification\Repositories\NotificationRepository;
-use App\Domain\Notification\ValueObjects\NotificationBulkPatchVo;
 use App\Domain\Notification\ValueObjects\NotificationCountsVo;
 use App\Domain\Notification\ValueObjects\NotificationListVo;
-use App\Domain\Notification\ValueObjects\NotificationPatchVo;
+use App\Domain\Notification\ValueObjects\NotificationSaveVo;
+use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Support\Exceptions\AppException;
+use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
+use App\Support\Traits\EnumValue;
+use app\UseCases\Notification\Dtos\NotificationCreateDto;
 use App\UseCases\Notification\Dtos\NotificationDto;
 
 /**
- * 通知一覧・件数取得・更新のユースケースをまとめるサービスです。
+ * 通知Serviceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Notification
  */
 class NotificationService extends AbstractService
 {
+    use EnumValue;
+
     /**
-     * @param NotificationRepository $notifications 通知Repository
-     * @param StaffRepository $staffs スタッフRepository
+     * @param NotificationRepository $notificationRepository 通知Repository
+     * @param StaffRepository $staffRepository スタッフRepository
      */
     public function __construct(
-        private readonly NotificationRepository $notifications,
-        private readonly StaffRepository $staffs,
+        private readonly NotificationRepository $notificationRepository,
+        private readonly StaffRepository $staffRepository,
     ) {
     }
 
@@ -46,11 +53,27 @@ class NotificationService extends AbstractService
      */
     public function listPage(NotificationDto $dto): NotificationListVo
     {
-        $limit = max(1, min(100, $dto->limit));
+        $condition = SimpleMapper::map($dto, NotificationCondition::class);
 
-        $page = $this->notifications->listPage((int)$dto->staffId, $dto->cursor, $limit);
+        $list = $this->notificationRepository->listPage($condition);
+        $condition->limit = max(1, min(100, $dto->limit));
+        $hasNext = $list->count() > $condition->limit;
+        $items = $hasNext ? $list->slice(0, $condition->limit) : $list;
 
-        return (new NotificationListVo())->assign($page);
+        $nextCursor = null;
+        if ($hasNext) {
+            $last = $items->last();
+            $nextCursor = base64_encode($last->createdAt->format('Y-m-d H:i:s') . ',' . $last->id);
+        }
+
+        $values = $list->map(function (Notification $row) use ($dto) {
+            return $this->toValues($row->attributesBySnake());
+        });
+
+        return new NotificationListVo()->assign([
+            'items' => $values->all(),
+            'nextCursor' => $nextCursor,
+        ]);
     }
 
     /**
@@ -61,54 +84,77 @@ class NotificationService extends AbstractService
      */
     public function counts(NotificationDto $dto): NotificationCountsVo
     {
-        return (new NotificationCountsVo())->assign($this->notifications->counts((int)$dto->staffId));
+        /** @var NotificationCondition $condition */
+        $condition = SimpleMapper::map($dto, NotificationCondition::class);
+        $total = $this->notificationRepository->counts($condition);
+
+        $condition->countUnread = true;
+        $unread = $this->notificationRepository->counts($condition);
+
+        return new NotificationCountsVo()->assign([
+            'total' => $total,
+            'unread' => $unread,
+        ]);
     }
 
     /**
      * 一括既読などの更新を行います。
      *
      * @param NotificationDto $dto 通知DTO
-     * @return NotificationBulkPatchVo 通知一括更新ValueObject
+     * @return NotificationSaveVo 通知更新ValueObject
      */
-    public function bulkMarkRead(NotificationDto $dto): NotificationBulkPatchVo
+    public function reads(NotificationDto $dto): NotificationSaveVo
     {
-        $updated = $this->notifications->bulkMarkRead((int)$dto->staffId, $dto->ids, $dto->all);
+        $condition = SimpleMapper::map($dto, NotificationCondition::class);
+        $updated = $this->notificationRepository->updateRead($condition);
 
-        return (new NotificationBulkPatchVo())->assign(['updated' => $updated]);
+        return new NotificationSaveVo()->assign(['updated' => $updated]);
     }
 
     /**
      * 有効なスタッフ全員へ通知を配信します（ファンアウト）。
      *
-     * @param string $title タイトル
-     * @param string $message メッセージ
-     * @param int $messageType メッセージ種類（1=info / 2=warn / 3=ok）
-     * @param int $executorId 登録者ID
-     * @param string|null $url 遷移先URL（省略可）
+     * @param NotificationCreateDto $dto 通知登録DTO
      * @return void
      */
-    public function fanOut(string $title, string $message, int $messageType, int $executorId, ?string $url = null): void
+    public function fanOut(NotificationCreateDto $dto): void
     {
-        $staffs = $this->staffs->findAllActive();
-        foreach ($staffs as $staff) {
-            $this->notifications->store($staff->id, $messageType, $title, $message, $executorId, $url);
-        }
+        $staffs = $this->staffRepository->findAllActive();
+
+        $notifications = $staffs->map(function (Staff $row) use ($dto) {
+            $entity = new Notification();
+            $entity->staffId = $row->id;
+            $entity->messageType = $dto->messageType;
+            $entity->title = $dto->title;
+            $entity->message = $dto->message;
+            $entity->url = $dto->url;
+            $entity->assignCreated($dto->executorId);
+            return $this->toValues($entity->attributesBySnake());
+        });
+
+        $this->notificationRepository->insertBatch($notifications->all());
     }
 
     /**
      * 単一通知を部分更新します。
      *
      * @param NotificationDto $dto 通知DTO
-     * @return NotificationPatchVo 通知更新ValueObject
+     * @return NotificationSaveVo 通知更新ValueObject
      */
-    public function patch(NotificationDto $dto): NotificationPatchVo
+    public function read(NotificationDto $dto): NotificationSaveVo
     {
-        $id = $dto->notificationId;
-        $ok = $this->notifications->patch((int)$id, $dto->attributes);
-        if (!$ok) {
-            throw AppException::noFound('notification_not_found');
+        $condition = SimpleMapper::mapSpecific($dto, NotificationCondition::class, [
+            'notificationId' => 'id',
+        ]);
+
+        $result = $this->notificationRepository->updateRead($condition);
+        if (!$result) {
+            throw AppException::notFound('notification_not_found');
         }
 
-        return (new NotificationPatchVo())->assign(['ok' => true, 'id' => $id]);
+        return new NotificationSaveVo()->assign([
+            'ok' => true,
+            'id' => $dto->notificationId
+        ]);
     }
 }

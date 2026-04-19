@@ -10,7 +10,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Notification\Repositories;
 
+use App\Domain\Notification\Condition\NotificationCondition;
 use App\Domain\Notification\Entities\Notification;
+use Illuminate\Support\Collection;
 
 /**
  * 通知一覧のページング取得と件数集計・更新を担うRepositoryのインターフェースです。
@@ -23,50 +25,32 @@ interface NotificationRepository
     /**
      * カーソル付きで通知一覧ページを取得します。
      *
-     * @param int $staffId 対象スタッフID
-     * @param string|null $cursor 次ページカーソル（先頭は null）
-     * @param int $limit 1ページあたりの最大件数
-     * @return array{items: list<Notification>, next_cursor: ?string} 一覧と次カーソル
+     * @param NotificationCondition $condition 検索条件
+     * @return Collection コレクション
      */
-    public function listPage(int $staffId, ?string $cursor, int $limit): array;
+    public function listPage(NotificationCondition $condition): Collection;
 
     /**
      * 通知件数の集計を取得します。
      *
-     * @param int $staffId 対象スタッフID
-     * @return array<string, int> 種別ごとの件数
+     * @param NotificationCondition $condition 検索条件
+     * @return int 件数
      */
-    public function counts(int $staffId): array;
+    public function counts(NotificationCondition $condition): int;
 
     /**
-     * 指定 ID の通知を一括で既読などの状態に更新します。
+     * 通知を既読更新します。
      *
-     * @param int $staffId 対象スタッフID
-     * @param list<int> $ids 対象 ID（空配列は未使用）
-     * @param bool $all 全件対象
+     * @param NotificationCondition $condition 検索条件
      * @return int 更新件数
      */
-    public function bulkMarkRead(int $staffId, array $ids, bool $all): int;
+    public function updateRead(NotificationCondition $condition): int;
 
     /**
-     * 単一通知を部分更新します。
+     * 通知を登録します。
      *
-     * @param int $id 通知 ID
-     * @param array<string, mixed> $attributes 更新属性（read 等）
-     * @return bool 成功時 true
-     */
-    public function patch(int $id, array $attributes): bool;
-
-    /**
-     * 通知を1件登録します。
-     *
-     * @param int $staffId 対象スタッフID
-     * @param int $messageType メッセージ種類
-     * @param string $title タイトル
-     * @param string $message メッセージ
-     * @param int $executorId 登録者ID
-     * @param string|null $url 遷移先URL（省略可）
+     * @param Notification $entity エンティティ
      * @return void
      */
-    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId, ?string $url = null): void;
+    public function persist(Notification $entity): void;
 }

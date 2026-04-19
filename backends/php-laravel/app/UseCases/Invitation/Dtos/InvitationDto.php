@@ -13,7 +13,7 @@ namespace App\UseCases\Invitation\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * 招待 API 用の入力 DTO です。
+ * 招待DTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Invitation\Dtos

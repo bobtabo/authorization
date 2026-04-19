@@ -66,14 +66,18 @@ describe("Notifications", () => {
     });
   });
 
-  describe("POST /api/notifications", () => {
-    test("通知トリガーが受け付けられる", async () => {
+  describe("PATCH /api/notifications", () => {
+    test("一括既読が成功する", async () => {
+      const staff = await makeStaff();
+      await makeNotification(staff.id, "通知A");
+      await makeNotification(staff.id, "通知B");
       const res = await app.request("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "新規通知", body: "通知本文" }),
+        method: "PATCH",
+        headers: { Cookie: `staff_id=${staff.id}` },
       });
-      expect(res.status).toBe(202);
+      expect(res.status).toBe(200);
+      const data = await res.json() as { updated: number };
+      expect(data.updated).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -83,8 +87,6 @@ describe("Notifications", () => {
       const n = await makeNotification(staff.id);
       const res = await app.request(`/api/notifications/${n.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ read: true }),
       });
       expect(res.status).toBe(200);
     });

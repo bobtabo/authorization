@@ -10,10 +10,13 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Repositories;
 
+use App\Domain\Notification\Condition\NotificationCondition;
 use App\Domain\Notification\Entities\Notification as Entity;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Infrastructure\Models\Notification as Model;
+use App\Support\Repositories\AbstractEloquentRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Eloquent により通知を読み書きするRepositoryクラスです。
@@ -21,21 +24,21 @@ use Carbon\Carbon;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentNotificationRepository implements NotificationRepository
+class EloquentNotificationRepository extends AbstractEloquentRepository implements NotificationRepository
 {
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function listPage(int $staffId, ?string $cursor, int $limit): array
+    public function listPage(NotificationCondition $condition): Collection
     {
         $query = Model::query()
-            ->where('staff_id', $staffId)
+            ->where('staff_id', $condition->staffId)
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc');
 
-        if ($cursor !== null) {
-            $decoded = base64_decode($cursor, true);
+        if ($condition->cursor !== null) {
+            $decoded = base64_decode($condition->cursor, true);
             if ($decoded !== false && str_contains($decoded, ',')) {
                 [$cursorCreatedAt, $cursorId] = explode(',', $decoded, 2);
                 $query->where(function ($q) use ($cursorCreatedAt, $cursorId) {
@@ -48,57 +51,49 @@ class EloquentNotificationRepository implements NotificationRepository
             }
         }
 
-        $rows = $query->limit($limit + 1)->get();
-        $hasNext = $rows->count() > $limit;
-        $items = $hasNext ? $rows->slice(0, $limit) : $rows;
+        $query->limit($condition->limit + 1);
+        return $this->findByQuery($query);
+    }
 
-        $nextCursor = null;
-        if ($hasNext) {
-            $last = $items->last();
-            $nextCursor = base64_encode($last->created_at->format('Y-m-d H:i:s') . ',' . $last->id);
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function counts(NotificationCondition $condition): int
+    {
+        $query = $this->getModel()->newQuery()->where('staff_id', $condition->staffId);
+
+        if ($condition->countUnread) {
+            $query->where('read', false);
         }
 
-        $entities = $items->map(fn($model) => (new Entity())->assign($model->toArray()))->values()->all();
-
-        return [
-            'items' => $entities,
-            'next_cursor' => $nextCursor,
-        ];
+        return $this->count($query);
     }
 
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function counts(int $staffId): array
+    public function updateRead(NotificationCondition $condition): int
     {
-        $total = Model::query()->where('staff_id', $staffId)->count();
-        $unread = Model::query()->where('staff_id', $staffId)->where('read', false)->count();
+        if ($condition->id !== null) {
+            $entity = $this->findByPk($condition->id);
+            $condition->staffId = $entity->staffId;
+            $condition->ids[] = $entity->id;
+        }
 
-        return [
-            'unread' => $unread,
-            'total' => $total,
-            'counts' => [],
-        ];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    public function bulkMarkRead(int $staffId, array $ids, bool $all): int
-    {
-        $query = Model::query()
-            ->where('staff_id', $staffId)
+        $query = $this->getModel()->newQuery()
+            ->where('staff_id', $condition->staffId)
             ->where('read', false);
 
-        if (!$all && $ids !== []) {
-            $query->whereIn('id', $ids);
+        if ($condition->ids !== []) {
+            $query->whereIn('id', $condition->ids);
         }
 
         return $query->update([
             'read' => true,
             'updated_at' => Carbon::now(),
+            'updated_by' => $condition->staffId
         ]);
     }
 
@@ -106,46 +101,26 @@ class EloquentNotificationRepository implements NotificationRepository
      * {@inheritdoc}
      */
     #[\Override]
-    public function store(int $staffId, int $messageType, string $title, string $message, int $executorId, ?string $url = null): void
+    public function persist(Entity $entity): void
     {
-        $now = Carbon::now();
-        $model = new Model();
-        $model->fill([
-            'staff_id' => $staffId,
-            'message_type' => $messageType,
-            'title' => $title,
-            'message' => $message,
-            'url' => $url,
-            'read' => false,
-            'created_by' => $executorId,
-            'updated_by' => $executorId,
-            'version' => 1,
-        ]);
-        $model->created_at = $now;
-        $model->updated_at = $now;
-        $model->save();
+        $this->save($entity);
     }
 
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function patch(int $id, array $attributes): bool
+    protected function getModel(): Model
     {
-        $model = Model::query()->find($id);
-        if ($model === null) {
-            return false;
-        }
+        return new Model();
+    }
 
-        $allowed = ['read'];
-        $filtered = array_intersect_key($attributes, array_flip($allowed));
-        if (empty($filtered)) {
-            return false;
-        }
-
-        $filtered['updated_at'] = Carbon::now();
-        $model->fill($filtered)->save();
-
-        return true;
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    protected function getEntity(): Entity
+    {
+        return new Entity();
     }
 }

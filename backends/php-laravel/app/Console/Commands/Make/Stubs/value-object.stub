@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\ValueObjects;
+namespace App\Domain;
 
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
@@ -17,7 +17,7 @@ use App\Support\ValueObjects\AbstractValueObject;
  * ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domains\ValueObjects
+ * @package App\Domain
  */
 class DummyClass extends AbstractValueObject
 {

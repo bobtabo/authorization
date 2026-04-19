@@ -80,7 +80,7 @@ class AppException extends RuntimeException
      * @param array $replace メッセージ置換文字列
      * @return self 例外
      */
-    public static function noFound(string $key, array $replace = []): self
+    public static function notFound(string $key, array $replace = []): self
     {
         return new self(Response::HTTP_NOT_FOUND, $key, $replace);
     }

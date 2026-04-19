@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\UseCases\Staff\Dtos;
 
+use App\Domain\Staff\Enums\StaffRole;
 use App\Support\Dtos\AbstractDto;
 
 /**
@@ -39,9 +40,9 @@ class StaffDto extends AbstractDto
     public array $statuses = [];
 
     /**
-     * 権限更新時の権限コード（{@see \App\Domain\Staff\Enums\StaffRole} の値）。
+     * 権限更新時の権限コード
      */
-    public ?int $role = null;
+    public ?StaffRole $role = null;
 
     /**
      * 操作を実行したスタッフID。

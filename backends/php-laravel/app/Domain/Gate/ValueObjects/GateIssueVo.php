@@ -14,7 +14,7 @@ use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 
 /**
- * JWT 発行結果 ValueObject です。
+ * JWT発行ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Gate\ValueObjects

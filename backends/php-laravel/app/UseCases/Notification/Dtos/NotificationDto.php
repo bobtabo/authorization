@@ -13,7 +13,7 @@ namespace App\UseCases\Notification\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * 通知 API 用の入力 DTO です。
+ * 通知DTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Notification\Dtos
@@ -21,9 +21,7 @@ use App\Support\Dtos\AbstractDto;
 class NotificationDto extends AbstractDto
 {
     public ?int $staffId = null;
-
     public ?string $cursor = null;
-
     public int $limit = 20;
 
     /**
@@ -32,15 +30,6 @@ class NotificationDto extends AbstractDto
      * @var list<int>
      */
     public array $ids = [];
-
     public bool $all = false;
-
     public ?int $notificationId = null;
-
-    /**
-     * 単一通知の部分更新内容。
-     *
-     * @var array<string, mixed>
-     */
-    public array $attributes = [];
 }

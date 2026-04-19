@@ -1,6 +1,6 @@
 /**
  * Vitest グローバルセットアップ。
- * DB_DATABASE=authorization_test は vitest.config.ts の env で設定済み。
+ * 環境変数は vitest.config.ts で .env.testing.local / .env.testing を読み込み済み。
  * テスト用テーブルの作成とテスト間のクリーンアップを担当します。
  */
 import { beforeEach } from "vitest";
@@ -8,7 +8,7 @@ import * as mysql from "mysql2/promise";
 
 // テスト用 DB 接続（テーブル作成・トランケート専用）
 const adminPool = mysql.createPool({
-  host: process.env.DB_HOST ?? "host.docker.internal",
+  host: process.env.DB_HOST ?? "127.0.0.1",
   port: Number(process.env.DB_PORT ?? 3306),
   database: process.env.DB_DATABASE ?? "authorization_test",
   user: process.env.DB_USERNAME ?? "develop",
@@ -53,7 +53,7 @@ CREATE TABLE \`clients\` (
   \`building\`      VARCHAR(255)    DEFAULT '',
   \`tel\`           VARCHAR(255)    DEFAULT '',
   \`email\`         VARCHAR(255)    DEFAULT '',
-  \`status\`        INT             DEFAULT 0,
+  \`status\`        INT             DEFAULT 1,
   \`access_token\`  VARCHAR(512),
   \`public_key\`    TEXT,
   \`private_key\`   TEXT,
@@ -61,8 +61,12 @@ CREATE TABLE \`clients\` (
   \`start_at\`      DATETIME        NULL,
   \`stop_at\`       DATETIME        NULL,
   \`created_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP,
+  \`created_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
   \`updated_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  \`updated_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
   \`deleted_at\`    DATETIME        NULL,
+  \`deleted_by\`    INT UNSIGNED    NULL,
+  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 1,
   PRIMARY KEY (\`id\`),
   UNIQUE KEY \`idx_clients_identifier\` (\`identifier\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -88,7 +92,7 @@ CREATE TABLE \`notifications\` (
   \`created_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
   \`updated_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   \`updated_by\`    INT UNSIGNED    NOT NULL DEFAULT 0,
-  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 0,
+  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 1,
   PRIMARY KEY (\`id\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 `;

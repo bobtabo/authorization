@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Notification\Entities;
 
+use App\Domain\Staff\Entities\Staff;
 use App\Support\Entities\AbstractEntity;
 
 /**
@@ -26,5 +27,8 @@ class Notification extends AbstractEntity
     public ?string $title = null;
     public ?string $message = null;
     public ?string $url = null;
-    public ?bool $read = null;
+    public bool $read = false;
+
+    //Relation
+    public ?Staff $staff = null;
 }

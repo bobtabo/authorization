@@ -7,10 +7,16 @@ import (
 	"authorization-go/internal/handler"
 	"authorization-go/internal/infrastructure/cache"
 	"authorization-go/internal/infrastructure/db"
+	"authorization-go/internal/infrastructure/mail"
+	"authorization-go/internal/infrastructure/model"
+	"authorization-go/internal/infrastructure/persistence"
 	"authorization-go/internal/middleware"
-	"authorization-go/internal/model"
-	"authorization-go/internal/repository"
-	"authorization-go/internal/service"
+	uclient "authorization-go/internal/usecase/client"
+	uauth "authorization-go/internal/usecase/auth"
+	ugate "authorization-go/internal/usecase/gate"
+	uinvitation "authorization-go/internal/usecase/invitation"
+	unotification "authorization-go/internal/usecase/notification"
+	ustaff "authorization-go/internal/usecase/staff"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -41,14 +47,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	// プロジェクトルートの .env を明示的にロードしてから DB 名だけ上書き
-	// （godotenv.Load は既存の env var を上書きしないため、順番が重要）
-	envFile := os.Getenv("ENV_FILE")
-	if envFile == "" {
-		envFile = "../.env"
-	}
-	_ = godotenv.Load(envFile)
-	os.Setenv("DB_DATABASE", "authorization_test")
+	// ローカルコンテナ用（host.docker.internal）を優先、なければ CI 用（127.0.0.1）
+	// godotenv.Load は既存の env var を上書きしないため CI の env vars が最優先される
+	_ = godotenv.Load("../.env.testing.local")
+	_ = godotenv.Load("../.env.testing")
 
 	testCfg = config.Load()
 
@@ -74,25 +76,26 @@ func TestMain(m *testing.M) {
 func buildRouter() *gin.Engine {
 	rdb := cache.New(testCfg)
 
-	clientRepo := repository.NewClientRepository(testDB)
-	staffRepo := repository.NewStaffRepository(testDB)
-	invitationRepo := repository.NewInvitationRepository(testDB, testCfg.App.FrontendURL)
-	notificationRepo := repository.NewNotificationRepository(testDB)
-	gateCacheRepo := repository.NewGateCacheRepository(rdb, testCfg)
+	clientRepo := persistence.NewGormClientRepository(testDB)
+	staffRepo := persistence.NewGormStaffRepository(testDB)
+	invitationRepo := persistence.NewGormInvitationRepository(testDB, testCfg.App.FrontendURL)
+	notificationRepo := persistence.NewGormNotificationRepository(testDB)
+	gateCacheRepo := cache.NewGateCacheRepository(rdb, testCfg)
 
-	authSvc := service.NewAuthService(staffRepo)
-	clientSvc := service.NewClientService(clientRepo)
-	staffSvc := service.NewStaffService(staffRepo)
-	invitationSvc := service.NewInvitationService(invitationRepo)
-	gateSvc := service.NewGateService(clientRepo, gateCacheRepo, testCfg)
-	notificationSvc := service.NewNotificationService(notificationRepo, staffRepo)
+	authUC := uauth.NewInteractor(staffRepo)
+	clientUC := uclient.NewInteractor(clientRepo)
+	staffUC := ustaff.NewInteractor(staffRepo)
+	invitationUC := uinvitation.NewInteractor(invitationRepo)
+	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, testCfg)
+	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
 
-	authH := handler.NewAuthHandler(authSvc, invitationSvc, testCfg)
-	clientH := handler.NewClientHandler(clientSvc, notificationSvc)
-	staffH := handler.NewStaffHandler(staffSvc)
-	invitationH := handler.NewInvitationHandler(invitationSvc)
-	gateH := handler.NewGateHandler(gateSvc)
-	notificationH := handler.NewNotificationHandler(notificationSvc, testCfg)
+	mailer := mail.NewMailer(testCfg.Mail)
+	authH := handler.NewAuthHandler(authUC, invitationUC, testCfg)
+	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
+	staffH := handler.NewStaffHandler(staffUC)
+	invitationH := handler.NewInvitationHandler(invitationUC)
+	gateH := handler.NewGateHandler(gateUC)
+	notificationH := handler.NewNotificationHandler(notificationUC, testCfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -119,15 +122,16 @@ func buildRouter() *gin.Engine {
 		api.PATCH("/staffs/:id/restore", staffH.Restore)
 		api.DELETE("/staffs/:id/delete", staffH.Destroy)
 
-		api.GET("/invitation/issue", invitationH.Issue)
 		api.GET("/invitation", invitationH.Index)
 
-		api.GET("/gate/issue", middleware.ClientTokenAuth(clientSvc), gateH.Issue)
+		adminInvH := handler.NewAdminInvitationHandler(invitationUC)
+		api.GET("/admin/invitation/issue", adminInvH.Issue)
+
+		api.GET("/gate/issue", middleware.ClientTokenAuth(clientUC), gateH.Issue)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)
 
 		api.GET("/notifications/counts", notificationH.Counts)
 		api.GET("/notifications", notificationH.Index)
-		api.POST("/notifications", notificationH.Store)
 		api.PATCH("/notifications", notificationH.ReadAll)
 		api.PATCH("/notifications/:id", notificationH.Read)
 	}
