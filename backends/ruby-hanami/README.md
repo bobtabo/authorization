@@ -84,8 +84,6 @@ backends/ruby-hanami/
 │       └── cache/           # Redis キャッシュリポジトリ実装
 ├── config/
 │   └── routes.rb
-├── db/
-│   └── migrate/
 ├── spec/                    # RSpec テスト
 ├── Gemfile
 └── Gemfile.lock
@@ -129,13 +127,7 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
-### 3. マイグレーション
-
-```bash
-bundle exec hanami db migrate
-```
-
-### 4. 起動
+### 3. 起動
 
 ```bash
 bundle exec hanami server
