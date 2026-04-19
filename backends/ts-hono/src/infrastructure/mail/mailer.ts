@@ -17,7 +17,7 @@ export async function sendAccessToken(to: string, clientName: string, token: str
   if (!to) return;
 
   const { host, port, username, password, fromAddress, appName } = config.mail;
-  const subject = mailSubject(`【${appName}】アクセストークンのお知らせ`);
+  const subject = mailSubject(`【${appName} / TypeScript】アクセストークンのお知らせ`);
   const html = buildHtml(clientName, token, appName);
 
   const transporter = nodemailer.createTransport({

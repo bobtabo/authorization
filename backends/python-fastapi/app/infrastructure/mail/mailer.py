@@ -26,7 +26,7 @@ def send_access_token(to: str, client_name: str, token: str) -> None:
     if not to:
         return
     settings = get_settings()
-    subject = _mail_subject(settings.app_env, f"【{settings.app_name}】アクセストークンのお知らせ")
+    subject = _mail_subject(settings.app_env, f"【{settings.app_name} / Python】アクセストークンのお知らせ")
     html = _build_html(client_name, token, settings.app_name)
 
     msg = MIMEMultipart("alternative")
