@@ -22,16 +22,20 @@
 
 ## :file_folder: ディレクトリ構成
 
-| パス                                                           | 内容                                                                 |
-|--------------------------------------------------------------|--------------------------------------------------------------------|
-| [`develop/`](./develop/)                                     | AWSの開発環境用を想定                                                       |
-| [`local/app-go/`](local/app-go/)         | Go 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                     |
-| [`local/app-php/`](local/app-php/)       | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                    |
-| [`local/app-python/`](local/app-python/) | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
-| [`local/app-ts/`](local/app-ts/)         | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
-| [`local/common/`](local/common/)         | 複数バックエンドで共有する共通インフラ。 |
-| [`production/`](./production/)                               | AWSの本番環境用を想定                                                       |
-| [`staging/`](./staging/)                                     | AWSの検証環境用を想定                                                       |
+| パス                                                                   | 内容                                                                 |
+|----------------------------------------------------------------------|--------------------------------------------------------------------|
+| [`develop/`](./develop/)                                             | AWSの開発環境用を想定                                                       |
+| [`local/app-go/`](local/app-go/)             | Go 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                     |
+| [`local/app-kotlin/`](local/app-kotlin/)     | Kotlin（Ktor）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
+| [`local/app-php/`](local/app-php/)           | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                    |
+| [`local/app-python/`](local/app-python/)     | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
+| [`local/app-rb-hanami/`](local/app-rb-hanami/) | Ruby（Hanami）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。           |
+| [`local/app-rb-rails/`](local/app-rb-rails/)   | Ruby（Rails）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。            |
+| [`local/app-rust/`](local/app-rust/)         | Rust（Axum）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
+| [`local/app-ts/`](local/app-ts/)             | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
+| [`local/common/`](local/common/)             | 複数バックエンドで共有する共通インフラ。                                              |
+| [`production/`](./production/)                                       | AWSの本番環境用を想定                                                       |
+| [`staging/`](./staging/)                                             | AWSの検証環境用を想定                                                       |
 
 `common` 側で Docker ネットワーク `authorization` を作成し、各 `docker-compose` はそのネットワークに参加します（`external: true`）。
 
@@ -83,11 +87,23 @@ bin/docker-common.sh down
 # Go環境を起動する
 bin/docker-go.sh up
 
+# Kotlin（Ktor）環境を起動する
+bin/docker-kotlin.sh up
+
 # PHP環境を起動する
 bin/docker-php.sh up
 
 # Python環境を起動する
 bin/docker-python.sh up
+
+# Ruby（Hanami）環境を起動する
+bin/docker-rb-hanami.sh up
+
+# Ruby（Rails）環境を起動する
+bin/docker-rb-rails.sh up
+
+# Rust（Axum）環境を起動する
+bin/docker-rust.sh up
 
 # TypeScript環境を起動する
 bin/docker-ts.sh up
@@ -99,11 +115,23 @@ bin/docker-ts.sh up
 # Go環境に入る
 bin/docker-go.sh exec
 
+# Kotlin（Ktor）環境に入る
+bin/docker-kotlin.sh exec
+
 # PHP環境に入る
 bin/docker-php.sh exec
 
 # Python環境に入る
 bin/docker-python.sh exec
+
+# Ruby（Hanami）環境に入る
+bin/docker-rb-hanami.sh exec
+
+# Ruby（Rails）環境に入る
+bin/docker-rb-rails.sh exec
+
+# Rust（Axum）環境に入る
+bin/docker-rust.sh exec
 
 # TypeScript環境に入る
 bin/docker-ts.sh exec
@@ -115,23 +143,35 @@ bin/docker-ts.sh exec
 # Go環境を破棄する
 bin/docker-go.sh down
 
+# Kotlin（Ktor）環境を破棄する
+bin/docker-kotlin.sh down
+
 # PHP環境を破棄する
 bin/docker-php.sh down
 
 # Python環境を破棄する
 bin/docker-python.sh down
 
+# Ruby（Hanami）環境を破棄する
+bin/docker-rb-hanami.sh down
+
+# Ruby（Rails）環境を破棄する
+bin/docker-rb-rails.sh down
+
+# Rust（Axum）環境を破棄する
+bin/docker-rust.sh down
+
 # TypeScript環境を破棄する
 bin/docker-ts.sh down
 ```
 
-### 全コンテナを起動する
+### 全コンテナを一括起動する
 
 ```bash
 bin/docker-backends.sh up
 ```
 
-### コンテナを破棄する
+### 全コンテナを一括破棄する
 
 ```bash
 bin/docker-backends.sh down
