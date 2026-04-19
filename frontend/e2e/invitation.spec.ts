@@ -45,7 +45,7 @@ for (const backend of BACKENDS) {
   test.describe(`招待URL [${backend.label}]`, () => {
     test.beforeEach(async ({ page }) => {
       await mockCommon(page, API);
-      await page.route(`${API}/invitation`, (route) =>
+      await page.route(`${API}/admin/invitation`, (route) =>
         route.fulfill({
           json: {
             found: true,
@@ -132,8 +132,8 @@ for (const backend of BACKENDS) {
 
     // ── エラー・モック警告 ────────────────────────────────────────────────────
 
-    test("GET /invitation エラー時にモック警告バナーが表示される", async ({ page }) => {
-      await page.route(`${API}/invitation`, (route) =>
+    test("GET /admin/invitation エラー時にモック警告バナーが表示される", async ({ page }) => {
+      await page.route(`${API}/admin/invitation`, (route) =>
         route.fulfill({ status: 500, json: { message: "internal_server_error" } }),
       );
 

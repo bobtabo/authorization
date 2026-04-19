@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\Invitation\InvitationIndexResponse;
 use App\Http\Responses\Invitation\InvitationIssueResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\UseCases\Invitation\Dtos\InvitationDto;
@@ -26,6 +27,23 @@ use Illuminate\Support\Facades\DB;
  */
 class InvitationController extends Controller
 {
+    /**
+     * 現在の招待 URL を返します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param InvitationService $service 招待Service
+     * @return JsonResponse JSON レスポンス
+     */
+    public function index(AppRequest $request, InvitationService $service): JsonResponse
+    {
+        $vo = $service->current(new InvitationDto());
+
+        $response = new InvitationIndexResponse();
+        $response->assign($vo->attributes());
+
+        return response()->success($response->attributes());
+    }
+
     /**
      * 招待 URL を発行します。
      *

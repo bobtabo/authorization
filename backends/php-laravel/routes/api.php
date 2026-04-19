@@ -9,7 +9,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\GateController;
 use App\Http\Controllers\Api\Admin\InvitationController as AdminInvitationController;
-use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StaffController;
 use Illuminate\Support\Facades\Route;
@@ -47,11 +46,6 @@ Route::prefix('staffs')->controller(StaffController::class)->group(function () {
     Route::delete('{id}/delete', 'destroy')->whereNumber('id');
 });
 
-// --- invitation ---
-Route::prefix('invitation')->controller(InvitationController::class)->group(function () {
-    Route::get('/', 'index');
-});
-
 // --- gate（OpenAPI: issue のみ bearerAuth）---
 Route::prefix('gate')->controller(GateController::class)->group(function () {
     Route::get('issue', 'issue')->middleware('client.token');
@@ -70,6 +64,7 @@ Route::prefix('notifications')->controller(NotificationController::class)->group
 // --- admin ---
 Route::prefix('admin')->group(function () {
     Route::prefix('invitation')->controller(AdminInvitationController::class)->group(function () {
+        Route::get('/', 'index');
         Route::get('issue', 'issue');
     });
 });

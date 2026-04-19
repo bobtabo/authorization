@@ -6,9 +6,9 @@ export type InvitationUrlResponse = {
   token: string;
 };
 
-/** GET /invitation */
+/** GET /admin/invitation */
 export async function getInvitation(): Promise<InvitationUrlResponse> {
-  return apiGet<InvitationUrlResponse>("/invitation");
+  return apiGet<InvitationUrlResponse>("/admin/invitation");
 }
 
 /** GET /admin/invitation/issue */

@@ -5,6 +5,16 @@ import { makeInvitation } from "./helpers.js";
 const app = createApp();
 
 describe("AdminInvitations", () => {
+  describe("GET /api/admin/invitation", () => {
+    test("現在の招待URLが取得できる", async () => {
+      const inv = await makeInvitation("current-token");
+      const res = await app.request("/api/admin/invitation");
+      expect(res.status).toBe(200);
+      const body = await res.json() as Record<string, unknown>;
+      expect(body.token).toBe(inv.token);
+    });
+  });
+
   describe("GET /api/admin/invitation/issue", () => {
     test("招待URLが発行できる", async () => {
       const res = await app.request("/api/admin/invitation/issue");

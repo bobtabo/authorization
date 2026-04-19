@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Infrastructure\Models\Invitation;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -22,6 +23,21 @@ use Tests\TestCase;
 class InvitationControllerTest extends TestCase
 {
     use DatabaseMigrations;
+
+    /**
+     * 現在の招待URL取得テストです。
+     *
+     * @return void
+     */
+    public function testIndex(): void
+    {
+        Invitation::factory()->create(['token' => 'test-current-token']);
+        $response = $this->get('/api/admin/invitation');
+        $data = $this->getResponseData('Invitation/index.json');
+        $response
+            ->assertStatus(200)
+            ->assertJson($data);
+    }
 
     /**
      * 招待URL発行テストです。
