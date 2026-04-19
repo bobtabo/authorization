@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config.settings import get_settings
 from app.exceptions import AppError
-from app.routers import auth, clients, staffs, invitations, gate, notifications
+from app.routers import auth, clients, staffs, invitations, admin_invitations, gate, notifications
 from app.routers.auth import oauth_router
 
 settings = get_settings()
@@ -33,5 +33,6 @@ app.include_router(auth.router, prefix=prefix)
 app.include_router(clients.router, prefix=prefix)
 app.include_router(staffs.router, prefix=prefix)
 app.include_router(invitations.router, prefix=prefix)
+app.include_router(admin_invitations.router, prefix=prefix)
 app.include_router(gate.router, prefix=prefix)
 app.include_router(notifications.router, prefix=prefix)

@@ -6,6 +6,7 @@ import authRoutes, { oauthApp } from "./routes/auth.js";
 import clientRoutes from "./routes/clients.js";
 import staffRoutes from "./routes/staffs.js";
 import invitationRoutes from "./routes/invitations.js";
+import adminInvitationRoutes from "./routes/adminInvitations.js";
 import gateRoutes from "./routes/gate.js";
 import notificationRoutes from "./routes/notifications.js";
 
@@ -34,6 +35,7 @@ export function createApp(): Hono {
   api.route("/", clientRoutes);
   api.route("/", staffRoutes);
   api.route("/", invitationRoutes);
+  api.route("/", adminInvitationRoutes);
   api.route("/", gateRoutes);
   api.route("/", notificationRoutes);
 

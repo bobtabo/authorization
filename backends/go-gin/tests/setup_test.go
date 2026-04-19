@@ -122,8 +122,10 @@ func buildRouter() *gin.Engine {
 		api.PATCH("/staffs/:id/restore", staffH.Restore)
 		api.DELETE("/staffs/:id/delete", staffH.Destroy)
 
-		api.GET("/invitation/issue", invitationH.Issue)
 		api.GET("/invitation", invitationH.Index)
+
+		admin := api.Group("/admin")
+		admin.GET("/invitation/issue", handler.NewAdminInvitationHandler(invitationUC).Issue)
 
 		api.GET("/gate/issue", middleware.ClientTokenAuth(clientUC), gateH.Issue)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)

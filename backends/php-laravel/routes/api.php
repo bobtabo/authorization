@@ -8,6 +8,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\GateController;
+use App\Http\Controllers\Api\Admin\InvitationController as AdminInvitationController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StaffController;
@@ -46,10 +47,16 @@ Route::prefix('staffs')->controller(StaffController::class)->group(function () {
     Route::delete('{id}/delete', 'destroy')->whereNumber('id');
 });
 
-// --- invitation（/invitation/issue を先に）---
+// --- invitation ---
 Route::prefix('invitation')->controller(InvitationController::class)->group(function () {
-    Route::get('issue', 'issue');
     Route::get('/', 'index');
+});
+
+// --- admin ---
+Route::prefix('admin')->group(function () {
+    Route::prefix('invitation')->controller(AdminInvitationController::class)->group(function () {
+        Route::get('issue', 'issue');
+    });
 });
 
 // --- gate（OpenAPI: issue のみ bearerAuth）---

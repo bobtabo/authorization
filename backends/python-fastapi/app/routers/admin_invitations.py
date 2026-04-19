@@ -5,7 +5,7 @@ from app.usecase.invitation.interactor import InvitationInteractor
 router = APIRouter()
 
 
-@router.get("/invitation")
-def index(interactor: InvitationInteractor = Depends(get_invitation_interactor)):
-    result = interactor.current()
+@router.get("/admin/invitation/issue")
+def issue(interactor: InvitationInteractor = Depends(get_invitation_interactor)):
+    result = interactor.issue()
     return {"found": True, "url": result.url, "display_url": result.display_url, "token": result.token}

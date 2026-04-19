@@ -7,17 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type InvitationHandler struct {
+type AdminInvitationHandler struct {
 	svc *uinvitation.Interactor
 }
 
-func NewInvitationHandler(svc *uinvitation.Interactor) *InvitationHandler {
-	return &InvitationHandler{svc: svc}
+func NewAdminInvitationHandler(svc *uinvitation.Interactor) *AdminInvitationHandler {
+	return &AdminInvitationHandler{svc: svc}
 }
 
-// GET /api/invitation
-func (h *InvitationHandler) Index(c *gin.Context) {
-	result, err := h.svc.Current()
+// GET /api/admin/invitation/issue
+func (h *AdminInvitationHandler) Issue(c *gin.Context) {
+	result, err := h.svc.Issue()
 	if err != nil {
 		_ = c.Error(err)
 		return
