@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-<a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-2.3.20-C50FDF?logo=kotlin&logoColor=white" alt="Kotlin 2.3.20"></a>
-<a href="https://ktor.io/"><img src="https://img.shields.io/badge/Ktor-3.4.2-F27D2C?logo=ktor&logoColor=white" alt="Ktor 3.4.2"></a>
-<a href="https://www.jetbrains.com/exposed/"><img src="https://img.shields.io/badge/Exposed-1.2.0-E945FA?logo=exposed&logoColor=white" alt="Exposed 1.2.0"></a>
+<a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-latest-C50FDF?logo=kotlin&logoColor=white" alt="Kotlin"></a>
+<a href="https://ktor.io/"><img src="https://img.shields.io/badge/Ktor-latest-F27D2C?logo=ktor&logoColor=white" alt="Ktor"></a>
+<a href="https://www.jetbrains.com/exposed/"><img src="https://img.shields.io/badge/Exposed-latest-E945FA?logo=exposed&logoColor=white" alt="Exposed"></a>
 </p>
 
 ---
@@ -32,18 +32,18 @@ DDD + クリーンアーキテクチャを採用しています。
 HTTP Request
     │
     ▼
-Handler (internal/handler/)
+Handler (src/main/kotlin/.../handler/)
     │  リクエスト解析・レスポンス整形
     ▼
-UseCase / Interactor (internal/usecase/)
+UseCase / Interactor (.../usecase/)
     │  ビジネスロジック・鍵ペア生成・JWT 操作
     │  Domain Repository インターフェースに依存（依存性逆転）
     ▼
-Domain (internal/domain/)
+Domain (.../domain/)
     │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-Infrastructure (internal/infrastructure/)
-    │  GORM 実装リポジトリ・Redis キャッシュ
+Infrastructure (.../infrastructure/)
+    │  Exposed リポジトリ・Redis キャッシュ
     ▼
 MySQL / Redis
 ```
@@ -64,35 +64,34 @@ MySQL / Redis
 ## :file_folder: ディレクトリ構成
 
 ```
-backends/go-gin/
-├── cmd/
-│   └── main.go                  # エントリーポイント・DI 組み立て・ルーティング
-├── internal/
-│   ├── config/                  # 環境変数読み込み（godotenv）
-│   ├── domain/                  # ドメイン層
-│   │   ├── client/              # エンティティ・リポジトリ IF・値オブジェクト・条件・列挙
+backends/kotlin-ktor/
+├── src/main/kotlin/com/authorization/
+│   ├── Application.kt       # エントリーポイント・DI 組み立て・ルーティング
+│   ├── config/              # 環境変数読み込み
+│   ├── domain/              # ドメイン層
+│   │   ├── client/          # エンティティ・リポジトリ IF・値オブジェクト
 │   │   ├── staff/
 │   │   ├── invitation/
 │   │   ├── notification/
-│   │   └── gate/                # 値オブジェクト・キャッシュリポジトリ IF
-│   ├── usecase/                 # ユースケース層
-│   │   ├── client/              # DTO・インタラクター
+│   │   └── gate/
+│   ├── usecase/             # ユースケース層
+│   │   ├── client/          # DTO・インタラクター
 │   │   ├── staff/
 │   │   ├── auth/
 │   │   ├── invitation/
 │   │   ├── notification/
 │   │   └── gate/
-│   ├── infrastructure/          # インフラ層
-│   │   ├── model/               # GORM モデル（DB スキーマ定義）
-│   │   ├── persistence/         # GORM リポジトリ実装
-│   │   ├── cache/               # Redis キャッシュリポジトリ実装
-│   │   └── db/                  # GORM 接続
-│   ├── handler/                 # Gin ハンドラー層
-│   └── middleware/              # 認証・エラーハンドリングミドルウェア
-├── pkg/
-│   └── apperror/                # アプリケーションエラー定義
-├── go.mod
-└── go.sum
+│   ├── infrastructure/      # インフラ層
+│   │   ├── model/           # Exposed テーブル定義
+│   │   ├── persistence/     # Exposed リポジトリ実装
+│   │   ├── cache/           # Redis キャッシュリポジトリ実装
+│   │   └── db/              # DB 接続
+│   ├── handler/             # Ktor ハンドラー層
+│   └── middleware/          # 認証・エラーハンドリングミドルウェア
+├── src/test/kotlin/
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle.properties
 ```
 
 ---
@@ -101,22 +100,22 @@ backends/go-gin/
 
 | パッケージ | 用途 |
 |---|---|
-| `gin-gonic/gin` | HTTP フレームワーク |
-| `gorm.io/gorm` | ORM |
-| `gorm.io/driver/mysql` | MySQL ドライバー |
-| `golang-jwt/jwt/v5` | JWT 生成・検証（RS256） |
-| `redis/go-redis/v9` | Redis クライアント |
-| `golang.org/x/oauth2` | Google OAuth 2.0 |
-| `joho/godotenv` | `.env` 読み込み |
+| `ktor-server` | HTTP フレームワーク |
+| `exposed` | ORM |
+| `mysql-connector-java` | MySQL ドライバー |
+| `lettuce` | Redis クライアント |
+| `java-jwt` | JWT 生成・検証（RS256） |
+| `ktor-server-sessions` | Cookie セッション管理 |
+| `logback` | ロギング |
 
 ---
 
 ## :rocket: セットアップ
 
-### 1. 依存パッケージの取得
+### 1. 依存パッケージのビルド
 
 ```bash
-go mod tidy
+./gradlew build
 ```
 
 ### 2. 環境変数の設定
@@ -135,10 +134,18 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ### 3. 起動
 
 ```bash
-go run ./cmd/main.go
+./gradlew run
 ```
 
 Docker 環境では `docker compose up -d` で自動起動します。
+
+---
+
+## :test_tube: テスト
+
+```bash
+./gradlew test
+```
 
 ---
 
