@@ -52,13 +52,6 @@ Route::prefix('invitation')->controller(InvitationController::class)->group(func
     Route::get('/', 'index');
 });
 
-// --- admin ---
-Route::prefix('admin')->group(function () {
-    Route::prefix('invitation')->controller(AdminInvitationController::class)->group(function () {
-        Route::get('issue', 'issue');
-    });
-});
-
 // --- gate（OpenAPI: issue のみ bearerAuth）---
 Route::prefix('gate')->controller(GateController::class)->group(function () {
     Route::get('issue', 'issue')->middleware('client.token');
@@ -72,4 +65,11 @@ Route::prefix('notifications')->controller(NotificationController::class)->group
     Route::get('/', 'index');
     Route::patch('/', 'readAll');
     Route::patch('{id}', 'read')->whereNumber('id');
+});
+
+// --- admin ---
+Route::prefix('admin')->group(function () {
+    Route::prefix('invitation')->controller(AdminInvitationController::class)->group(function () {
+        Route::get('issue', 'issue');
+    });
 });
