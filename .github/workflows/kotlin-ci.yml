@@ -1,0 +1,101 @@
+# Kotlin CI ワークフロー
+# developブランチのbackends/kotlin-ktor/**変更時にCIを実行
+name: Kotlin CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'backends/kotlin-ktor/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Ubuntu ランナーを使用
+    runs-on: ubuntu-latest
+
+    # サービスコンテナ: MySQLとRedisをテスト用に起動
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    # CI実行ステップ
+    steps:
+      - uses: actions/checkout@v4
+
+      # JDK 21 をセットアップ
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # Gradle をセットアップ（Gradle 8.10）
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+
+      # Gradle キャッシュ
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('backends/kotlin-ktor/**/*.gradle*', 'backends/kotlin-ktor/**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      # テスト用DBを作成
+      - name: Create test database
+        run: |
+          mysql -h 127.0.0.1 -u root -p'docker#DOCKER1234' -e "
+            CREATE DATABASE IF NOT EXISTS authorization_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            GRANT ALL PRIVILEGES ON authorization_test.* TO 'develop'@'%';
+            FLUSH PRIVILEGES;
+          "
+
+      # ビルドを実行
+      - name: Build
+        run: gradle build -x test
+        working-directory: backends/kotlin-ktor
+
+      # テストを実行
+      - name: Run tests
+        run: gradle test
+        working-directory: backends/kotlin-ktor
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: authorization_test
+          DB_USERNAME: develop
+          DB_PASSWORD: "docker#DOCKER1234"
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          APP_ENV: testing
+          CACHE_PREFIX: ""
+          GATE_JWT_CACHE_TTL: "1800"
+          FRONTEND_URL: "http://localhost:3000"
