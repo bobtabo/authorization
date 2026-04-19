@@ -54,7 +54,6 @@ func main() {
 	authH := handler.NewAuthHandler(authUC, invitationUC, cfg)
 	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
 	staffH := handler.NewStaffHandler(staffUC)
-	invitationH := handler.NewInvitationHandler(invitationUC)
 	adminInvitationH := handler.NewAdminInvitationHandler(invitationUC)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(notificationUC, cfg)
@@ -106,10 +105,8 @@ func main() {
 		api.PATCH("/staffs/:id/restore", staffH.Restore)
 		api.DELETE("/staffs/:id/delete", staffH.Destroy)
 
-		// --- invitation ---
-		api.GET("/invitation", invitationH.Index)
-
 		// --- admin ---
+		api.GET("/admin/invitation", adminInvitationH.Index)
 		api.GET("/admin/invitation/issue", adminInvitationH.Issue)
 
 		// --- gate ---

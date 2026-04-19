@@ -93,7 +93,6 @@ func buildRouter() *gin.Engine {
 	authH := handler.NewAuthHandler(authUC, invitationUC, testCfg)
 	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
 	staffH := handler.NewStaffHandler(staffUC)
-	invitationH := handler.NewInvitationHandler(invitationUC)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(notificationUC, testCfg)
 
@@ -122,9 +121,8 @@ func buildRouter() *gin.Engine {
 		api.PATCH("/staffs/:id/restore", staffH.Restore)
 		api.DELETE("/staffs/:id/delete", staffH.Destroy)
 
-		api.GET("/invitation", invitationH.Index)
-
 		adminInvH := handler.NewAdminInvitationHandler(invitationUC)
+		api.GET("/admin/invitation", adminInvH.Index)
 		api.GET("/admin/invitation/issue", adminInvH.Issue)
 
 		api.GET("/gate/issue", middleware.ClientTokenAuth(clientUC), gateH.Issue)

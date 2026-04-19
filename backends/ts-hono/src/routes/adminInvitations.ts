@@ -1,7 +1,12 @@
 import { Hono } from "hono";
-import { issue } from "../usecase/invitation/interactor.js";
+import { current, issue } from "../usecase/invitation/interactor.js";
 
 const app = new Hono();
+
+app.get("/invitation", async (c) => {
+  const result = await current();
+  return c.json({ found: true, url: result.url, display_url: result.displayUrl, token: result.token });
+});
 
 app.get("/invitation/issue", async (c) => {
   const result = await issue();
