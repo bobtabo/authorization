@@ -1,12 +1,12 @@
 <p align="center">
-<a href="https://www.ruby-lang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ruby/ruby-original.svg" height="72" alt="Go"></a>
+<a href="https://www.ruby-lang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ruby/ruby-original.svg" height="72" alt="Ruby"></a>
 &nbsp;&nbsp;
-<a href="https://rubyonrails.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/rails/rails-plain.svg" height="72" alt="Gin"></a>
+<a href="https://rubyonrails.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/rails/rails-plain.svg" height="72" alt="Rails"></a>
 </p>
 
 <p align="center">
-<a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/Ruby-4.0.2-CF251F?logo=ruby&logoColor=white" alt="Ruby 4.0.2"></a>
-<a href="https://rubyonrails.org/"><img src="https://img.shields.io/badge/Ruby On Rails-8.1.3-CC0000?logo=rubyonrails&logoColor=white" alt="Ruby On Rails 8.1.3"></a>
+<a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/Ruby-latest-CF251F?logo=ruby&logoColor=white" alt="Ruby"></a>
+<a href="https://rubyonrails.org/"><img src="https://img.shields.io/badge/Ruby On Rails-latest-CC0000?logo=rubyonrails&logoColor=white" alt="Ruby On Rails"></a>
 </p>
 
 ---
@@ -29,20 +29,22 @@ DDD + クリーンアーキテクチャを採用しています。
 HTTP Request
     │
     ▼
-Handler (internal/handler/)
-    │  リクエスト解析・レスポンス整形
+Controller (app/controllers/api/)
+    │  リクエストのバリデーション・レスポンス整形
     ▼
-UseCase / Interactor (internal/usecase/)
-    │  ビジネスロジック・鍵ペア生成・JWT 操作
-    │  Domain Repository インターフェースに依存（依存性逆転）
+UseCase (app/use_cases/)
+    │  アプリケーションロジック・DTO 変換
     ▼
-Domain (internal/domain/)
-    │  エンティティ・リポジトリインターフェース・値オブジェクト
+Service (app/domain/*/services/)
+    │  ドメインロジック
     ▼
-Infrastructure (internal/infrastructure/)
-    │  GORM 実装リポジトリ・Redis キャッシュ
+Repository Interface (app/domain/*/repositories/)
+    │  データアクセス抽象化
     ▼
-MySQL / Redis
+ActiveRecord Repository (app/infrastructure/repositories/)
+    │  DB アクセス実装
+    ▼
+ActiveRecord Model (app/infrastructure/models/)
 ```
 
 ### ドメイン一覧
@@ -62,23 +64,55 @@ MySQL / Redis
 
 ```
 backends/ruby-rails/
+├── app/
+│   ├── controllers/
+│   │   └── api/             # API コントローラー
+│   ├── domain/              # ドメイン層
+│   │   ├── client/          # エンティティ・リポジトリ IF・値オブジェクト
+│   │   ├── staff/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── use_cases/           # ユースケース層
+│   │   ├── client/          # DTO・インタラクター
+│   │   ├── staff/
+│   │   ├── auth/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   └── infrastructure/      # インフラ層
+│       ├── models/          # ActiveRecord モデル
+│       └── repositories/    # リポジトリ実装
+├── config/
+│   └── routes.rb
+├── db/
+│   └── migrate/
+├── spec/                    # RSpec テスト
+├── Gemfile
+└── Gemfile.lock
 ```
 
 ---
 
-## :package: 主要パッケージ
+## :package: 主要 Gem
 
-| パッケージ | 用途 |
+| Gem | 用途 |
 |---|---|
+| `rails` | フレームワーク |
+| `jwt` | JWT 生成・検証（RS256） |
+| `omniauth-google-oauth2` | Google OAuth 2.0 連携 |
+| `redis` | Redis クライアント |
+| `mysql2` | MySQL ドライバー |
+| `rspec-rails` | テストフレームワーク |
 
 ---
 
 ## :rocket: セットアップ
 
-### 1. 依存パッケージの取得
+### 1. 依存 Gem のインストール
 
 ```bash
-
+bundle install
 ```
 
 ### 2. 環境変数の設定
@@ -94,13 +128,27 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
-### 3. 起動
+### 3. マイグレーション
 
 ```bash
+bundle exec rails db:migrate
+```
 
+### 4. 起動
+
+```bash
+bundle exec rails server
 ```
 
 Docker 環境では `docker compose up -d` で自動起動します。
+
+---
+
+## :test_tube: テスト
+
+```bash
+bundle exec rspec
+```
 
 ---
 
