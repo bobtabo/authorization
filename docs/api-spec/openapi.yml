@@ -487,11 +487,11 @@ paths:
         '404':
           description: スタッフが存在しない場合のエラー
 
-  /invitation/issue:
+  /admin/invitation/issue:
     get:
       summary: 招待URLを発行します
       tags:
-        - invitation
+        - admin
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -1023,3 +1023,5 @@ tags:
     description: 認可API
   - name: notifications
     description: 通知API
+  - name: admin
+    description: 管理API
