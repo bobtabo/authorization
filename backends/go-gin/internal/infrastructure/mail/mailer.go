@@ -44,7 +44,7 @@ func (m *Mailer) SendAccessToken(to, clientName, token string) {
 	if to == "" {
 		return
 	}
-	subject := mailSubject(m.cfg.AppEnv, fmt.Sprintf("【%s】アクセストークンのお知らせ", m.cfg.AppName))
+	subject := mailSubject(m.cfg.AppEnv, fmt.Sprintf("【%s / Go】アクセストークンのお知らせ", m.cfg.AppName))
 	body := buildAccessTokenHTML(clientName, token, m.cfg.AppName)
 
 	fromHeader := mime.QEncoding.Encode("UTF-8", m.cfg.AppName) + " <" + m.cfg.FromAddress + ">"

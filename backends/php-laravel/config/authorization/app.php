@@ -32,7 +32,7 @@ return [
         'port' => env('MAIL_PORT'),
         'from' => env('MAIL_FROM_ADDRESS'),
         'subject' => [
-            'prefix' => '【' . env('APP_NAME') . '】',
+            'prefix' => '【' . env('APP_NAME') . ' / PHP】',
             'access_token' => 'アクセストークンのお知らせ',
         ],
         'template' => [
