@@ -124,8 +124,8 @@ func buildRouter() *gin.Engine {
 
 		api.GET("/invitation", invitationH.Index)
 
-		admin := api.Group("/admin")
-		admin.GET("/invitation/issue", handler.NewAdminInvitationHandler(invitationUC).Issue)
+		adminInvH := handler.NewAdminInvitationHandler(invitationUC)
+		api.GET("/admin/invitation/issue", adminInvH.Issue)
 
 		api.GET("/gate/issue", middleware.ClientTokenAuth(clientUC), gateH.Issue)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)

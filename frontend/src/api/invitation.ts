@@ -11,7 +11,7 @@ export async function getInvitation(): Promise<InvitationUrlResponse> {
   return apiGet<InvitationUrlResponse>("/invitation");
 }
 
-/** GET /invitation/issue */
+/** GET /admin/invitation/issue */
 export async function issueInvitation(): Promise<InvitationUrlResponse> {
-  return apiGet<InvitationUrlResponse>("/invitation/issue");
+  return apiGet<InvitationUrlResponse>("/admin/invitation/issue");
 }

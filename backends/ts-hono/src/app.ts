@@ -35,7 +35,7 @@ export function createApp(): Hono {
   api.route("/", clientRoutes);
   api.route("/", staffRoutes);
   api.route("/", invitationRoutes);
-  api.route("/", adminInvitationRoutes);
+  api.route("/admin", adminInvitationRoutes);
   api.route("/", gateRoutes);
   api.route("/", notificationRoutes);
 
