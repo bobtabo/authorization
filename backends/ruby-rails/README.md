@@ -85,8 +85,6 @@ backends/ruby-rails/
 │       └── repositories/    # リポジトリ実装
 ├── config/
 │   └── routes.rb
-├── db/
-│   └── migrate/
 ├── spec/                    # RSpec テスト
 ├── Gemfile
 └── Gemfile.lock
@@ -128,13 +126,7 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
-### 3. マイグレーション
-
-```bash
-bundle exec rails db:migrate
-```
-
-### 4. 起動
+### 3. 起動
 
 ```bash
 bundle exec rails server
