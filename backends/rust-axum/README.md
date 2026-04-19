@@ -1,15 +1,15 @@
 <p align="center">
 <a href="https://www.rust-lang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/rust/rust-original.svg" height="72" alt="Rust"></a>
 &nbsp;&nbsp;
-<a href="https://github.com/tokio-rs/axum" target="_blank"><img src="https://www.aldeka.net/_app/immutable/assets/ferris.5bb4776d.png" height="72" alt="Gin"></a>
+<a href="https://github.com/tokio-rs/axum" target="_blank"><img src="https://www.aldeka.net/_app/immutable/assets/ferris.5bb4776d.png" height="72" alt="Axum"></a>
 &nbsp;&nbsp;
 <a href="https://www.sea-ql.org/SeaORM/" target="_blank"><img src="https://www.sea-ql.org/SeaORM/img/SeaQL.png" height="72" alt="SeaORM"></a>
 </p>
 
 <p align="center">
-<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.95.0-000000?logo=rust&logoColor=white" alt="Rust 1.95.0"></a>
-<a href="https://github.com/tokio-rs/axum"><img src="https://img.shields.io/badge/Axum-0.8.9-F44E00?logo=axum&logoColor=white" alt="Axum 0.8.9"></a>
-<a href="https://www.sea-ql.org/SeaORM/"><img src="https://img.shields.io/badge/SeaORM-2.0.0-304ECF?logo=seaorm&logoColor=white" alt="SeaORM 2.0.0"></a>
+<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-latest-000000?logo=rust&logoColor=white" alt="Rust"></a>
+<a href="https://github.com/tokio-rs/axum"><img src="https://img.shields.io/badge/Axum-latest-F44E00?logo=axum&logoColor=white" alt="Axum"></a>
+<a href="https://www.sea-ql.org/SeaORM/"><img src="https://img.shields.io/badge/SeaORM-latest-304ECF?logo=seaorm&logoColor=white" alt="SeaORM"></a>
 </p>
 
 ---
@@ -32,18 +32,18 @@ DDD + クリーンアーキテクチャを採用しています。
 HTTP Request
     │
     ▼
-Handler (internal/handler/)
+Handler (src/handler/)
     │  リクエスト解析・レスポンス整形
     ▼
-UseCase / Interactor (internal/usecase/)
+UseCase / Interactor (src/usecase/)
     │  ビジネスロジック・鍵ペア生成・JWT 操作
     │  Domain Repository インターフェースに依存（依存性逆転）
     ▼
-Domain (internal/domain/)
+Domain (src/domain/)
     │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-Infrastructure (internal/infrastructure/)
-    │  GORM 実装リポジトリ・Redis キャッシュ
+Infrastructure (src/infrastructure/)
+    │  SeaORM リポジトリ・Redis キャッシュ
     ▼
 MySQL / Redis
 ```
@@ -65,6 +65,31 @@ MySQL / Redis
 
 ```
 backends/rust-axum/
+├── src/
+│   ├── main.rs              # エントリーポイント・DI 組み立て・ルーティング
+│   ├── config/              # 環境変数読み込み（dotenvy）
+│   ├── domain/              # ドメイン層
+│   │   ├── client/          # エンティティ・リポジトリ IF・値オブジェクト
+│   │   ├── staff/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── usecase/             # ユースケース層
+│   │   ├── client/          # DTO・インタラクター
+│   │   ├── staff/
+│   │   ├── auth/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── infrastructure/      # インフラ層
+│   │   ├── model/           # SeaORM エンティティ（DB スキーマ定義）
+│   │   ├── persistence/     # SeaORM リポジトリ実装
+│   │   ├── cache/           # Redis キャッシュリポジトリ実装
+│   │   └── db/              # DB 接続
+│   ├── handler/             # Axum ハンドラー層
+│   └── middleware/          # 認証・エラーハンドリングミドルウェア
+├── Cargo.toml
+└── Cargo.lock
 ```
 
 ---
@@ -73,15 +98,23 @@ backends/rust-axum/
 
 | パッケージ | 用途 |
 |---|---|
+| `axum` | HTTP フレームワーク |
+| `tokio` | 非同期ランタイム |
+| `sea-orm` | ORM |
+| `jsonwebtoken` | JWT 生成・検証（RS256） |
+| `redis` | Redis クライアント |
+| `lettre` | メール送信（SMTP） |
+| `serde` | シリアライズ・デシリアライズ |
+| `dotenvy` | `.env` 読み込み |
 
 ---
 
 ## :rocket: セットアップ
 
-### 1. 依存パッケージの取得
+### 1. 依存パッケージのビルド
 
 ```bash
-
+cargo build
 ```
 
 ### 2. 環境変数の設定
@@ -100,10 +133,18 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ### 3. 起動
 
 ```bash
-
+cargo run
 ```
 
 Docker 環境では `docker compose up -d` で自動起動します。
+
+---
+
+## :test_tube: テスト
+
+```bash
+cargo test
+```
 
 ---
 
