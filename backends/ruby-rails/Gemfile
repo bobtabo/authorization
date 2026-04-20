@@ -1,3 +1,6 @@
 source "https://rubygems.org"
 
 gem "rails"
+gem "mysql2"
+gem "redis"
+gem "dotenv-rails"

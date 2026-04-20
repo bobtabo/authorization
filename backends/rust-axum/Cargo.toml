@@ -15,3 +15,7 @@ serde_json = "1"
 dotenvy = "0.15"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+sqlx = { version = "0", features = ["mysql", "runtime-tokio-native-tls", "chrono", "macros"] }
+redis = { version = "0", features = ["tokio-comp"] }
+lettre = { version = "0", features = ["tokio1", "tokio1-native-tls", "smtp-transport", "builder"] }
+chrono = { version = "0", features = ["serde"] }
