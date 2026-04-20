@@ -4,6 +4,7 @@ use std::net::SocketAddr;
 mod config;
 mod handler;
 mod infrastructure;
+mod usecase;
 
 #[tokio::main]
 async fn main() {
