@@ -19,3 +19,4 @@ sqlx = { version = "0", features = ["mysql", "runtime-tokio-native-tls", "chrono
 redis = { version = "0", features = ["tokio-comp"] }
 lettre = { version = "0", features = ["tokio1", "tokio1-native-tls", "smtp-transport", "builder"] }
 chrono = { version = "0", features = ["serde"] }
+async-trait = "0"
