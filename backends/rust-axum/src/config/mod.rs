@@ -1,5 +1,6 @@
 use std::env;
 
+#[derive(Clone)]
 pub struct Config {
     pub app:   AppConfig,
     pub db:    DbConfig,
@@ -9,6 +10,7 @@ pub struct Config {
     pub mail:  MailConfig,
 }
 
+#[derive(Clone)]
 pub struct AppConfig {
     pub env:                        String,
     pub port:                       String,
@@ -18,22 +20,26 @@ pub struct AppConfig {
     pub cache_prefix:               String,
 }
 
+#[derive(Clone)]
 pub struct DbConfig {
     pub dsn: String,
 }
 
+#[derive(Clone)]
 pub struct RedisConfig {
     pub addr:     String,
     pub password: String,
     pub db:       i64,
 }
 
+#[derive(Clone)]
 pub struct OAuthConfig {
     pub google_client_id:     String,
     pub google_client_secret: String,
     pub google_redirect_url:  String,
 }
 
+#[derive(Clone)]
 pub struct JwtConfig {
     pub issuer:    String,
     pub algorithm: String,
@@ -41,6 +47,7 @@ pub struct JwtConfig {
     pub cache_ttl: i64,
 }
 
+#[derive(Clone)]
 pub struct MailConfig {
     pub host:         String,
     pub port:         String,

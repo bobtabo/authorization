@@ -2,6 +2,11 @@ val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 val exposed_version: String by project
+val mysql_version: String by project
+val hikari_version: String by project
+val jedis_version: String by project
+val angus_mail_version: String by project
+val dotenv_version: String by project
 
 plugins {
     kotlin("jvm") version "2.3.20"
@@ -30,11 +35,11 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-java-time:$exposed_version")
-    implementation("com.mysql:mysql-connector-j")
-    implementation("com.zaxxer:HikariCP")
-    implementation("redis.clients:jedis")
-    implementation("org.eclipse.angus:angus-mail")
-    implementation("io.github.cdimascio:dotenv-kotlin")
+    implementation("com.mysql:mysql-connector-j:$mysql_version")
+    implementation("com.zaxxer:HikariCP:$hikari_version")
+    implementation("redis.clients:jedis:$jedis_version")
+    implementation("org.eclipse.angus:angus-mail:$angus_mail_version")
+    implementation("io.github.cdimascio:dotenv-kotlin:$dotenv_version")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

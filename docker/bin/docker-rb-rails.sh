@@ -15,7 +15,7 @@ if [ "${ARG}" = "up" ]; then
 elif [ "${ARG}" = "down" ]; then
     docker-compose -p app-rb-rails -f docker-compose.yml down --rmi all --volumes
 elif [ "${ARG}" = "exec" ]; then
-    docker-compose -p app-rb-rails exec --user 1000 rb-rails bash
+    docker-compose -p app-rb-rails -f docker-compose.yml exec --user 1000 rb-rails bash
 else
     echo "使い方: $0 {up|down|exec}"
     exit 1

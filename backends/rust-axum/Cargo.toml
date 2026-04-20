@@ -20,3 +20,4 @@ redis = { version = "0", features = ["tokio-comp"] }
 lettre = { version = "0", features = ["tokio1", "tokio1-native-tls", "smtp-transport", "builder"] }
 chrono = { version = "0", features = ["serde"] }
 async-trait = "0"
+axum-extra = { version = "0", features = ["cookie"] }

@@ -1,4 +1,8 @@
-use crate::config::Config;
+use async_trait::async_trait;
+use crate::{
+    config::Config,
+    domain::gate::value_objects::{CacheRepository, DomainError},
+};
 use redis::Client;
 
 pub fn new(cfg: &Config) -> redis::RedisResult<Client> {
@@ -8,4 +12,28 @@ pub fn new(cfg: &Config) -> redis::RedisResult<Client> {
         format!("redis://:{}@{}/{}", cfg.redis.password, cfg.redis.addr, cfg.redis.db)
     };
     Client::open(url)
+}
+
+pub struct RedisGateCacheRepository {
+    client: Client,
+    prefix: String,
+}
+
+impl RedisGateCacheRepository {
+    pub fn new(client: Client, cfg: &Config) -> Self {
+        Self {
+            client,
+            prefix: cfg.app.cache_prefix.clone(),
+        }
+    }
+}
+
+#[async_trait]
+impl CacheRepository for RedisGateCacheRepository {
+    async fn get_jwt(&self, _identifier: &str, _member_id: &str) -> Result<Option<String>, DomainError> {
+        todo!()
+    }
+    async fn put_jwt(&self, _identifier: &str, _member_id: &str, _token: &str, _ttl: i64) -> Result<(), DomainError> {
+        todo!()
+    }
 }

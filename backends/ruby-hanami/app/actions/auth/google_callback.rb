@@ -2,8 +2,10 @@ module Authorization
   module Actions
     module Auth
       class GoogleCallback < Authorization::Action
+        include Authorization::Actions::Base
+
         def handle(request, response)
-          response.status = 200
+          json_response(response, {})
         end
       end
     end

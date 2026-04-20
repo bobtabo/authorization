@@ -3,8 +3,11 @@ module Authorization
     module Admin
       module Invitations
         class Issue < Authorization::Action
+          include Authorization::Actions::Base
+
           def handle(request, response)
-            response.status = 200
+            v = container[:invitation_uc].issue
+            json_response(response, { found: true, url: v.url, display_url: v.display_url, token: v.token })
           end
         end
       end

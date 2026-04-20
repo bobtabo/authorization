@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
       net-tools
 
 # cargo-watch（ホットリロード）のインストール
-RUN cargo install cargo-watch
+RUN cargo install cargo-watch --locked
 
 # ユーザーを作成
 ARG DOCKER_UID=1000

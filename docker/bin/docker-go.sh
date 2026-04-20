@@ -15,7 +15,7 @@ if [ "${ARG}" = "up" ]; then
 elif [ "${ARG}" = "down" ]; then
     docker-compose -p app-go -f docker-compose.yml down --rmi all --volumes
 elif [ "${ARG}" = "exec" ]; then
-    docker-compose -p app-go exec --user 1000 go sh
+    docker-compose -p app-go -f docker-compose.yml exec --user 1000 go sh
 else
     echo "使い方: $0 {up|down|exec}"
     exit 1

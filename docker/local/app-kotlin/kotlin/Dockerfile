@@ -1,4 +1,4 @@
-FROM gradle:8.10-jdk21
+FROM gradle:8.14-jdk21
 
 # ライブラリのインストール
 RUN apt-get update && apt-get install -y \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 ARG DOCKER_UID=1000
 ARG DOCKER_USER=docker
 ARG DOCKER_PASSWORD=docker
-RUN useradd -m --uid ${DOCKER_UID} --groups sudo ${DOCKER_USER} \
+RUN useradd -m --uid ${DOCKER_UID} --non-unique --groups sudo ${DOCKER_USER} \
       && echo ${DOCKER_USER}:${DOCKER_PASSWORD} | chpasswd \
       && echo "docker    ALL=(ALL)       ALL" >> /etc/sudoers
 

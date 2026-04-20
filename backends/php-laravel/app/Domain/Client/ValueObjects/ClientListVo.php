@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Client\ValueObjects;
 
+use App\Domain\Client\Entities\Client;
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 use Illuminate\Support\Collection;

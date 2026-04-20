@@ -34,6 +34,6 @@ services:
     volumes:
       - ./../../../backends/kotlin-ktor:/var/www/${APP_NAME}
     working_dir: /var/www/${APP_NAME}
-    command: ./gradlew run
+    command: gradle run
     networks:
       - authorization
