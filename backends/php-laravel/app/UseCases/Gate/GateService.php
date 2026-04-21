@@ -12,9 +12,9 @@ namespace App\UseCases\Gate;
 
 use App\Domain\Client\Condition\ClientCondition;
 use App\Domain\Client\Repositories\ClientRepository;
+use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Gate\ValueObjects\GateIssueVo;
 use App\Domain\Gate\ValueObjects\GateVerifyVo;
-use App\Infrastructure\Gate\GateCacheRepository;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
@@ -35,11 +35,11 @@ class GateService extends AbstractService
 {
     /**
      * @param ClientRepository $clientRepository クライアントリポジトリ
-     * @param GateCacheRepository $cacheRepository JWT キャッシュリポジトリ
+     * @param GateRepository $cacheRepository JWT キャッシュリポジトリ
      */
     public function __construct(
         private readonly ClientRepository $clientRepository,
-        private readonly GateCacheRepository $cacheRepository,
+        private readonly GateRepository $cacheRepository,
     ) {
     }
 

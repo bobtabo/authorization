@@ -23,7 +23,7 @@ use Illuminate\Support\Collection;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentStaffEloquentRepository extends AbstractEloquentRepository implements StaffRepository
+class EloquentStaffRepository extends AbstractEloquentRepository implements StaffRepository
 {
     /**
      * {@inheritdoc}

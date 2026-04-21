@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentClientEloquentRepository extends AbstractEloquentRepository implements ClientRepository
+class EloquentClientRepository extends AbstractEloquentRepository implements ClientRepository
 {
     /**
      * {@inheritdoc}

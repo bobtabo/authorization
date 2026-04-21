@@ -11,13 +11,15 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Domain\Client\Repositories\ClientRepository;
+use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
-use App\Infrastructure\Repositories\EloquentClientEloquentRepository;
-use App\Infrastructure\Repositories\EloquentInvitationEloquentRepository;
+use app\Infrastructure\Repositories\CacheGateRepository;
+use App\Infrastructure\Repositories\EloquentClientRepository;
+use App\Infrastructure\Repositories\EloquentInvitationRepository;
 use App\Infrastructure\Repositories\EloquentNotificationRepository;
-use App\Infrastructure\Repositories\EloquentStaffEloquentRepository;
+use App\Infrastructure\Repositories\EloquentStaffRepository;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Gate\GateService;
@@ -44,18 +46,19 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Domain ポート → Infrastructure 実装（DIP）
-        $this->app->bind(ClientRepository::class, EloquentClientEloquentRepository::class);
-        $this->app->bind(StaffRepository::class, EloquentStaffEloquentRepository::class);
-        $this->app->bind(InvitationRepository::class, EloquentInvitationEloquentRepository::class);
+        $this->app->bind(ClientRepository::class, EloquentClientRepository::class);
+        $this->app->bind(StaffRepository::class, EloquentStaffRepository::class);
+        $this->app->bind(InvitationRepository::class, EloquentInvitationRepository::class);
         $this->app->bind(NotificationRepository::class, EloquentNotificationRepository::class);
+        $this->app->bind(GateRepository::class, CacheGateRepository::class);
 
         // アプリケーションサービス（ユースケース）
         $this->app->singleton(AuthService::class);
         $this->app->singleton(ClientService::class);
-        $this->app->singleton(StaffService::class);
+        $this->app->singleton(GateService::class);
         $this->app->singleton(InvitationService::class);
         $this->app->singleton(NotificationService::class);
-        $this->app->singleton(GateService::class);
+        $this->app->singleton(StaffService::class);
     }
 
     /**

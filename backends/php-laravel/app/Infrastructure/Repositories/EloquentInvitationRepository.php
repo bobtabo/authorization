@@ -23,7 +23,7 @@ use Random\RandomException;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories
  */
-class EloquentInvitationEloquentRepository extends AbstractEloquentRepository implements InvitationRepository
+class EloquentInvitationRepository extends AbstractEloquentRepository implements InvitationRepository
 {
     /**
      * {@inheritdoc}

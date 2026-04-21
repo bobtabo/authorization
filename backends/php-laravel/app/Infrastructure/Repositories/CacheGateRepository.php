@@ -8,8 +8,9 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Gate;
+namespace app\Infrastructure\Repositories;
 
+use App\Domain\Gate\Repositories\GateRepository;
 use App\Support\Repositories\AbstractCacheRepository;
 
 /**
@@ -18,30 +19,23 @@ use App\Support\Repositories\AbstractCacheRepository;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate
  */
-class GateCacheRepository extends AbstractCacheRepository
+class CacheGateRepository extends AbstractCacheRepository implements GateRepository
 {
     private const TAG = 'gate.jwt';
 
     /**
-     * JWT をキャッシュします。
-     *
-     * @param string $identifier クライアント識別名
-     * @param string $memberId クライアント会員ID
-     * @param string $token JWT 文字列
-     * @param int $ttl 有効期限（秒）
+     * {@inheritdoc}
      */
+    #[\Override]
     public function putJwt(string $identifier, string $memberId, string $token, int $ttl): void
     {
         $this->put(self::TAG, "{$identifier}.{$memberId}", $token, $ttl);
     }
 
     /**
-     * キャッシュ済み JWT を取得します。
-     *
-     * @param string $identifier クライアント識別名
-     * @param string $memberId クライアント会員ID
-     * @return string|null キャッシュされた JWT 文字列、未キャッシュの場合 null
+     * {@inheritdoc}
      */
+    #[\Override]
     public function getJwt(string $identifier, string $memberId): ?string
     {
         $value = $this->get(self::TAG, "{$identifier}.{$memberId}");
