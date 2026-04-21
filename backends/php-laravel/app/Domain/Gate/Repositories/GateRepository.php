@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace App\Domain\Gate\Repositories;
 
 /**
- * Gate（JWT）向けキャッシュRepositoryのインターフェースです。
+ * 認可Repositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate

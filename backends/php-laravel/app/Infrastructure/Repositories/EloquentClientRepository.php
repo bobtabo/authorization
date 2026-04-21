@@ -19,7 +19,7 @@ use App\Support\Repositories\AbstractEloquentRepository;
 use Illuminate\Support\Collection;
 
 /**
- * Eloquent によりクライアントを永続化するRepositoryクラスです。
+ * クライアントRepositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories

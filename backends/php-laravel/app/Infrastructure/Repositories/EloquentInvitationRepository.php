@@ -18,7 +18,7 @@ use App\Support\Repositories\AbstractEloquentRepository;
 use Random\RandomException;
 
 /**
- * 永続化未接続時に招待を仮返却するStubのRepositoryクラスです。
+ * 招待Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories

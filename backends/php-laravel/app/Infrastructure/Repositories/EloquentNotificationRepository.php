@@ -19,7 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
- * Eloquent により通知を読み書きするRepositoryクラスです。
+ * 通知Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories

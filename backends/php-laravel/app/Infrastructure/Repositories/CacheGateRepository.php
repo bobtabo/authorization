@@ -14,14 +14,14 @@ use App\Domain\Gate\Repositories\GateRepository;
 use App\Support\Repositories\AbstractCacheRepository;
 
 /**
- * Gate（JWT）向けキャッシュRepositoryクラスです。
+ * 認可Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Gate
  */
 class CacheGateRepository extends AbstractCacheRepository implements GateRepository
 {
-    private const TAG = 'gate.jwt';
+    private const string TAG = 'gate.jwt';
 
     /**
      * {@inheritdoc}

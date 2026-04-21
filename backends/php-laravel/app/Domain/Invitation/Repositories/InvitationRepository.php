@@ -14,7 +14,7 @@ use App\Domain\Invitation\Condition\InvitationCondition;
 use App\Domain\Invitation\Entities\Invitation;
 
 /**
- * 招待の現在値取得と発行を担うRepositoryのインターフェースです。
+ * 招待Repositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Invitation\Repositories

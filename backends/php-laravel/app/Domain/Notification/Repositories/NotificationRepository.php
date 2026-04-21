@@ -15,7 +15,7 @@ use App\Domain\Notification\Entities\Notification;
 use Illuminate\Support\Collection;
 
 /**
- * 通知一覧のページング取得と件数集計・更新を担うRepositoryのインターフェースです。
+ * 通知Repositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Notification\Repositories

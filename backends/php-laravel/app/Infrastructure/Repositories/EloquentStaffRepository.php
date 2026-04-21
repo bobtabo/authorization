@@ -18,7 +18,7 @@ use App\Support\Repositories\AbstractEloquentRepository;
 use Illuminate\Support\Collection;
 
 /**
- * Eloquent によりスタッフを読み書きするRepositoryクラスです。
+ * スタッフRepositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Repositories

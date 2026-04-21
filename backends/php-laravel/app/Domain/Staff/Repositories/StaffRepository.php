@@ -15,7 +15,7 @@ use App\Domain\Staff\Entities\Staff;
 use Illuminate\Support\Collection;
 
 /**
- * スタッフを取得・条件検索・更新するRepositoryのインターフェースです。
+ * スタッフRepositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Staff\Repositories
