@@ -8,7 +8,7 @@ class Interactor(private val repo: Repository) {
     suspend fun findById(id: Long): Client = TODO()
     suspend fun store(dto: StoreDto): Client = TODO()
     suspend fun update(dto: UpdateDto): Client = TODO()
-    suspend fun destroy(id: Long, executorId: Long) = TODO()
+    suspend fun destroy(id: Long, executorId: Long): Unit = TODO()
     suspend fun findByAccessToken(token: String): Client? = TODO()
     suspend fun findByIdentifier(identifier: String): Client? = TODO()
 }

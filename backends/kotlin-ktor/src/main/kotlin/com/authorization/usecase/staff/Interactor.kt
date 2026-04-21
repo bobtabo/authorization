@@ -6,9 +6,9 @@ import com.authorization.domain.staff.Staff
 
 class Interactor(private val repo: Repository) {
     suspend fun findByCondition(cond: Condition): List<Staff> = TODO()
-    suspend fun updateRole(dto: UpdateRoleDto) = TODO()
-    suspend fun restore(id: Long) = TODO()
-    suspend fun destroy(dto: DestroyDto) = TODO()
+    suspend fun updateRole(dto: UpdateRoleDto): Unit = TODO()
+    suspend fun restore(id: Long): Unit = TODO()
+    suspend fun destroy(dto: DestroyDto): Unit = TODO()
 
     companion object {
         fun status(s: Staff): Int = if (s.deletedAt != null) 0 else 1

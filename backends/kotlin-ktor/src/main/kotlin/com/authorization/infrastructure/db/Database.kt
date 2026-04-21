@@ -9,8 +9,8 @@ fun initDatabase(cfg: Config): Database {
     val hikariConfig = HikariConfig().apply {
         jdbcUrl         = cfg.db.dsn
         driverClassName = "com.mysql.cj.jdbc.Driver"
-        username        = System.getenv("DB_USERNAME") ?: "root"
-        password        = System.getenv("DB_PASSWORD") ?: ""
+        username        = cfg.db.username
+        password        = cfg.db.password
         maximumPoolSize = 10
     }
     val dataSource = HikariDataSource(hikariConfig)

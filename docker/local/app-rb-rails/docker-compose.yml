@@ -36,6 +36,6 @@ services:
     working_dir: /var/www/${APP_NAME}
     command: >
       sh -c "bundle install --quiet &&
-             bundle exec rails server -b 0.0.0.0 -p 3000"
+             bundle exec puma -b tcp://0.0.0.0:3000"
     networks:
       - authorization

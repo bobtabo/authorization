@@ -13,8 +13,8 @@ class Interactor(
     suspend fun listPage(staffId: Long, cursor: String?, limit: Long): Page = TODO()
     suspend fun counts(staffId: Long): Pair<Long, Long> = TODO()
     suspend fun bulkMarkRead(staffId: Long): Long = TODO()
-    suspend fun fanOut(dto: FanOutDto) = TODO()
-    suspend fun markRead(id: Long) = TODO()
+    suspend fun fanOut(dto: FanOutDto): Unit = TODO()
+    suspend fun markRead(id: Long): Unit = TODO()
 
     companion object {
         private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")

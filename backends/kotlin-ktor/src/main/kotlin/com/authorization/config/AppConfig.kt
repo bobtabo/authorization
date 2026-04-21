@@ -13,6 +13,8 @@ data class AppConfig(
 
 data class DbConfig(
     val dsn: String,
+    val username: String,
+    val password: String,
 )
 
 data class RedisConfig(
@@ -83,7 +85,9 @@ object ConfigLoader {
                 cachePrefix              = str("CACHE_PREFIX", ""),
             ),
             db = DbConfig(
-                dsn = dsn,
+                dsn      = dsn,
+                username = dbUser,
+                password = dbPass,
             ),
             redis = RedisConfig(
                 host     = str("REDIS_HOST", "localhost"),
