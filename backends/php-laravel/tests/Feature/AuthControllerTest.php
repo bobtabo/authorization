@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Infrastructure\Models\Invitation;
 use App\Infrastructure\Models\Staff;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Socialite\Facades\Socialite;
@@ -48,6 +49,9 @@ class AuthControllerTest extends TestCase
      */
     public function testInvitation(): void
     {
+        $invitation = Invitation::factory()->create([
+            'token' => 'dummy-token',
+        ]);
         $params = $this->getRequestParams('Auth/invitation.json');
         $token = $params['token'];
         $response = $this->get("/api/auth/invitation/{$token}");

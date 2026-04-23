@@ -49,10 +49,11 @@ class InvitationService extends AbstractService
             throw AppException::notFound('invitation_not_found');
         }
 
-        return (new InvitationVo())->assign([
+        $url = $this->buildUrl($entity->token);
+        return new InvitationVo()->assign([
             'found' => true,
-            'url' => $entity->url,
-            'displayUrl' => $entity->displayUrl,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
             'token' => $entity->token,
         ]);
     }
@@ -66,13 +67,17 @@ class InvitationService extends AbstractService
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
-        $entity = $this->repository->issue();
+        $entity = $this->repository->getCurrent();
+        $entity->token = bin2hex(random_bytes(16));
+        $entity->assignUpdated($dto->executorId);
+        $saved = $this->repository->persist($entity);
 
+        $url = $this->buildUrl($saved->token);
         return new InvitationVo()->assign([
             'found' => true,
-            'url' => $entity->url,
-            'displayUrl' => $entity->displayUrl,
-            'token' => $entity->token,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
+            'token' => $saved->token,
         ]);
     }
 
@@ -95,11 +100,53 @@ class InvitationService extends AbstractService
             throw AppException::badRequest('invitation_invalid');
         }
 
-        return (new InvitationVo())->assign([
+        $url = $this->buildUrl($entity->token);
+        return new InvitationVo()->assign([
             'found' => true,
-            'url' => $entity->url,
-            'displayUrl' => $entity->displayUrl,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
             'token' => $entity->token,
         ]);
+    }
+
+    /**
+     * トークンから完全な招待 URL を生成します。
+     *
+     * @param string $token 招待トークン
+     * @return string 完全 URL
+     */
+    private function buildUrl(string $token): string
+    {
+        $base = rtrim((string)config('authorization.app.frontend_url'), '/');
+        return $base . '/invitation/' . $token;
+    }
+
+    /**
+     * 表示用に `/invitation/` 以降のトークンを省略した URL を返します。
+     *
+     * @param string $url 完全 URL
+     * @param int $head トークン先頭から表示する文字数
+     * @param int $tail トークン末尾から表示する文字数
+     * @return string 省略表示用 URL
+     */
+    private function buildDisplayUrl(string $url, int $head = 6, int $tail = 4): string
+    {
+        $segment = '/invitation/';
+        $idx = strpos($url, $segment);
+        if ($idx === false) {
+            return strlen($url) > 72 ? substr($url, 0, 68) . '...' : $url;
+        }
+
+        $base = substr($url, 0, $idx + strlen($segment));
+        $after = substr($url, $idx + strlen($segment));
+        $suffixLen = strcspn($after, '?#');
+        $token = substr($after, 0, $suffixLen);
+        $suffix = substr($after, $suffixLen);
+
+        if (strlen($token) <= $head + $tail + 3) {
+            return $url;
+        }
+
+        return $base . substr($token, 0, $head) . '...' . substr($token, -$tail) . $suffix;
     }
 }

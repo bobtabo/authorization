@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Infrastructure\Models\Invitation;
+use App\Infrastructure\Models\Staff;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
 
@@ -46,7 +47,11 @@ class InvitationControllerTest extends TestCase
      */
     public function testIssue(): void
     {
-        $response = $this->get('/api/admin/invitation/issue');
+        Invitation::factory()->create();
+        $staff = Staff::factory()->create();
+
+        $response = $this->withStaffCookie($staff->id)
+            ->get('/api/admin/invitation/issue');
         $response
             ->assertStatus(200)
             ->assertJsonStructure(['url', 'token']);
