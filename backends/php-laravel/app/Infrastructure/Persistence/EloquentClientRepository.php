@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Repositories;
+namespace App\Infrastructure\Persistence;
 
 use App\Domain\Client\Condition\ClientCondition;
 use App\Domain\Client\Entities\Client as Entity;
@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
  * クライアントRepositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Infrastructure\Repositories
+ * @package App\Infrastructure\Persistence
  */
 class EloquentClientRepository extends AbstractEloquentRepository implements ClientRepository
 {

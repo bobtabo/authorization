@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Repositories;
+namespace App\Infrastructure\Persistence;
 
 use App\Domain\Notification\Condition\NotificationCondition;
 use App\Domain\Notification\Entities\Notification as Entity;
@@ -22,7 +22,7 @@ use Illuminate\Support\Collection;
  * 通知Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Infrastructure\Repositories
+ * @package App\Infrastructure\Persistence
  */
 class EloquentNotificationRepository extends AbstractEloquentRepository implements NotificationRepository
 {

@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Repositories;
+namespace App\Infrastructure\Persistence;
 
 use App\Domain\Invitation\Condition\InvitationCondition;
 use App\Domain\Invitation\Entities\Invitation as Entity;
@@ -22,7 +22,7 @@ use App\Support\Repositories\Conditions\Option;
  * 招待Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Infrastructure\Repositories
+ * @package App\Infrastructure\Persistence
  */
 class EloquentInvitationRepository extends AbstractEloquentRepository implements InvitationRepository
 {

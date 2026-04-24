@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace app\Infrastructure\Repositories;
+namespace App\Infrastructure\Cache;
 
 use App\Domain\Gate\Repositories\GateRepository;
 use App\Support\Repositories\AbstractCacheRepository;
@@ -17,9 +17,9 @@ use App\Support\Repositories\AbstractCacheRepository;
  * 認可Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Infrastructure\Gate
+ * @package App\Infrastructure\Cache
  */
-class CacheGateRepository extends AbstractCacheRepository implements GateRepository
+class RedisGateRepository extends AbstractCacheRepository implements GateRepository
 {
     private const string TAG = 'gate.jwt';
 

@@ -22,7 +22,7 @@ use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\Support\Traits\EnumValue;
-use app\UseCases\Notification\Dtos\NotificationCreateDto;
+use App\UseCases\Notification\Dtos\NotificationCreateDto;
 use App\UseCases\Notification\Dtos\NotificationDto;
 
 /**

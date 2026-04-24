@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Repositories;
+namespace App\Infrastructure\Persistence;
 
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff as Entity;
@@ -21,7 +21,7 @@ use Illuminate\Support\Collection;
  * スタッフRepositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Infrastructure\Repositories
+ * @package App\Infrastructure\Persistence
  */
 class EloquentStaffRepository extends AbstractEloquentRepository implements StaffRepository
 {
