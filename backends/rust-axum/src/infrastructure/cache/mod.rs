@@ -14,12 +14,12 @@ pub fn new(cfg: &Config) -> redis::RedisResult<Client> {
     Client::open(url)
 }
 
-pub struct RedisGateCacheRepository {
+pub struct RedisGateRepository {
     client: Client,
     prefix: String,
 }
 
-impl RedisGateCacheRepository {
+impl RedisGateRepository {
     pub fn new(client: Client, cfg: &Config) -> Self {
         Self {
             client,
@@ -29,7 +29,7 @@ impl RedisGateCacheRepository {
 }
 
 #[async_trait]
-impl CacheRepository for RedisGateCacheRepository {
+impl CacheRepository for RedisGateRepository {
     async fn get_jwt(&self, _identifier: &str, _member_id: &str) -> Result<Option<String>, DomainError> {
         todo!()
     }

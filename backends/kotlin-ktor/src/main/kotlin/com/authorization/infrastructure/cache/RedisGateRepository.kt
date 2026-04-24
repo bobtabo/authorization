@@ -4,7 +4,7 @@ import com.authorization.config.Config
 import com.authorization.domain.gate.CacheRepository
 import redis.clients.jedis.JedisPool
 
-class GateCacheRepository(
+class RedisGateRepository(
     private val pool: JedisPool,
     private val cfg: Config,
 ) : CacheRepository {

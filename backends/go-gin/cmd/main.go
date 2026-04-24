@@ -37,7 +37,7 @@ func main() {
 	staffRepo := persistence.NewGormStaffRepository(database)
 	invitationRepo := persistence.NewGormInvitationRepository(database, cfg.App.FrontendURL)
 	notificationRepo := persistence.NewGormNotificationRepository(database)
-	gateCacheRepo := cache.NewGateCacheRepository(rdb, cfg)
+	gateCacheRepo := cache.NewRedisGateRepository(rdb, cfg)
 
 	// --- Usecases ---
 	authUC := uauth.NewInteractor(staffRepo)

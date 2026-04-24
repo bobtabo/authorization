@@ -9,7 +9,7 @@ from app.infrastructure.persistence.sqlalchemy_client_repository import SqlAlche
 from app.infrastructure.persistence.sqlalchemy_staff_repository import SqlAlchemyStaffRepository
 from app.infrastructure.persistence.sqlalchemy_invitation_repository import SqlAlchemyInvitationRepository
 from app.infrastructure.persistence.sqlalchemy_notification_repository import SqlAlchemyNotificationRepository
-from app.infrastructure.cache.gate_cache_repository import GateCacheRepository
+from app.infrastructure.cache.redis_gate_repository import RedisGateRepository
 from app.domain.client.repository import ClientRepository
 from app.domain.staff.repository import StaffRepository
 from app.usecase.auth.interactor import AuthInteractor
@@ -57,7 +57,7 @@ def get_gate_interactor(
     client_repo: ClientRepository = Depends(get_client_repo),
     rdb: redis_lib.Redis = Depends(get_redis_client),
 ) -> GateInteractor:
-    cache_repo = GateCacheRepository(rdb)
+    cache_repo = RedisGateRepository(rdb)
     return GateInteractor(client_repo, cache_repo)
 
 

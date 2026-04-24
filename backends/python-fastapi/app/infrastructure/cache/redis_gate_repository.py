@@ -3,7 +3,7 @@ import redis
 from app.config.settings import get_settings
 
 
-class GateCacheRepository:
+class RedisGateRepository:
     """Gate JWT の Redis キャッシュリポジトリ。"""
 
     def __init__(self, rdb: redis.Redis):

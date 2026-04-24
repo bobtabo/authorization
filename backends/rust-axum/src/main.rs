@@ -27,7 +27,7 @@ async fn main() {
         cfg.app.frontend_url.clone(),
     ));
     let notification_repo = Arc::new(infrastructure::persistence::notification::SqlxNotificationRepository::new(pool.clone()));
-    let gate_cache = Arc::new(infrastructure::cache::RedisGateCacheRepository::new(redis_client, &cfg));
+    let gate_cache = Arc::new(infrastructure::cache::RedisGateRepository::new(redis_client, &cfg));
 
     let auth_uc         = Arc::new(usecase::auth::Interactor::new(staff_repo.clone()));
     let client_uc       = Arc::new(usecase::client::Interactor::new(client_repo.clone()));

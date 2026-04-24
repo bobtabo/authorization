@@ -4,14 +4,14 @@ from jose import jwt, JWTError
 from app.config.settings import get_settings
 from app.domain.client.repository import ClientRepository
 from app.exceptions import unauthorized, not_found, internal
-from app.infrastructure.cache.gate_cache_repository import GateCacheRepository
+from app.infrastructure.cache.redis_gate_repository import RedisGateRepository
 from app.usecase.gate.dto import GateIssueDto, GateVerifyDto
 
 
 class GateInteractor:
     """Gate のユースケース実装。"""
 
-    def __init__(self, client_repo: ClientRepository, cache_repo: GateCacheRepository):
+    def __init__(self, client_repo: ClientRepository, cache_repo: RedisGateRepository):
         self.client_repo = client_repo
         self.cache_repo = cache_repo
         self.settings = get_settings()

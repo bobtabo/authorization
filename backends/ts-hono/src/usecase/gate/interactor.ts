@@ -2,10 +2,10 @@ import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 import { config } from "../../config.js";
 import { unauthorized, notFound, internal } from "../../lib/errors.js";
 import { DrizzleClientRepository } from "../../infrastructure/persistence/drizzleClientRepository.js";
-import { GateCacheRepository } from "../../infrastructure/cache/gateCacheRepository.js";
+import { RedisGateRepository } from "../../infrastructure/cache/redisGateRepository.js";
 
 const clientRepo = new DrizzleClientRepository();
-const cacheRepo = new GateCacheRepository();
+const cacheRepo = new RedisGateRepository();
 
 export async function issueToken(accessToken: string, member: string): Promise<string> {
   const client = await clientRepo.findByToken(accessToken);

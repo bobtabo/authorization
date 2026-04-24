@@ -80,7 +80,7 @@ func buildRouter() *gin.Engine {
 	staffRepo := persistence.NewGormStaffRepository(testDB)
 	invitationRepo := persistence.NewGormInvitationRepository(testDB, testCfg.App.FrontendURL)
 	notificationRepo := persistence.NewGormNotificationRepository(testDB)
-	gateCacheRepo := cache.NewGateCacheRepository(rdb, testCfg)
+	gateCacheRepo := cache.NewRedisGateRepository(rdb, testCfg)
 
 	authUC := uauth.NewInteractor(staffRepo)
 	clientUC := uclient.NewInteractor(clientRepo)

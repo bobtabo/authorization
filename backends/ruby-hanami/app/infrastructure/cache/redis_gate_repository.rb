@@ -1,6 +1,6 @@
 module Infrastructure
   module Cache
-    class RedisGateCacheRepository
+    class RedisGateRepository
       def initialize(cfg)
         @redis  = RedisClient.new_client(cfg)
         @prefix = cfg.app.cache_prefix

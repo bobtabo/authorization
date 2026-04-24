@@ -2,7 +2,7 @@ package com.authorization
 
 import com.authorization.config.ConfigLoader
 import com.authorization.handler.*
-import com.authorization.infrastructure.cache.GateCacheRepository
+import com.authorization.infrastructure.cache.RedisGateRepository
 import com.authorization.infrastructure.cache.newRedisPool
 import com.authorization.infrastructure.db.initDatabase
 import com.authorization.infrastructure.mail.Mailer
@@ -35,7 +35,7 @@ fun Application.module() {
     val staffRepo        = ExposedStaffRepository(db)
     val invitationRepo   = ExposedInvitationRepository(db, cfg)
     val notificationRepo = ExposedNotificationRepository(db)
-    val gateCache        = GateCacheRepository(redisPool, cfg)
+    val gateCache        = RedisGateRepository(redisPool, cfg)
 
     val authUC         = AuthInteractor(staffRepo)
     val clientUC       = ClientInteractor(clientRepo)

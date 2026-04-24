@@ -5,7 +5,7 @@ function cacheKey(identifier: string, member: string): string {
   return `${config.app.cachePrefix}:gate:${identifier}:${member}`;
 }
 
-export class GateCacheRepository {
+export class RedisGateRepository {
   async getJwt(identifier: string, member: string): Promise<string | null> {
     return redis.get(cacheKey(identifier, member));
   }
