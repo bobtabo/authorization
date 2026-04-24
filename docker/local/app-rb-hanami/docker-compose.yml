@@ -28,7 +28,7 @@ services:
 
   rb-hanami:
     container_name: ${RB_HANAMI_CONTAINER}
-    build: rb-hanami
+    build: ruby
     ports:
       - '${RB_HANAMI_DEBUG_PORT}:1235'
     volumes:
