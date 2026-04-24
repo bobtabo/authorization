@@ -28,7 +28,7 @@ services:
 
   rb-rails:
     container_name: ${RB_RAILS_CONTAINER}
-    build: rb-rails
+    build: ruby
     ports:
       - '${RB_RAILS_DEBUG_PORT}:1234'
     volumes:
