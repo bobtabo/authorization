@@ -1,9 +1,20 @@
+# frozen_string_literal: true
+#
+# クライアント詳細アクションを定義するモジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 module Authorization
   module Actions
     module Clients
+      # 指定IDのクライアント詳細を返すアクションです。
+      # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
       class Show < Authorization::Action
         include Authorization::Actions::Base
 
+        # @param request [Hanami::Action::Request] リクエスト
+        # @param response [Hanami::Action::Response] レスポンス
+        # @return [void]
         def handle(request, response)
           c = container[:client_uc].find_by_id(request.params[:id].to_i)
           json_response(response, {

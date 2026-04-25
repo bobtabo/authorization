@@ -1,3 +1,9 @@
+# frozen_string_literal: true
+#
+# DI コンテナ定義モジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 module AppContainer
   @mutex = Mutex.new
 
@@ -18,6 +24,7 @@ module AppContainer
 
     {
       cfg:             cfg,
+      rom:             rom,
       auth_uc:         UseCase::Auth::Interactor.new(staff_repo),
       client_uc:       UseCase::Client::Interactor.new(client_repo),
       staff_uc:        UseCase::Staff::Interactor.new(staff_repo),

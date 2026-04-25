@@ -1,14 +1,27 @@
+# frozen_string_literal: true
+#
+# メーラーを定義するモジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 require "net/smtp"
 require "base64"
 require "time"
 
 module Infrastructure
   module Mail
+    # SMTP でメールを送信するメーラークラスです。
+    # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
     class Mailer
+      # @param cfg [ConfigLoader] 設定（cfg.mail を内部で参照）
       def initialize(cfg = ConfigLoader.load)
         @cfg = cfg.mail
       end
 
+      # @param to [String] 宛先メールアドレス
+      # @param client_name [String] クライアント名
+      # @param token [String] アクセストークン
+      # @return [void]
       def send_access_token(to, client_name, token)
         return if to.nil? || to.empty?
 

@@ -1,5 +1,13 @@
+# frozen_string_literal: true
+#
+# クライアントモデルを定義するモジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 module Infrastructure
   module Model
+    # クライアントの永続化モデルです。
+    # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
     Client = Struct.new(
       :id, :name, :identifier,
       :post_code, :pref, :city, :address, :building, :tel, :email,

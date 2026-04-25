@@ -1,11 +1,22 @@
+# frozen_string_literal: true
+#
+# Google OAuth リダイレクトアクションを定義するモジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 require "cgi"
 
 module Authorization
   module Actions
     module Auth
+      # Google OAuth 認証ページへリダイレクトするアクションです。
+      # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
       class GoogleRedirect < Authorization::Action
         include Authorization::Actions::Base
 
+        # @param request [Hanami::Action::Request] リクエスト
+        # @param response [Hanami::Action::Response] レスポンス
+        # @return [void]
         def handle(request, response)
           cfg = container[:cfg]
           url = "https://accounts.google.com/o/oauth2/auth" \

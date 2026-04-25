@@ -1,6 +1,8 @@
 source "https://rubygems.org"
 
 gem "hanami"
+gem "hanami-controller"
+gem "hanami-router"
 gem "puma"
 gem "rom"
 gem "rom-sql"

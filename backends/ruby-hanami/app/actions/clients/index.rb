@@ -1,9 +1,20 @@
+# frozen_string_literal: true
+#
+# クライアント一覧アクションを定義するモジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 module Authorization
   module Actions
     module Clients
+      # 検索条件でクライアント一覧を返すアクションです。
+      # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
       class Index < Authorization::Action
         include Authorization::Actions::Base
 
+        # @param request [Hanami::Action::Request] リクエスト
+        # @param response [Hanami::Action::Response] レスポンス
+        # @return [void]
         def handle(request, response)
           clients = container[:client_uc].find_by_condition(
             UseCase::Client::ListConditionDto.new(
