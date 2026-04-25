@@ -1,9 +1,15 @@
+/*
+ * Exposed ORM テーブル定義モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.infrastructure.model
 
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.javatime.datetime
 
+/** クライアントテーブル定義です。 */
 object Clients : LongIdTable("clients") {
     val name        = varchar("name", 255)
     val identifier  = varchar("identifier", 255).uniqueIndex()
@@ -30,6 +36,7 @@ object Clients : LongIdTable("clients") {
     val version     = integer("version").default(0)
 }
 
+/** スタッフテーブル定義です。 */
 object Staffs : LongIdTable("staffs") {
     val name        = varchar("name", 255)
     val email       = varchar("email", 255).uniqueIndex()
@@ -47,6 +54,7 @@ object Staffs : LongIdTable("staffs") {
     val version     = integer("version").default(0)
 }
 
+/** 招待テーブル定義です。 */
 object Invitations : IntIdTable("invitations") {
     val token     = varchar("token", 255).uniqueIndex()
     val createdAt = datetime("created_at")
@@ -58,6 +66,7 @@ object Invitations : IntIdTable("invitations") {
     val version   = integer("version").default(0)
 }
 
+/** 通知テーブル定義です。 */
 object Notifications : LongIdTable("notifications") {
     val staffId     = long("staff_id")
     val messageType = integer("message_type").default(1)

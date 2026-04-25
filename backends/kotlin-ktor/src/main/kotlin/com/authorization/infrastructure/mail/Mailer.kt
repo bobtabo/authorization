@@ -1,3 +1,8 @@
+/*
+ * メール送信モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.infrastructure.mail
 
 import com.authorization.config.MailConfig
@@ -11,8 +16,20 @@ import jakarta.mail.internet.MimeMessage
 import java.time.Year
 import java.util.Properties
 
+/**
+ * メール送信クラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 class Mailer(private val cfg: MailConfig) {
 
+    /**
+     * クライアントへアクセストークン通知メールを送信します。
+     *
+     * @param to 宛先メールアドレス
+     * @param clientName クライアント名
+     * @param token アクセストークン
+     */
     fun sendAccessToken(to: String, clientName: String, token: String) {
         if (to.isBlank()) return
 
@@ -47,6 +64,12 @@ class Mailer(private val cfg: MailConfig) {
         }
     }
 
+    /**
+     * 環境に応じたメール件名プレフィックスを付与します。
+     *
+     * @param subject 件名
+     * @return プレフィックス付き件名
+     */
     private fun mailSubject(subject: String): String {
         val label = when (cfg.appEnv) {
             "local"   -> "Local"
@@ -59,6 +82,14 @@ class Mailer(private val cfg: MailConfig) {
     }
 }
 
+/**
+ * アクセストークン通知メールの HTML を生成します。
+ *
+ * @param name クライアント名
+ * @param token アクセストークン
+ * @param appName アプリケーション名
+ * @return HTML 文字列
+ */
 private fun buildAccessTokenHtml(name: String, token: String, appName: String): String {
     val year = Year.now().value
     return ACCESS_TOKEN_TEMPLATE

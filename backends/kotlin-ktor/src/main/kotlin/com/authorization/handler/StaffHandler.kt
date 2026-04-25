@@ -1,3 +1,8 @@
+/*
+ * スタッフ HTTP ハンドラーモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.handler
 
 import com.authorization.domain.staff.Condition
@@ -9,12 +14,23 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import kotlinx.serialization.json.*
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.format.DateTimeFormatter
 
 private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
+/**
+ * スタッフ API のハンドラーです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 class StaffHandler(private val staffUC: StaffUC) {
 
+    /**
+     * スタッフ一覧を取得します。
+     *
+     * @param call アプリケーションコール
+     */
     suspend fun index(call: ApplicationCall) {
         val keyword = call.request.queryParameters["keyword"]
         val roles = call.request.queryParameters.getAll("roles")
@@ -29,7 +45,7 @@ class StaffHandler(private val staffUC: StaffUC) {
                     put("name",       s.name)
                     put("email",      s.email)
                     put("role",       s.role)
-                    put("status",     StaffUC.status(s))
+                    put("status",     s.status)
                     put("created_at", s.createdAt.format(fmt))
                     put("updated_at", s.updatedAt.format(fmt))
                 })
@@ -38,6 +54,11 @@ class StaffHandler(private val staffUC: StaffUC) {
         call.respond(buildJsonObject { put("items", items) })
     }
 
+    /**
+     * スタッフのロールを更新します。
+     *
+     * @param call アプリケーションコール
+     */
     suspend fun updateRole(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
@@ -45,22 +66,32 @@ class StaffHandler(private val staffUC: StaffUC) {
         val body = call.receive<JsonObject>()
         val role = body["role"]?.jsonPrimitive?.intOrNull
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "role_required") })
-        staffUC.updateRole(UpdateRoleDto(id = id, role = role, executorId = executorId))
+        newSuspendedTransaction { staffUC.updateRole(UpdateRoleDto(id = id, role = role, executorId = executorId)) }
         call.respond(buildJsonObject { put("id", id) })
     }
 
+    /**
+     * 論理削除されたスタッフを復元します。
+     *
+     * @param call アプリケーションコール
+     */
     suspend fun restore(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
-        staffUC.restore(id)
+        newSuspendedTransaction { staffUC.restore(id) }
         call.respond(buildJsonObject { put("id", id) })
     }
 
+    /**
+     * スタッフを論理削除します。
+     *
+     * @param call アプリケーションコール
+     */
     suspend fun destroy(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
         val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
-        staffUC.destroy(DestroyDto(id = id, executorId = executorId))
+        newSuspendedTransaction { staffUC.destroy(DestroyDto(id = id, executorId = executorId)) }
         call.respond(buildJsonObject { put("id", id) })
     }
 }

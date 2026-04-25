@@ -1,7 +1,17 @@
+/*
+ * 通知ドメインエンティティモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.domain.notification
 
 import java.time.LocalDateTime
 
+/**
+ * 通知エンティティです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 data class Notification(
     val id:          Long           = 0,
     val staffId:     Long,

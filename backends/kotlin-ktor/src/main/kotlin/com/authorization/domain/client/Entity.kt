@@ -1,7 +1,17 @@
+/*
+ * クライアントドメインエンティティモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.domain.client
 
 import java.time.LocalDateTime
 
+/**
+ * クライアントエンティティです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 data class Client(
     val id:          Long              = 0,
     val name:        String,

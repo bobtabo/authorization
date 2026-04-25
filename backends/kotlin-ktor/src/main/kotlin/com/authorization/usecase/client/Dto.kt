@@ -1,5 +1,15 @@
+/*
+ * クライアントユースケース DTO モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.usecase.client
 
+/**
+ * クライアント登録 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 data class StoreDto(
     val name:       String,
     val postCode:   String = "",
@@ -12,6 +22,11 @@ data class StoreDto(
     val executorId: Long   = 0,
 )
 
+/**
+ * クライアント更新 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 data class UpdateDto(
     val id:         Long,
     val name:       String?  = null,
@@ -26,6 +41,11 @@ data class UpdateDto(
     val executorId: Long     = 0,
 )
 
+/**
+ * クライアント一覧取得条件 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 data class ListConditionDto(
     val keyword:   String?    = null,
     val startFrom: String?    = null,

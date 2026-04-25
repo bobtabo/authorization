@@ -1,7 +1,17 @@
+/*
+ * スタッフドメインエンティティモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 package com.authorization.domain.staff
 
 import java.time.LocalDateTime
 
+/**
+ * スタッフエンティティです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 data class Staff(
     val id:          Long           = 0,
     val name:        String,
