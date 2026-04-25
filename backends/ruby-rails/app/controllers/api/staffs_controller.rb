@@ -1,4 +1,13 @@
+# frozen_string_literal: true
+#
+# スタッフ API コントローラー。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
+# スタッフに関する API エンドポイントを提供するコントローラーです。
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 class Api::StaffsController < Api::BaseController
+  # スタッフ一覧を返します。
   def index
     keyword = params[:keyword]
     roles   = Array(params[:roles]).flat_map { |r| r.to_s.split(",") }.filter_map(&:to_i)
@@ -11,33 +20,42 @@ class Api::StaffsController < Api::BaseController
         name:       s.name,
         email:      s.email,
         role:       s.role,
-        status:     UseCase::Staff::Interactor.status(s),
+        status:     s.status,
         created_at: s.created_at.strftime(TIME_FORMAT),
         updated_at: s.updated_at.strftime(TIME_FORMAT),
       }
     }}
   end
 
+  # スタッフのロールを更新します。
   def update_role
     executor_id = staff_id_from_cookie
-    container[:staff_uc].update_role(
-      UseCase::Staff::UpdateRoleDto.new(
-        id: params[:id].to_i, role: params[:role].to_i, executor_id: executor_id
+    ActiveRecord::Base.transaction do
+      container[:staff_uc].update_role(
+        UseCase::Staff::UpdateRoleDto.new(
+          id: params[:id].to_i, role: params[:role].to_i, executor_id: executor_id
+        )
       )
-    )
+    end
     render json: { id: params[:id].to_i }
   end
 
+  # 削除済みスタッフを復元します。
   def restore
-    container[:staff_uc].restore(params[:id].to_i)
+    ActiveRecord::Base.transaction do
+      container[:staff_uc].restore(params[:id].to_i)
+    end
     render json: { id: params[:id].to_i }
   end
 
+  # スタッフを削除します。
   def destroy
     executor_id = staff_id_from_cookie
-    container[:staff_uc].destroy(
-      UseCase::Staff::DestroyDto.new(id: params[:id].to_i, executor_id: executor_id)
-    )
+    ActiveRecord::Base.transaction do
+      container[:staff_uc].destroy(
+        UseCase::Staff::DestroyDto.new(id: params[:id].to_i, executor_id: executor_id)
+      )
+    end
     render json: { id: params[:id].to_i }
   end
 end

@@ -1,4 +1,13 @@
+# frozen_string_literal: true
+#
+# 認証 API コントローラー。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
+# 認証に関する API エンドポイントを提供するコントローラーです。
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 class Api::AuthController < Api::BaseController
+  # Google OAuth2 認可画面へリダイレクトします。
   def google_redirect
     cfg = container[:cfg]
     url = "https://accounts.google.com/o/oauth2/auth" \
@@ -8,10 +17,12 @@ class Api::AuthController < Api::BaseController
     redirect_to url, allow_other_host: true
   end
 
+  # Google OAuth2 コールバックを処理します。
   def google_callback
     head :ok
   end
 
+  # 認証済みスタッフのプロフィールを返します。
   def get_my_profile
     staff_id = staff_id_from_cookie
     return render json: { error: "unauthenticated" }, status: :unauthorized if staff_id == 0
@@ -20,6 +31,7 @@ class Api::AuthController < Api::BaseController
     render json: { staff_id: s.id, name: s.name, avatar: s.avatar, role: s.role }
   end
 
+  # ログイン済みスタッフの情報を返します。
   def login
     staff_id = staff_id_from_cookie
     return render json: { error: "unauthenticated" }, status: :unauthorized if staff_id == 0
@@ -28,10 +40,12 @@ class Api::AuthController < Api::BaseController
     render json: { staff_id: s.id, name: s.name, avatar: s.avatar, role: s.role }
   end
 
+  # ログアウト処理を行います。
   def logout
     render json: {}
   end
 
+  # 招待トークンを検証して招待情報を返します。
   def invitation
     v = container[:invitation_uc].find_by_token(
       UseCase::Invitation::FindByTokenDto.new(token: params[:token])

@@ -1,5 +1,12 @@
+# frozen_string_literal: true
+#
+# クライアントエンティティを表すドメインオブジェクトモジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 module Domain
   module Client
+    # クライアントのエンティティです。
     Entity = Struct.new(
       :id, :name, :identifier,
       :post_code, :pref, :city, :address, :building, :tel, :email,

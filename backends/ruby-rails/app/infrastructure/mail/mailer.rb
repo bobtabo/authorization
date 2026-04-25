@@ -1,13 +1,27 @@
+# frozen_string_literal: true
+#
+# メール送信モジュール。
+#
+# @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 require "net/smtp"
 require "time"
 
 module Infrastructure
   module Mail
+    # メール送信クラスです。
+    # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
     class Mailer
+      # @param cfg [AppConfig] アプリケーション設定
       def initialize(cfg = ConfigLoader.load)
         @cfg = cfg.mail
       end
 
+      # クライアントへアクセストークン通知メールを送信します。
+      # @param to [String] 宛先メールアドレス
+      # @param client_name [String] クライアント名
+      # @param token [String] アクセストークン
+      # @return [void]
       def send_access_token(to, client_name, token)
         return if to.nil? || to.empty?
 
@@ -22,15 +36,23 @@ module Infrastructure
 
       private
 
+      # @param subject [String] 件名
+      # @return [String] 環境プレフィックス付き件名
       def mail_subject(subject)
         label = env_label(@cfg.app_env)
         label.empty? ? subject : "[#{label}]#{subject}"
       end
 
+      # @param env [String] 環境名
+      # @return [String] 環境ラベル
       def env_label(env)
         { "local" => "Local", "testing" => "Test", "develop" => "Develop", "staging" => "Staging" }.fetch(env, "")
       end
 
+      # @param to [String] 宛先メールアドレス
+      # @param subject [String] 件名
+      # @param body [String] 本文 HTML
+      # @return [String] MIME メッセージ
       def build_message(to, subject, body)
         encoded_subject = "=?UTF-8?B?#{Base64.strict_encode64(subject)}?="
         encoded_from    = "=?UTF-8?B?#{Base64.strict_encode64(@cfg.app_name)}?= <#{@cfg.from_address}>"
@@ -43,6 +65,9 @@ module Infrastructure
         "\r\n#{body}"
       end
 
+      # @param to [String] 宛先メールアドレス
+      # @param message [String] MIME メッセージ
+      # @return [void]
       def smtp_send(to, message)
         Net::SMTP.start(@cfg.host, @cfg.port.to_i) do |smtp|
           smtp.auth_login(@cfg.username, @cfg.password) if @cfg.username && !@cfg.username.empty?
@@ -50,6 +75,9 @@ module Infrastructure
         end
       end
 
+      # @param name [String] クライアント名
+      # @param token [String] アクセストークン
+      # @return [String] HTML 文字列
       def build_access_token_html(name, token)
         year = Time.now.year
         ACCESS_TOKEN_TEMPLATE
