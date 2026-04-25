@@ -5,3 +5,7 @@ gem "puma"
 gem "mysql2"
 gem "redis"
 gem "dotenv-rails"
+
+group :development, :test do
+  gem "rspec-rails"
+end

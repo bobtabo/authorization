@@ -1,2 +1,7 @@
 tmp/
 log/
+.env
+.bundle/
+vendor/bundle/
+config/master.key
+config/credentials.yml.enc
