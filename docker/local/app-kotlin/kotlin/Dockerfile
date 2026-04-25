@@ -24,3 +24,6 @@ ENV LANG="ja_JP.UTF-8" \
     LC_ALL="ja_JP.UTF-8"
 
 WORKDIR /var/www
+
+# gradle:8.14-jdk21 は USER gradle に切り替えるため root に戻す
+USER root
