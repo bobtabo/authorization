@@ -1,3 +1,10 @@
+/**
+ * クライアントドメイン エンティティモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+
+/** クライアントのドメインエンティティ。 */
 export interface Client {
   id: number;
   name: string;

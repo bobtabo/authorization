@@ -1,3 +1,10 @@
+/**
+ * スタッフドメイン エンティティモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+
+/** スタッフのドメインエンティティ。 */
 export interface Staff {
   id: number;
   name: string;

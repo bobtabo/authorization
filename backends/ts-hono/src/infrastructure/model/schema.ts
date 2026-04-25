@@ -1,3 +1,8 @@
+/**
+ * インフラ Drizzle ORM スキーマモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import {
   mysqlTable, bigint, varchar, text, int, boolean, datetime,
 } from "drizzle-orm/mysql-core";

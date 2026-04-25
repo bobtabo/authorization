@@ -1,5 +1,11 @@
+/**
+ * スタッフドメイン リポジトリインターフェースモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import type { Staff } from "./entity.js";
 
+/** スタッフのリポジトリインターフェース。 */
 export interface StaffRepository {
   findAll(keyword?: string, roles?: number[]): Promise<Staff[]>;
   findById(id: number): Promise<Staff | undefined>;

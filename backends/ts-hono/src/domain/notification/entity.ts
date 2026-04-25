@@ -1,3 +1,10 @@
+/**
+ * 通知ドメイン エンティティモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+
+/** 通知のドメインエンティティ。 */
 export interface Notification {
   id: number;
   staffId: number;
