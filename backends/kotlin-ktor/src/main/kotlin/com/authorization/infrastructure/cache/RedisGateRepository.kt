@@ -26,7 +26,10 @@ class RedisGateRepository(
      * @param memberId メンバー ID
      * @return JWT、またはキャッシュがなければ null
      */
-    override suspend fun getJwt(identifier: String, memberId: String): String? = TODO()
+    override suspend fun getJwt(identifier: String, memberId: String): String? {
+        val key = cacheKey(identifier, memberId)
+        return pool.resource.use { it.get(key) }
+    }
 
     /**
      * JWT をキャッシュに保存します。
@@ -36,5 +39,11 @@ class RedisGateRepository(
      * @param token JWT
      * @param ttl キャッシュ有効期間（秒）
      */
-    override suspend fun putJwt(identifier: String, memberId: String, token: String, ttl: Long) = TODO()
+    override suspend fun putJwt(identifier: String, memberId: String, token: String, ttl: Long) {
+        val key = cacheKey(identifier, memberId)
+        pool.resource.use { it.setex(key, ttl, token) }
+    }
+
+    private fun cacheKey(identifier: String, memberId: String): String =
+        "${cfg.app.cachePrefix}:gate.jwt:$identifier:$memberId"
 }

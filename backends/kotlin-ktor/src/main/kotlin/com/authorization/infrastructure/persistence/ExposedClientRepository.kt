@@ -6,9 +6,20 @@
 package com.authorization.infrastructure.persistence
 
 import com.authorization.domain.client.Client
+import com.authorization.domain.client.ClientStatus
 import com.authorization.domain.client.Condition
 import com.authorization.domain.client.Repository
+import com.authorization.infrastructure.model.Clients
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.andWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.time.LocalDateTime
 
 /**
  * Exposed を使用したクライアントリポジトリの実装です。
@@ -23,7 +34,22 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param cond 検索条件
      * @return クライアント一覧
      */
-    override suspend fun findByCondition(cond: Condition): List<Client> = TODO()
+    override suspend fun findByCondition(cond: Condition): List<Client> = newSuspendedTransaction(db = db) {
+        var query = Clients.selectAll()
+        cond.keyword?.let { kw ->
+            query = query.andWhere { (Clients.name like "%$kw%") or (Clients.email like "%$kw%") }
+        }
+        cond.startFrom?.let { from ->
+            query = query.andWhere { Clients.startAt greaterEq from }
+        }
+        cond.startTo?.let { to ->
+            query = query.andWhere { Clients.startAt lessEq to }
+        }
+        if (cond.statuses.isNotEmpty()) {
+            query = query.andWhere { Clients.status inList cond.statuses }
+        }
+        query.orderBy(Clients.createdAt to SortOrder.DESC).map { rowToClient(it) }
+    }
 
     /**
      * 指定した ID のクライアントを取得します。
@@ -31,7 +57,9 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param id クライアント ID
      * @return クライアント、または null
      */
-    override suspend fun findById(id: Long): Client? = TODO()
+    override suspend fun findById(id: Long): Client? = newSuspendedTransaction(db = db) {
+        Clients.selectAll().where { Clients.id eq id }.firstOrNull()?.let { rowToClient(it) }
+    }
 
     /**
      * アクセストークンに一致するクライアントを取得します。
@@ -39,7 +67,13 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param token アクセストークン
      * @return クライアント、または null
      */
-    override suspend fun findByAccessToken(token: String): Client? = TODO()
+    override suspend fun findByAccessToken(token: String): Client? = newSuspendedTransaction(db = db) {
+        Clients.selectAll().where {
+            (Clients.accessToken eq token) and
+            (Clients.status eq ClientStatus.ACTIVE) and
+            Clients.deletedAt.isNull()
+        }.firstOrNull()?.let { rowToClient(it) }
+    }
 
     /**
      * 識別子に一致するクライアントを取得します。
@@ -47,7 +81,10 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param identifier 識別子
      * @return クライアント、または null
      */
-    override suspend fun findByIdentifier(identifier: String): Client? = TODO()
+    override suspend fun findByIdentifier(identifier: String): Client? = newSuspendedTransaction(db = db) {
+        Clients.selectAll().where { Clients.identifier eq identifier }
+            .firstOrNull()?.let { rowToClient(it) }
+    }
 
     /**
      * クライアントを保存します（新規登録・更新）。
@@ -55,7 +92,52 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param c クライアントエンティティ
      * @return 保存後のクライアントエンティティ
      */
-    override suspend fun save(c: Client): Client = TODO()
+    override suspend fun save(c: Client): Client = newSuspendedTransaction(db = db) {
+        if (c.id == 0L) {
+            val newId = Clients.insertAndGetId {
+                it[name]        = c.name
+                it[identifier]  = c.identifier
+                it[postCode]    = c.postCode
+                it[pref]        = c.pref
+                it[city]        = c.city
+                it[address]     = c.address
+                it[building]    = c.building
+                it[tel]         = c.tel
+                it[email]       = c.email
+                it[accessToken] = c.accessToken
+                it[privateKey]  = c.privateKey
+                it[publicKey]   = c.publicKey
+                it[fingerprint] = c.fingerprint
+                it[status]      = c.status
+                it[startAt]     = c.startAt
+                it[stopAt]      = c.stopAt
+                it[createdAt]   = c.createdAt
+                it[createdBy]   = c.createdBy?.toInt()
+                it[updatedAt]   = c.updatedAt
+                it[updatedBy]   = c.updatedBy?.toInt()
+                it[version]     = c.version
+            }
+            c.copy(id = newId.value)
+        } else {
+            Clients.update({ Clients.id eq c.id }) {
+                it[name]      = c.name
+                it[postCode]  = c.postCode
+                it[pref]      = c.pref
+                it[city]      = c.city
+                it[address]   = c.address
+                it[building]  = c.building
+                it[tel]       = c.tel
+                it[email]     = c.email
+                it[status]    = c.status
+                it[startAt]   = c.startAt
+                it[stopAt]    = c.stopAt
+                it[updatedAt] = c.updatedAt
+                it[updatedBy] = c.updatedBy?.toInt()
+                it[version]   = c.version + 1
+            }
+            c.copy(version = c.version + 1)
+        }
+    }
 
     /**
      * クライアントを論理削除します。
@@ -63,5 +145,41 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param id クライアント ID
      * @param deletedBy 削除者スタッフ ID
      */
-    override suspend fun softDelete(id: Long, deletedBy: Long) = TODO()
+    override suspend fun softDelete(id: Long, deletedBy: Long) = newSuspendedTransaction(db = db) {
+        val now = LocalDateTime.now()
+        Clients.update({ Clients.id eq id }) {
+            it[deletedAt]       = now
+            it[Clients.deletedBy] = deletedBy.toInt()
+            it[updatedAt]       = now
+            it[updatedBy]       = deletedBy.toInt()
+        }
+        Unit
+    }
+
+    private fun rowToClient(row: ResultRow) = Client(
+        id          = row[Clients.id].value,
+        name        = row[Clients.name],
+        identifier  = row[Clients.identifier],
+        postCode    = row[Clients.postCode],
+        pref        = row[Clients.pref],
+        city        = row[Clients.city],
+        address     = row[Clients.address],
+        building    = row[Clients.building],
+        tel         = row[Clients.tel],
+        email       = row[Clients.email],
+        accessToken = row[Clients.accessToken],
+        privateKey  = row[Clients.privateKey],
+        publicKey   = row[Clients.publicKey],
+        fingerprint = row[Clients.fingerprint],
+        status      = row[Clients.status],
+        startAt     = row[Clients.startAt],
+        stopAt      = row[Clients.stopAt],
+        createdAt   = row[Clients.createdAt],
+        createdBy   = row[Clients.createdBy]?.toLong(),
+        updatedAt   = row[Clients.updatedAt],
+        updatedBy   = row[Clients.updatedBy]?.toLong(),
+        deletedAt   = row[Clients.deletedAt],
+        deletedBy   = row[Clients.deletedBy]?.toLong(),
+        version     = row[Clients.version],
+    )
 }

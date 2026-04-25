@@ -7,6 +7,8 @@ package com.authorization.usecase.auth
 
 import com.authorization.domain.staff.Repository
 import com.authorization.domain.staff.Staff
+import com.authorization.domain.staff.StaffRole
+import java.time.LocalDateTime
 
 /**
  * 認証ユースケースの Interactor です。
@@ -21,7 +23,8 @@ class Interactor(private val staffRepo: Repository) {
      * @param id スタッフ ID
      * @return スタッフエンティティ
      */
-    suspend fun findUser(id: Long): Staff = TODO()
+    suspend fun findUser(id: Long): Staff =
+        staffRepo.findById(id) ?: error("staff_not_found")
 
     /**
      * ログインを処理してスタッフを返します。
@@ -29,5 +32,24 @@ class Interactor(private val staffRepo: Repository) {
      * @param dto ログイン DTO
      * @return スタッフエンティティ
      */
-    suspend fun login(dto: LoginDto): Staff = TODO()
+    suspend fun login(dto: LoginDto): Staff {
+        val now = LocalDateTime.now()
+        val existing = staffRepo.findByProvider(dto.provider, dto.providerId)
+        val staff = existing?.copy(
+            avatar      = dto.avatar,
+            lastLoginAt = now,
+            updatedAt   = now,
+        ) ?: Staff(
+            name        = dto.name,
+            email       = dto.email,
+            provider    = dto.provider,
+            providerId  = dto.providerId,
+            avatar      = dto.avatar,
+            role        = StaffRole.MEMBER,
+            lastLoginAt = now,
+            createdAt   = now,
+            updatedAt   = now,
+        )
+        return staffRepo.save(staff)
+    }
 }

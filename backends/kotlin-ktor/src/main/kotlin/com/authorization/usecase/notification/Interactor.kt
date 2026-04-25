@@ -30,7 +30,8 @@ class Interactor(
      * @param limit 取得件数
      * @return 通知ページ VO
      */
-    suspend fun listPage(staffId: Long, cursor: String?, limit: Long): Page = TODO()
+    suspend fun listPage(staffId: Long, cursor: String?, limit: Long): Page =
+        repo.listPage(staffId, cursor, limit.coerceIn(1, 100).toInt())
 
     /**
      * 通知の未読件数と総件数を取得します。
@@ -38,28 +39,42 @@ class Interactor(
      * @param staffId スタッフ ID
      * @return 件数 VO（未読件数・総件数）
      */
-    suspend fun counts(staffId: Long): CountsVo = TODO()
+    suspend fun counts(staffId: Long): CountsVo {
+        val (unread, total) = repo.counts(staffId)
+        return CountsVo(unread = unread, total = total)
+    }
 
     /**
      * スタッフの通知をすべて既読にします。
      *
      * @param staffId スタッフ ID
      */
-    suspend fun bulkMarkRead(staffId: Long): Unit = TODO()
+    suspend fun bulkMarkRead(staffId: Long) {
+        repo.bulkMarkRead(staffId, emptyList(), true)
+    }
 
     /**
      * 通知をすべてのアクティブスタッフへ一括配信します。
      *
      * @param dto 配信 DTO
      */
-    suspend fun fanOut(dto: FanOutDto): Unit = TODO()
+    suspend fun fanOut(dto: FanOutDto) {
+        val staffs = staffRepo.findAllActive()
+        staffs.forEach { s ->
+            runCatching {
+                repo.store(s.id, dto.messageType, dto.title, dto.message, dto.executorId, dto.url.ifBlank { null })
+            }
+        }
+    }
 
     /**
      * 指定した通知を既読にします。
      *
      * @param id 通知 ID
      */
-    suspend fun markRead(id: Long): Unit = TODO()
+    suspend fun markRead(id: Long) {
+        repo.patch(id, mapOf("read" to true))
+    }
 
     companion object {
         private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")

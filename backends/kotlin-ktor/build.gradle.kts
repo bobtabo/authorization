@@ -7,6 +7,7 @@ val hikari_version: String by project
 val jedis_version: String by project
 val angus_mail_version: String by project
 val dotenv_version: String by project
+val nimbus_jwt_version: String by project
 
 plugins {
     kotlin("jvm") version "2.3.20"
@@ -40,6 +41,7 @@ dependencies {
     implementation("redis.clients:jedis:$jedis_version")
     implementation("org.eclipse.angus:angus-mail:$angus_mail_version")
     implementation("io.github.cdimascio:dotenv-kotlin:$dotenv_version")
+    implementation("com.nimbusds:nimbus-jose-jwt:$nimbus_jwt_version")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

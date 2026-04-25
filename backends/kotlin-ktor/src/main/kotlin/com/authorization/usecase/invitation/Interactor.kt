@@ -20,14 +20,15 @@ class Interactor(private val repo: Repository) {
      *
      * @return 招待 VO
      */
-    suspend fun current(): Vo = TODO()
+    suspend fun current(): Vo =
+        repo.getCurrent() ?: error("invitation_not_found")
 
     /**
      * 招待トークンを新規発行します。
      *
      * @return 発行された招待 VO
      */
-    suspend fun issue(): Vo = TODO()
+    suspend fun issue(): Vo = repo.issue()
 
     /**
      * 招待トークンに一致する招待情報を取得します。
@@ -35,5 +36,6 @@ class Interactor(private val repo: Repository) {
      * @param dto 検索 DTO
      * @return 招待 VO
      */
-    suspend fun findByToken(dto: FindByTokenDto): Vo = TODO()
+    suspend fun findByToken(dto: FindByTokenDto): Vo =
+        repo.findByToken(dto.token) ?: error("invitation_not_found")
 }
