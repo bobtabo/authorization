@@ -14,21 +14,24 @@ module UseCase
         @repo = repo
       end
 
-      # @param cond [Domain::Staff::Condition] 検索条件
-      # @return [Array<Domain::Staff::ListItem>] スタッフ一覧
-      def find_by_condition(cond) = raise NotImplementedError
+      def find_by_condition(cond)
+        @repo.find_by_condition(cond)
+      end
 
-      # @param dto [UseCase::Staff::UpdateRoleDto] ロール更新 DTO
-      # @return [void]
-      def update_role(dto)        = raise NotImplementedError
+      def update_role(dto)
+        @repo.update_role(dto.id, dto.role, dto.executor_id)
+        nil
+      end
 
-      # @param id [Integer] スタッフ ID
-      # @return [void]
-      def restore(id)             = raise NotImplementedError
+      def restore(id)
+        @repo.restore(id)
+        nil
+      end
 
-      # @param dto [UseCase::Staff::DestroyDto] 削除 DTO
-      # @return [void]
-      def destroy(dto)            = raise NotImplementedError
+      def destroy(dto)
+        @repo.soft_delete(dto.id, dto.executor_id)
+        nil
+      end
     end
   end
 end

@@ -17,7 +17,7 @@ module AppContainer
 
     client_repo       = Infrastructure::Persistence::RomClientRepository.new(rom)
     staff_repo        = Infrastructure::Persistence::RomStaffRepository.new(rom)
-    invitation_repo   = Infrastructure::Persistence::RomInvitationRepository.new(rom)
+    invitation_repo   = Infrastructure::Persistence::RomInvitationRepository.new(rom, cfg)
     notification_repo = Infrastructure::Persistence::RomNotificationRepository.new(rom)
     gate_cache        = Infrastructure::Cache::RedisGateRepository.new(cfg)
     mailer            = Infrastructure::Mail::Mailer.new(cfg)

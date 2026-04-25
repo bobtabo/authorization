@@ -16,27 +16,40 @@ module UseCase
         @staff_repo = staff_repo
       end
 
-      # @param staff_id [Integer] スタッフ ID
-      # @param cursor [String, nil] ページネーションカーソル
-      # @param limit [Integer] 取得件数上限
-      # @return [Domain::Notification::Page] 通知ページ
-      def list_page(staff_id, cursor, limit) = raise NotImplementedError
+      def list_page(staff_id, cursor, limit)
+        @repo.list_page(staff_id, cursor, limit)
+      end
 
-      # @param staff_id [Integer] スタッフ ID
-      # @return [Domain::Notification::CountsVo] 未読件数・総件数VO
-      def counts(staff_id)                   = raise NotImplementedError
+      def counts(staff_id)
+        @repo.counts(staff_id)
+      end
 
-      # @param staff_id [Integer] スタッフ ID
-      # @return [void]
-      def bulk_mark_read(staff_id)           = raise NotImplementedError
+      def bulk_mark_read(staff_id)
+        @repo.bulk_mark_read(staff_id, [], true)
+      end
 
-      # @param dto [UseCase::Notification::FanOutDto] 配信 DTO
-      # @return [void]
-      def fan_out(dto)                       = raise NotImplementedError
+      def fan_out(dto)
+        @staff_repo.find_all_active.each do |staff|
+          begin
+            @repo.store(
+              staff.id,
+              dto.message_type,
+              dto.title,
+              dto.message,
+              dto.executor_id,
+              dto.url,
+            )
+          rescue StandardError
+            nil
+          end
+        end
+        nil
+      end
 
-      # @param id [Integer] 通知 ID
-      # @return [void]
-      def mark_read(id)                      = raise NotImplementedError
+      def mark_read(id)
+        @repo.patch(id, { "read" => true })
+        nil
+      end
     end
   end
 end

@@ -14,15 +14,19 @@ module UseCase
         @repo = repo
       end
 
-      # @return [Domain::Invitation::Vo] 現在有効な招待VO
-      def current            = raise NotImplementedError
+      def current
+        @repo.get_current
+      end
 
-      # @return [Domain::Invitation::Vo] 発行した招待VO
-      def issue              = raise NotImplementedError
+      def issue
+        @repo.issue
+      end
 
-      # @param dto [UseCase::Invitation::FindByTokenDto] トークン検索 DTO
-      # @return [Domain::Invitation::Vo] 招待VO
-      def find_by_token(dto) = raise NotImplementedError
+      def find_by_token(dto)
+        vo = @repo.find_by_token(dto.token)
+        raise "invitation_not_found" unless vo
+        vo
+      end
     end
   end
 end

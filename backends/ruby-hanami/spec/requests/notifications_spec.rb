@@ -6,7 +6,7 @@ RSpec.describe "Notifications" do
   describe "GET /api/notifications/counts" do
     context "認証済みの場合" do
       it "未読数と総数を返す" do
-        allow(container[:notification_uc]).to receive(:counts).with(1).and_return([3, 10])
+        allow(container[:notification_uc]).to receive(:counts).with(1).and_return(double("counts_vo", unread: 3, total: 10))
         get "/api/notifications/counts", {}, { "HTTP_COOKIE" => "staff_id=1" }
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body)

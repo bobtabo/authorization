@@ -72,8 +72,16 @@ end
 # ---------- AppContainer スタブ ----------
 
 def stub_container(overrides = {})
+  rom_conn = double("rom_connection")
+  allow(rom_conn).to receive(:transaction) { |&blk| blk.call }
+  rom_gw   = double("rom_gateway", connection: rom_conn)
+  rom_gws  = double("rom_gateways")
+  allow(rom_gws).to receive(:[]).with(:default).and_return(rom_gw)
+  rom = double("rom", gateways: rom_gws)
+
   defaults = {
     cfg:             double("cfg", app: double("app_cfg", notification_default_limit: 10)),
+    rom:             rom,
     auth_uc:         double("auth_uc"),
     client_uc:       double("client_uc"),
     staff_uc:        double("staff_uc"),
@@ -92,6 +100,7 @@ end
 def staff_fixture(overrides = {})
   double("staff",
     { id: 1, name: "テストスタッフ", email: "staff@example.com", avatar: nil, role: 1,
+      status: :active,
       created_at: Time.now, updated_at: Time.now, deleted_at: nil }.merge(overrides)
   )
 end

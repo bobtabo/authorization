@@ -19,8 +19,8 @@ module Authorization
           staff_id = staff_id_from_cookie(request)
           return json_response(response, { error: "unauthenticated" }, status: 401) if staff_id == 0
 
-          transaction { container[:notification_uc].bulk_mark_read(staff_id) }
-          json_response(response, {})
+          updated = transaction { container[:notification_uc].bulk_mark_read(staff_id) }
+          json_response(response, { updated: updated })
         end
       end
     end

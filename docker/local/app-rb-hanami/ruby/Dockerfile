@@ -27,4 +27,10 @@ ENV LANG="ja_JP.UTF-8" \
 # bundler を最新化
 RUN gem update --system && gem install bundler
 
+# bundle パスと作業ディレクトリを docker ユーザーに移譲
+RUN chown -R ${DOCKER_USER}:${DOCKER_USER} /usr/local/bundle \
+    && mkdir -p /var/www \
+    && chown ${DOCKER_USER}:${DOCKER_USER} /var/www
+
+USER ${DOCKER_USER}
 WORKDIR /var/www

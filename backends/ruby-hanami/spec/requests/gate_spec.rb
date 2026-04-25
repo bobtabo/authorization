@@ -6,7 +6,7 @@ RSpec.describe "Gate" do
   describe "GET /api/gate/issue" do
     context "member パラメータあり" do
       it "JWT トークンを返す" do
-        allow(container[:gate_uc]).to receive(:issue_token).and_return("jwt.token.here")
+        allow(container[:gate_uc]).to receive(:issue_token).and_return(double("issue_vo", token: "jwt.token.here"))
         get "/api/gate/issue?member=user-001",
             {}, { "HTTP_AUTHORIZATION" => "Bearer access-token-abc" }
         expect(last_response.status).to eq(200)
@@ -28,8 +28,8 @@ RSpec.describe "Gate" do
   describe "GET /api/gate/client/:identifier/verify" do
     context "token パラメータあり" do
       it "ペイロードを返す" do
-        payload = { "sub" => "user-001", "iss" => "authorization" }
-        allow(container[:gate_uc]).to receive(:verify).and_return(payload)
+        claims = { "sub" => "user-001", "iss" => "authorization" }
+        allow(container[:gate_uc]).to receive(:verify).and_return(double("verify_vo", claims: claims))
         get "/api/gate/client/test-client/verify?token=jwt.token.here"
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body)
