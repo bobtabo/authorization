@@ -38,7 +38,7 @@ services:
       - kotlin_gradle:/var/www/${APP_NAME}/.gradle
       - kotlin_kotlin:/var/www/${APP_NAME}/.kotlin
     working_dir: /var/www/${APP_NAME}
-    command: gradle run
+    command: sh -c "chmod 777 build .gradle .kotlin 2>/dev/null || true && gradle run"
     networks:
       - authorization
 
