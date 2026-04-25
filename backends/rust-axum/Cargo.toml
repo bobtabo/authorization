@@ -21,3 +21,10 @@ lettre = { version = "0", features = ["tokio1", "tokio1-native-tls", "smtp-trans
 chrono = { version = "0", features = ["serde"] }
 async-trait = "0"
 axum-extra = { version = "0", features = ["cookie"] }
+jsonwebtoken = "9"
+rsa = { version = "0.9", features = ["pem"] }
+rand = "0.8"
+sha2 = "0.10"
+base64 = "0.22"
+hex = "0.4"
+uuid = { version = "1", features = ["v4"] }

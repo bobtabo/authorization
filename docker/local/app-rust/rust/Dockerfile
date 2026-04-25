@@ -18,7 +18,8 @@ ARG DOCKER_USER=docker
 ARG DOCKER_PASSWORD=docker
 RUN useradd -m --uid ${DOCKER_UID} --groups sudo ${DOCKER_USER} \
       && echo ${DOCKER_USER}:${DOCKER_PASSWORD} | chpasswd \
-      && echo "docker    ALL=(ALL)       ALL" >> /etc/sudoers
+      && echo "docker    ALL=(ALL)       ALL" >> /etc/sudoers \
+      && chown -R ${DOCKER_USER}:${DOCKER_USER} /usr/local/cargo
 
 # ロケール
 RUN localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
