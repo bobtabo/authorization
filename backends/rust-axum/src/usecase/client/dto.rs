@@ -1,3 +1,9 @@
+//! クライアントユースケース DTO モジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
+/// クライアント登録入力 DTO。
 pub struct StoreDto {
     pub name:        String,
     pub post_code:   String,
@@ -10,6 +16,7 @@ pub struct StoreDto {
     pub executor_id: u32,
 }
 
+/// クライアント更新入力 DTO。
 pub struct UpdateDto {
     pub id:          u64,
     pub name:        Option<String>,
@@ -24,6 +31,7 @@ pub struct UpdateDto {
     pub executor_id: u32,
 }
 
+/// クライアント一覧検索条件 DTO。
 pub struct ListConditionDto {
     pub keyword:    Option<String>,
     pub start_from: Option<String>,

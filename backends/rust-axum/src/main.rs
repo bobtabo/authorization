@@ -1,3 +1,8 @@
+//! アプリケーションエントリーポイント。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use axum::{Router, routing::{delete, get, patch, post, put}};
 use std::{net::SocketAddr, sync::Arc};
 
@@ -39,6 +44,7 @@ async fn main() {
 
     let app_state = state::AppState {
         cfg: cfg.clone(),
+        pool: pool.clone(),
         auth_uc,
         client_uc,
         staff_uc,
@@ -68,21 +74,21 @@ fn api_routes() -> Router<state::AppState> {
         .route("/auth/logout",            get(handler::auth::logout))
         .route("/auth/invitation/:token", get(handler::auth::invitation))
         // --- clients ---
-        .route("/clients",          get(handler::client::index))
-        .route("/clients/store",    post(handler::client::store))
-        .route("/clients/:id/update", put(handler::client::update))
-        .route("/clients/:id",      get(handler::client::show).delete(handler::client::destroy))
+        .route("/clients",                get(handler::client::index))
+        .route("/clients/store",          post(handler::client::store))
+        .route("/clients/:id/update",     put(handler::client::update))
+        .route("/clients/:id",            get(handler::client::show).delete(handler::client::destroy))
         // --- staffs ---
-        .route("/staffs",                   get(handler::staff::index))
-        .route("/staffs/:id/updateRole",    patch(handler::staff::update_role))
-        .route("/staffs/:id/restore",       patch(handler::staff::restore))
-        .route("/staffs/:id/delete",        delete(handler::staff::destroy))
+        .route("/staffs",                 get(handler::staff::index))
+        .route("/staffs/:id/updateRole",  patch(handler::staff::update_role))
+        .route("/staffs/:id/restore",     patch(handler::staff::restore))
+        .route("/staffs/:id/delete",      delete(handler::staff::destroy))
         // --- admin ---
-        .route("/admin/invitation",         get(handler::admin_invitation::index))
-        .route("/admin/invitation/issue",   get(handler::admin_invitation::issue))
+        .route("/admin/invitation",       get(handler::admin_invitation::index))
+        .route("/admin/invitation/issue", get(handler::admin_invitation::issue))
         // --- gate ---
-        .route("/gate/issue",                       get(handler::gate::issue))
-        .route("/gate/client/:identifier/verify",   get(handler::gate::verify))
+        .route("/gate/issue",                     get(handler::gate::issue))
+        .route("/gate/client/:identifier/verify", get(handler::gate::verify))
         // --- notifications ---
         .route("/notifications/counts", get(handler::notification::counts))
         .route("/notifications",        get(handler::notification::index).patch(handler::notification::read_all))

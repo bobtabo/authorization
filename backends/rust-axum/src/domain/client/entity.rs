@@ -1,5 +1,11 @@
+//! クライアントドメイン エンティティモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use chrono::NaiveDateTime;
 
+/// クライアントのドメインエンティティ。
 pub struct Client {
     pub id:           u64,
     pub name:         String,

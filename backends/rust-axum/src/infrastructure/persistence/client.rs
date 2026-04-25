@@ -1,3 +1,8 @@
+//! クライアントリポジトリ SQLx 実装モジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use async_trait::async_trait;
 use sqlx::MySqlPool;
 use crate::domain::client::{
@@ -6,11 +11,13 @@ use crate::domain::client::{
     repository::{DomainError, Repository},
 };
 
+/// SQLx を用いたクライアントリポジトリ実装。
 pub struct SqlxClientRepository {
     pool: MySqlPool,
 }
 
 impl SqlxClientRepository {
+    /// プールを受け取りリポジトリを生成します。
     pub fn new(pool: MySqlPool) -> Self {
         Self { pool }
     }

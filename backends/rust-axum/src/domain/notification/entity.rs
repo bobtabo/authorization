@@ -1,5 +1,11 @@
+//! 通知ドメイン エンティティモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use chrono::NaiveDateTime;
 
+/// 通知のドメインエンティティ。
 pub struct Notification {
     pub id:           u64,
     pub staff_id:     u32,

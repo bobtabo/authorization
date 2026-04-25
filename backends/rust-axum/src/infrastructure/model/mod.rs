@@ -1,3 +1,8 @@
+//! インフラ DB モデル（SQLx FromRow）モジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use chrono::NaiveDateTime;
 
 #[derive(Debug, sqlx::FromRow)]

@@ -1,3 +1,8 @@
+//! 招待リポジトリ SQLx 実装モジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use async_trait::async_trait;
 use sqlx::MySqlPool;
 use crate::domain::invitation::{
@@ -5,12 +10,14 @@ use crate::domain::invitation::{
     repository::{DomainError, Repository},
 };
 
+/// SQLx を用いた招待リポジトリ実装。
 pub struct SqlxInvitationRepository {
     pool:         MySqlPool,
     frontend_url: String,
 }
 
 impl SqlxInvitationRepository {
+    /// プールとフロントエンド URL を受け取りリポジトリを生成します。
     pub fn new(pool: MySqlPool, frontend_url: String) -> Self {
         Self { pool, frontend_url }
     }

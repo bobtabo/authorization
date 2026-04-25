@@ -1,3 +1,8 @@
+//! クライアントハンドラーモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -16,6 +21,7 @@ use crate::{
 };
 use super::{staff_id_from_cookie, TIME_FORMAT};
 
+/// クライアント一覧取得クエリ。
 #[derive(Deserialize)]
 pub struct IndexQuery {
     pub keyword:    Option<String>,
@@ -23,6 +29,7 @@ pub struct IndexQuery {
     pub start_to:   Option<String>,
 }
 
+/// クライアント登録リクエストボディ。
 #[derive(Deserialize)]
 pub struct StoreBody {
     pub name:      String,
@@ -35,6 +42,7 @@ pub struct StoreBody {
     pub email:     Option<String>,
 }
 
+/// クライアント更新リクエストボディ。
 #[derive(Deserialize)]
 pub struct UpdateBody {
     pub name:      Option<String>,
@@ -48,6 +56,7 @@ pub struct UpdateBody {
     pub status:    Option<i32>,
 }
 
+/// クライアント一覧を返します。
 pub async fn index(
     State(state): State<AppState>,
     Query(q): Query<IndexQuery>,
@@ -75,6 +84,7 @@ pub async fn index(
     }
 }
 
+/// クライアント詳細を返します。
 pub async fn show(
     State(state): State<AppState>,
     Path(id): Path<u64>,
@@ -101,6 +111,7 @@ pub async fn show(
     }
 }
 
+/// クライアントを登録します。トランザクション内で処理し、完了後にメール送信・通知配信を行います。
 pub async fn store(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -118,29 +129,45 @@ pub async fn store(
         email:       body.email.unwrap_or_default(),
         executor_id,
     };
-    match state.client_uc.store(dto).await {
-        Ok(client) => {
-            let notif_url = format!("/clients/show?id={}", client.id);
-            let _ = state.notification_uc.fan_out(FanOutDto {
-                title:        "新しいクライアントが登録されました".to_string(),
-                message:      client.name.clone(),
-                message_type: 1,
-                executor_id,
-                url:          notif_url,
-            }).await;
-            let mailer = state.mailer.clone();
-            let email = client.email.clone();
-            let name = client.name.clone();
-            let token = client.access_token.clone();
-            tokio::spawn(async move {
-                mailer.send_access_token(&email, &name, &token).await;
-            });
-            (StatusCode::CREATED, Json(json!({"id": client.id})))
+
+    let tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+    };
+
+    let result = match state.client_uc.store(dto).await {
+        Ok(r) => r,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
         }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+    };
+
+    if tx.commit().await.is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
     }
+
+    // トランザクション外でのサイドエフェクト
+    let notif_url = format!("/clients/show?id={}", result.id);
+    let _ = state.notification_uc.fan_out(FanOutDto {
+        title:        "新しいクライアントが登録されました".to_string(),
+        message:      result.name.clone(),
+        message_type: 1,
+        executor_id,
+        url:          notif_url,
+    }).await;
+    let mailer = state.mailer.clone();
+    let email = result.email.clone();
+    let name = result.name.clone();
+    let token = result.token.clone();
+    tokio::spawn(async move {
+        mailer.send_access_token(&email, &name, &token).await;
+    });
+
+    (StatusCode::CREATED, Json(json!({"id": result.id})))
 }
 
+/// クライアント情報を更新します。トランザクション内で処理します。
 pub async fn update(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -161,36 +188,64 @@ pub async fn update(
         status:      body.status,
         executor_id,
     };
-    match state.client_uc.update(dto).await {
-        Ok(c) => (StatusCode::OK, Json(json!({
-            "id":         c.id,
-            "name":       c.name,
-            "identifier": c.identifier,
-            "post_code":  c.post_code,
-            "pref":       c.pref,
-            "city":       c.city,
-            "address":    c.address,
-            "building":   c.building,
-            "tel":        c.tel,
-            "email":      c.email,
-            "status":     c.status,
-            "start_at":   c.start_at.map(|t| t.format(TIME_FORMAT).to_string()),
-            "stop_at":    c.stop_at.map(|t| t.format(TIME_FORMAT).to_string()),
-            "created_at": c.created_at.format(TIME_FORMAT).to_string(),
-            "updated_at": c.updated_at.format(TIME_FORMAT).to_string(),
-        }))),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+
+    let tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+    };
+
+    let result = match state.client_uc.update(dto).await {
+        Ok(r) => r,
+        Err(_) => {
+            let _ = tx.rollback().await;
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        }
+    };
+
+    if tx.commit().await.is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
     }
+
+    (StatusCode::OK, Json(json!({
+        "id":         result.id,
+        "name":       result.name,
+        "identifier": result.identifier,
+        "post_code":  result.post_code,
+        "pref":       result.pref,
+        "city":       result.city,
+        "address":    result.address,
+        "building":   result.building,
+        "tel":        result.tel,
+        "email":      result.email,
+        "status":     result.status,
+        "start_at":   result.start_at.map(|t| t.format(TIME_FORMAT).to_string()),
+        "stop_at":    result.stop_at.map(|t| t.format(TIME_FORMAT).to_string()),
+        "created_at": result.created_at.format(TIME_FORMAT).to_string(),
+        "updated_at": result.updated_at.format(TIME_FORMAT).to_string(),
+    })))
 }
 
+/// クライアントを論理削除します。トランザクション内で処理します。
 pub async fn destroy(
     State(state): State<AppState>,
     jar: CookieJar,
     Path(id): Path<u64>,
 ) -> (StatusCode, Json<Value>) {
     let executor_id = staff_id_from_cookie(&jar);
-    match state.client_uc.destroy(id, executor_id).await {
-        Ok(_) => (StatusCode::OK, Json(json!({}))),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+
+    let tx = match state.pool.begin().await {
+        Ok(tx) => tx,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+    };
+
+    if let Err(_) = state.client_uc.destroy(id, executor_id).await {
+        let _ = tx.rollback().await;
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
     }
+
+    if tx.commit().await.is_err() {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+    }
+
+    (StatusCode::OK, Json(json!({})))
 }

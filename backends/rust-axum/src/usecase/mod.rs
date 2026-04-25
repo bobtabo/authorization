@@ -1,3 +1,8 @@
+//! ユースケースモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 pub mod auth;
 pub mod client;
 pub mod gate;

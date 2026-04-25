@@ -1,5 +1,11 @@
+//! スタッフドメイン エンティティモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use chrono::NaiveDateTime;
 
+/// スタッフのドメインエンティティ。
 pub struct Staff {
     pub id:            u32,
     pub name:          String,

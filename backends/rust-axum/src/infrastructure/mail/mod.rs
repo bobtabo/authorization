@@ -1,3 +1,8 @@
+//! メール送信インフラモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use crate::config::MailConfig;
 use chrono::Datelike;
 use lettre::message::header::ContentType;

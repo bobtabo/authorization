@@ -1,3 +1,8 @@
+//! 認証ハンドラーモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -13,6 +18,7 @@ use crate::{
 };
 use super::staff_id_from_cookie;
 
+/// Google OAuth リダイレクト URL へ転送します。
 pub async fn google_redirect(State(state): State<AppState>) -> Redirect {
     let url = format!(
         "https://accounts.google.com/o/oauth2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email+profile&access_type=online&state=state",
@@ -22,10 +28,12 @@ pub async fn google_redirect(State(state): State<AppState>) -> Redirect {
     Redirect::temporary(&url)
 }
 
+/// Google OAuth コールバックを処理します。
 pub async fn google_callback(State(_state): State<AppState>) -> StatusCode {
     StatusCode::OK
 }
 
+/// ログイン中スタッフのプロフィールを返します。
 pub async fn get_my_profile(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -45,6 +53,7 @@ pub async fn get_my_profile(
     }
 }
 
+/// ログイン中スタッフの情報を返します。
 pub async fn login(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -64,10 +73,12 @@ pub async fn login(
     }
 }
 
+/// ログアウトします。
 pub async fn logout() -> (StatusCode, Json<Value>) {
     (StatusCode::OK, Json(json!({})))
 }
 
+/// 招待トークンを検証して招待情報を返します。
 pub async fn invitation(
     State(state): State<AppState>,
     Path(token): Path<String>,

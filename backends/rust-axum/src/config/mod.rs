@@ -1,3 +1,8 @@
+//! アプリケーション設定モジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use std::env;
 
 #[derive(Clone)]

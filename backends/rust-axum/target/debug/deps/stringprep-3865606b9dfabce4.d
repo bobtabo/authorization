@@ -1,0 +1,9 @@
+/Users/satoshi/Work/authorizations/authorization/backends/rust-axum/target/debug/deps/stringprep-3865606b9dfabce4.d: /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/lib.rs /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/rfc3454.rs /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/tables.rs
+
+/Users/satoshi/Work/authorizations/authorization/backends/rust-axum/target/debug/deps/libstringprep-3865606b9dfabce4.rlib: /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/lib.rs /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/rfc3454.rs /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/tables.rs
+
+/Users/satoshi/Work/authorizations/authorization/backends/rust-axum/target/debug/deps/libstringprep-3865606b9dfabce4.rmeta: /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/lib.rs /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/rfc3454.rs /Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/tables.rs
+
+/Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/lib.rs:
+/Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/rfc3454.rs:
+/Users/satoshi/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/stringprep-0.1.5/src/tables.rs:

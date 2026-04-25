@@ -1,3 +1,8 @@
+//! Gate ハンドラーモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use axum::{
     extract::{Path, Query, State},
     http::{header::AUTHORIZATION, HeaderMap, StatusCode},
@@ -11,16 +16,19 @@ use crate::{
     usecase::gate::dto::{IssueDto, VerifyDto},
 };
 
+/// JWT 発行クエリ。
 #[derive(Deserialize)]
 pub struct IssueQuery {
     pub member: Option<String>,
 }
 
+/// JWT 検証クエリ。
 #[derive(Deserialize)]
 pub struct VerifyQuery {
     pub token: Option<String>,
 }
 
+/// アクセストークンを検証して JWT を発行します。
 pub async fn issue(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -36,11 +44,12 @@ pub async fn issue(
     let access_token = auth.strip_prefix("Bearer ").unwrap_or("").to_string();
 
     match state.gate_uc.issue_token(IssueDto { access_token, member_id: member }).await {
-        Ok(token) => (StatusCode::OK, Json(json!({"token": token}))),
-        Err(_)    => (StatusCode::UNAUTHORIZED, Json(json!({"error": "unauthorized"}))),
+        Ok(vo)  => (StatusCode::OK, Json(json!({"token": vo.token}))),
+        Err(_)  => (StatusCode::UNAUTHORIZED, Json(json!({"error": "unauthorized"}))),
     }
 }
 
+/// JWT を検証してクレームを返します。
 pub async fn verify(
     State(state): State<AppState>,
     Path(identifier): Path<String>,
@@ -51,7 +60,7 @@ pub async fn verify(
         _ => return (StatusCode::BAD_REQUEST, Json(json!({"error": "token_required"}))),
     };
     match state.gate_uc.verify(VerifyDto { identifier, token }).await {
-        Ok(payload) => (StatusCode::OK, Json(payload)),
-        Err(_)      => (StatusCode::UNAUTHORIZED, Json(json!({"error": "jwt_invalid"}))),
+        Ok(vo)  => (StatusCode::OK, Json(vo.claims)),
+        Err(_)  => (StatusCode::UNAUTHORIZED, Json(json!({"error": "jwt_invalid"}))),
     }
 }

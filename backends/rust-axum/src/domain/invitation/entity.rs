@@ -1,5 +1,11 @@
+//! 招待ドメイン エンティティモジュール。
+//!
+//! # Author
+//! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+
 use chrono::NaiveDateTime;
 
+/// 招待のドメインエンティティ。
 pub struct Invitation {
     pub id:         u32,
     pub token:      String,
