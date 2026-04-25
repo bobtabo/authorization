@@ -29,7 +29,6 @@ services:
   kotlin:
     container_name: ${KOTLIN_CONTAINER}
     build: kotlin
-    user: root
     ports:
       - '${KOTLIN_DEBUG_PORT}:5005'
     volumes:
@@ -38,7 +37,7 @@ services:
       - kotlin_gradle:/var/www/${APP_NAME}/.gradle
       - kotlin_kotlin:/var/www/${APP_NAME}/.kotlin
     working_dir: /var/www/${APP_NAME}
-    command: sh -c "chmod 777 build .gradle .kotlin 2>/dev/null || true && gradle run"
+    command: gradle run
     networks:
       - authorization
 

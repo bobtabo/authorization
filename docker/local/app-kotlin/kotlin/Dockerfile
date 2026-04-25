@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
       vim \
       locales \
       iputils-ping \
-      net-tools
+      net-tools \
+      gosu
 
 # ユーザーを作成
 ARG DOCKER_UID=1000
@@ -25,5 +26,9 @@ ENV LANG="ja_JP.UTF-8" \
 
 WORKDIR /var/www
 
-# gradle:8.14-jdk21 は USER gradle に切り替えるため root に戻す
+# gradle:8.14-jdk21 は USER gradle に切り替えるため、エントリーポイントで
+# root として権限修正してから gradle ユーザーに降格する
 USER root
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT ["docker-entrypoint.sh"]
