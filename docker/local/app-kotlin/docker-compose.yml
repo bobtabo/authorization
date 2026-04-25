@@ -29,6 +29,7 @@ services:
   kotlin:
     container_name: ${KOTLIN_CONTAINER}
     build: kotlin
+    user: root
     ports:
       - '${KOTLIN_DEBUG_PORT}:5005'
     volumes:
