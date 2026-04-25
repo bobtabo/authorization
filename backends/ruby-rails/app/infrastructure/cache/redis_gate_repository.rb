@@ -15,17 +15,20 @@ module Infrastructure
         @prefix = cfg.app.cache_prefix
       end
 
-      # @param identifier [String] 識別子
-      # @param member_id [String] メンバー ID
-      # @return [String, nil] JWT トークン
-      def get_jwt(identifier, member_id) = raise NotImplementedError
+      def get_jwt(identifier, member_id)
+        @redis.get(cache_key(identifier, member_id))
+      end
 
-      # @param identifier [String] 識別子
-      # @param member_id [String] メンバー ID
-      # @param token [String] JWT トークン
-      # @param ttl [Integer] 有効期限（秒）
-      # @return [void]
-      def put_jwt(identifier, member_id, token, ttl) = raise NotImplementedError
+      def put_jwt(identifier, member_id, token, ttl)
+        @redis.set(cache_key(identifier, member_id), token, ex: ttl)
+        nil
+      end
+
+      private
+
+      def cache_key(identifier, member_id)
+        "#{@prefix}:gate.jwt:#{identifier}:#{member_id}"
+      end
     end
   end
 end

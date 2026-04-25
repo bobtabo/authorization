@@ -10,6 +10,16 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require 'rspec/rails'
 # Add additional requires below this line. Rails is not loaded until this point!
 
+# Zeitwerk registers app/domain, app/usecase, app/infrastructure as namespace-less roots,
+# but the files define constants with Domain::, UseCase::, Infrastructure:: prefixes.
+# Ignore those directories in Zeitwerk, then load them with Ruby's `load` directly so
+# the constants (Domain::Client::Entity etc.) are defined before specs run.
+%w[config domain usecase infrastructure].each do |dir|
+  path = Rails.root.join("app/#{dir}")
+  Rails.autoloaders.each { |loader| loader.ignore(path) }
+  Dir["#{path}/**/*.rb"].sort.each { |f| load f }
+end
+
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
 # run as spec files by default. This means that files in spec/support that end
