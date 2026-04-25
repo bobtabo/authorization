@@ -33,7 +33,15 @@ services:
       - '${KOTLIN_DEBUG_PORT}:5005'
     volumes:
       - ./../../../backends/kotlin-ktor:/var/www/${APP_NAME}
+      - kotlin_build:/var/www/${APP_NAME}/build
+      - kotlin_gradle:/var/www/${APP_NAME}/.gradle
+      - kotlin_kotlin:/var/www/${APP_NAME}/.kotlin
     working_dir: /var/www/${APP_NAME}
     command: gradle run
     networks:
       - authorization
+
+volumes:
+  kotlin_build:
+  kotlin_gradle:
+  kotlin_kotlin:
