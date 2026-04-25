@@ -50,5 +50,6 @@ class ClientStoreResultVo:
 
     id: int
     name: str
+    identifier: str
     email: str
     token: str

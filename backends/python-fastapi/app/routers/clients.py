@@ -104,7 +104,7 @@ def store(
         daemon=True,
     ).start()
 
-    return {"id": result.id, "name": result.name, "email": result.email, "token": result.token}
+    return {"id": result.id, "name": result.name, "identifier": result.identifier, "email": result.email, "token": result.token}
 
 
 class UpdateBody(BaseModel):

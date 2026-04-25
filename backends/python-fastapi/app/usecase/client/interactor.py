@@ -201,6 +201,7 @@ class ClientInteractor:
         return ClientStoreResultVo(
             id=saved.id,
             name=saved.name,
+            identifier=saved.identifier,
             email=saved.email,
             token=saved.token or "",
         )
