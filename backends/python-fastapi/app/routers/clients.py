@@ -1,3 +1,8 @@
+"""
+クライアントルーターモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 import threading
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
@@ -12,7 +17,20 @@ from app.infrastructure.mail.mailer import send_access_token
 router = APIRouter()
 
 
-def _map_client(c) -> dict:
+def _map_list_item(c) -> dict:
+    return {
+        "id": c.id,
+        "name": c.name,
+        "identifier": c.identifier,
+        "status": c.status,
+        "start_at": c.started_at.strftime("%Y-%m-%d %H:%M") if c.started_at else None,
+        "stop_at": c.stopped_at.strftime("%Y-%m-%d %H:%M") if c.stopped_at else None,
+        "created_at": c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else None,
+        "updated_at": c.updated_at.strftime("%Y-%m-%d %H:%M") if c.updated_at else None,
+    }
+
+
+def _map_detail(c) -> dict:
     return {
         "id": c.id,
         "name": c.name,
@@ -25,7 +43,6 @@ def _map_client(c) -> dict:
         "tel": c.tel,
         "email": c.email,
         "status": c.status,
-        "token": c.token,
         "fingerprint": c.fingerprint,
         "start_at": c.started_at.strftime("%Y-%m-%d %H:%M") if c.started_at else None,
         "stop_at": c.stopped_at.strftime("%Y-%m-%d %H:%M") if c.stopped_at else None,
@@ -41,12 +58,12 @@ def index(
     interactor: ClientInteractor = Depends(get_client_interactor),
 ):
     clients = interactor.find_all(keyword=keyword, status=status)
-    return [_map_client(c) for c in clients]
+    return [_map_list_item(c) for c in clients]
 
 
 @router.get("/clients/{client_id}")
 def show(client_id: int, interactor: ClientInteractor = Depends(get_client_interactor)):
-    return _map_client(interactor.find_by_id(client_id))
+    return _map_detail(interactor.find_by_id(client_id))
 
 
 class StoreBody(BaseModel):
@@ -70,12 +87,12 @@ def store(
     dto = ClientStoreDto(name=body.name, post_code=body.post_code, pref=body.pref,
                          city=body.city, address=body.address, building=body.building,
                          tel=body.tel, email=body.email, executor_id=executor_id)
-    client = interactor.store(dto)
+    result = interactor.store(dto)
 
-    notif_url = f"/clients/show?id={client.id}"
+    notif_url = f"/clients/show?id={result.id}"
     notification_interactor.fan_out(
         title="新しいクライアントが登録されました",
-        body=client.name,
+        body=result.name,
         url=notif_url,
         executor_id=executor_id,
         message_type=1,
@@ -83,11 +100,11 @@ def store(
 
     threading.Thread(
         target=send_access_token,
-        args=(client.email, client.name, client.token),
+        args=(result.email, result.name, result.token),
         daemon=True,
     ).start()
 
-    return _map_client(client)
+    return {"id": result.id, "name": result.name, "email": result.email, "token": result.token}
 
 
 class UpdateBody(BaseModel):
@@ -105,8 +122,7 @@ class UpdateBody(BaseModel):
 @router.put("/clients/{client_id}/update")
 def update(client_id: int, body: UpdateBody, interactor: ClientInteractor = Depends(get_client_interactor)):
     dto = ClientUpdateDto(client_id=client_id, **body.model_dump(exclude_none=True))
-    client = interactor.update(dto)
-    return _map_client(client)
+    return _map_detail(interactor.update(dto))
 
 
 @router.delete("/clients/{client_id}/delete")

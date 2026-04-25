@@ -1,3 +1,8 @@
+"""
+Redis クライアントモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 import redis
 from app.config.settings import get_settings
 

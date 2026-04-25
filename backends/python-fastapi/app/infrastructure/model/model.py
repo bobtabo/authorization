@@ -1,3 +1,8 @@
+"""
+SQLAlchemy ORM モデルモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, func
@@ -9,6 +14,8 @@ class Base(DeclarativeBase):
 
 
 class ClientModel(Base):
+    """clients テーブルの ORM モデル。"""
+
     __tablename__ = "clients"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -38,6 +45,8 @@ class ClientModel(Base):
 
 
 class StaffModel(Base):
+    """staffs テーブルの ORM モデル。"""
+
     __tablename__ = "staffs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -53,6 +62,8 @@ class StaffModel(Base):
 
 
 class InvitationModel(Base):
+    """invitations テーブルの ORM モデル。"""
+
     __tablename__ = "invitations"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -62,6 +73,8 @@ class InvitationModel(Base):
 
 
 class NotificationModel(Base):
+    """notifications テーブルの ORM モデル。"""
+
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)

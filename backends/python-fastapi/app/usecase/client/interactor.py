@@ -1,8 +1,13 @@
+"""
+クライアントユースケース Interactor モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 import hashlib
 import secrets
 import struct
 from base64 import b64encode
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from datetime import datetime, timezone
 from typing import Optional
@@ -10,11 +15,20 @@ from typing import Optional
 from app.domain.client.entity import Client
 from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
-from app.exceptions import not_found, conflict
+from app.domain.client.value_objects import ClientListItem, ClientDetailVo, ClientStoreResultVo
+from app.exceptions import not_found
 from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto
 
 
 def _rsa_fingerprint(private_key) -> str:
+    """PHP と同一方式で SSH wire format SHA256 フィンガープリントを生成します。
+
+    Args:
+        private_key: RSA 秘密鍵オブジェクト
+
+    Returns:
+        "SHA256:..." 形式のフィンガープリント文字列
+    """
     pub_numbers = private_key.public_key().public_numbers()
     e = pub_numbers.e
     n = pub_numbers.n
@@ -33,26 +47,126 @@ def _rsa_fingerprint(private_key) -> str:
     return f"SHA256:{b64}"
 
 
+def _to_list_item(c: Client) -> ClientListItem:
+    """クライアントエンティティを一覧用 Vo に変換します。
+
+    Args:
+        c: クライアントエンティティ
+
+    Returns:
+        ClientListItem インスタンス
+    """
+    return ClientListItem(
+        id=c.id,
+        name=c.name,
+        identifier=c.identifier,
+        status=c.status,
+        started_at=c.started_at,
+        stopped_at=c.stopped_at,
+        created_at=c.created_at,
+        updated_at=c.updated_at,
+    )
+
+
+def _to_detail_vo(c: Client) -> ClientDetailVo:
+    """クライアントエンティティを詳細用 Vo に変換します。
+
+    Args:
+        c: クライアントエンティティ
+
+    Returns:
+        ClientDetailVo インスタンス
+    """
+    return ClientDetailVo(
+        id=c.id,
+        name=c.name,
+        identifier=c.identifier,
+        post_code=c.post_code,
+        pref=c.pref,
+        city=c.city,
+        address=c.address,
+        building=c.building,
+        tel=c.tel,
+        email=c.email,
+        status=c.status,
+        fingerprint=c.fingerprint,
+        started_at=c.started_at,
+        stopped_at=c.stopped_at,
+        created_at=c.created_at,
+        updated_at=c.updated_at,
+    )
+
+
 class ClientInteractor:
-    """クライアントのユースケース実装。"""
+    """クライアントのユースケース実装。
+
+    Attributes:
+        repository: クライアントリポジトリ
+    """
 
     def __init__(self, repo: ClientRepository):
-        self.repo = repo
+        """初期化します。
 
-    def authenticate_by_token(self, token: str) -> Optional[Client]:
-        return self.repo.find_client_by_token(token)
+        Args:
+            repo: クライアントリポジトリ
+        """
+        self.repository = repo
 
-    def find_all(self, keyword: Optional[str] = None, status: Optional[int] = None) -> list[Client]:
+    def authenticate_by_token(self, token: str) -> bool:
+        """Bearerトークンでクライアントを認証します。
+
+        Args:
+            token: アクセストークン
+
+        Returns:
+            認証成功の場合 True
+        """
+        return self.repository.find_client_by_token(token) is not None
+
+    def find_all(
+        self,
+        keyword: Optional[str] = None,
+        status: Optional[int] = None,
+    ) -> list[ClientListItem]:
+        """検索条件に合致するクライアント一覧の Vo を返します。
+
+        Args:
+            keyword: キーワード検索文字列
+            status: ステータスフィルター
+
+        Returns:
+            ClientListItem のリスト
+        """
         cond = ClientCondition(keyword=keyword, status=status)
-        return self.repo.find_all_clients(cond)
+        clients = self.repository.find_all_clients(cond)
+        return [_to_list_item(c) for c in clients]
 
-    def find_by_id(self, client_id: int) -> Client:
-        client = self.repo.find_client_by_id(client_id)
+    def find_by_id(self, client_id: int) -> ClientDetailVo:
+        """IDでクライアント詳細の Vo を返します。
+
+        Args:
+            client_id: クライアントID
+
+        Returns:
+            ClientDetailVo インスタンス
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_id(client_id)
         if client is None:
             raise not_found("client_not_found")
-        return client
+        return _to_detail_vo(client)
 
-    def store(self, dto: ClientStoreDto) -> Client:
+    def store(self, dto: ClientStoreDto) -> ClientStoreResultVo:
+        """クライアントを新規登録し、登録結果の Vo を返します。RSA鍵ペア・アクセストークンを自動生成します。
+
+        Args:
+            dto: クライアント登録 Dto
+
+        Returns:
+            ClientStoreResultVo インスタンス（メール送信・通知配信に使用）
+        """
         identifier = secrets.token_hex(8)
 
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
@@ -83,10 +197,29 @@ class ClientInteractor:
             fingerprint=fingerprint,
             executor_id=dto.executor_id,
         )
-        return self.repo.save_client(client)
+        saved = self.repository.save_client(client)
+        return ClientStoreResultVo(
+            id=saved.id,
+            name=saved.name,
+            email=saved.email,
+            token=saved.token or "",
+        )
 
-    def update(self, dto: ClientUpdateDto) -> Client:
-        client = self.find_by_id(dto.client_id)
+    def update(self, dto: ClientUpdateDto) -> ClientDetailVo:
+        """クライアントを更新し、更新後の詳細 Vo を返します。
+
+        Args:
+            dto: クライアント更新 Dto
+
+        Returns:
+            ClientDetailVo インスタンス
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_id(dto.client_id)
+        if client is None:
+            raise not_found("client_not_found")
 
         if dto.name is not None:
             client.name = dto.name
@@ -113,10 +246,21 @@ class ClientInteractor:
                 client.stopped_at = now
             client.status = dto.status
 
-        return self.repo.save_client(client)
+        saved = self.repository.save_client(client)
+        return _to_detail_vo(saved)
 
     def destroy(self, client_id: int) -> None:
-        client = self.find_by_id(client_id)
+        """クライアントをステータス Closed(4) に更新してから論理削除します。
+
+        Args:
+            client_id: クライアントID
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_id(client_id)
+        if client is None:
+            raise not_found("client_not_found")
         client.status = 4
-        self.repo.save_client(client)
-        self.repo.soft_delete_client(client)
+        self.repository.save_client(client)
+        self.repository.soft_delete_client(client)

@@ -1,3 +1,8 @@
+"""
+認証ルーターモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 import httpx
 from fastapi import APIRouter, Depends, Response, Request
 from fastapi.responses import RedirectResponse

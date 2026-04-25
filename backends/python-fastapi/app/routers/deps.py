@@ -1,3 +1,8 @@
+"""
+ルーター依存性注入モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from typing import Optional
 from fastapi import Cookie, Depends, Header
 from sqlalchemy.orm import Session
@@ -94,7 +99,5 @@ def require_client_token(
     token: str = Depends(get_bearer_token),
     client_interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    client = client_interactor.authenticate_by_token(token)
-    if client is None:
+    if not client_interactor.authenticate_by_token(token):
         raise unauthorized("invalid_token")
-    return client

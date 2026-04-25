@@ -1,3 +1,8 @@
+"""
+スタッフドメイン 列挙定数モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 PROVIDER_GOOGLE = 1
 
 ROLE_VIEWER = 0

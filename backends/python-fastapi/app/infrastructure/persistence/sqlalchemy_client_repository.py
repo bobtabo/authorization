@@ -1,4 +1,10 @@
+"""
+クライアントリポジトリ SQLAlchemy 実装モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from typing import Optional
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
@@ -10,6 +16,14 @@ from app.infrastructure.model.model import ClientModel
 
 
 def _to_entity(m: ClientModel) -> Client:
+    """ClientModel をドメインエンティティに変換します。
+
+    Args:
+        m: ClientModel インスタンス
+
+    Returns:
+        Client エンティティ
+    """
     return Client(
         id=m.id,
         name=m.name,
@@ -35,12 +49,29 @@ def _to_entity(m: ClientModel) -> Client:
 
 
 class SqlAlchemyClientRepository(ClientRepository):
-    """ClientRepository の SQLAlchemy 実装。"""
+    """ClientRepository の SQLAlchemy 実装。
+
+    Attributes:
+        db: SQLAlchemy セッション
+    """
 
     def __init__(self, db: Session):
+        """初期化します。
+
+        Args:
+            db: SQLAlchemy セッション
+        """
         self.db = db
 
     def find_all_clients(self, cond: ClientCondition) -> list[Client]:
+        """検索条件に合致するクライアントエンティティを返します。
+
+        Args:
+            cond: 検索条件
+
+        Returns:
+            クライアントエンティティのリスト
+        """
         q = self.db.query(ClientModel)
         if cond.keyword:
             like = f"%{cond.keyword}%"
@@ -50,10 +81,26 @@ class SqlAlchemyClientRepository(ClientRepository):
         return [_to_entity(m) for m in q.order_by(ClientModel.id).all()]
 
     def find_client_by_id(self, client_id: int) -> Optional[Client]:
+        """IDでクライアントエンティティを返します。存在しない場合は None を返します。
+
+        Args:
+            client_id: クライアントID
+
+        Returns:
+            クライアントエンティティ、または None
+        """
         m = self.db.query(ClientModel).filter(ClientModel.id == client_id).first()
         return _to_entity(m) if m else None
 
     def find_client_by_token(self, token: str) -> Optional[Client]:
+        """アクセストークンでアクティブなクライアントエンティティを返します。
+
+        Args:
+            token: アクセストークン
+
+        Returns:
+            クライアントエンティティ、または None
+        """
         m = self.db.query(ClientModel).filter(
             ClientModel.token == token,
             ClientModel.status == 2,  # Active のみ
@@ -62,6 +109,14 @@ class SqlAlchemyClientRepository(ClientRepository):
         return _to_entity(m) if m else None
 
     def find_client_by_identifier(self, identifier: str) -> Optional[Client]:
+        """識別子でクライアントエンティティを返します。
+
+        Args:
+            identifier: クライアント識別子
+
+        Returns:
+            クライアントエンティティ、または None
+        """
         m = self.db.query(ClientModel).filter(
             ClientModel.identifier == identifier,
             ClientModel.deleted_at.is_(None),
@@ -69,6 +124,17 @@ class SqlAlchemyClientRepository(ClientRepository):
         return _to_entity(m) if m else None
 
     def save_client(self, client: Client) -> Client:
+        """クライアントエンティティを保存（新規作成または更新）して返します。
+
+        Args:
+            client: 保存するクライアントエンティティ
+
+        Returns:
+            保存済みクライアントエンティティ
+
+        Raises:
+            ValueError: 更新対象のクライアントが存在しない場合
+        """
         if client.id:
             m = self.db.query(ClientModel).filter(ClientModel.id == client.id).first()
             if m is None:
@@ -98,12 +164,17 @@ class SqlAlchemyClientRepository(ClientRepository):
         m.updated_by = client.executor_id
 
         self.db.add(m)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(m)
         return _to_entity(m)
 
     def soft_delete_client(self, client: Client) -> None:
+        """クライアントを論理削除します。
+
+        Args:
+            client: 削除対象のクライアントエンティティ
+        """
         m = self.db.query(ClientModel).filter(ClientModel.id == client.id).first()
         if m:
             m.deleted_at = datetime.now(timezone.utc)
-            self.db.commit()
+            self.db.flush()

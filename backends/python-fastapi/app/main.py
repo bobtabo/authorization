@@ -1,3 +1,8 @@
+"""
+FastAPI アプリケーションエントリーポイント。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -22,6 +27,7 @@ app.add_middleware(
 
 @app.exception_handler(AppError)
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """AppError を JSON レスポンスに変換するグローバルハンドラー。"""
     return JSONResponse(status_code=exc.status_code, content={"message": exc.message})
 
 

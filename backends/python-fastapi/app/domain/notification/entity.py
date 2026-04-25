@@ -1,3 +1,8 @@
+"""
+通知ドメイン エンティティモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional

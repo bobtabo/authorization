@@ -1,9 +1,16 @@
+"""
+アプリケーション設定モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
 
 class Settings(BaseSettings):
+    """環境変数から読み込むアプリケーション設定。"""
+
     model_config = SettingsConfigDict(env_file=os.getenv("ENV_FILE", ".env"), env_file_encoding="utf-8", extra="ignore")
 
     app_env: str = "local"
@@ -44,6 +51,7 @@ class Settings(BaseSettings):
 
     @property
     def db_url(self) -> str:
+        """SQLAlchemy 接続 URL を返します。"""
         return (
             f"mysql+pymysql://{self.db_username}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_database}"
@@ -53,4 +61,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """設定シングルトンを返します。"""
     return Settings()

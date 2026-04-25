@@ -1,3 +1,8 @@
+"""
+Gate ドメイン バリューオブジェクトモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass
 from typing import Any
 

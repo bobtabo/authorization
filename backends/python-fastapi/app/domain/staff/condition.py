@@ -1,3 +1,8 @@
+"""
+スタッフドメイン 検索条件モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass, field
 from typing import Optional
 

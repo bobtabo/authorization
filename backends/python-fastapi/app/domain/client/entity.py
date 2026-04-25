@@ -1,3 +1,8 @@
+"""
+クライアントドメイン エンティティモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional

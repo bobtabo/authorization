@@ -1,3 +1,8 @@
+"""
+管理者招待ルーターモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from fastapi import APIRouter, Depends
 from app.routers.deps import get_invitation_interactor
 from app.usecase.invitation.interactor import InvitationInteractor
