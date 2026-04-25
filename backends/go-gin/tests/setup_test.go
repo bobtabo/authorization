@@ -75,26 +75,35 @@ func TestMain(m *testing.M) {
 // buildRouter はテスト用の Gin ルーターを構築します。
 func buildRouter() *gin.Engine {
 	rdb := cache.New(testCfg)
-
-	clientRepo := persistence.NewGormClientRepository(testDB)
-	staffRepo := persistence.NewGormStaffRepository(testDB)
-	invitationRepo := persistence.NewGormInvitationRepository(testDB, testCfg.App.FrontendURL)
-	notificationRepo := persistence.NewGormNotificationRepository(testDB)
 	gateCacheRepo := cache.NewRedisGateRepository(rdb, testCfg)
 
-	authUC := uauth.NewInteractor(staffRepo)
-	clientUC := uclient.NewInteractor(clientRepo)
-	staffUC := ustaff.NewInteractor(staffRepo)
-	invitationUC := uinvitation.NewInteractor(invitationRepo)
-	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, testCfg)
-	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
+	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx))
+	}
+	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	}
+	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	}
+	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, testCfg.App.FrontendURL))
+	}
+	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+		return unotification.NewInteractor(
+			persistence.NewGormNotificationRepository(tx),
+			persistence.NewGormStaffRepository(tx),
+		)
+	}
+
+	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(testDB), gateCacheRepo, testCfg)
 
 	mailer := mail.NewMailer(testCfg.Mail)
-	authH := handler.NewAuthHandler(authUC, invitationUC, testCfg)
-	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
-	staffH := handler.NewStaffHandler(staffUC)
+	authH := handler.NewAuthHandler(testDB, newAuthUC, newInviteUC, testCfg)
+	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer)
+	staffH := handler.NewStaffHandler(testDB, newStaffUC)
 	gateH := handler.NewGateHandler(gateUC)
-	notificationH := handler.NewNotificationHandler(notificationUC, testCfg)
+	notificationH := handler.NewNotificationHandler(testDB, newNotifUC, testCfg)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -121,11 +130,11 @@ func buildRouter() *gin.Engine {
 		api.PATCH("/staffs/:id/restore", staffH.Restore)
 		api.DELETE("/staffs/:id/delete", staffH.Destroy)
 
-		adminInvH := handler.NewAdminInvitationHandler(invitationUC)
+		adminInvH := handler.NewAdminInvitationHandler(testDB, newInviteUC)
 		api.GET("/admin/invitation", adminInvH.Index)
 		api.GET("/admin/invitation/issue", adminInvH.Issue)
 
-		api.GET("/gate/issue", middleware.ClientTokenAuth(clientUC), gateH.Issue)
+		api.GET("/gate/issue", middleware.ClientTokenAuth(newClientUC(testDB)), gateH.Issue)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)
 
 		api.GET("/notifications/counts", notificationH.Counts)

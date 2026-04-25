@@ -1,3 +1,4 @@
+// Package gate はゲートユースケースを提供します。
 package gate
 
 import (
@@ -22,6 +23,11 @@ type Interactor struct {
 	cfg        *config.Config
 }
 
+// NewInteractor は Interactor を生成します。
+//
+// clientRepo: クライアントリポジトリ
+// cache: JWTキャッシュリポジトリ
+// cfg: アプリケーション設定
 func NewInteractor(
 	clientRepo domclient.Repository,
 	cache domgate.CacheRepository,
@@ -30,37 +36,50 @@ func NewInteractor(
 	return &Interactor{clientRepo: clientRepo, cache: cache, cfg: cfg}
 }
 
-// IssueToken はクライアント会員向け JWT を発行します（キャッシュ付き）。
-func (uc *Interactor) IssueToken(dto IssueDto) (string, error) {
+// IssueToken はクライアント会員向け JWT を発行し、発行結果の値オブジェクトを返します。
+// キャッシュに有効なトークンが存在する場合はキャッシュから返します。
+//
+// dto: JWT 発行 Dto
+// 戻り値: 発行結果 Vo、またはエラー
+func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 	c, err := uc.clientRepo.FindByAccessToken(dto.AccessToken)
 	if err != nil || c == nil {
-		return "", apperror.Unauthorized("client_not_found")
+		return nil, apperror.Unauthorized("client_not_found")
 	}
 
 	identifier := c.Identifier
 	cached, err := uc.cache.GetJwt(identifier, dto.MemberID)
 	if err == nil && cached != "" {
-		return cached, nil
+		return &domgate.IssueVo{Token: cached}, nil
 	}
 
 	token, err := uc.issueJwt(dto.MemberID, identifier, c.PrivateKey, c.Fingerprint)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	_ = uc.cache.PutJwt(identifier, dto.MemberID, token, uc.cfg.JWT.CacheTTL)
-	return token, nil
+	return &domgate.IssueVo{Token: token}, nil
 }
 
-// Verify は JWT を検証してペイロードを返します。
-func (uc *Interactor) Verify(dto VerifyDto) (map[string]interface{}, error) {
+// Verify は JWT を検証し、ペイロードの値オブジェクトを返します。
+//
+// dto: JWT 検証 Dto
+// 戻り値: 検証結果 Vo、またはエラー
+func (uc *Interactor) Verify(dto VerifyDto) (*domgate.VerifyVo, error) {
 	c, err := uc.clientRepo.FindByIdentifier(dto.Identifier)
 	if err != nil || c == nil {
 		return nil, apperror.Forbidden("client_not_found")
 	}
 
-	return uc.verifyJwt(dto.Identifier, dto.Token, c.PublicKey)
+	claims, err := uc.verifyJwt(dto.Identifier, dto.Token, c.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	return &domgate.VerifyVo{Claims: claims}, nil
 }
+
+// ---------- プライベートヘルパー ----------
 
 func (uc *Interactor) issueJwt(memberID, identifier, privateKeyPEM, fingerprint string) (string, error) {
 	privKey, err := parseRSAPrivateKey(privateKeyPEM)

@@ -9,16 +9,24 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
+// StaffHandler はスタッフ関連のHTTPハンドラーを提供します。
 type StaffHandler struct {
-	staffUC *ustaff.Interactor
+	db         *gorm.DB
+	newStaffUC func(*gorm.DB) *ustaff.Interactor
 }
 
-func NewStaffHandler(staffUC *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{staffUC: staffUC}
+// NewStaffHandler は StaffHandler を生成します。
+//
+// db: GORM DB インスタンス
+// newStaffUC: スタッフユースケースファクトリ
+func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor) *StaffHandler {
+	return &StaffHandler{db: db, newStaffUC: newStaffUC}
 }
 
+// Index は検索条件に合致するスタッフ一覧を返します。
 // GET /api/staffs
 func (h *StaffHandler) Index(c *gin.Context) {
 	cond := domstaff.Condition{}
@@ -28,7 +36,7 @@ func (h *StaffHandler) Index(c *gin.Context) {
 	}
 	cond.Roles = parseIntList(c.QueryArray("roles"))
 
-	staffs, err := h.staffUC.FindByCondition(cond)
+	staffs, err := h.newStaffUC(h.db).FindByCondition(cond)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -36,6 +44,7 @@ func (h *StaffHandler) Index(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": mapStaffList(staffs)})
 }
 
+// UpdateRole はスタッフの権限を更新します。
 // PATCH /api/staffs/:id/updateRole
 func (h *StaffHandler) UpdateRole(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -53,17 +62,20 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 	}
 
 	executorID := staffIDFromCookie(c)
-	if err = h.staffUC.UpdateRole(ustaff.UpdateRoleDto{
-		ID:         id,
-		Role:       body.Role,
-		ExecutorID: executorID,
-	}); err != nil {
-		_ = c.Error(err)
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
+			ID:         id,
+			Role:       body.Role,
+			ExecutorID: executorID,
+		})
+	}); txErr != nil {
+		_ = c.Error(txErr)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
+// Restore はスタッフの論理削除を復元します。
 // PATCH /api/staffs/:id/restore
 func (h *StaffHandler) Restore(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -71,13 +83,16 @@ func (h *StaffHandler) Restore(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	if err = h.staffUC.Restore(id); err != nil {
-		_ = c.Error(err)
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		return h.newStaffUC(tx).Restore(id)
+	}); txErr != nil {
+		_ = c.Error(txErr)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
+// Destroy はスタッフを論理削除します。
 // DELETE /api/staffs/:id/delete
 func (h *StaffHandler) Destroy(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
@@ -86,11 +101,13 @@ func (h *StaffHandler) Destroy(c *gin.Context) {
 		return
 	}
 	executorID := staffIDFromCookie(c)
-	if err = h.staffUC.Destroy(ustaff.DestroyDto{
-		ID:         id,
-		ExecutorID: executorID,
-	}); err != nil {
-		_ = c.Error(err)
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		return h.newStaffUC(tx).Destroy(ustaff.DestroyDto{
+			ID:         id,
+			ExecutorID: executorID,
+		})
+	}); txErr != nil {
+		_ = c.Error(txErr)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"id": id})
@@ -98,7 +115,8 @@ func (h *StaffHandler) Destroy(c *gin.Context) {
 
 // ---------- 変換ヘルパー ----------
 
-func mapStaffList(staffs []*domstaff.Staff) []gin.H {
+// mapStaffList はスタッフ一覧 Vo をレスポンス用マップのスライスに変換します。
+func mapStaffList(staffs []*domstaff.ListItem) []gin.H {
 	out := make([]gin.H, 0, len(staffs))
 	for _, s := range staffs {
 		out = append(out, gin.H{
@@ -106,7 +124,7 @@ func mapStaffList(staffs []*domstaff.Staff) []gin.H {
 			"name":       s.Name,
 			"email":      s.Email,
 			"role":       s.Role,
-			"status":     ustaff.Status(s),
+			"status":     s.Status,
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})
@@ -114,11 +132,13 @@ func mapStaffList(staffs []*domstaff.Staff) []gin.H {
 	return out
 }
 
+// parseUintParam はパスパラメータを uint に変換します。
 func parseUintParam(c *gin.Context, key string) (uint, error) {
 	v, err := strconv.ParseUint(c.Param(key), 10, 32)
 	return uint(v), err
 }
 
+// parseIntList はクエリパラメータの文字列スライスをカンマ区切りで展開し int スライスに変換します。
 func parseIntList(raw []string) []int {
 	var out []int
 	for _, v := range raw {

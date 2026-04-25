@@ -18,10 +18,15 @@ type GormInvitationRepository struct {
 	frontendURL string
 }
 
+// NewGormInvitationRepository は GormInvitationRepository を生成します。
+//
+// db: GORM DB インスタンス
+// frontendURL: フロントエンドのベース URL（招待 URL 生成に使用）
 func NewGormInvitationRepository(db *gorm.DB, frontendURL string) *GormInvitationRepository {
 	return &GormInvitationRepository{db: db, frontendURL: frontendURL}
 }
 
+// GetCurrent は最新の招待情報の値オブジェクトを返します。
 func (r *GormInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 	var m model.Invitation
 	if err := r.db.Order("id DESC").First(&m).Error; err != nil {
@@ -33,6 +38,7 @@ func (r *GormInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 	return r.buildVo(m.Token), nil
 }
 
+// Issue は新しい招待トークンを生成して保存し、値オブジェクトを返します。
 func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	token, err := generateInvitationToken()
 	if err != nil {
@@ -50,6 +56,7 @@ func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	return r.buildVo(token), nil
 }
 
+// FindByToken はトークンで招待情報の値オブジェクトを返します。
 func (r *GormInvitationRepository) FindByToken(token string) (*dominvitation.Vo, error) {
 	var m model.Invitation
 	if err := r.db.Where("token = ?", token).First(&m).Error; err != nil {

@@ -1,3 +1,4 @@
+// Package invitation は招待ユースケースを提供します。
 package invitation
 
 import (
@@ -10,11 +11,16 @@ type Interactor struct {
 	repo dominvitation.Repository
 }
 
+// NewInteractor は Interactor を生成します。
+//
+// repo: 招待リポジトリ
 func NewInteractor(repo dominvitation.Repository) *Interactor {
 	return &Interactor{repo: repo}
 }
 
-// Current は最新の招待情報を取得します。
+// Current は最新の招待情報の値オブジェクトを返します。
+//
+// 戻り値: 招待 Vo、またはエラー
 func (uc *Interactor) Current() (*dominvitation.Vo, error) {
 	result, err := uc.repo.GetCurrent()
 	if err != nil {
@@ -26,12 +32,17 @@ func (uc *Interactor) Current() (*dominvitation.Vo, error) {
 	return result, nil
 }
 
-// Issue は新しい招待を発行します。
+// Issue は新しい招待トークンを発行し、招待情報の値オブジェクトを返します。
+//
+// 戻り値: 招待 Vo、またはエラー
 func (uc *Interactor) Issue() (*dominvitation.Vo, error) {
 	return uc.repo.Issue()
 }
 
-// FindByToken はトークンで招待を検索します。
+// FindByToken はトークンで招待情報の値オブジェクトを返します。
+//
+// dto: トークン検索 Dto
+// 戻り値: 招待 Vo、またはエラー
 func (uc *Interactor) FindByToken(dto FindByTokenDto) (*dominvitation.Vo, error) {
 	if dto.Token == "" {
 		return nil, apperror.BadRequest("invitation_invalid")

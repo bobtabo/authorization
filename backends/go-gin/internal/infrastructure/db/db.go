@@ -1,3 +1,4 @@
+// Package db はデータベース接続の初期化を提供します。
 package db
 
 import (
@@ -8,6 +9,10 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// New は設定を元に GORM DB インスタンスを生成します。
+//
+// cfg: アプリケーション設定
+// 戻り値: GORM DB インスタンス、またはエラー
 func New(cfg *config.Config) (*gorm.DB, error) {
 	logLevel := logger.Warn
 	if cfg.App.Env == "local" {

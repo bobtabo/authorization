@@ -1,7 +1,9 @@
+// Package handler はHTTPリクエストを受け付けるハンドラー実装を提供します。
 package handler
 
 import (
 	"authorization-go/internal/config"
+	domstaff "authorization-go/internal/domain/staff"
 	uauth "authorization-go/internal/usecase/auth"
 	uinvitation "authorization-go/internal/usecase/invitation"
 	"authorization-go/pkg/apperror"
@@ -15,18 +17,28 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"gorm.io/gorm"
 )
 
+// AuthHandler は認証関連のHTTPハンドラーを提供します。
 type AuthHandler struct {
-	authUC       *uauth.Interactor
-	invitationUC *uinvitation.Interactor
+	db           *gorm.DB
+	newAuthUC    func(*gorm.DB) *uauth.Interactor
+	newInviteUC  func(*gorm.DB) *uinvitation.Interactor
 	cfg          *config.Config
 	oauthConfig  *oauth2.Config
 }
 
+// NewAuthHandler は AuthHandler を生成します。
+//
+// db: GORM DB インスタンス
+// newAuthUC: 認証ユースケースファクトリ
+// newInviteUC: 招待ユースケースファクトリ
+// cfg: アプリケーション設定
 func NewAuthHandler(
-	authUC *uauth.Interactor,
-	invitationUC *uinvitation.Interactor,
+	db *gorm.DB,
+	newAuthUC func(*gorm.DB) *uauth.Interactor,
+	newInviteUC func(*gorm.DB) *uinvitation.Interactor,
 	cfg *config.Config,
 ) *AuthHandler {
 	oauthCfg := &oauth2.Config{
@@ -40,13 +52,15 @@ func NewAuthHandler(
 		Endpoint: google.Endpoint,
 	}
 	return &AuthHandler{
-		authUC:       authUC,
-		invitationUC: invitationUC,
-		cfg:          cfg,
-		oauthConfig:  oauthCfg,
+		db:          db,
+		newAuthUC:   newAuthUC,
+		newInviteUC: newInviteUC,
+		cfg:         cfg,
+		oauthConfig: oauthCfg,
 	}
 }
 
+// GetMyProfile は認証済みスタッフのプロフィールを返します。
 // GET /api/auth/me
 func (h *AuthHandler) GetMyProfile(c *gin.Context) {
 	staffID := staffIDFromCookie(c)
@@ -54,7 +68,7 @@ func (h *AuthHandler) GetMyProfile(c *gin.Context) {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	staff, err := h.authUC.FindUser(staffID)
+	staff, err := h.newAuthUC(h.db).FindUser(staffID)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -67,6 +81,7 @@ func (h *AuthHandler) GetMyProfile(c *gin.Context) {
 	})
 }
 
+// Login は認証済みスタッフのプロフィールを返します。
 // GET /api/auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
 	staffID := staffIDFromCookie(c)
@@ -74,7 +89,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	staff, err := h.authUC.FindUser(staffID)
+	staff, err := h.newAuthUC(h.db).FindUser(staffID)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -87,6 +102,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// Logout はセッションクッキーを削除してログアウトします。
 // GET /api/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
 	secure := h.cfg.App.Env == "production"
@@ -94,10 +110,11 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// Invitation はトークンで招待情報を返します。
 // GET /api/auth/invitation/:token
 func (h *AuthHandler) Invitation(c *gin.Context) {
 	token := c.Param("token")
-	result, err := h.invitationUC.FindByToken(uinvitation.FindByTokenDto{Token: token})
+	result, err := h.newInviteUC(h.db).FindByToken(uinvitation.FindByTokenDto{Token: token})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -110,13 +127,15 @@ func (h *AuthHandler) Invitation(c *gin.Context) {
 	})
 }
 
-// GET /api/auth/google/redirect
+// GoogleRedirect は Google OAuth 認証ページへリダイレクトします。
+// GET /auth/google/redirect
 func (h *AuthHandler) GoogleRedirect(c *gin.Context) {
 	url := h.oauthConfig.AuthCodeURL("state", oauth2.AccessTypeOnline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-// GET /api/auth/google/callback
+// GoogleCallback は Google OAuth コールバックを処理し、スタッフを作成または更新してセッションを発行します。
+// GET /auth/google/callback
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
@@ -141,14 +160,20 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		avatar = &pic
 	}
 
-	staff, err := h.authUC.Login(uauth.LoginDto{
+	dto := uauth.LoginDto{
 		Provider:   1, // Google
 		ProviderID: userInfo["id"],
 		Name:       userInfo["name"],
 		Email:      userInfo["email"],
 		Avatar:     avatar,
-	})
-	if err != nil {
+	}
+
+	var staff *domstaff.Vo
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		var e error
+		staff, e = h.newAuthUC(tx).Login(dto)
+		return e
+	}); txErr != nil {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 		return
 	}
@@ -159,6 +184,9 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 
+// ---------- プライベートヘルパー ----------
+
+// fetchGoogleUserInfo は Google OAuth トークンからユーザー情報を取得します。
 func fetchGoogleUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]string, error) {
 	client := cfg.Client(context.Background(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")

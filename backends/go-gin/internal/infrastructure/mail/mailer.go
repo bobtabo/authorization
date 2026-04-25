@@ -1,3 +1,4 @@
+// Package mail はメール送信の実装を提供します。
 package mail
 
 import (
@@ -10,10 +11,14 @@ import (
 	"time"
 )
 
+// Mailer はSMTPメール送信サービスです。
 type Mailer struct {
 	cfg config.MailConfig
 }
 
+// NewMailer は Mailer を生成します。
+//
+// cfg: メール設定
 func NewMailer(cfg config.MailConfig) *Mailer {
 	return &Mailer{cfg: cfg}
 }
@@ -40,6 +45,7 @@ func mailSubject(env, subject string) string {
 	return subject
 }
 
+// SendAccessToken はクライアントにアクセストークンをメールで送信します。
 func (m *Mailer) SendAccessToken(to, clientName, token string) {
 	if to == "" {
 		return
