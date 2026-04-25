@@ -9,12 +9,13 @@ import com.authorization.domain.notification.Notification
 import com.authorization.domain.notification.Page
 import com.authorization.domain.notification.Repository
 import com.authorization.infrastructure.model.Notifications
-import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -45,10 +46,9 @@ class ExposedNotificationRepository(private val db: Database) : Repository {
 
         if (cursor != null) {
             val (dt, cursorId) = decodeCursor(cursor) ?: error("invalid_cursor")
-            val cursorEntityId = EntityID(cursorId, Notifications)
             query = query.andWhere {
                 (Notifications.createdAt less dt) or
-                ((Notifications.createdAt eq dt) and (Notifications.id less cursorEntityId))
+                ((Notifications.createdAt eq dt) and (Notifications.id less cursorId))
             }
         }
 
@@ -106,10 +106,9 @@ class ExposedNotificationRepository(private val db: Database) : Repository {
             }.toLong()
         } else {
             if (ids.isEmpty()) return@newSuspendedTransaction 0L
-            val entityIds = ids.map { EntityID(it, Notifications) }
             Notifications.update({
                 (Notifications.staffId eq staffId) and
-                (Notifications.id inList entityIds) and
+                (Notifications.id inList ids) and
                 (Notifications.read eq false) and
                 Notifications.deletedAt.isNull()
             }) {

@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class InteractorTest {
 
@@ -69,6 +69,6 @@ class InteractorTest {
         val dto      = LoginDto(provider = 1, providerId = "google-123", name = "Test Staff", email = "staff@example.com", avatar = "new-avatar")
         val result   = uc.login(dto)
         assertEquals(5L, result.id)
-        assertNotNull(result.avatar)
+        assertTrue(result.avatar != null)
     }
 }

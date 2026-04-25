@@ -8,8 +8,8 @@ import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class InteractorTest {
 
@@ -92,7 +92,7 @@ class InteractorTest {
             override suspend fun save(c: Client): Client { saved = c; return c }
         }
         Interactor(repo).update(UpdateDto(id = 3L, status = ClientStatus.ACTIVE, executorId = 1L))
-        assertNotNull(saved?.startAt)
+        assertTrue(saved?.startAt != null)
     }
 
     @Test
@@ -112,6 +112,6 @@ class InteractorTest {
     @Test
     fun `findByIdentifier returns client when found`() = runBlocking {
         val uc = Interactor(mockRepo(byIdentifier = makeClient(7L)))
-        assertNotNull(uc.findByIdentifier("abc123"))
+        assertTrue(uc.findByIdentifier("abc123") != null)
     }
 }
