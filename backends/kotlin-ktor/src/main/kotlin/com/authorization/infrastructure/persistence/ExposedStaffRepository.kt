@@ -97,9 +97,9 @@ class ExposedStaffRepository(private val db: Database) : Repository {
                 it[role]        = s.role
                 it[lastLoginAt] = s.lastLoginAt
                 it[createdAt]   = s.createdAt
-                it[createdBy]   = s.createdBy?.toInt()
+                it[createdBy]   = s.createdBy?.toInt() ?: 0
                 it[updatedAt]   = s.updatedAt
-                it[updatedBy]   = s.updatedBy?.toInt()
+                it[updatedBy]   = s.updatedBy?.toInt() ?: 0
                 it[version]     = s.version
             }
             s.copy(id = newId.value)

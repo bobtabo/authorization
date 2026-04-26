@@ -114,9 +114,9 @@ class ExposedClientRepository(private val db: Database) : Repository {
                 it[startAt]     = c.startAt
                 it[stopAt]      = c.stopAt
                 it[createdAt]   = c.createdAt
-                it[createdBy]   = c.createdBy?.toInt()
+                it[createdBy]   = c.createdBy?.toInt() ?: 0
                 it[updatedAt]   = c.updatedAt
-                it[updatedBy]   = c.updatedBy?.toInt()
+                it[updatedBy]   = c.updatedBy?.toInt() ?: 0
                 it[version]     = c.version
             }
             c.copy(id = newId.value)
@@ -134,7 +134,7 @@ class ExposedClientRepository(private val db: Database) : Repository {
                 it[startAt]   = c.startAt
                 it[stopAt]    = c.stopAt
                 it[updatedAt] = c.updatedAt
-                it[updatedBy] = c.updatedBy?.toInt()
+                it[updatedBy] = c.updatedBy?.toInt() ?: 0
                 it[version]   = c.version + 1
             }
             c.copy(version = c.version + 1)
@@ -166,7 +166,7 @@ class ExposedClientRepository(private val db: Database) : Repository {
         pref        = row[Clients.pref],
         city        = row[Clients.city],
         address     = row[Clients.address],
-        building    = row[Clients.building],
+        building    = row[Clients.building] ?: "",
         tel         = row[Clients.tel],
         email       = row[Clients.email],
         accessToken = row[Clients.accessToken],

@@ -17,7 +17,7 @@ object Clients : LongIdTable("clients") {
     val pref        = varchar("pref", 255).default("")
     val city        = varchar("city", 255).default("")
     val address     = varchar("address", 255).default("")
-    val building    = varchar("building", 255).default("")
+    val building    = varchar("building", 255).nullable()
     val tel         = varchar("tel", 255).default("")
     val email       = varchar("email", 255).default("")
     val accessToken = varchar("access_token", 512).uniqueIndex()

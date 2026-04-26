@@ -46,9 +46,9 @@ module Infrastructure
             role:          entity.role,
             last_login_at: entity.last_login_at,
             created_at:    entity.created_at,
-            created_by:    entity.created_by,
+            created_by:    entity.created_by || 0,
             updated_at:    entity.updated_at,
-            updated_by:    entity.updated_by,
+            updated_by:    entity.updated_by || 0,
             version:       entity.version,
           )
           row_to_entity(r)
@@ -61,7 +61,7 @@ module Infrastructure
             role:          entity.role,
             last_login_at: entity.last_login_at,
             updated_at:    entity.updated_at,
-            updated_by:    entity.updated_by,
+            updated_by:    entity.updated_by || 0,
             version:       entity.version + 1,
           )
           row_to_entity(r.reload)

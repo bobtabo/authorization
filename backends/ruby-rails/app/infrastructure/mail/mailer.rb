@@ -12,9 +12,9 @@ module Infrastructure
     # メール送信クラスです。
     # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
     class Mailer
-      # @param cfg [AppConfig] アプリケーション設定
-      def initialize(cfg = ConfigLoader.load)
-        @cfg = cfg.mail
+      # @param cfg [MailConfig] メール設定
+      def initialize(cfg = ConfigLoader.load.mail)
+        @cfg = cfg
       end
 
       # クライアントへアクセストークン通知メールを送信します。
