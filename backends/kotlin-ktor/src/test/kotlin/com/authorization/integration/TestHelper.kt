@@ -22,11 +22,11 @@ data class NotificationRow(val id: Long, val staffId: Long)
 object TestHelper {
     val cfg by lazy { ConfigLoader.load() }
     val db: Database by lazy {
-        initDatabase(cfg).also { db ->
-            transaction(db) {
-                SchemaUtils.create(Staffs, Clients, Invitations, Notifications)
-            }
+        val (database, _) = initDatabase(cfg)
+        transaction(database) {
+            SchemaUtils.create(Staffs, Clients, Invitations, Notifications)
         }
+        database
     }
     private val jedisPool by lazy { newRedisPool(cfg) }
 

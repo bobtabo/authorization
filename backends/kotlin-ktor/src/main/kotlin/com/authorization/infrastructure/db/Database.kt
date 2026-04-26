@@ -16,7 +16,7 @@ import org.jetbrains.exposed.sql.Database
  * @param cfg アプリケーション設定
  * @return Exposed Database インスタンス
  */
-fun initDatabase(cfg: Config): Database {
+fun initDatabase(cfg: Config): Pair<Database, HikariDataSource> {
     val hikariConfig = HikariConfig().apply {
         jdbcUrl         = cfg.db.dsn
         driverClassName = "com.mysql.cj.jdbc.Driver"
@@ -25,5 +25,5 @@ fun initDatabase(cfg: Config): Database {
         maximumPoolSize = 10
     }
     val dataSource = HikariDataSource(hikariConfig)
-    return Database.connect(dataSource)
+    return Database.connect(dataSource) to dataSource
 }

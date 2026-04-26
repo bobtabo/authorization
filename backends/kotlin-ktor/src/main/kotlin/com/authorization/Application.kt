@@ -29,8 +29,13 @@ fun main() {
 fun Application.module() = module(ConfigLoader.load())
 
 fun Application.module(cfg: Config) {
-    val db         = initDatabase(cfg)
+    val (db, ds)  = initDatabase(cfg)
     val redisPool  = newRedisPool(cfg)
+
+    environment.monitor.subscribe(ApplicationStopped) {
+        ds.close()
+        redisPool.close()
+    }
 
     val clientRepo       = ExposedClientRepository(db)
     val staffRepo        = ExposedStaffRepository(db)
