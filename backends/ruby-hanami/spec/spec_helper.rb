@@ -30,6 +30,7 @@ APP_ROOT = File.expand_path("..", __dir__)
   "app/domain/**/*.rb",
   "app/usecase/**/*.rb",
   "app/infrastructure/**/*.rb",
+  "app/middleware/**/*.rb",
   "app/actions/base.rb",
   "app/actions/**/*.rb",
   "app/config/container.rb",
@@ -70,7 +71,10 @@ RSpec.configure do |config|
 end
 
 def app
-  TEST_APP
+  Rack::Builder.new do
+    use Middleware::JsonBodyParser
+    run TEST_APP
+  end
 end
 
 # ---------- DB / Redis ヘルパー ----------
