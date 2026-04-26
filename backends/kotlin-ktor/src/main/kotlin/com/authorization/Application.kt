@@ -1,5 +1,6 @@
 package com.authorization
 
+import com.authorization.config.Config
 import com.authorization.config.ConfigLoader
 import com.authorization.handler.*
 import com.authorization.infrastructure.cache.RedisGateRepository
@@ -25,9 +26,9 @@ fun main() {
         .start(wait = true)
 }
 
-fun Application.module() {
-    val cfg = ConfigLoader.load()
+fun Application.module() = module(ConfigLoader.load())
 
+fun Application.module(cfg: Config) {
     val db         = initDatabase(cfg)
     val redisPool  = newRedisPool(cfg)
 
