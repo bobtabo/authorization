@@ -20,7 +20,9 @@ Config = Struct.new(:app, :db, :redis, :oauth, :jwt, :mail, keyword_init: true)
 
 module ConfigLoader
   def self.load
-    dsn = "mysql2://#{ENV.fetch('DB_USERNAME', 'root')}:#{ENV.fetch('DB_PASSWORD', '')}"\
+    require 'uri'
+    dsn = "mysql2://#{URI.encode_www_form_component(ENV.fetch('DB_USERNAME', 'root'))}"\
+          ":#{URI.encode_www_form_component(ENV.fetch('DB_PASSWORD', ''))}"\
           "@#{ENV.fetch('DB_HOST', 'localhost')}:#{ENV.fetch('DB_PORT', '3306')}"\
           "/#{ENV.fetch('DB_DATABASE', 'authorization')}"
 

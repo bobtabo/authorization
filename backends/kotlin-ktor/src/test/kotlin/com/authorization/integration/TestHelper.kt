@@ -7,6 +7,7 @@ import com.authorization.infrastructure.db.initDatabase
 import com.authorization.infrastructure.model.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.security.KeyPairGenerator
 import java.time.LocalDateTime
@@ -37,7 +38,7 @@ object TestHelper {
             }
             exec("SET FOREIGN_KEY_CHECKS=1")
         }
-        jedisPool.resource.use { it.flushDb() }
+        jedisPool.resource.use { it.flushDB() }
     }
 
     fun createStaff(
