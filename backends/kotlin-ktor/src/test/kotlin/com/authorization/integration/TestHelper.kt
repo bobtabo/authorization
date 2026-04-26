@@ -118,7 +118,9 @@ object TestHelper {
                 it[Notifications.message]   = "テスト通知本文"
                 it[Notifications.read]      = read
                 it[Notifications.createdAt] = now
+                it[Notifications.createdBy] = 0
                 it[Notifications.updatedAt] = now
+                it[Notifications.updatedBy] = 0
             }.value
         }
         return NotificationRow(id, staffId)
