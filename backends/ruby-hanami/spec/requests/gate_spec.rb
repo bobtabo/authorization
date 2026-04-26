@@ -1,17 +1,19 @@
+# frozen_string_literal: true
+
 require "spec_helper"
 
 RSpec.describe "Gate" do
-  let(:container) { stub_container }
+  before { truncate_tables }
 
   describe "GET /api/gate/issue" do
     context "member パラメータあり" do
       it "JWT トークンを返す" do
-        allow(container[:gate_uc]).to receive(:issue_token).and_return(double("issue_vo", token: "jwt.token.here"))
+        client = create_client
         get "/api/gate/issue?member=user-001",
-            {}, { "HTTP_AUTHORIZATION" => "Bearer access-token-abc" }
+            {}, { "HTTP_AUTHORIZATION" => "Bearer #{client[:access_token]}" }
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body)
-        expect(body["token"]).to eq("jwt.token.here")
+        expect(body["token"]).not_to be_nil
       end
     end
 
@@ -26,11 +28,14 @@ RSpec.describe "Gate" do
   end
 
   describe "GET /api/gate/client/:identifier/verify" do
-    context "token パラメータあり" do
+    context "有効なトークンの場合" do
       it "ペイロードを返す" do
-        claims = { "sub" => "user-001", "iss" => "authorization" }
-        allow(container[:gate_uc]).to receive(:verify).and_return(double("verify_vo", claims: claims))
-        get "/api/gate/client/test-client/verify?token=jwt.token.here"
+        client = create_client
+        get "/api/gate/issue?member=user-001",
+            {}, { "HTTP_AUTHORIZATION" => "Bearer #{client[:access_token]}" }
+        token = JSON.parse(last_response.body)["token"]
+
+        get "/api/gate/client/#{client[:identifier]}/verify?token=#{token}"
         expect(last_response.status).to eq(200)
         body = JSON.parse(last_response.body)
         expect(body["sub"]).to eq("user-001")
@@ -39,7 +44,8 @@ RSpec.describe "Gate" do
 
     context "token パラメータなし" do
       it "400を返す" do
-        get "/api/gate/client/test-client/verify"
+        client = create_client
+        get "/api/gate/client/#{client[:identifier]}/verify"
         expect(last_response.status).to eq(400)
         body = JSON.parse(last_response.body)
         expect(body["error"]).to eq("token_required")

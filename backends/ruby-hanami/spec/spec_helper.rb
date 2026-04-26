@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dotenv"
 # ローカルコンテナ用（host.docker.internal）を優先、なければ CI 用（127.0.0.1）
 # Dotenv.load は既存の env var を上書きしないため CI の env vars が最優先される
@@ -11,9 +13,12 @@ require "hanami/router"
 require "rack/test"
 require "rspec"
 require "json"
+require "openssl"
+require "securerandom"
+require "redis"
 
 # Authorization::Action は Hanami::Action のエイリアス
-# （通常は Hanami::App の起動時に生成されるが、テストではここで直接定義する）
+# （app/action.rb はサーバー起動時に Hanami::App がロードするため、テストでは直接定義する）
 module Authorization
   Action = Hanami::Action unless const_defined?(:Action)
 end
@@ -30,7 +35,7 @@ APP_ROOT = File.expand_path("..", __dir__)
   "app/config/container.rb",
 ].each { |pattern| Dir[File.join(APP_ROOT, pattern)].sort.each { |f| require f } }
 
-# テスト用 Rack アプリ（Hanami::Router を直接使用）
+# テスト用 Rack アプリ（Hanami::Router を直接使用、実 AppContainer を通じて実 DB へ接続）
 TEST_APP = Hanami::Router.new do
   get  "/auth/google/redirect",                   to: Authorization::Actions::Auth::GoogleRedirect.new
   get  "/auth/google/callback",                   to: Authorization::Actions::Auth::GoogleCallback.new
@@ -59,7 +64,6 @@ end
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
-
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
@@ -69,68 +73,100 @@ def app
   TEST_APP
 end
 
-# ---------- AppContainer スタブ ----------
+# ---------- DB / Redis ヘルパー ----------
 
-def stub_container(overrides = {})
-  rom_conn = double("rom_connection")
-  allow(rom_conn).to receive(:transaction) { |&blk| blk.call }
-  rom_gw   = double("rom_gateway", connection: rom_conn)
-  rom_gws  = double("rom_gateways")
-  allow(rom_gws).to receive(:[]).with(:default).and_return(rom_gw)
-  rom = double("rom", gateways: rom_gws)
-
-  defaults = {
-    cfg:             double("cfg", app: double("app_cfg", notification_default_limit: 10)),
-    rom:             rom,
-    auth_uc:         double("auth_uc"),
-    client_uc:       double("client_uc"),
-    staff_uc:        double("staff_uc"),
-    invitation_uc:   double("invitation_uc"),
-    gate_uc:         double("gate_uc"),
-    notification_uc: double("notification_uc"),
-    mailer:          double("mailer", send_access_token: nil),
-  }
-  container = defaults.merge(overrides)
-  allow(AppContainer).to receive(:instance).and_return(container)
-  container
+def db
+  AppContainer.instance[:rom].gateways[:default].connection
 end
 
-# ---------- フィクスチャ ----------
+def truncate_tables
+  db.run("SET FOREIGN_KEY_CHECKS=0")
+  %w[notifications invitations clients staffs].each { |t| db.run("TRUNCATE TABLE #{t}") }
+  db.run("SET FOREIGN_KEY_CHECKS=1")
+  cfg = AppContainer.instance[:cfg]
+  r = Redis.new(host: cfg.redis.host, port: cfg.redis.port)
+  r.flushdb
+  r.close
+rescue StandardError => e
+  warn "truncate_tables warning: #{e.message}"
+end
 
-def staff_fixture(overrides = {})
-  double("staff",
-    { id: 1, name: "テストスタッフ", email: "staff@example.com", avatar: nil, role: 1,
-      status: :active,
-      created_at: Time.now, updated_at: Time.now, deleted_at: nil }.merge(overrides)
+# ---------- テストデータ生成ヘルパー ----------
+
+def create_staff(overrides = {})
+  now = Time.now
+  attrs = {
+    name:        "テストスタッフ",
+    email:       "staff-#{SecureRandom.hex(4)}@example.com",
+    provider:    1,
+    provider_id: "test-#{SecureRandom.hex(8)}",
+    role:        1,
+    created_at:  now,
+    updated_at:  now,
+    created_by:  0,
+    updated_by:  0,
+    version:     1,
+  }.merge(overrides)
+  id = db[:staffs].insert(attrs)
+  db[:staffs].where(id: id).first
+end
+
+def create_client(overrides = {})
+  key   = OpenSSL::PKey::RSA.generate(2048)
+  token = SecureRandom.hex(32)
+  now   = Time.now
+  attrs = {
+    name:         "テストクライアント",
+    identifier:   "test-client-#{SecureRandom.hex(4)}",
+    post_code:    "100-0001",
+    pref:         "東京都",
+    city:         "千代田区",
+    address:      "千代田1-1",
+    building:     "",
+    tel:          "0312345678",
+    email:        "client-#{SecureRandom.hex(4)}@example.com",
+    access_token: token,
+    private_key:  key.to_pem,
+    public_key:   key.public_key.to_pem,
+    fingerprint:  "SHA256:test",
+    status:       1,
+    created_at:   now,
+    updated_at:   now,
+    created_by:   0,
+    updated_by:   0,
+    version:      1,
+  }.merge(overrides)
+  id = db[:clients].insert(attrs)
+  db[:clients].where(id: id).first
+end
+
+def create_invitation(token = SecureRandom.hex(16))
+  now = Time.now
+  id = db[:invitations].insert(
+    token:      token,
+    created_at: now,
+    updated_at: now,
+    created_by: 0,
+    updated_by: 0,
+    version:    1,
   )
+  db[:invitations].where(id: id).first
 end
 
-def client_fixture(overrides = {})
-  double("client",
-    { id: 1, name: "テストクライアント", identifier: "test-client-001",
-      post_code: "100-0001", pref: "東京都", city: "千代田区",
-      address: "千代田1-1", building: nil, tel: "0312345678",
-      email: "client@example.com", access_token: "token-abc",
-      status: 1, start_at: nil, stop_at: nil,
-      created_at: Time.now, updated_at: Time.now }.merge(overrides)
-  )
-end
-
-def invitation_fixture(overrides = {})
-  double("invitation",
-    { url: "http://localhost:3000/invite/abc", display_url: "localhost:3000/invite/abc",
-      token: "abc123" }.merge(overrides)
-  )
-end
-
-def notification_fixture(overrides = {})
-  double("notification",
-    { id: 1, staff_id: 1, message_type: 1, title: "テスト通知", message: "本文",
-      url: "/clients/show?id=1", read: false,
-      created_at: Time.now, updated_at: Time.now }.merge(overrides)
-  )
-end
-
-def notification_page_fixture(items)
-  double("page", items: items, next_cursor: nil)
+def create_notification(staff_id, title, overrides = {})
+  now = Time.now
+  attrs = {
+    staff_id:     staff_id,
+    message_type: 1,
+    title:        title,
+    message:      "テスト通知本文",
+    read:         false,
+    created_at:   now,
+    updated_at:   now,
+    created_by:   0,
+    updated_by:   0,
+    version:      1,
+  }.merge(overrides)
+  id = db[:notifications].insert(attrs)
+  db[:notifications].where(id: id).first
 end
