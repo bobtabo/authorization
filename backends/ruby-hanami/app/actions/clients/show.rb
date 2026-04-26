@@ -17,6 +17,10 @@ module Authorization
         # @return [void]
         def handle(request, response)
           c = container[:client_uc].find_by_id(request.params[:id].to_i)
+        rescue RuntimeError => e
+          response.status = 404
+          response.body   = { error: e.message }.to_json
+        else
           json_response(response, {
             id:         c.id,
             name:       c.name,
