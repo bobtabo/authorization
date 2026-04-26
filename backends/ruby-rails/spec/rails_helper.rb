@@ -128,6 +128,16 @@ RSpec.configure do |config|
   # instead of true.
   config.use_transactional_fixtures = true
 
+  # テストスイート開始前にテーブルを truncate する。
+  # ローカル環境で Ctrl+C などにより前回ロールバックされなかったデータを除去し、
+  # 固定メールアドレスを使うテストの一意制約違反を防ぐ。
+  config.before(:suite) do
+    conn = ActiveRecord::Base.connection
+    conn.execute("SET FOREIGN_KEY_CHECKS=0")
+    %w[notifications invitations clients staffs].each { |t| conn.execute("TRUNCATE TABLE #{t}") }
+    conn.execute("SET FOREIGN_KEY_CHECKS=1")
+  end
+
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
 
