@@ -29,7 +29,7 @@ struct InvitationRow {
     #[allow(dead_code)]
     deleted_by: Option<u32>,
     #[allow(dead_code)]
-    version:    i32,
+    version:    u32,
 }
 
 /// SQLx を用いた招待リポジトリ実装。

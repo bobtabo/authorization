@@ -17,7 +17,7 @@ use crate::domain::notification::{
 struct NotificationRow {
     id:           u64,
     staff_id:     u32,
-    message_type: i32,
+    message_type: u32,
     title:        String,
     message:      String,
     url:          Option<String>,
@@ -28,14 +28,14 @@ struct NotificationRow {
     updated_by:   Option<u32>,
     deleted_at:   Option<NaiveDateTime>,
     deleted_by:   Option<u32>,
-    version:      i32,
+    version:      u32,
 }
 
 fn row_to_entity(r: NotificationRow) -> Notification {
     Notification {
         id:           r.id,
         staff_id:     r.staff_id,
-        message_type: r.message_type,
+        message_type: r.message_type as i32,
         title:        r.title,
         message:      r.message,
         url:          r.url,
@@ -46,7 +46,7 @@ fn row_to_entity(r: NotificationRow) -> Notification {
         updated_by:   r.updated_by,
         deleted_at:   r.deleted_at,
         deleted_by:   r.deleted_by,
-        version:      r.version,
+        version:      r.version as i32,
     }
 }
 

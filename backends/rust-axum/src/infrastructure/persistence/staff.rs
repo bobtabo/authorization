@@ -20,7 +20,7 @@ struct StaffRow {
     provider:      i32,
     provider_id:   String,
     avatar:        Option<String>,
-    role:          i32,
+    role:          u32,
     last_login_at: Option<NaiveDateTime>,
     created_at:    NaiveDateTime,
     created_by:    Option<u32>,
@@ -28,7 +28,7 @@ struct StaffRow {
     updated_by:    Option<u32>,
     deleted_at:    Option<NaiveDateTime>,
     deleted_by:    Option<u32>,
-    version:       i32,
+    version:       u32,
 }
 
 fn row_to_entity(r: StaffRow) -> Staff {
@@ -39,7 +39,7 @@ fn row_to_entity(r: StaffRow) -> Staff {
         provider:      r.provider,
         provider_id:   r.provider_id,
         avatar:        r.avatar,
-        role:          r.role,
+        role:          r.role as i32,
         last_login_at: r.last_login_at,
         created_at:    r.created_at,
         created_by:    r.created_by,
@@ -47,7 +47,7 @@ fn row_to_entity(r: StaffRow) -> Staff {
         updated_by:    r.updated_by,
         deleted_at:    r.deleted_at,
         deleted_by:    r.deleted_by,
-        version:       r.version,
+        version:       r.version as i32,
     }
 }
 

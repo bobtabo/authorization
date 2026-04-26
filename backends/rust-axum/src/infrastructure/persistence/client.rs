@@ -28,7 +28,7 @@ struct ClientRow {
     private_key:  String,
     public_key:   String,
     fingerprint:  String,
-    status:       i32,
+    status:       u32,
     start_at:     Option<NaiveDateTime>,
     stop_at:      Option<NaiveDateTime>,
     created_at:   NaiveDateTime,
@@ -37,7 +37,7 @@ struct ClientRow {
     updated_by:   Option<u32>,
     deleted_at:   Option<NaiveDateTime>,
     deleted_by:   Option<u32>,
-    version:      i32,
+    version:      u32,
 }
 
 fn row_to_entity(r: ClientRow) -> Client {
@@ -56,7 +56,7 @@ fn row_to_entity(r: ClientRow) -> Client {
         private_key:  r.private_key,
         public_key:   r.public_key,
         fingerprint:  r.fingerprint,
-        status:       r.status,
+        status:       r.status as i32,
         start_at:     r.start_at,
         stop_at:      r.stop_at,
         created_at:   r.created_at,
@@ -65,7 +65,7 @@ fn row_to_entity(r: ClientRow) -> Client {
         updated_by:   r.updated_by,
         deleted_at:   r.deleted_at,
         deleted_by:   r.deleted_by,
-        version:      r.version,
+        version:      r.version as i32,
     }
 }
 

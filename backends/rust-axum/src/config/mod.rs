@@ -113,9 +113,21 @@ fn build_dsn() -> String {
     let host = get_env("DB_HOST", "localhost");
     let port = get_env("DB_PORT", "3306");
     let user = get_env("DB_USERNAME", "root");
-    let pass = get_env("DB_PASSWORD", "");
+    let pass = url_encode_password(&get_env("DB_PASSWORD", ""));
     let name = get_env("DB_DATABASE", "authorization");
     format!("mysql://{}:{}@{}:{}/{}?ssl-mode=disabled", user, pass, host, port, name)
+}
+
+fn url_encode_password(s: &str) -> String {
+    s.chars().flat_map(|c| match c {
+        '#' => "%23".chars().collect::<Vec<_>>(),
+        '@' => "%40".chars().collect::<Vec<_>>(),
+        ':' => "%3A".chars().collect::<Vec<_>>(),
+        '/' => "%2F".chars().collect::<Vec<_>>(),
+        '?' => "%3F".chars().collect::<Vec<_>>(),
+        '%' => "%25".chars().collect::<Vec<_>>(),
+        c   => vec![c],
+    }).collect()
 }
 
 fn get_env(key: &str, fallback: &str) -> String {
