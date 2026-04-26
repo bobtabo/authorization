@@ -44,7 +44,80 @@ begin
 rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
+require "openssl"
+require "securerandom"
+
 RSpec.configure do |config|
+  config.include(Module.new do
+    def create_staff(overrides = {})
+      now = Time.current
+      Infrastructure::Model::Staff.create!({
+        name:        "テストスタッフ",
+        email:       "staff-#{SecureRandom.hex(4)}@example.com",
+        provider:    1,
+        provider_id: "test-#{SecureRandom.hex(8)}",
+        role:        1,
+        created_at:  now,
+        updated_at:  now,
+        created_by:  0,
+        updated_by:  0,
+        version:     1,
+      }.merge(overrides))
+    end
+
+    def create_client(overrides = {})
+      key   = OpenSSL::PKey::RSA.generate(2048)
+      token = SecureRandom.hex(32)
+      now   = Time.current
+      Infrastructure::Model::Client.create!({
+        name:         "テストクライアント",
+        identifier:   "test-client-#{SecureRandom.hex(4)}",
+        post_code:    "100-0001",
+        pref:         "東京都",
+        city:         "千代田区",
+        address:      "千代田1-1",
+        building:     "",
+        tel:          "0312345678",
+        email:        "client-#{SecureRandom.hex(4)}@example.com",
+        access_token: token,
+        private_key:  key.to_pem,
+        public_key:   key.public_key.to_pem,
+        fingerprint:  "SHA256:test",
+        status:       1,
+        created_at:   now,
+        updated_at:   now,
+        created_by:   0,
+        updated_by:   0,
+        version:      1,
+      }.merge(overrides))
+    end
+
+    def create_invitation(token = SecureRandom.hex(16))
+      now = Time.current
+      Infrastructure::Model::Invitation.create!(
+        token:      token,
+        created_at: now,
+        updated_at: now,
+      )
+    end
+
+    def create_notification(staff_id, title, overrides = {})
+      now = Time.current
+      Infrastructure::Model::Notification.create!({
+        staff_id:     staff_id,
+        message_type: 1,
+        title:        title,
+        message:      "テスト通知本文",
+        read:         false,
+        created_at:   now,
+        updated_at:   now,
+        created_by:   0,
+        updated_by:   0,
+        version:      1,
+      }.merge(overrides))
+    end
+  end)
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')
