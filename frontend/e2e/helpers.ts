@@ -104,6 +104,7 @@ export const BACKENDS = [
   { value: "php",    label: "PHP",        apiPrefix: "**/function/php/api" },
   { value: "go",     label: "Go",         apiPrefix: "**/function/go/api" },
   { value: "python", label: "Python",     apiPrefix: "**/function/python/api" },
+  { value: "rust",   label: "Rust",       apiPrefix: "**/function/rust/api" },
   { value: "ts",     label: "TypeScript", apiPrefix: "**/function/ts/api" },
 ] as const;
 

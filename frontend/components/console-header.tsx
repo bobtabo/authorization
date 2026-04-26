@@ -214,6 +214,7 @@ export function ConsoleHeader(): React.JSX.Element {
                 <option value="go">Go</option>
                 <option value="php">PHP</option>
                 <option value="python">Python</option>
+                <option value="rust">Rust</option>
                 <option value="ts">TypeScript</option>
               </select>
               <ChevronDown
