@@ -101,11 +101,14 @@ export async function mockLogout(page: Page, apiPrefix: string): Promise<void> {
 
 /** バックエンドランタイム定義。 */
 export const BACKENDS = [
-  { value: "php",    label: "PHP",        apiPrefix: "**/function/php/api" },
-  { value: "go",     label: "Go",         apiPrefix: "**/function/go/api" },
-  { value: "python", label: "Python",     apiPrefix: "**/function/python/api" },
-  { value: "rust",   label: "Rust",       apiPrefix: "**/function/rust/api" },
-  { value: "ts",     label: "TypeScript", apiPrefix: "**/function/ts/api" },
+  { value: "php",      label: "PHP",          apiPrefix: "**/function/php/api" },
+  { value: "go",       label: "Go",           apiPrefix: "**/function/go/api" },
+  { value: "kotlin",   label: "Kotlin",       apiPrefix: "**/function/kotlin/api" },
+  { value: "python",   label: "Python",       apiPrefix: "**/function/python/api" },
+  { value: "rb-hanami",label: "Ruby (Hanami)",apiPrefix: "**/function/rb-hanami/api" },
+  { value: "rb-rails", label: "Ruby (Rails)", apiPrefix: "**/function/rb-rails/api" },
+  { value: "rust",     label: "Rust",         apiPrefix: "**/function/rust/api" },
+  { value: "ts",       label: "TypeScript",   apiPrefix: "**/function/ts/api" },
 ] as const;
 
 /** スタッフ一覧のモックデータ */

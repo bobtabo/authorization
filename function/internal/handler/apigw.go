@@ -17,10 +17,14 @@ import (
 // backendURL はパスプレフィックスからバックエンドのベース URL を返す。
 // 環境変数で上書き可能（本番デプロイ時など）。
 var backendURL = map[string]string{
-	"/function/php":    getenv("BACKEND_PHP_URL", "https://apis.authorization-php.dev"),
-	"/function/go":     getenv("BACKEND_GO_URL", "https://apis.authorization-go.dev"),
-	"/function/python": getenv("BACKEND_PYTHON_URL", "https://apis.authorization-python.dev"),
-	"/function/ts":     getenv("BACKEND_TS_URL", "https://apis.authorization-ts.dev"),
+	"/function/php":      getenv("BACKEND_PHP_URL",      "https://apis.authorization-php.dev"),
+	"/function/go":       getenv("BACKEND_GO_URL",       "https://apis.authorization-go.dev"),
+	"/function/kotlin":   getenv("BACKEND_KOTLIN_URL",   "https://apis.authorization-kotlin.dev"),
+	"/function/python":   getenv("BACKEND_PYTHON_URL",   "https://apis.authorization-python.dev"),
+	"/function/rb-hanami":getenv("BACKEND_RB_HANAMI_URL","https://apis.authorization-rb-hanami.dev"),
+	"/function/rb-rails": getenv("BACKEND_RB_RAILS_URL", "https://apis.authorization-rb-rails.dev"),
+	"/function/rust":     getenv("BACKEND_RUST_URL",     "https://apis.authorization-rust.dev"),
+	"/function/ts":       getenv("BACKEND_TS_URL",       "https://apis.authorization-ts.dev"),
 }
 
 func getenv(key, fallback string) string {
