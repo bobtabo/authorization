@@ -61,6 +61,10 @@ jobs:
             FLUSH PRIVILEGES;
           "
 
+      # テスト用DBにスキーマをロード
+      - name: Load schema
+        run: mysql -h 127.0.0.1 -u root -p'docker#DOCKER1234' authorization_test < backends/go-gin/tests/schema.sql
+
       # .env ファイルをコピー
       - name: Generate .env
         run: cp .env.testing .env
