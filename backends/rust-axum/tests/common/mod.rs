@@ -1,12 +1,18 @@
 use axum::Router;
 use sqlx::MySqlPool;
 use std::sync::Arc;
+use tokio::sync::OnceCell;
 use authorization::{build_router, build_state, config::Config};
+
+static SCHEMA_INIT: OnceCell<()> = OnceCell::const_new();
 
 pub async fn build_test_app() -> (Router, MySqlPool) {
     let cfg = Arc::new(Config::load());
     let (state, pool) = build_state(cfg).await;
-    ensure_schema(&pool).await;
+    let pool_for_init = pool.clone();
+    SCHEMA_INIT.get_or_init(|| async move {
+        ensure_schema(&pool_for_init).await;
+    }).await;
     let app = build_router(state);
     (app, pool)
 }
