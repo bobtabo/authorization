@@ -47,5 +47,5 @@ dependencies {
 }
 
 tasks.test {
-    environment("ENV_FILE", ".env.testing")
+    environment("ENV_FILE", System.getenv("ENV_FILE") ?: ".env.testing")
 }
