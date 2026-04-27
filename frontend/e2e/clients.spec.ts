@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { mockCommon, mockClients, mockClientDetail, mockClientsWithDeleted, mockSoftDeletedClientDetail, BACKENDS } from "./helpers";
+import { test, expect, stubRoute, mockCommon, mockClients, mockClientDetail, mockClientsWithDeleted, mockSoftDeletedClientDetail, BACKENDS } from "./helpers";
 
 for (const backend of BACKENDS) {
   const API = backend.apiPrefix;
@@ -16,10 +15,8 @@ for (const backend of BACKENDS) {
     // 一覧
     // -----------------------------------------------------------------------
     test.describe("一覧", () => {
-      test.beforeEach(async ({ page }) => {
-        await page.route(`${API}/clients*`, (route) =>
-          route.fulfill({ json: mockClients }),
-        );
+      test.beforeEach(async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients*`, mockClients, isReal);
         await page.goto("/clients");
       });
 
@@ -73,13 +70,9 @@ for (const backend of BACKENDS) {
         await expect(page).toHaveURL("/clients/create");
       });
 
-      test("登録成功で一覧へ遷移する", async ({ page }) => {
-        await page.route(`${API}/clients/store`, (route) =>
-          route.fulfill({ json: { id: 3 } }),
-        );
-        await page.route(`${API}/clients*`, (route) =>
-          route.fulfill({ json: mockClients }),
-        );
+      test("登録成功で一覧へ遷移する", async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients/store`, { id: 3 }, isReal);
+        await stubRoute(page, `${API}/clients*`, mockClients, isReal);
 
         await page.getByPlaceholder("株式会社モックデータ商事").fill("新規テスト株式会社");
         await page.getByPlaceholder("0000000", { exact: true }).fill("1000001");
@@ -99,10 +92,8 @@ for (const backend of BACKENDS) {
     // 詳細
     // -----------------------------------------------------------------------
     test.describe("詳細", () => {
-      test.beforeEach(async ({ page }) => {
-        await page.route(`${API}/clients/1`, (route) =>
-          route.fulfill({ json: mockClientDetail }),
-        );
+      test.beforeEach(async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients/1`, mockClientDetail, isReal);
         await page.goto("/clients/show?id=1");
       });
 
@@ -120,10 +111,8 @@ for (const backend of BACKENDS) {
     // 論理削除済みレコードの表示
     // -----------------------------------------------------------------------
     test.describe("論理削除済みレコードの表示", () => {
-      test.beforeEach(async ({ page }) => {
-        await page.route(`${API}/clients*`, (route) =>
-          route.fulfill({ json: mockClientsWithDeleted }),
-        );
+      test.beforeEach(async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients*`, mockClientsWithDeleted, isReal);
         await page.goto("/clients");
       });
 
@@ -131,10 +120,8 @@ for (const backend of BACKENDS) {
         await expect(page.getByText("アーカイブ商事")).toBeVisible();
       });
 
-      test("論理削除済みクライアントの詳細が表示される", async ({ page }) => {
-        await page.route(`${API}/clients/3`, (route) =>
-          route.fulfill({ json: mockSoftDeletedClientDetail }),
-        );
+      test("論理削除済みクライアントの詳細が表示される", async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients/3`, mockSoftDeletedClientDetail, isReal);
         await page.goto("/clients/show?id=3");
         await expect(page.getByText("アーカイブ商事")).toBeVisible();
       });
@@ -144,10 +131,8 @@ for (const backend of BACKENDS) {
     // 編集
     // -----------------------------------------------------------------------
     test.describe("編集", () => {
-      test.beforeEach(async ({ page }) => {
-        await page.route(`${API}/clients/1`, (route) =>
-          route.fulfill({ json: mockClientDetail }),
-        );
+      test.beforeEach(async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients/1`, mockClientDetail, isReal);
         await page.goto("/clients/edit?id=1");
       });
 
@@ -160,13 +145,9 @@ for (const backend of BACKENDS) {
         ).toHaveValue("sample@example.com");
       });
 
-      test("更新成功で一覧へ遷移する", async ({ page }) => {
-        await page.route(`${API}/clients/1/update`, (route) =>
-          route.fulfill({ json: mockClientDetail }),
-        );
-        await page.route(`${API}/clients*`, (route) =>
-          route.fulfill({ json: mockClients }),
-        );
+      test("更新成功で一覧へ遷移する", async ({ page, isReal }) => {
+        await stubRoute(page, `${API}/clients/1/update`, mockClientDetail, isReal);
+        await stubRoute(page, `${API}/clients*`, mockClients, isReal);
 
         await page.getByRole("button", { name: "更新" }).click();
         await page.getByRole("button", { name: "更新する" }).click();

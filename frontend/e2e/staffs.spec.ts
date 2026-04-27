@@ -1,15 +1,12 @@
-import { test, expect } from "@playwright/test";
-import { mockCommon, mockStaffs, BACKENDS } from "./helpers";
+import { test, expect, stubRoute, mockCommon, mockStaffs, BACKENDS } from "./helpers";
 
 for (const backend of BACKENDS) {
   const API = backend.apiPrefix;
 
   test.describe(`スタッフ [${backend.label}]`, () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page, isReal }) => {
       await mockCommon(page, API);
-      await page.route(`${API}/staffs*`, (route) =>
-        route.fulfill({ json: mockStaffs }),
-      );
+      await stubRoute(page, `${API}/staffs*`, mockStaffs, isReal);
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);
       }, backend.value);
@@ -46,18 +43,19 @@ for (const backend of BACKENDS) {
       await expect(page.getByRole("table").getByText("メンバースタッフ")).toBeVisible();
     });
 
-    test("ロール変更が実行される", async ({ page }) => {
-      await page.route(`${API}/staffs/2/updateRole`, (route) =>
-        route.fulfill({ json: { ...mockStaffs.items[1], role: 1 } }),
+    test("ロール変更が実行される", async ({ page, isReal }) => {
+      await stubRoute(
+        page,
+        `${API}/staffs/2/updateRole`,
+        { ...mockStaffs.items[1], role: 1 },
+        isReal,
       );
 
       await page.getByLabel("メンバースタッフの権限").getByRole("button", { name: "管理者" }).click();
     });
 
-    test("スタッフを無効化できる", async ({ page }) => {
-      await page.route(`${API}/staffs/2/delete`, (route) =>
-        route.fulfill({ status: 200, json: {} }),
-      );
+    test("スタッフを無効化できる", async ({ page, isReal }) => {
+      await stubRoute(page, `${API}/staffs/2/delete`, {}, isReal);
 
       await page.getByLabel("メンバースタッフの状態").getByRole("button", { name: "無効" }).click();
     });

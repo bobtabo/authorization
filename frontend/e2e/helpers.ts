@@ -1,21 +1,43 @@
-import type { Page } from "@playwright/test";
+import { test as base, expect, type Page } from "@playwright/test";
 
-/** auth/me・通知など、全ページ共通のモックを設定します。 */
+export { expect };
+export type { Page };
+
+/** real-* プロジェクト時に true になるフィクスチャ付きの test。 */
+export const test = base.extend<{ isReal: boolean }>({
+  isReal: async ({}, use, testInfo) => {
+    await use(testInfo.project.name.startsWith("real-"));
+  },
+});
+
+/** auth/me・通知など、全ページ共通のモックを設定します。real モードでも常にモック。 */
 export async function mockCommon(page: Page, apiPrefix: string): Promise<void> {
-  // ログイン済みユーザー（管理者）
   await page.route(`${apiPrefix}/auth/me`, (route) =>
     route.fulfill({
       json: { staff_id: 1, name: "テストスタッフ", avatar: null, role: 1 },
     }),
   );
-
-  // 通知ヘッダー
   await page.route(`${apiPrefix}/notifications/counts`, (route) =>
     route.fulfill({ json: { unread: 0, total: 0 } }),
   );
   await page.route(`${apiPrefix}/notifications*`, (route) =>
     route.fulfill({ json: [] }),
   );
+}
+
+/**
+ * 通常モードのみ page.route() を設定するヘルパー。
+ * isReal=true のとき（real-* プロジェクト）はスキップし、実バックエンドに通す。
+ */
+export async function stubRoute(
+  page: Page,
+  pattern: string,
+  json: unknown,
+  isReal: boolean,
+): Promise<void> {
+  if (!isReal) {
+    await page.route(pattern, (route) => route.fulfill({ json }));
+  }
 }
 
 /** クライアント一覧のモックデータ */
@@ -101,14 +123,14 @@ export async function mockLogout(page: Page, apiPrefix: string): Promise<void> {
 
 /** バックエンドランタイム定義。 */
 export const BACKENDS = [
-  { value: "php",      label: "PHP",          apiPrefix: "**/function/php/api" },
-  { value: "go",       label: "Go",           apiPrefix: "**/function/go/api" },
-  { value: "kotlin",   label: "Kotlin",       apiPrefix: "**/function/kotlin/api" },
-  { value: "python",   label: "Python",       apiPrefix: "**/function/python/api" },
-  { value: "rb-hanami",label: "Ruby (Hanami)",apiPrefix: "**/function/rb-hanami/api" },
-  { value: "rb-rails", label: "Ruby (Rails)", apiPrefix: "**/function/rb-rails/api" },
-  { value: "rust",     label: "Rust",         apiPrefix: "**/function/rust/api" },
-  { value: "ts",       label: "TypeScript",   apiPrefix: "**/function/ts/api" },
+  { value: "php",       label: "PHP",           apiPrefix: "**/function/php/api" },
+  { value: "go",        label: "Go",            apiPrefix: "**/function/go/api" },
+  { value: "kotlin",    label: "Kotlin",        apiPrefix: "**/function/kotlin/api" },
+  { value: "python",    label: "Python",        apiPrefix: "**/function/python/api" },
+  { value: "rb-hanami", label: "Ruby (Hanami)", apiPrefix: "**/function/rb-hanami/api" },
+  { value: "rb-rails",  label: "Ruby (Rails)",  apiPrefix: "**/function/rb-rails/api" },
+  { value: "rust",      label: "Rust",          apiPrefix: "**/function/rust/api" },
+  { value: "ts",        label: "TypeScript",    apiPrefix: "**/function/ts/api" },
 ] as const;
 
 /** スタッフ一覧のモックデータ */

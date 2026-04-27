@@ -39,6 +39,16 @@ export default defineConfig({
         screenshot: { mode: "on", fullPage: true },
       },
     },
+    // ── 実バックエンド E2E（バックエンド起動＋ seed.sql 適用が前提）──────────
+    // 実行例: npx playwright test --project=real-go
+    { name: "real-php",       grep: /\[PHP\]/,              use: { ...devices["Desktop Chrome"] } },
+    { name: "real-go",        grep: /\[Go\]/,               use: { ...devices["Desktop Chrome"] } },
+    { name: "real-kotlin",    grep: /\[Kotlin\]/,           use: { ...devices["Desktop Chrome"] } },
+    { name: "real-python",    grep: /\[Python\]/,           use: { ...devices["Desktop Chrome"] } },
+    { name: "real-rb-hanami", grep: /\[Ruby \(Hanami\)\]/, use: { ...devices["Desktop Chrome"] } },
+    { name: "real-rb-rails",  grep: /\[Ruby \(Rails\)\]/,  use: { ...devices["Desktop Chrome"] } },
+    { name: "real-rust",      grep: /\[Rust\]/,             use: { ...devices["Desktop Chrome"] } },
+    { name: "real-ts",        grep: /\[TypeScript\]/,       use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
     // dev サーバーと共存できるよう、E2E 専用に build → start する。
