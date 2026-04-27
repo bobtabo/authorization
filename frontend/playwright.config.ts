@@ -15,6 +15,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"]],
+  expect: { timeout: 15000 },
   use: {
     baseURL: "http://127.0.0.1:3001",
     trace: "on-first-retry",

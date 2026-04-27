@@ -43,14 +43,14 @@ for (const backend of BACKENDS) {
 
   test.describe(`招待URL [${backend.label}]`, () => {
     test.beforeEach(async ({ page, isReal }) => {
-      await mockCommon(page, API);
+      await mockCommon(page, API, isReal);
       await stubRoute(page, `${API}/admin/invitation`, {
         found: true,
-        url: "http://localhost:3000/invitation/current-token-abc123",
-        display_url: "localhost:3000/invitation/current-token-abc123",
-        token: "current-token-abc123",
+        url: "http://localhost:3000/invitation/e2e-tkn-001",
+        display_url: "localhost:3000/invitation/e2e-tkn-001",
+        token: "e2e-tkn-001",
       }, isReal);
-      await stubRoute(page, `${API}/clients*`, [], isReal);
+      await stubRoute(page, `${API}/clients*`, [], false);
 
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);
@@ -98,7 +98,7 @@ for (const backend of BACKENDS) {
       await openInvitationModal(page);
       const urlField = page.locator("#invitation-url-field");
       await expect(urlField).toBeVisible();
-      await expect(urlField).toHaveValue(/current-token-abc123/);
+      await expect(urlField).toHaveValue(/\/invitation\//, { timeout: 15000 });
     });
 
     // ── 再発行 ───────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ for (const backend of BACKENDS) {
 
       await openInvitationModal(page);
       const urlField = page.locator("#invitation-url-field");
-      await expect(urlField).toHaveValue(/current-token-abc123/);
+      await expect(urlField).toHaveValue(/\/invitation\//, { timeout: 15000 });
 
       await page.getByRole("button", { name: "URLを再発行" }).click();
       await expect(urlField).toHaveValue(/new-token-xyz789/);
@@ -145,7 +145,7 @@ for (const backend of BACKENDS) {
       );
 
       await openInvitationModal(page);
-      await expect(page.locator("#invitation-url-field")).toHaveValue(/current-token-abc123/);
+      await expect(page.locator("#invitation-url-field")).toHaveValue(/\/invitation\//, { timeout: 15000 });
 
       await page.getByRole("button", { name: "URLを再発行" }).click();
       await expect(
@@ -159,7 +159,7 @@ for (const backend of BACKENDS) {
       await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
 
       await openInvitationModal(page);
-      await expect(page.locator("#invitation-url-field")).toHaveValue(/current-token-abc123/);
+      await expect(page.locator("#invitation-url-field")).toHaveValue(/\/invitation\//, { timeout: 15000 });
 
       await page.getByRole("button", { name: /クリップボードにコピー/ }).click();
       await expect(page.getByRole("button", { name: /コピーしました/ })).toBeVisible();

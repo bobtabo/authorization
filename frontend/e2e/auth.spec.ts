@@ -17,7 +17,7 @@ test.describe("認証", () => {
 for (const backend of BACKENDS) {
   test.describe(`認証 [${backend.label}]`, () => {
     test("E2E モードでログインするとクライアント一覧へ遷移する", async ({ page, isReal }) => {
-      await mockCommon(page, backend.apiPrefix);
+      await mockCommon(page, backend.apiPrefix, isReal);
       await stubRoute(page, `${backend.apiPrefix}/clients*`, mockClients, isReal);
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);

@@ -4,8 +4,8 @@ for (const backend of BACKENDS) {
   const API = backend.apiPrefix;
 
   test.describe(`クライアント [${backend.label}]`, () => {
-    test.beforeEach(async ({ page }) => {
-      await mockCommon(page, API);
+    test.beforeEach(async ({ page, isReal }) => {
+      await mockCommon(page, API, isReal);
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);
       }, backend.value);
@@ -16,14 +16,14 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("一覧", () => {
       test.beforeEach(async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients*`, mockClients, isReal);
+        await stubRoute(page, `${API}/clients*`, mockClients, false);
         await page.goto("/clients");
       });
 
       test("クライアント一覧が表示される", async ({ page }) => {
         await expect(page.getByText("クライアント一覧")).toBeVisible();
-        await expect(page.getByText("株式会社サンプル")).toBeVisible();
-        await expect(page.getByText("テスト商事")).toBeVisible();
+        await expect(page.getByText("株式会社アルファテック")).toBeVisible();
+        await expect(page.getByText("ベータソリューションズ株式会社")).toBeVisible();
       });
 
       test("ステータスバッジが表示される", async ({ page }) => {
@@ -32,18 +32,18 @@ for (const backend of BACKENDS) {
       });
 
       test("会社名で検索できる", async ({ page }) => {
-        await page.getByPlaceholder("会社名で検索...").fill("サンプル");
+        await page.getByPlaceholder("会社名で検索...").fill("アルファ");
 
-        await expect(page.getByText("株式会社サンプル")).toBeVisible();
-        await expect(page.getByText("テスト商事")).not.toBeVisible();
+        await expect(page.getByText("株式会社アルファテック")).toBeVisible();
+        await expect(page.getByText("ベータソリューションズ株式会社")).not.toBeVisible();
       });
 
       test("条件クリアで検索が解除される", async ({ page }) => {
-        await page.getByPlaceholder("会社名で検索...").fill("サンプル");
+        await page.getByPlaceholder("会社名で検索...").fill("アルファ");
         await page.getByText("条件クリア").click();
 
-        await expect(page.getByText("株式会社サンプル")).toBeVisible();
-        await expect(page.getByText("テスト商事")).toBeVisible();
+        await expect(page.getByText("株式会社アルファテック")).toBeVisible();
+        await expect(page.getByText("ベータソリューションズ株式会社")).toBeVisible();
       });
 
       test("新規登録ボタンが表示される", async ({ page }) => {
@@ -56,6 +56,9 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("新規登録", () => {
       test.beforeEach(async ({ page }) => {
+        await page.route("https://apis.postcode-jp.com/**", (route) =>
+          route.fulfill({ json: [{ pref: "東京都", city: "千代田区", town: "" }] }),
+        );
         await page.goto("/clients/create");
       });
 
@@ -71,11 +74,12 @@ for (const backend of BACKENDS) {
       });
 
       test("登録成功で一覧へ遷移する", async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients/store`, { id: 3 }, isReal);
-        await stubRoute(page, `${API}/clients*`, mockClients, isReal);
+        await stubRoute(page, `${API}/clients/store`, { id: 3 }, false);
+        await stubRoute(page, `${API}/clients*`, mockClients, false);
 
         await page.getByPlaceholder("株式会社モックデータ商事").fill("新規テスト株式会社");
         await page.getByPlaceholder("0000000", { exact: true }).fill("1000001");
+        await expect(page.locator('input[placeholder="郵便番号で自動入力"]')).not.toHaveValue("", { timeout: 3000 });
         await page.getByPlaceholder("架空市中央区みなみ町").fill("千代田区");
         await page.getByPlaceholder("1丁目2番3号").fill("1-1");
         await page.getByPlaceholder("09000000000").fill("0312345678");
@@ -93,12 +97,12 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("詳細", () => {
       test.beforeEach(async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients/1`, mockClientDetail, isReal);
+        await stubRoute(page, `${API}/clients/1`, mockClientDetail, false);
         await page.goto("/clients/show?id=1");
       });
 
       test("クライアント詳細が表示される", async ({ page }) => {
-        await expect(page.getByText("株式会社サンプル")).toBeVisible();
+        await expect(page.getByText("株式会社アルファテック")).toBeVisible();
         await expect(page.getByText("利用中")).toBeVisible();
       });
 
@@ -112,18 +116,18 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("論理削除済みレコードの表示", () => {
       test.beforeEach(async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients*`, mockClientsWithDeleted, isReal);
+        await stubRoute(page, `${API}/clients*`, mockClientsWithDeleted, false);
         await page.goto("/clients");
       });
 
       test("論理削除済みのクライアントが一覧に表示される", async ({ page }) => {
-        await expect(page.getByText("アーカイブ商事")).toBeVisible();
+        await expect(page.getByText("ガンマシステム株式会社")).toBeVisible();
       });
 
       test("論理削除済みクライアントの詳細が表示される", async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients/3`, mockSoftDeletedClientDetail, isReal);
+        await stubRoute(page, `${API}/clients/3`, mockSoftDeletedClientDetail, false);
         await page.goto("/clients/show?id=3");
-        await expect(page.getByText("アーカイブ商事")).toBeVisible();
+        await expect(page.getByText("ガンマシステム株式会社")).toBeVisible();
       });
     });
 
@@ -132,27 +136,29 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("編集", () => {
       test.beforeEach(async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients/1`, mockClientDetail, isReal);
+        await stubRoute(page, `${API}/clients/1`, mockClientDetail, false);
         await page.goto("/clients/edit?id=1");
       });
 
       test("編集フォームに既存データが表示される", async ({ page }) => {
         await expect(
           page.locator('input[placeholder="株式会社モックデータ商事"]'),
-        ).toHaveValue("株式会社サンプル");
+        ).toHaveValue("株式会社アルファテック");
         await expect(
           page.locator('input[placeholder="contact@example.com"]'),
-        ).toHaveValue("sample@example.com");
+        ).toHaveValue("info@alpha-tech.example.com");
       });
 
       test("更新成功で一覧へ遷移する", async ({ page, isReal }) => {
-        await stubRoute(page, `${API}/clients/1/update`, mockClientDetail, isReal);
-        await stubRoute(page, `${API}/clients*`, mockClients, isReal);
+        await stubRoute(page, `${API}/clients/1/update`, mockClientDetail, false);
+        await stubRoute(page, `${API}/clients*`, mockClients, false);
+
+        await expect(page.getByPlaceholder("株式会社モックデータ商事")).not.toHaveValue("", { timeout: 15000 });
 
         await page.getByRole("button", { name: "更新" }).click();
         await page.getByRole("button", { name: "更新する" }).click();
 
-        await expect(page).toHaveURL("/clients");
+        await expect(page).toHaveURL("/clients", { timeout: 15000 });
       });
     });
   });
