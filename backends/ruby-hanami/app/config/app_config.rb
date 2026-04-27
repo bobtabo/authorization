@@ -1,3 +1,5 @@
+# auto_register: false
+
 AppConfig = Struct.new(
   :env, :port, :frontend_url, :staff_cookie_lifetime, :notification_default_limit, :cache_prefix,
   keyword_init: true

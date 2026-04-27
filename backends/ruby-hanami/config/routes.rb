@@ -24,8 +24,8 @@ module Authorization
     delete '/api/staffs/:id/delete',        to: 'staffs.destroy'
 
     # --- admin ---
-    get '/api/admin/invitation',       to: 'admin/invitations.index'
-    get '/api/admin/invitation/issue', to: 'admin/invitations.issue'
+    get '/api/admin/invitation',       to: 'admin.invitations.index'
+    get '/api/admin/invitation/issue', to: 'admin.invitations.issue'
 
     # --- gate ---
     get '/api/gate/issue',                     to: 'gate.issue'
