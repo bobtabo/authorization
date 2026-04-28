@@ -21,21 +21,25 @@ RSpec.describe UseCase::Invitation::Interactor do
     )
   end
 
+  let(:stub_auth_repo) do
+    double("InvitationAuthRepo", store: nil)
+  end
+
   describe "#current" do
     it "returns current invitation from repo" do
-      vo = described_class.new(stub_repo).current
+      vo = described_class.new(stub_repo, stub_auth_repo).current
       expect(vo.token).to eq "tok123"
     end
 
     it "returns nil when no invitation" do
       allow(stub_repo).to receive(:get_current).and_return(nil)
-      expect(described_class.new(stub_repo).current).to be_nil
+      expect(described_class.new(stub_repo, stub_auth_repo).current).to be_nil
     end
   end
 
   describe "#issue" do
     it "returns newly issued invitation" do
-      vo = described_class.new(stub_repo).issue
+      vo = described_class.new(stub_repo, stub_auth_repo).issue
       expect(vo.token).to eq "new-token"
     end
   end
@@ -44,14 +48,14 @@ RSpec.describe UseCase::Invitation::Interactor do
     it "returns vo when token found" do
       vo = make_vo.call("abc")
       allow(stub_repo).to receive(:find_by_token).with("abc").and_return(vo)
-      result = described_class.new(stub_repo).find_by_token(UseCase::Invitation::FindByTokenDto.new(token: "abc"))
+      result = described_class.new(stub_repo, stub_auth_repo).find_by_token(UseCase::Invitation::FindByTokenDto.new(token: "abc"))
       expect(result.token).to eq "abc"
     end
 
     it "raises when token not found" do
       allow(stub_repo).to receive(:find_by_token).and_return(nil)
       expect {
-        described_class.new(stub_repo).find_by_token(UseCase::Invitation::FindByTokenDto.new(token: "bad"))
+        described_class.new(stub_repo, stub_auth_repo).find_by_token(UseCase::Invitation::FindByTokenDto.new(token: "bad"))
       }.to raise_error(RuntimeError)
     end
   end

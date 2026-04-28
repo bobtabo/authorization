@@ -22,38 +22,43 @@ RSpec.describe UseCase::Auth::Interactor do
     )
   end
 
+  let(:stub_auth_repo) do
+    double("InvitationAuthRepo", find: "tok", remove: nil)
+  end
+
   describe "#find_user" do
     it "returns Vo when staff exists" do
-      vo = described_class.new(stub_repo).find_user(1)
+      vo = described_class.new(stub_repo, stub_auth_repo).find_user(1)
       expect(vo.id).to eq 1
       expect(vo.name).to eq "テスト"
     end
 
     it "raises when staff not found" do
       allow(stub_repo).to receive(:find_by_id).and_return(nil)
-      expect { described_class.new(stub_repo).find_user(99) }.to raise_error(RuntimeError)
+      expect { described_class.new(stub_repo, stub_auth_repo).find_user(99) }.to raise_error(RuntimeError)
     end
   end
 
   describe "#login" do
-    let(:dto) do
-      UseCase::Auth::LoginDto.new(
-        provider: 1, provider_id: "g123",
-        name: "テスト", email: "t@example.com", avatar: "http://img"
-      )
-    end
-
     it "returns Vo for new staff (upsert)" do
       allow(stub_repo).to receive(:find_by_provider).and_return(nil)
       allow(stub_repo).to receive(:save).and_return(staff_entity)
-      vo = described_class.new(stub_repo).login(dto)
+      dto = UseCase::Auth::LoginDto.new(
+        provider: 1, provider_id: "g123",
+        name: "テスト", email: "t@example.com", avatar: "http://img", invitation_token: "tok"
+      )
+      vo = described_class.new(stub_repo, stub_auth_repo).login(dto)
       expect(vo.id).to eq 1
     end
 
     it "returns Vo for existing staff (update)" do
       allow(stub_repo).to receive(:find_by_provider).and_return(staff_entity)
       allow(stub_repo).to receive(:save).and_return(staff_entity)
-      vo = described_class.new(stub_repo).login(dto)
+      dto = UseCase::Auth::LoginDto.new(
+        provider: 1, provider_id: "g123",
+        name: "テスト", email: "t@example.com", avatar: "http://img"
+      )
+      vo = described_class.new(stub_repo, stub_auth_repo).login(dto)
       expect(vo.role).to eq Domain::Staff::Role::MEMBER
     end
   end
