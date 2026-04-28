@@ -3,7 +3,7 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 /// クライアントのドメインエンティティ。
 pub struct Client {
@@ -22,13 +22,13 @@ pub struct Client {
     pub public_key:   String,
     pub fingerprint:  String,
     pub status:       i32,
-    pub start_at:     Option<NaiveDateTime>,
-    pub stop_at:      Option<NaiveDateTime>,
-    pub created_at:   NaiveDateTime,
+    pub start_at: Option<DateTime<Utc>>,
+    pub stop_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
     pub created_by:   Option<u32>,
-    pub updated_at:   NaiveDateTime,
+    pub updated_at: DateTime<Utc>,
     pub updated_by:   Option<u32>,
-    pub deleted_at:   Option<NaiveDateTime>,
+    pub deleted_at: Option<DateTime<Utc>>,
     pub deleted_by:   Option<u32>,
     pub version:      i32,
 }

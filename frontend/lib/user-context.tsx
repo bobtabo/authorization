@@ -61,7 +61,12 @@ export function UserProvider({ children }: { children: React.ReactNode }): React
         if (status === 401) {
           localStorage.removeItem(USER_CACHE_KEY);
           setUser(null);
-          if (window.location.pathname !== "/login") {
+          const { pathname } = window.location;
+          if (pathname.startsWith("/error")) {
+            window.location.replace(`/error?code=${status}`);
+          } else if (pathname.startsWith("/login") || pathname.startsWith("/invitation")) {
+            // public page — stay
+          } else {
             window.location.href = "/login";
           }
         }

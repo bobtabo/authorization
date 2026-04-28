@@ -4,7 +4,7 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
 use crate::domain::invitation::{
     value_objects::Vo,
@@ -17,15 +17,15 @@ struct InvitationRow {
     id:         u32,
     token:      String,
     #[allow(dead_code)]
-    created_at: NaiveDateTime,
+    created_at: DateTime<Utc>,
     #[allow(dead_code)]
     created_by: Option<u32>,
     #[allow(dead_code)]
-    updated_at: NaiveDateTime,
+    updated_at: DateTime<Utc>,
     #[allow(dead_code)]
     updated_by: Option<u32>,
     #[allow(dead_code)]
-    deleted_at: Option<NaiveDateTime>,
+    deleted_at: Option<DateTime<Utc>>,
     #[allow(dead_code)]
     deleted_by: Option<u32>,
     #[allow(dead_code)]
@@ -68,7 +68,7 @@ impl Repository for SqlxInvitationRepository {
 
     async fn issue(&self) -> Result<Vo, DomainError> {
         let token = generate_token();
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         sqlx::query(
             "INSERT INTO invitations (token, created_at, updated_at, version) VALUES (?, ?, ?, 0)"
         )

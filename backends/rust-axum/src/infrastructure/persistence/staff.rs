@@ -4,7 +4,7 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use sqlx::{MySqlPool, QueryBuilder};
 use crate::domain::staff::{
     condition::Condition,
@@ -21,12 +21,12 @@ struct StaffRow {
     provider_id:   String,
     avatar:        Option<String>,
     role:          u32,
-    last_login_at: Option<NaiveDateTime>,
-    created_at:    NaiveDateTime,
+    last_login_at: Option<DateTime<Utc>>,
+    created_at: DateTime<Utc>,
     created_by:    Option<u32>,
-    updated_at:    NaiveDateTime,
+    updated_at: DateTime<Utc>,
     updated_by:    Option<u32>,
-    deleted_at:    Option<NaiveDateTime>,
+    deleted_at: Option<DateTime<Utc>>,
     deleted_by:    Option<u32>,
     version:       u32,
 }
@@ -184,7 +184,7 @@ impl Repository for SqlxStaffRepository {
     }
 
     async fn update_role(&self, id: u32, role: i32, updated_by: u32) -> Result<bool, DomainError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         let result = sqlx::query(
             "UPDATE staffs SET role = ?, updated_at = ?, updated_by = ?, version = version + 1 \
              WHERE id = ? AND deleted_at IS NULL"
@@ -199,7 +199,7 @@ impl Repository for SqlxStaffRepository {
     }
 
     async fn soft_delete(&self, id: u32, deleted_by: u32) -> Result<bool, DomainError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         let result = sqlx::query(
             "UPDATE staffs SET deleted_at = ?, deleted_by = ? \
              WHERE id = ? AND deleted_at IS NULL"

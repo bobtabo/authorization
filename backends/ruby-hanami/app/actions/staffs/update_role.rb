@@ -20,7 +20,7 @@ module Authorization
           id = request.params[:id].to_i
           transaction do
             container[:staff_uc].update_role(
-              UseCase::Staff::UpdateRoleDto.new(
+              ::UseCase::Staff::UpdateRoleDto.new(
                 id: id, role: request.params[:role].to_i, executor_id: executor_id
               )
             )

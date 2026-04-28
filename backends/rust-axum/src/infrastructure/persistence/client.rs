@@ -4,7 +4,7 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use sqlx::{MySqlPool, QueryBuilder};
 use crate::domain::client::{
     condition::Condition,
@@ -21,7 +21,7 @@ struct ClientRow {
     pref:         String,
     city:         String,
     address:      String,
-    building:     String,
+    building:     Option<String>,
     tel:          String,
     email:        String,
     access_token: String,
@@ -29,13 +29,13 @@ struct ClientRow {
     public_key:   String,
     fingerprint:  String,
     status:       u32,
-    start_at:     Option<NaiveDateTime>,
-    stop_at:      Option<NaiveDateTime>,
-    created_at:   NaiveDateTime,
+    start_at: Option<DateTime<Utc>>,
+    stop_at: Option<DateTime<Utc>>,
+    created_at: DateTime<Utc>,
     created_by:   Option<u32>,
-    updated_at:   NaiveDateTime,
+    updated_at: DateTime<Utc>,
     updated_by:   Option<u32>,
-    deleted_at:   Option<NaiveDateTime>,
+    deleted_at: Option<DateTime<Utc>>,
     deleted_by:   Option<u32>,
     version:      u32,
 }
@@ -49,7 +49,7 @@ fn row_to_entity(r: ClientRow) -> Client {
         pref:         r.pref,
         city:         r.city,
         address:      r.address,
-        building:     r.building,
+        building:     r.building.unwrap_or_default(),
         tel:          r.tel,
         email:        r.email,
         access_token: r.access_token,
@@ -219,7 +219,7 @@ impl Repository for SqlxClientRepository {
     }
 
     async fn soft_delete(&self, id: u64, deleted_by: u32) -> Result<(), DomainError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         sqlx::query(
             "UPDATE clients SET deleted_at = ?, deleted_by = ? WHERE id = ?"
         )

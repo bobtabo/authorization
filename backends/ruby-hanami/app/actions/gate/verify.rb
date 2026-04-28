@@ -22,7 +22,7 @@ module Authorization
           end
 
           v = container[:gate_uc].verify(
-            UseCase::Gate::VerifyDto.new(
+            ::UseCase::Gate::VerifyDto.new(
               identifier: request.params[:identifier],
               token:      token,
             )

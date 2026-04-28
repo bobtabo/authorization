@@ -102,7 +102,7 @@ mod tests {
     }
 
     fn make_staff(id: u32, deleted: bool) -> Staff {
-        let now = chrono::NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let now = chrono::Utc::now();
         Staff {
             id,
             name:          "Test Staff".to_string(),

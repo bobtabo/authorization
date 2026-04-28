@@ -20,7 +20,7 @@ module Authorization
           id = request.params[:id].to_i
           transaction do
             container[:staff_uc].destroy(
-              UseCase::Staff::DestroyDto.new(id: id, executor_id: executor_id)
+              ::UseCase::Staff::DestroyDto.new(id: id, executor_id: executor_id)
             )
           end
           json_response(response, { id: id })

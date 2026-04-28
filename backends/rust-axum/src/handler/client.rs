@@ -80,7 +80,10 @@ pub async fn index(
             })).collect();
             (StatusCode::OK, Json(json!(list)))
         }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+        Err(e) => {
+            tracing::error!("client index error: {e}");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})))
+        }
     }
 }
 

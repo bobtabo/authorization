@@ -4,7 +4,7 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use std::sync::Arc;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use crate::domain::client::{
     condition::Condition,
     entity::Client,
@@ -58,7 +58,7 @@ impl Interactor {
         rand::RngCore::fill_bytes(&mut rand::rngs::OsRng, &mut id_bytes);
         let identifier = hex::encode(id_bytes);
 
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         let c = Client {
             id:           0,
             name:         dto.name,
@@ -110,7 +110,7 @@ impl Interactor {
         if let Some(v) = dto.email       { c.email     = v; }
 
         if let Some(status) = dto.status {
-            let now = chrono::Local::now().naive_local();
+            let now = chrono::Utc::now();
             if status == 2 && c.start_at.is_none() {
                 c.start_at = Some(now);
                 c.stop_at  = None;
@@ -121,7 +121,7 @@ impl Interactor {
             c.status = status;
         }
 
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         c.updated_at = now;
         c.updated_by = Some(dto.executor_id);
 
@@ -134,7 +134,7 @@ impl Interactor {
         let mut c = self.repo.find_by_id(id).await?
             .ok_or_else(|| simple_err("client_not_found"))?;
 
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         c.status     = 4;
         c.updated_at = now;
         c.updated_by = Some(executor_id);
@@ -187,9 +187,11 @@ fn to_detail_vo(c: Client) -> DetailVo {
     }
 }
 
-fn parse_datetime(s: &str) -> Option<NaiveDateTime> {
+fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
+    use chrono::NaiveDateTime;
     NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()
-        .or_else(|| NaiveDateTime::parse_from_str(s, "%Y-%m-%d").ok())
+        .or_else(|| NaiveDateTime::parse_from_str(s, "%Y-%m-%d 00:00:00").ok())
+        .map(|dt| DateTime::from_naive_utc_and_offset(dt, Utc))
 }
 
 fn simple_err(msg: &str) -> UseCaseError {
@@ -264,7 +266,7 @@ mod tests {
     }
 
     fn make_client(id: u64) -> Client {
-        let now = chrono::NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let now = chrono::Utc::now();
         Client {
             id,
             name:         "Test Client".to_string(),

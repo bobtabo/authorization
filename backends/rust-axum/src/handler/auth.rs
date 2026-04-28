@@ -4,33 +4,129 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
-    response::Redirect,
+    response::{IntoResponse, Redirect},
     Json,
 };
+use axum_extra::extract::cookie::{Cookie, SameSite};
 use axum_extra::extract::CookieJar;
+use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::{
     state::AppState,
+    usecase::auth::dto::LoginDto,
     usecase::invitation::dto::FindByTokenDto,
 };
 use super::staff_id_from_cookie;
+
+const GOOGLE_TOKEN_URL:    &str = "https://oauth2.googleapis.com/token";
+const GOOGLE_USERINFO_URL: &str = "https://www.googleapis.com/oauth2/v2/userinfo";
+
+#[derive(Deserialize)]
+pub struct GoogleCallbackQuery {
+    code: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct TokenResponse {
+    access_token: String,
+}
+
+#[derive(Deserialize)]
+struct GoogleUserInfo {
+    id:      String,
+    name:    String,
+    email:   String,
+    picture: Option<String>,
+}
 
 /// Google OAuth リダイレクト URL へ転送します。
 pub async fn google_redirect(State(state): State<AppState>) -> Redirect {
     let url = format!(
         "https://accounts.google.com/o/oauth2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email+profile&access_type=online&state=state",
         state.cfg.oauth.google_client_id,
-        state.cfg.oauth.google_redirect_url,
+        percent_encoding::utf8_percent_encode(&state.cfg.oauth.google_redirect_url, percent_encoding::NON_ALPHANUMERIC),
     );
     Redirect::temporary(&url)
 }
 
-/// Google OAuth コールバックを処理します。
-pub async fn google_callback(State(_state): State<AppState>) -> StatusCode {
-    StatusCode::OK
+/// Google OAuth コールバックを処理してセッションを発行します。
+pub async fn google_callback(
+    State(state): State<AppState>,
+    jar: CookieJar,
+    Query(params): Query<GoogleCallbackQuery>,
+) -> impl IntoResponse {
+    let cfg       = &state.cfg;
+    let error_url = format!("{}/error?code=500", cfg.app.frontend_url);
+
+    let code = match params.code.filter(|c| !c.is_empty()) {
+        Some(c) => c,
+        None    => return (jar, Redirect::temporary(&format!("{}/error?code=400", cfg.app.frontend_url))).into_response(),
+    };
+
+    let client = reqwest::Client::new();
+
+    let token_resp = client
+        .post(GOOGLE_TOKEN_URL)
+        .form(&[
+            ("client_id",     cfg.oauth.google_client_id.as_str()),
+            ("client_secret", cfg.oauth.google_client_secret.as_str()),
+            ("redirect_uri",  cfg.oauth.google_redirect_url.as_str()),
+            ("code",          code.as_str()),
+            ("grant_type",    "authorization_code"),
+        ])
+        .send().await;
+
+    let token: TokenResponse = match token_resp {
+        Ok(r) => match r.json::<TokenResponse>().await {
+            Ok(t)  => t,
+            Err(e) => { tracing::error!("token parse failed: {}", e); return (jar, Redirect::temporary(&error_url)).into_response(); }
+        },
+        Err(e) => { tracing::error!("token exchange failed: {}", e); return (jar, Redirect::temporary(&error_url)).into_response(); }
+    };
+
+    let userinfo_resp = client
+        .get(GOOGLE_USERINFO_URL)
+        .bearer_auth(&token.access_token)
+        .send().await;
+
+    let user_info: GoogleUserInfo = match userinfo_resp {
+        Ok(r) => match r.json::<GoogleUserInfo>().await {
+            Ok(u)  => u,
+            Err(e) => { tracing::error!("userinfo parse failed: {}", e); return (jar, Redirect::temporary(&error_url)).into_response(); }
+        },
+        Err(e) => { tracing::error!("userinfo fetch failed: {}", e); return (jar, Redirect::temporary(&error_url)).into_response(); }
+    };
+
+    let dto = LoginDto {
+        provider:    1,
+        provider_id: user_info.id,
+        name:        user_info.name,
+        email:       user_info.email,
+        avatar:      user_info.picture,
+    };
+
+    let vo = match state.auth_uc.login(dto).await {
+        Ok(v)  => v,
+        Err(e) => {
+            tracing::error!("login failed: {}", e);
+            return (jar, Redirect::temporary(&error_url)).into_response();
+        }
+    };
+
+    let max_age = time::Duration::seconds(cfg.app.staff_cookie_lifetime * 60);
+    let secure  = cfg.app.env == "production";
+    let cookie  = Cookie::build(("staff_id", vo.id.to_string()))
+        .path("/")
+        .http_only(true)
+        .max_age(max_age)
+        .same_site(SameSite::Lax)
+        .secure(secure)
+        .build();
+
+    (jar.add(cookie), Redirect::temporary(&format!("{}/clients", cfg.app.frontend_url))).into_response()
 }
 
 /// ログイン中スタッフのプロフィールを返します。

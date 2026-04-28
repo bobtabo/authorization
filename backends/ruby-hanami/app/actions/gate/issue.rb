@@ -24,7 +24,7 @@ module Authorization
           auth         = request.env.fetch("HTTP_AUTHORIZATION", "")
           access_token = auth.delete_prefix("Bearer ").strip
           v = container[:gate_uc].issue_token(
-            UseCase::Gate::IssueDto.new(access_token: access_token, member_id: member)
+            ::UseCase::Gate::IssueDto.new(access_token: access_token, member_id: member)
           )
           json_response(response, { token: v.token })
         end

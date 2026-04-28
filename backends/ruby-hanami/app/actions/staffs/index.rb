@@ -19,7 +19,7 @@ module Authorization
           keyword = request.params[:keyword]
           roles   = Array(request.params[:roles]).flat_map { |r| r.to_s.split(",") }.filter_map(&:to_i)
           staffs  = container[:staff_uc].find_by_condition(
-            Domain::Staff::Condition.new(keyword: keyword, roles: roles)
+            ::Domain::Staff::Condition.new(keyword: keyword, roles: roles)
           )
           json_response(response, { items: staffs.map { |s|
             {

@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use base64::Engine;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 use sqlx::{MySqlPool, QueryBuilder};
 use crate::domain::notification::{
     entity::Notification,
@@ -22,11 +22,11 @@ struct NotificationRow {
     message:      String,
     url:          Option<String>,
     read:         bool,
-    created_at:   NaiveDateTime,
+    created_at: DateTime<Utc>,
     created_by:   Option<u32>,
-    updated_at:   NaiveDateTime,
+    updated_at: DateTime<Utc>,
     updated_by:   Option<u32>,
-    deleted_at:   Option<NaiveDateTime>,
+    deleted_at: Option<DateTime<Utc>>,
     deleted_by:   Option<u32>,
     version:      u32,
 }
@@ -89,7 +89,7 @@ impl Repository for SqlxNotificationRepository {
         if let Some(c) = cursor {
             if let Some((ts, cid)) = decode_cursor(c) {
                 let ts_dt = chrono::DateTime::from_timestamp(ts, 0)
-                    .map(|d| d.naive_utc());
+                    ;
                 if let Some(dt) = ts_dt {
                     qb.push(" AND (created_at < ");
                     qb.push_bind(dt);
@@ -110,7 +110,7 @@ impl Repository for SqlxNotificationRepository {
         let next_cursor = if rows.len() as i32 > limit {
             rows.truncate(limit as usize);
             let last = &rows[rows.len() - 1];
-            Some(encode_cursor(last.created_at.and_utc().timestamp(), last.id as i64))
+            Some(encode_cursor(last.created_at.timestamp(), last.id as i64))
         } else {
             None
         };
@@ -140,7 +140,7 @@ impl Repository for SqlxNotificationRepository {
     }
 
     async fn bulk_mark_read(&self, staff_id: i64, ids: Vec<i64>, all: bool) -> Result<i64, DomainError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
             "UPDATE notifications SET `read` = true, updated_at = "
         );
@@ -163,7 +163,7 @@ impl Repository for SqlxNotificationRepository {
     }
 
     async fn store(&self, staff_id: u32, message_type: i32, title: &str, message: &str, created_by: u32, url: Option<&str>) -> Result<(), DomainError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         sqlx::query(
             "INSERT INTO notifications (staff_id, message_type, title, message, url, `read`, \
              created_at, created_by, updated_at, updated_by, version) \
@@ -184,7 +184,7 @@ impl Repository for SqlxNotificationRepository {
     }
 
     async fn patch(&self, id: i64, read: bool) -> Result<bool, DomainError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         let result = sqlx::query(
             "UPDATE notifications SET `read` = ?, updated_at = ? WHERE id = ?"
         )

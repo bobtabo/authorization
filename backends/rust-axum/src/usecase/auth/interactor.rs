@@ -34,7 +34,7 @@ impl Interactor {
 
     /// OAuth 情報でスタッフを upsert してログインし、VO を返します。
     pub async fn login(&self, dto: LoginDto) -> Result<Vo, UseCaseError> {
-        let now = chrono::Local::now().naive_local();
+        let now = chrono::Utc::now();
         let existing = self.staff_repo.find_by_provider(dto.provider, &dto.provider_id).await?;
 
         let saved = if let Some(mut s) = existing {
@@ -53,9 +53,9 @@ impl Interactor {
                 role:          ROLE_MEMBER,
                 last_login_at: Some(now),
                 created_at:    now,
-                created_by:    None,
+                created_by:    Some(0),
                 updated_at:    now,
-                updated_by:    None,
+                updated_by:    Some(0),
                 deleted_at:    None,
                 deleted_by:    None,
                 version:       0,
@@ -104,7 +104,7 @@ mod tests {
     }
 
     fn make_staff(id: u32) -> Staff {
-        let now = chrono::NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let now = chrono::Utc::now();
         Staff {
             id,
             name:          "Alice".to_string(),

@@ -20,7 +20,7 @@ module Authorization
           p = request.params
           client = transaction do
             container[:client_uc].update(
-              UseCase::Client::UpdateDto.new(
+              ::UseCase::Client::UpdateDto.new(
                 id:          p[:id].to_i,
                 name:        p[:name],
                 post_code:   p[:post_code],

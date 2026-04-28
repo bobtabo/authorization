@@ -20,7 +20,7 @@ module Authorization
           p = request.params
           client = transaction do
             c = container[:client_uc].store(
-              UseCase::Client::StoreDto.new(
+              ::UseCase::Client::StoreDto.new(
                 name:        p[:name].to_s,
                 post_code:   p[:post_code].to_s,
                 pref:        p[:pref].to_s,
@@ -33,7 +33,7 @@ module Authorization
               )
             )
             container[:notification_uc].fan_out(
-              UseCase::Notification::FanOutDto.new(
+              ::UseCase::Notification::FanOutDto.new(
                 title:        "新しいクライアントが登録されました",
                 message:      c.name,
                 message_type: 1,

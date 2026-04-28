@@ -131,7 +131,7 @@ mod tests {
     }
 
     fn make_notification(id: u64) -> Notification {
-        let now = chrono::NaiveDateTime::parse_from_str("2024-01-01 12:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let now = chrono::Utc::now();
         Notification {
             id,
             staff_id:     1,
@@ -151,7 +151,7 @@ mod tests {
     }
 
     fn make_staff(id: u32) -> Staff {
-        let now = chrono::NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let now = chrono::Utc::now();
         Staff {
             id,
             name: "Staff".to_string(), email: "s@example.com".to_string(),

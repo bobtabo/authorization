@@ -3,7 +3,7 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 /// スタッフ一覧レスポンス用 VO。
 pub struct ListItem {
@@ -13,8 +13,8 @@ pub struct ListItem {
     pub role:       i32,
     /// 0=削除済み, 1=有効。
     pub status:     i32,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 /// ログイン中スタッフ情報レスポンス用 VO。

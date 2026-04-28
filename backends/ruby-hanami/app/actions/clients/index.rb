@@ -17,7 +17,7 @@ module Authorization
         # @return [void]
         def handle(request, response)
           clients = container[:client_uc].find_by_condition(
-            UseCase::Client::ListConditionDto.new(
+            ::UseCase::Client::ListConditionDto.new(
               keyword:    request.params[:keyword],
               start_from: request.params[:start_from],
               start_to:   request.params[:start_to],

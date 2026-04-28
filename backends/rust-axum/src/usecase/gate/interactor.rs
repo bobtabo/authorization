@@ -156,7 +156,7 @@ mod tests {
     }
 
     fn make_client() -> Client {
-        let now = chrono::NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+        let now = chrono::Utc::now();
         Client {
             id: 1, name: "C".to_string(), identifier: "id1".to_string(),
             post_code: "".to_string(), pref: "".to_string(), city: "".to_string(),
