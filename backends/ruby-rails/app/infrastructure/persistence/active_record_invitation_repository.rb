@@ -24,7 +24,7 @@ module Infrastructure
       def issue
         token = SecureRandom.hex(16)
         now   = Time.current
-        @model.create!(token: token, created_at: now, updated_at: now)
+        @model.create!(token: token, created_at: now, created_by: 0, updated_at: now, updated_by: 0)
         build_vo(token)
       end
 
@@ -36,9 +36,23 @@ module Infrastructure
       private
 
       def build_vo(token)
-        url         = "#{@frontend_url}/register?token=#{token}"
-        display_url = url.length > 50 ? "#{url[0, 47]}..." : url
+        url         = "#{@frontend_url}/invitation/#{token}"
+        display_url = build_display_url(url)
         Domain::Invitation::Vo.new(token: token, url: url, display_url: display_url)
+      end
+
+      def build_display_url(url)
+        seg = "/invitation/"
+        idx = url.index(seg)
+        if idx
+          base   = url[0, idx + seg.length]
+          after  = url[idx + seg.length..]
+          tok_end = (after.index(/[?#]/) || after.length)
+          tok    = after[0, tok_end]
+          suffix = after[tok_end..]
+          return "#{base}#{tok[0, 6]}...#{tok[-4..]}#{suffix}" if tok.length > 13
+        end
+        url.length > 72 ? "#{url[0, 68]}..." : url
       end
     end
   end

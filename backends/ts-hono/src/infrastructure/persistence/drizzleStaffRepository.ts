@@ -43,10 +43,10 @@ export class DrizzleStaffRepository implements StaffRepository {
   async upsert(data: typeof staffs.$inferInsert): Promise<Staff> {
     const existing = await this.findByProvider(data.provider, data.providerId);
     if (existing) {
-      await this.db.update(staffs).set({ name: data.name, email: data.email, avatar: data.avatar, updatedAt: new Date() }).where(eq(staffs.id, existing.id));
+      await this.db.update(staffs).set({ name: data.name, email: data.email, avatar: data.avatar, lastLoginAt: data.lastLoginAt ?? null, updatedAt: new Date() }).where(eq(staffs.id, existing.id));
       return (await this.db.select().from(staffs).where(eq(staffs.id, existing.id)).limit(1))[0]!;
     }
-    await this.db.insert(staffs).values(data);
+    await this.db.insert(staffs).values({ ...data, createdBy: 0, updatedBy: 0 });
     return (await this.db.select().from(staffs).where(and(eq(staffs.provider, data.provider), eq(staffs.providerId, data.providerId))).limit(1))[0]!;
   }
 

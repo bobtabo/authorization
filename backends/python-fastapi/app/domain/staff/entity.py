@@ -18,6 +18,7 @@ class Staff:
     provider_id: str = ""
     avatar: Optional[str] = None
     role: int = 0
+    last_login_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None

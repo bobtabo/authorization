@@ -64,6 +64,7 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 			return nil, err
 		}
 
+		zero := uint(0)
 		newStaff := &domstaff.Staff{
 			Name:        dto.Name,
 			Email:       dto.Email,
@@ -73,7 +74,9 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 			Role:        domstaff.RoleMember,
 			LastLoginAt: &now,
 			CreatedAt:   now,
+			CreatedBy:   &zero,
 			UpdatedAt:   now,
+			UpdatedBy:   &zero,
 		}
 		saved, err := uc.staffRepo.Save(newStaff)
 		if err != nil {

@@ -35,5 +35,7 @@ services:
       - ./../../../backends/rust-axum:/var/www/${APP_NAME}
     working_dir: /var/www/${APP_NAME}
     command: cargo watch -x run
+    environment:
+      - APP_ENV=local
     networks:
       - authorization

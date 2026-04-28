@@ -32,6 +32,7 @@ def _to_entity(m: StaffModel) -> Staff:
         provider_id=m.provider_id,
         avatar=m.avatar,
         role=m.role,
+        last_login_at=m.last_login_at,
         created_at=m.created_at,
         updated_at=m.updated_at,
         deleted_at=m.deleted_at,
@@ -149,6 +150,7 @@ class SqlAlchemyStaffRepository(StaffRepository):
         m.provider_id = staff.provider_id
         m.avatar = staff.avatar
         m.role = staff.role
+        m.last_login_at = staff.last_login_at
         m.deleted_at = staff.deleted_at
 
         self.db.add(m)

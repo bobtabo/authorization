@@ -65,13 +65,17 @@ pub struct MailConfig {
 
 impl Config {
     pub fn load() -> Self {
-        // ENV_FILE 指定があればそれを使う。なければ .env.testing.local → .env.testing → .env の順で先読み。
+        // ENV_FILE 指定があればそれを使う。
+        // APP_ENV=testing のときのみ .env.testing.local → .env.testing → .env の順で先読み。
+        // それ以外（ローカル開発・本番）は .env のみ。
         // dotenvy::from_filename は既存の env var を上書きしないため CI のシステム env vars が優先される。
         if let Ok(f) = env::var("ENV_FILE") {
             let _ = dotenvy::from_filename(&f);
-        } else {
+        } else if env::var("APP_ENV").as_deref() == Ok("testing") {
             let _ = dotenvy::from_filename(".env.testing.local");
             let _ = dotenvy::from_filename(".env.testing");
+            let _ = dotenvy::from_filename(".env");
+        } else {
             let _ = dotenvy::from_filename(".env");
         }
 

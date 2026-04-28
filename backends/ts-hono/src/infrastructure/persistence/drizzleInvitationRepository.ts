@@ -18,7 +18,7 @@ export class DrizzleInvitationRepository implements InvitationRepository {
   }
 
   async issue(token: string): Promise<Invitation> {
-    await this.db.insert(invitations).values({ token });
+    await this.db.insert(invitations).values({ token, createdBy: 0, updatedBy: 0 });
     const rows = await this.db.select().from(invitations).where(eq(invitations.token, token)).limit(1);
     return rows[0]!;
   }

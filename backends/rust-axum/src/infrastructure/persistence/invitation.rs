@@ -45,12 +45,8 @@ impl SqlxInvitationRepository {
     }
 
     fn build_vo(&self, token: &str) -> Vo {
-        let url = format!("{}/register?token={}", self.frontend_url, token);
-        let display_url = if url.len() > 50 {
-            format!("{}...{}", &url[..20], &url[url.len() - 20..])
-        } else {
-            url.clone()
-        };
+        let url         = format!("{}/invitation/{}", self.frontend_url, token);
+        let display_url = build_display_url(&url);
         Vo { token: token.to_string(), url, display_url }
     }
 }
@@ -70,7 +66,7 @@ impl Repository for SqlxInvitationRepository {
         let token = generate_token();
         let now = chrono::Utc::now();
         sqlx::query(
-            "INSERT INTO invitations (token, created_at, updated_at, version) VALUES (?, ?, ?, 0)"
+            "INSERT INTO invitations (token, created_at, created_by, updated_at, updated_by, version) VALUES (?, ?, 0, ?, 0, 1)"
         )
         .bind(&token)
         .bind(now)
@@ -82,13 +78,30 @@ impl Repository for SqlxInvitationRepository {
 
     async fn find_by_token(&self, token: &str) -> Result<Option<Vo>, DomainError> {
         let row = sqlx::query_as::<_, InvitationRow>(
-            "SELECT * FROM invitations WHERE token = ? AND deleted_at IS NULL LIMIT 1"
+            "SELECT * FROM invitations WHERE token = ? LIMIT 1"
         )
         .bind(token)
         .fetch_optional(&self.pool)
         .await?;
         Ok(row.map(|r| self.build_vo(&r.token)))
     }
+}
+
+fn build_display_url(url: &str) -> String {
+    const SEG: &str = "/invitation/";
+    const HEAD: usize = 6;
+    const TAIL: usize = 4;
+    if let Some(idx) = url.find(SEG) {
+        let base  = &url[..idx + SEG.len()];
+        let after = &url[idx + SEG.len()..];
+        let tok_end = after.find(|c| c == '?' || c == '#').unwrap_or(after.len());
+        let tok    = &after[..tok_end];
+        let suffix = &after[tok_end..];
+        if tok.len() > HEAD + TAIL + 3 {
+            return format!("{}{}...{}{}", base, &tok[..HEAD], &tok[tok.len() - TAIL..], suffix);
+        }
+    }
+    if url.len() > 72 { format!("{}...", &url[..68]) } else { url.to_string() }
 }
 
 fn generate_token() -> String {

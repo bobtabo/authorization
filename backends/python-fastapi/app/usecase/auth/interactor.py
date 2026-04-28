@@ -3,6 +3,7 @@
 
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
+from datetime import datetime, timezone
 from typing import Optional
 
 from app.domain.invitation.auth_repository import InvitationAuthRepository
@@ -72,6 +73,7 @@ class AuthInteractor:
             if not token or self.invitation_auth_repo.find(token) is None:
                 raise forbidden("invitation_required")
             self.invitation_auth_repo.remove(token)
+            now = datetime.now(timezone.utc)
             staff = Staff(
                 provider=dto.provider,
                 provider_id=dto.provider_id,
@@ -79,10 +81,12 @@ class AuthInteractor:
                 email=dto.email,
                 avatar=dto.avatar,
                 role=0,
+                last_login_at=now,
             )
         else:
             staff.name = dto.name
             staff.email = dto.email
             staff.avatar = dto.avatar
+            staff.last_login_at = datetime.now(timezone.utc)
         saved = self.staff_repo.save_staff(staff)
         return _staff_to_vo(saved)

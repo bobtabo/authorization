@@ -45,6 +45,7 @@ export class AuthInteractor {
         email: input.email,
         avatar: input.avatar ?? null,
         role: existing.role ?? 0,
+        lastLoginAt: new Date(),
       });
       return toStaffVo(staff);
     }
@@ -62,6 +63,7 @@ export class AuthInteractor {
       email: input.email,
       avatar: input.avatar ?? null,
       role: 0,
+      lastLoginAt: new Date(),
     });
     return toStaffVo(staff);
   }

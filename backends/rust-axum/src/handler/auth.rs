@@ -203,6 +203,9 @@ pub async fn invitation(
             "display_url": v.display_url,
             "token":       v.token,
         }))),
-        Err(_) => (StatusCode::BAD_REQUEST, Json(json!({"error": "invitation_invalid"}))),
+        Err(e) => {
+            tracing::error!("invitation find_by_token failed: {}", e);
+            (StatusCode::BAD_REQUEST, Json(json!({"error": "invitation_invalid"})))
+        }
     }
 }

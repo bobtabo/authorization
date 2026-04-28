@@ -50,7 +50,9 @@ class ExposedInvitationRepository(private val db: Database, private val cfg: Con
         Invitations.insert {
             it[Invitations.token]     = token
             it[Invitations.createdAt] = now
+            it[Invitations.createdBy] = 0
             it[Invitations.updatedAt] = now
+            it[Invitations.updatedBy] = 0
         }
         buildVo(token)
     }
@@ -75,8 +77,22 @@ class ExposedInvitationRepository(private val db: Database, private val cfg: Con
     }
 
     private fun buildVo(token: String): Vo {
-        val url        = "${cfg.app.frontendUrl}/register?token=$token"
-        val displayUrl = if (url.length > 50) url.substring(0, 47) + "..." else url
+        val url        = "${cfg.app.frontendUrl}/invitation/$token"
+        val displayUrl = buildDisplayUrl(url)
         return Vo(token = token, url = url, displayUrl = displayUrl)
+    }
+
+    private fun buildDisplayUrl(url: String): String {
+        val seg = "/invitation/"
+        val idx = url.indexOf(seg)
+        if (idx != -1) {
+            val base   = url.substring(0, idx + seg.length)
+            val after  = url.substring(idx + seg.length)
+            val tokEnd = after.indexOfFirst { it == '?' || it == '#' }.takeIf { it >= 0 } ?: after.length
+            val tok    = after.substring(0, tokEnd)
+            val suffix = after.substring(tokEnd)
+            if (tok.length > 13) return "${base}${tok.take(6)}...${tok.takeLast(4)}$suffix"
+        }
+        return if (url.length > 72) url.take(68) + "..." else url
     }
 }

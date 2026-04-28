@@ -13,7 +13,11 @@ export interface Staff {
   providerId: string;
   avatar: string | null;
   role: number | null;
+  lastLoginAt: Date | null;
   createdAt: Date | null;
+  createdBy: number | null;
   updatedAt: Date | null;
+  updatedBy: number | null;
   deletedAt: Date | null;
+  version: number;
 }

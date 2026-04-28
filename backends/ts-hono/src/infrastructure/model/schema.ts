@@ -42,17 +42,26 @@ export const staffs = mysqlTable("staffs", {
   provider: int("provider").notNull(),
   providerId: varchar("provider_id", { length: 255 }).notNull(),
   avatar: varchar("avatar", { length: 255 }),
-  role: int("role").default(0),
+  role: int("role", { unsigned: true }).default(2),
+  lastLoginAt: datetime("last_login_at"),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  createdBy: int("created_by", { unsigned: true }),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedBy: int("updated_by", { unsigned: true }),
   deletedAt: datetime("deleted_at"),
+  version: int("version", { unsigned: true }).notNull().default(1),
 });
 
 export const invitations = mysqlTable("invitations", {
   id: bigint("id", { mode: "number", unsigned: true }).primaryKey().autoincrement(),
   token: varchar("token", { length: 255 }).notNull(),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  createdBy: int("created_by", { unsigned: true }),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedBy: int("updated_by", { unsigned: true }),
+  deletedAt: datetime("deleted_at"),
+  deletedBy: int("deleted_by", { unsigned: true }),
+  version: int("version", { unsigned: true }).notNull().default(1),
 });
 
 export const notifications = mysqlTable("notifications", {

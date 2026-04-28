@@ -45,11 +45,14 @@ func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now()
+	now  := time.Now()
+	zero := uint(0)
 	m := model.Invitation{
 		Token:     token,
 		CreatedAt: now,
+		CreatedBy: &zero,
 		UpdatedAt: now,
+		UpdatedBy: &zero,
 	}
 	if err = r.db.Create(&m).Error; err != nil {
 		return nil, err

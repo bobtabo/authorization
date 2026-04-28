@@ -56,8 +56,11 @@ class StaffModel(Base):
     provider_id: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     role: Mapped[int] = mapped_column(Integer, default=0)
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
