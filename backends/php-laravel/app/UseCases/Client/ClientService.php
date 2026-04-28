@@ -30,6 +30,11 @@ use Carbon\Carbon;
  */
 class ClientService extends AbstractService
 {
+    /**
+     * コンストラクタ。
+     *
+     * @param ClientRepository $repository クライアントRepository
+     */
     public function __construct(
         private readonly ClientRepository $repository,
     ) {

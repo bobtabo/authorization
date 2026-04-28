@@ -12,10 +12,12 @@ namespace App\Providers;
 
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Gate\Repositories\GateRepository;
+use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Cache\RedisGateRepository;
+use App\Infrastructure\Cache\RedisInvitationAuthRepository;
 use App\Infrastructure\Persistence\EloquentClientRepository;
 use App\Infrastructure\Persistence\EloquentInvitationRepository;
 use App\Infrastructure\Persistence\EloquentNotificationRepository;
@@ -51,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(InvitationRepository::class, EloquentInvitationRepository::class);
         $this->app->bind(NotificationRepository::class, EloquentNotificationRepository::class);
         $this->app->bind(GateRepository::class, RedisGateRepository::class);
+        $this->app->bind(InvitationAuthRepository::class, RedisInvitationAuthRepository::class);
 
         // アプリケーションサービス（ユースケース）
         $this->app->singleton(AuthService::class);

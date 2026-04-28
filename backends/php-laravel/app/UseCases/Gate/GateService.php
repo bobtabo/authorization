@@ -34,6 +34,8 @@ use Throwable;
 class GateService extends AbstractService
 {
     /**
+     * コンストラクタ。
+     *
      * @param ClientRepository $clientRepository クライアントリポジトリ
      * @param GateRepository $gateRepository 認可リポジトリ
      */

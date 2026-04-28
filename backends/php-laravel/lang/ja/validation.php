@@ -190,6 +190,7 @@ return [
         // 招待
         'invitation_not_found' => '招待情報がありません。',
         'invitation_invalid' => '招待が無効です。',
+        'invitation_required' => '招待URLを経由してください。',
         // 通知
         'notification_not_found' => '通知を更新できませんでした。',
         'notification_accepted' => '受理しました（非同期処理は未接続です）。',

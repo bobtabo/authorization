@@ -36,6 +36,8 @@ class NotificationService extends AbstractService
     use EnumValue;
 
     /**
+     * コンストラクタ。
+     *
      * @param NotificationRepository $notificationRepository 通知Repository
      * @param StaffRepository $staffRepository スタッフRepository
      */

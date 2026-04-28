@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\UseCases\Invitation;
 
 use App\Domain\Invitation\Condition\InvitationCondition;
+use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Domain\Invitation\ValueObjects\InvitationVo;
 use App\Support\Exceptions\AppException;
@@ -28,10 +29,14 @@ use Random\RandomException;
 class InvitationService extends AbstractService
 {
     /**
-     * @param InvitationRepository $repository 招待Repository
+     * コンストラクタ。
+     *
+     * @param InvitationRepository $invitationRepository 招待Repository
+     * @param InvitationAuthRepository $invitationAuthRepository 招待認証Repository
      */
     public function __construct(
-        private readonly InvitationRepository $repository,
+        private readonly InvitationRepository $invitationRepository,
+        private readonly InvitationAuthRepository $invitationAuthRepository,
     ) {
     }
 
@@ -44,7 +49,7 @@ class InvitationService extends AbstractService
     public function current(InvitationDto $dto): InvitationVo
     {
         unset($dto);
-        $entity = $this->repository->getCurrent();
+        $entity = $this->invitationRepository->getCurrent();
         if ($entity === null) {
             throw AppException::notFound('invitation_not_found');
         }
@@ -67,10 +72,10 @@ class InvitationService extends AbstractService
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
-        $entity = $this->repository->getCurrent();
+        $entity = $this->invitationRepository->getCurrent();
         $entity->token = bin2hex(random_bytes(16));
         $entity->assignUpdated($dto->executorId);
-        $saved = $this->repository->persist($entity);
+        $saved = $this->invitationRepository->persist($entity);
 
         $url = $this->buildUrl($saved->token);
         return new InvitationVo()->assign([
@@ -95,10 +100,13 @@ class InvitationService extends AbstractService
         }
 
         $condition = SimpleMapper::map($dto, InvitationCondition::class);
-        $entity = $this->repository->findByToken($condition);
+        $entity = $this->invitationRepository->findByToken($condition);
         if ($entity === null) {
             throw AppException::badRequest('invitation_invalid');
         }
+
+        // 招待トークンを一時保存（10分間）
+        $this->invitationAuthRepository->store($entity->token, 600);
 
         $url = $this->buildUrl($entity->token);
         return new InvitationVo()->assign([

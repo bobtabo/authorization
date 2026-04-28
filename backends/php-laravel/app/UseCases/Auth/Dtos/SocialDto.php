@@ -27,4 +27,5 @@ class SocialDto extends AbstractDto
     public ?string $name = null;
     public ?string $email = null;
     public ?string $avatar = null;
+    public ?string $invitationToken = null;
 }
