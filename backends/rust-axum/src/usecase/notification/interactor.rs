@@ -92,6 +92,7 @@ fn to_item(n: Notification) -> NotificationItem {
 mod tests {
     use super::*;
     use async_trait::async_trait;
+    use chrono::TimeZone;
     use std::sync::Mutex;
     use crate::domain::{
         notification::{
@@ -131,7 +132,7 @@ mod tests {
     }
 
     fn make_notification(id: u64) -> Notification {
-        let now = chrono::Utc::now();
+        let fixed = chrono::Utc.with_ymd_and_hms(2024, 1, 1, 12, 0, 0).unwrap();
         Notification {
             id,
             staff_id:     1,
@@ -140,9 +141,9 @@ mod tests {
             message:      "Message".to_string(),
             url:          None,
             read:         false,
-            created_at:   now,
+            created_at:   fixed,
             created_by:   None,
-            updated_at:   now,
+            updated_at:   fixed,
             updated_by:   None,
             deleted_at:   None,
             deleted_by:   None,
