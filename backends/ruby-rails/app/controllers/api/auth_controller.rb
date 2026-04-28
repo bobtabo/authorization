@@ -12,29 +12,36 @@ require "json"
 class Api::AuthController < Api::BaseController
   # Google OAuth2 認可画面へリダイレクトします。
   def google_redirect
-    cfg = container[:cfg]
+    cfg   = container[:cfg]
+    token = params[:token].presence
+    state = token || "state"
     url = "https://accounts.google.com/o/oauth2/auth" \
           "?client_id=#{cfg.oauth.google_client_id}" \
           "&redirect_uri=#{CGI.escape(cfg.oauth.google_redirect_url)}" \
-          "&response_type=code&scope=email+profile&access_type=online&state=state"
+          "&response_type=code&scope=email+profile&access_type=online" \
+          "&state=#{CGI.escape(state)}"
     redirect_to url, allow_other_host: true
   end
 
   # Google OAuth2 コールバックを処理します。
   def google_callback
-    cfg  = container[:cfg]
-    code = params[:code]
+    cfg   = container[:cfg]
+    code  = params[:code]
     return redirect_to "#{cfg.app.frontend_url}/error?code=500", allow_other_host: true if code.blank?
+
+    state_val        = params[:state]
+    invitation_token = (state_val.present? && state_val != "state") ? state_val : nil
 
     access_token = exchange_code_for_token(code, cfg.oauth)
     user_info    = fetch_google_user_info(access_token)
 
     dto = UseCase::Auth::LoginDto.new(
-      provider:    1,
-      provider_id: user_info["id"],
-      name:        user_info["name"],
-      email:       user_info["email"],
-      avatar:      user_info["picture"].presence,
+      provider:         1,
+      provider_id:      user_info["id"],
+      name:             user_info["name"],
+      email:            user_info["email"],
+      avatar:           user_info["picture"].presence,
+      invitation_token: invitation_token,
     )
     staff = container[:auth_uc].login(dto)
 
@@ -47,6 +54,9 @@ class Api::AuthController < Api::BaseController
       secure:    cfg.app.env == "production",
     }
     redirect_to "#{cfg.app.frontend_url}/clients", allow_other_host: true
+  rescue Domain::ForbiddenError
+    cfg = container[:cfg]
+    redirect_to "#{cfg.app.frontend_url}/error?code=403", allow_other_host: true
   rescue => e
     Rails.logger.error("google_callback error: #{e.message}")
     cfg = container[:cfg]

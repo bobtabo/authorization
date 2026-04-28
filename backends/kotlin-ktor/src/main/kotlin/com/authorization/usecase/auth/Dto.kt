@@ -11,9 +11,10 @@ package com.authorization.usecase.auth
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 data class LoginDto(
-    val provider:   Int,
-    val providerId: String,
-    val name:       String,
-    val email:      String,
-    val avatar:     String?,
+    val provider:        Int,
+    val providerId:      String,
+    val name:            String,
+    val email:           String,
+    val avatar:          String?,
+    val invitationToken: String? = null,
 )

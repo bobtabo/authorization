@@ -75,10 +75,11 @@ func TestMain(m *testing.M) {
 // buildRouter はテスト用の Gin ルーターを構築します。
 func buildRouter() *gin.Engine {
 	rdb := cache.New(testCfg)
-	gateCacheRepo := cache.NewRedisGateRepository(rdb, testCfg)
+	gateCacheRepo      := cache.NewRedisGateRepository(rdb, testCfg)
+	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, testCfg)
 
 	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
-		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx))
+		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
 	}
 	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
 		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
@@ -87,7 +88,7 @@ func buildRouter() *gin.Engine {
 		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
 	}
 	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
-		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, testCfg.App.FrontendURL))
+		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, testCfg.App.FrontendURL), invitationAuthRepo)
 	}
 	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
 		return unotification.NewInteractor(

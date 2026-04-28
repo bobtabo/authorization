@@ -10,19 +10,21 @@ use crate::domain::staff::{
     repository::Repository,
     value_objects::Vo,
 };
+use crate::domain::invitation::auth_repository::AuthRepository as InvitationAuthRepository;
 use super::dto::LoginDto;
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
 /// 認証のユースケース実装。
 pub struct Interactor {
-    staff_repo: Arc<dyn Repository>,
+    staff_repo:            Arc<dyn Repository>,
+    invitation_auth_repo:  Arc<dyn InvitationAuthRepository>,
 }
 
 impl Interactor {
     /// リポジトリを受け取りインタラクターを生成します。
-    pub fn new(staff_repo: Arc<dyn Repository>) -> Self {
-        Self { staff_repo }
+    pub fn new(staff_repo: Arc<dyn Repository>, invitation_auth_repo: Arc<dyn InvitationAuthRepository>) -> Self {
+        Self { staff_repo, invitation_auth_repo }
     }
 
     /// スタッフ ID でログイン中スタッフの VO を返します。
@@ -43,6 +45,11 @@ impl Interactor {
             s.updated_at    = now;
             self.staff_repo.save(s).await?
         } else {
+            let token = dto.invitation_token.as_deref().unwrap_or("");
+            if token.is_empty() || self.invitation_auth_repo.find(token).await?.is_none() {
+                return Err("invitation_required".to_string().into());
+            }
+            self.invitation_auth_repo.remove(token).await?;
             let new_staff = Staff {
                 id:            0,
                 name:          dto.name,
@@ -86,6 +93,7 @@ mod tests {
         entity::Staff,
         repository::{DomainError, Repository},
     };
+    use crate::domain::invitation::auth_repository::AuthRepository as InvAuthRepo;
 
     struct MockStaffRepo {
         find_by_provider: Mutex<Option<Option<Staff>>>,
@@ -101,6 +109,22 @@ mod tests {
                 saved:            Mutex::new(None),
             }
         }
+    }
+
+    struct MockInvitationAuthRepo {
+        stored: Mutex<Option<String>>,
+    }
+    impl MockInvitationAuthRepo {
+        fn with_token(token: &str) -> Self { Self { stored: Mutex::new(Some(token.to_string())) } }
+        fn empty() -> Self { Self { stored: Mutex::new(None) } }
+    }
+    #[async_trait]
+    impl InvAuthRepo for MockInvitationAuthRepo {
+        async fn store(&self, _: &str, _: u64) -> Result<(), DomainError> { Ok(()) }
+        async fn find(&self, _: &str) -> Result<Option<String>, DomainError> {
+            Ok(self.stored.lock().unwrap().clone())
+        }
+        async fn remove(&self, _: &str) -> Result<(), DomainError> { Ok(()) }
     }
 
     fn make_staff(id: u32) -> Staff {
@@ -143,10 +167,14 @@ mod tests {
         async fn restore(&self, _: u32) -> Result<bool, DomainError> { Ok(true) }
     }
 
+    fn make_uc(staff: Arc<MockStaffRepo>, auth: Arc<dyn InvAuthRepo>) -> Interactor {
+        Interactor::new(staff, auth)
+    }
+
     #[tokio::test]
     async fn test_find_user_returns_vo() {
         let mock = Arc::new(MockStaffRepo::new());
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::empty()));
         let vo = uc.find_user(1).await.unwrap();
         assert_eq!(vo.id, 1);
         assert_eq!(vo.name, "Alice");
@@ -156,25 +184,43 @@ mod tests {
     async fn test_find_user_not_found() {
         let mock = Arc::new(MockStaffRepo::new());
         *mock.find_by_id.lock().unwrap() = Some(None);
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::empty()));
         let result = uc.find_user(99).await;
         assert!(result.is_err());
     }
 
     #[tokio::test]
-    async fn test_login_creates_new_staff_when_not_exists() {
+    async fn test_login_creates_new_staff_with_invitation() {
         let mock = Arc::new(MockStaffRepo::new());
         *mock.find_by_provider.lock().unwrap() = Some(None);
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::with_token("tok")));
         let dto = LoginDto {
-            provider:    1,
-            provider_id: "new_id".to_string(),
-            name:        "Bob".to_string(),
-            email:       "bob@example.com".to_string(),
-            avatar:      None,
+            provider:         1,
+            provider_id:      "new_id".to_string(),
+            name:             "Bob".to_string(),
+            email:            "bob@example.com".to_string(),
+            avatar:           None,
+            invitation_token: Some("tok".to_string()),
         };
         let vo = uc.login(dto).await.unwrap();
         assert_eq!(vo.name, "Bob");
+    }
+
+    #[tokio::test]
+    async fn test_login_new_staff_without_invitation_fails() {
+        let mock = Arc::new(MockStaffRepo::new());
+        *mock.find_by_provider.lock().unwrap() = Some(None);
+        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::empty()));
+        let dto = LoginDto {
+            provider:         1,
+            provider_id:      "new_id".to_string(),
+            name:             "Bob".to_string(),
+            email:            "bob@example.com".to_string(),
+            avatar:           None,
+            invitation_token: None,
+        };
+        let result = uc.login(dto).await;
+        assert!(result.is_err());
     }
 
     #[tokio::test]
@@ -184,13 +230,14 @@ mod tests {
         *mock.find_by_provider.lock().unwrap() = Some(Some(existing));
         let saved = make_staff(10);
         *mock.saved.lock().unwrap() = Some(saved);
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::empty()));
         let dto = LoginDto {
-            provider:    1,
-            provider_id: "goog1".to_string(),
-            name:        "Alice Updated".to_string(),
-            email:       "alice@example.com".to_string(),
-            avatar:      Some("new_avatar.png".to_string()),
+            provider:         1,
+            provider_id:      "goog1".to_string(),
+            name:             "Alice Updated".to_string(),
+            email:            "alice@example.com".to_string(),
+            avatar:           Some("new_avatar.png".to_string()),
+            invitation_token: None,
         };
         let vo = uc.login(dto).await.unwrap();
         assert_eq!(vo.id, 10);

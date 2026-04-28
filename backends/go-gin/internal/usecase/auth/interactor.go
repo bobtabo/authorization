@@ -2,6 +2,7 @@
 package auth
 
 import (
+	dominvitation "authorization-go/internal/domain/invitation"
 	domstaff "authorization-go/internal/domain/staff"
 	"authorization-go/pkg/apperror"
 	"time"
@@ -9,14 +10,16 @@ import (
 
 // Interactor は認証のユースケースを実装します。
 type Interactor struct {
-	repo domstaff.Repository
+	staffRepo          domstaff.Repository
+	invitationAuthRepo dominvitation.AuthRepository
 }
 
 // NewInteractor は Interactor を生成します。
 //
-// repo: スタッフリポジトリ
-func NewInteractor(repo domstaff.Repository) *Interactor {
-	return &Interactor{repo: repo}
+// staffRepo: スタッフリポジトリ
+// invitationAuthRepo: 招待認証キャッシュリポジトリ
+func NewInteractor(staffRepo domstaff.Repository, invitationAuthRepo dominvitation.AuthRepository) *Interactor {
+	return &Interactor{staffRepo: staffRepo, invitationAuthRepo: invitationAuthRepo}
 }
 
 // FindUser はIDでスタッフを取得し、レスポンス用 Vo を返します。
@@ -24,7 +27,7 @@ func NewInteractor(repo domstaff.Repository) *Interactor {
 // id: スタッフID
 // 戻り値: スタッフ Vo、またはエラー
 func (uc *Interactor) FindUser(id uint) (*domstaff.Vo, error) {
-	s, err := uc.repo.FindByID(id)
+	s, err := uc.staffRepo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -35,18 +38,32 @@ func (uc *Interactor) FindUser(id uint) (*domstaff.Vo, error) {
 }
 
 // Login はソーシャル認証でログインし、レスポンス用 Vo を返します。
-// 未登録の場合は新規スタッフを作成します。
+// 未登録の場合は招待トークンを検証してから新規スタッフを作成します。
 //
 // dto: ログイン情報 Dto
 // 戻り値: スタッフ Vo、またはエラー
 func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
-	existing, err := uc.repo.FindByProvider(dto.Provider, dto.ProviderID)
+	existing, err := uc.staffRepo.FindByProvider(dto.Provider, dto.ProviderID)
 	if err != nil {
 		return nil, err
 	}
 
 	now := time.Now()
 	if existing == nil {
+		if dto.InvitationToken == "" {
+			return nil, apperror.Forbidden("invitation_required")
+		}
+		found, err := uc.invitationAuthRepo.Find(dto.InvitationToken)
+		if err != nil {
+			return nil, err
+		}
+		if found == "" {
+			return nil, apperror.Forbidden("invitation_required")
+		}
+		if err := uc.invitationAuthRepo.Remove(dto.InvitationToken); err != nil {
+			return nil, err
+		}
+
 		newStaff := &domstaff.Staff{
 			Name:        dto.Name,
 			Email:       dto.Email,
@@ -58,7 +75,7 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
-		saved, err := uc.repo.Save(newStaff)
+		saved, err := uc.staffRepo.Save(newStaff)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +85,7 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 	existing.Avatar = dto.Avatar
 	existing.LastLoginAt = &now
 	existing.UpdatedAt = now
-	saved, err := uc.repo.Save(existing)
+	saved, err := uc.staffRepo.Save(existing)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import httpx
 from fastapi import APIRouter, Depends, Response, Request
 from fastapi.responses import RedirectResponse
 from app.config.settings import Settings, get_settings
-from app.exceptions import unauthorized, bad_request
+from app.exceptions import unauthorized, bad_request, forbidden
 from app.routers.deps import (
     get_auth_interactor, get_invitation_interactor, get_staff_id_from_cookie,
 )
@@ -64,13 +64,14 @@ def invitation(
 
 
 @oauth_router.get("/auth/google/redirect")
-def google_redirect(settings: Settings = Depends(get_settings)):
+def google_redirect(token: str = "", settings: Settings = Depends(get_settings)):
     params = {
         "client_id": settings.google_client_id,
         "redirect_uri": settings.google_redirect_url,
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
+        "state": token if token else "state",
     }
     query = "&".join(f"{k}={v}" for k, v in params.items())
     return RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{query}", status_code=302)
@@ -79,11 +80,13 @@ def google_redirect(settings: Settings = Depends(get_settings)):
 @oauth_router.get("/auth/google/callback")
 def google_callback(
     code: str = "",
+    state: str = "state",
     settings: Settings = Depends(get_settings),
     interactor: AuthInteractor = Depends(get_auth_interactor),
 ):
     if not code:
         raise bad_request("code_required")
+    invitation_token = state if state and state != "state" else None
 
     with httpx.Client() as client:
         token_resp = client.post(GOOGLE_TOKEN_URL, data={
@@ -107,8 +110,14 @@ def google_callback(
         name=user_info.get("name", ""),
         email=user_info.get("email", ""),
         avatar=user_info.get("picture"),
+        invitation_token=invitation_token,
     )
-    staff = interactor.login(dto)
+    try:
+        staff = interactor.login(dto)
+    except Exception as e:
+        if hasattr(e, "status_code") and e.status_code == 403:
+            return RedirectResponse(url=f"{settings.frontend_url}/error?code=403", status_code=302)
+        raise
 
     max_age = settings.staff_cookie_lifetime * 60
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)

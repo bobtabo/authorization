@@ -3,7 +3,9 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
+import { forbidden } from "../../lib/errors.js";
 import type { StaffRepository } from "../../domain/staff/repository.js";
+import type { InvitationAuthRepository } from "../../domain/invitation/authRepository.js";
 import type { StaffVo } from "../../domain/staff/valueObjects.js";
 import type { LoginInput } from "./dto.js";
 
@@ -13,7 +15,10 @@ function toStaffVo(staff: { id: number; name: string; avatar: string | null | un
 
 /** 認証のユースケース実装。 */
 export class AuthInteractor {
-  constructor(private readonly repo: StaffRepository) {}
+  constructor(
+    private readonly repo: StaffRepository,
+    private readonly invitationAuthRepo: InvitationAuthRepository,
+  ) {}
 
   /**
    * スタッフIDでログイン中スタッフの VO を返します。
@@ -31,6 +36,25 @@ export class AuthInteractor {
    * @returns StaffVo
    */
   async login(input: LoginInput): Promise<StaffVo> {
+    const existing = await this.repo.findByProvider(input.provider, input.providerId);
+    if (existing) {
+      const staff = await this.repo.upsert({
+        provider: input.provider,
+        providerId: input.providerId,
+        name: input.name,
+        email: input.email,
+        avatar: input.avatar ?? null,
+        role: existing.role ?? 0,
+      });
+      return toStaffVo(staff);
+    }
+
+    const token = input.invitationToken ?? "";
+    if (!token || !(await this.invitationAuthRepo.find(token))) {
+      throw forbidden("invitation_required");
+    }
+    await this.invitationAuthRepo.remove(token);
+
     const staff = await this.repo.upsert({
       provider: input.provider,
       providerId: input.providerId,

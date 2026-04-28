@@ -25,8 +25,14 @@ const GOOGLE_TOKEN_URL:    &str = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL: &str = "https://www.googleapis.com/oauth2/v2/userinfo";
 
 #[derive(Deserialize)]
+pub struct GoogleRedirectQuery {
+    token: Option<String>,
+}
+
+#[derive(Deserialize)]
 pub struct GoogleCallbackQuery {
-    code: Option<String>,
+    code:  Option<String>,
+    state: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -43,11 +49,16 @@ struct GoogleUserInfo {
 }
 
 /// Google OAuth リダイレクト URL へ転送します。
-pub async fn google_redirect(State(state): State<AppState>) -> Redirect {
+pub async fn google_redirect(
+    State(state): State<AppState>,
+    Query(params): Query<GoogleRedirectQuery>,
+) -> Redirect {
+    let oauth_state = params.token.as_deref().unwrap_or("state");
     let url = format!(
-        "https://accounts.google.com/o/oauth2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email+profile&access_type=online&state=state",
+        "https://accounts.google.com/o/oauth2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email+profile&access_type=online&state={}",
         state.cfg.oauth.google_client_id,
         percent_encoding::utf8_percent_encode(&state.cfg.oauth.google_redirect_url, percent_encoding::NON_ALPHANUMERIC),
+        percent_encoding::utf8_percent_encode(oauth_state, percent_encoding::NON_ALPHANUMERIC),
     );
     Redirect::temporary(&url)
 }
@@ -65,6 +76,7 @@ pub async fn google_callback(
         Some(c) => c,
         None    => return (jar, Redirect::temporary(&format!("{}/error?code=400", cfg.app.frontend_url))).into_response(),
     };
+    let invitation_token = params.state.filter(|s| s != "state" && !s.is_empty());
 
     let client = reqwest::Client::new();
 
@@ -101,16 +113,21 @@ pub async fn google_callback(
     };
 
     let dto = LoginDto {
-        provider:    1,
-        provider_id: user_info.id,
-        name:        user_info.name,
-        email:       user_info.email,
-        avatar:      user_info.picture,
+        provider:         1,
+        provider_id:      user_info.id,
+        name:             user_info.name,
+        email:            user_info.email,
+        avatar:           user_info.picture,
+        invitation_token,
     };
 
     let vo = match state.auth_uc.login(dto).await {
         Ok(v)  => v,
         Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("invitation_required") {
+                return (jar, Redirect::temporary(&format!("{}/error?code=403", cfg.app.frontend_url))).into_response();
+            }
             tracing::error!("login failed: {}", e);
             return (jar, Redirect::temporary(&error_url)).into_response();
         }

@@ -35,11 +35,12 @@ func main() {
 	rdb := cache.New(cfg)
 
 	// --- Infrastructure: 読み取り専用リポジトリ（トランザクション不要）---
-	gateCacheRepo := cache.NewRedisGateRepository(rdb, cfg)
+	gateCacheRepo      := cache.NewRedisGateRepository(rdb, cfg)
+	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, cfg)
 
 	// --- ユースケースファクトリ（書き込み系ハンドラーへ注入）---
 	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
-		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx))
+		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
 	}
 	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
 		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
@@ -48,7 +49,7 @@ func main() {
 		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
 	}
 	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
-		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, cfg.App.FrontendURL))
+		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, cfg.App.FrontendURL), invitationAuthRepo)
 	}
 	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
 		return unotification.NewInteractor(

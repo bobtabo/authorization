@@ -18,11 +18,14 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
-          cfg = container[:cfg]
+          cfg   = container[:cfg]
+          token = request.params[:token]
+          state = (token && !token.empty?) ? token : "state"
           url = "https://accounts.google.com/o/oauth2/auth" \
                 "?client_id=#{cfg.oauth.google_client_id}" \
                 "&redirect_uri=#{CGI.escape(cfg.oauth.google_redirect_url)}" \
-                "&response_type=code&scope=email+profile&access_type=online&state=state"
+                "&response_type=code&scope=email+profile&access_type=online" \
+                "&state=#{CGI.escape(state)}"
           response.redirect_to url
         end
       end

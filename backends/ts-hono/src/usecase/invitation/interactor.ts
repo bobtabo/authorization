@@ -6,6 +6,7 @@
 import { randomBytes } from "crypto";
 import { notFound } from "../../lib/errors.js";
 import type { InvitationRepository } from "../../domain/invitation/repository.js";
+import type { InvitationAuthRepository } from "../../domain/invitation/authRepository.js";
 import type { InvitationResult } from "../../domain/invitation/valueObjects.js";
 import { config } from "../../config.js";
 
@@ -16,7 +17,10 @@ function buildResult(token: string): InvitationResult {
 
 /** 招待のユースケース実装。 */
 export class InvitationInteractor {
-  constructor(private readonly repo: InvitationRepository) {}
+  constructor(
+    private readonly repo: InvitationRepository,
+    private readonly authRepo: InvitationAuthRepository,
+  ) {}
 
   /**
    * 最新の招待情報の VO を返します。
@@ -48,6 +52,7 @@ export class InvitationInteractor {
   async findByToken(token: string): Promise<InvitationResult> {
     const inv = await this.repo.findByToken(token);
     if (!inv) throw notFound("invitation_not_found");
+    await this.authRepo.store(inv.token, 600);
     return buildResult(inv.token);
   }
 }

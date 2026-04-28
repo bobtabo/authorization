@@ -11,4 +11,5 @@ export interface LoginInput {
   name: string;
   email: string;
   avatar?: string;
+  invitationToken?: string;
 }

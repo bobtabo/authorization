@@ -7,6 +7,6 @@
 module UseCase
   module Auth
     # ログイン時に渡す DTO です。
-    LoginDto = Struct.new(:provider, :provider_id, :name, :email, :avatar, keyword_init: true)
+    LoginDto = Struct.new(:provider, :provider_id, :name, :email, :avatar, :invitation_token, keyword_init: true)
   end
 end

@@ -8,6 +8,7 @@ use redis::AsyncCommands;
 use crate::{
     config::Config,
     domain::gate::value_objects::{CacheRepository, DomainError},
+    domain::invitation::auth_repository::AuthRepository,
 };
 use redis::Client;
 
@@ -38,6 +39,50 @@ impl RedisGateRepository {
 
     fn cache_key(&self, identifier: &str, member_id: &str) -> String {
         format!("{}:gate.jwt:{}:{}", self.prefix, identifier, member_id)
+    }
+}
+
+/// Redis を用いた招待認証キャッシュリポジトリ。
+pub struct RedisInvitationAuthRepository {
+    client: Client,
+    prefix: String,
+}
+
+impl RedisInvitationAuthRepository {
+    /// クライアントとキャッシュプレフィックスを受け取りリポジトリを生成します。
+    pub fn new(client: Client, cfg: &Config) -> Self {
+        Self {
+            client,
+            prefix: cfg.app.cache_prefix.clone(),
+        }
+    }
+
+    fn cache_key(&self, token: &str) -> String {
+        format!("{}:invitation_auth:invitation_auth:{}", self.prefix, token)
+    }
+}
+
+#[async_trait]
+impl AuthRepository for RedisInvitationAuthRepository {
+    async fn store(&self, token: &str, ttl: u64) -> Result<(), DomainError> {
+        let key = self.cache_key(token);
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let _: () = conn.set_ex(&key, token, ttl).await?;
+        Ok(())
+    }
+
+    async fn find(&self, token: &str) -> Result<Option<String>, DomainError> {
+        let key = self.cache_key(token);
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let val: Option<String> = conn.get(&key).await?;
+        Ok(val)
+    }
+
+    async fn remove(&self, token: &str) -> Result<(), DomainError> {
+        let key = self.cache_key(token);
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let _: () = conn.del(&key).await?;
+        Ok(())
     }
 }
 

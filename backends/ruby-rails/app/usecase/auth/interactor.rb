@@ -10,8 +10,10 @@ module UseCase
     # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
     class Interactor
       # @param staff_repo [Domain::Staff::Repository] スタッフリポジトリ
-      def initialize(staff_repo)
-        @staff_repo = staff_repo
+      # @param invitation_auth_repo [Domain::Invitation::AuthRepository] 招待認証キャッシュリポジトリ
+      def initialize(staff_repo, invitation_auth_repo)
+        @staff_repo           = staff_repo
+        @invitation_auth_repo = invitation_auth_repo
       end
 
       def find_user(id)
@@ -31,6 +33,11 @@ module UseCase
           updated.updated_at    = now
           saved = @staff_repo.save(updated)
         else
+          token = dto.invitation_token
+          if token.blank? || @invitation_auth_repo.find(token).nil?
+            raise Domain::ForbiddenError.new("invitation_required")
+          end
+          @invitation_auth_repo.remove(token)
           new_entity = Domain::Staff::Entity.new(
             id:            nil,
             name:          dto.name,

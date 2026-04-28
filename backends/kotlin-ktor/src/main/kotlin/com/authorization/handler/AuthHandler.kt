@@ -7,6 +7,7 @@ package com.authorization.handler
 
 import com.authorization.config.Config
 import com.authorization.config.OAuthConfig
+import com.authorization.support.AppException
 import com.authorization.usecase.auth.Interactor as AuthUC
 import com.authorization.usecase.auth.LoginDto
 import com.authorization.usecase.invitation.FindByTokenDto
@@ -38,10 +39,13 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun googleRedirect(call: ApplicationCall) {
+        val token = call.request.queryParameters["token"]
+        val oauthState = if (!token.isNullOrEmpty()) token else "state"
         val url = "https://accounts.google.com/o/oauth2/auth" +
             "?client_id=${cfg.oauth.googleClientId}" +
             "&redirect_uri=${cfg.oauth.googleRedirectUrl}" +
-            "&response_type=code&scope=email+profile&access_type=online&state=state"
+            "&response_type=code&scope=email+profile&access_type=online" +
+            "&state=${URLEncoder.encode(oauthState, "UTF-8")}"
         call.respondRedirect(url, permanent = false)
     }
 
@@ -56,6 +60,8 @@ class AuthHandler(
             call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
             return
         }
+        val stateVal = call.request.queryParameters["state"]
+        val invitationToken = if (!stateVal.isNullOrEmpty() && stateVal != "state") stateVal else null
 
         val accessToken = try {
             exchangeCodeForToken(code, cfg.oauth)
@@ -72,14 +78,22 @@ class AuthHandler(
         }
 
         val dto = LoginDto(
-            provider   = 1,
-            providerId = userInfo["id"] ?: "",
-            name       = userInfo["name"] ?: "",
-            email      = userInfo["email"] ?: "",
-            avatar     = userInfo["picture"]?.ifEmpty { null },
+            provider        = 1,
+            providerId      = userInfo["id"] ?: "",
+            name            = userInfo["name"] ?: "",
+            email           = userInfo["email"] ?: "",
+            avatar          = userInfo["picture"]?.ifEmpty { null },
+            invitationToken = invitationToken,
         )
         val staff = try {
             authUC.login(dto)
+        } catch (e: AppException) {
+            if (e.statusCode == 403) {
+                call.respondRedirect(cfg.app.frontendUrl + "/error?code=403", permanent = false)
+            } else {
+                call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
+            }
+            return
         } catch (e: Exception) {
             call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
             return

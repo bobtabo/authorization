@@ -16,6 +16,7 @@ class AuthLoginDto:
     name: str
     email: str
     avatar: Optional[str] = None
+    invitation_token: Optional[str] = None
 
 
 @dataclass

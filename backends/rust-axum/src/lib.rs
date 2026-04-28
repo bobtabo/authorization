@@ -34,12 +34,13 @@ pub async fn build_state(cfg: Arc<config::Config>) -> (AppState, sqlx::MySqlPool
         cfg.app.frontend_url.clone(),
     ));
     let notification_repo = Arc::new(infrastructure::persistence::notification::SqlxNotificationRepository::new(pool.clone()));
-    let gate_cache        = Arc::new(infrastructure::cache::RedisGateRepository::new(redis_client, &cfg));
+    let gate_cache            = Arc::new(infrastructure::cache::RedisGateRepository::new(redis_client.clone(), &cfg));
+    let invitation_auth_cache = Arc::new(infrastructure::cache::RedisInvitationAuthRepository::new(redis_client, &cfg));
 
-    let auth_uc         = Arc::new(usecase::auth::Interactor::new(staff_repo.clone()));
+    let auth_uc         = Arc::new(usecase::auth::Interactor::new(staff_repo.clone(), invitation_auth_cache.clone()));
     let client_uc       = Arc::new(usecase::client::Interactor::new(client_repo.clone()));
     let staff_uc        = Arc::new(usecase::staff::Interactor::new(staff_repo.clone()));
-    let invitation_uc   = Arc::new(usecase::invitation::Interactor::new(invitation_repo));
+    let invitation_uc   = Arc::new(usecase::invitation::Interactor::new(invitation_repo, invitation_auth_cache));
     let gate_uc         = Arc::new(usecase::gate::Interactor::new(client_repo.clone(), gate_cache, cfg.clone()));
     let notification_uc = Arc::new(usecase::notification::Interactor::new(notification_repo, staff_repo.clone()));
     let mailer          = Arc::new(infrastructure::mail::Mailer::new(cfg.mail.clone()));

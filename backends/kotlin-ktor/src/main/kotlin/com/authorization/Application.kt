@@ -4,6 +4,7 @@ import com.authorization.config.Config
 import com.authorization.config.ConfigLoader
 import com.authorization.handler.*
 import com.authorization.infrastructure.cache.RedisGateRepository
+import com.authorization.infrastructure.cache.RedisInvitationAuthRepository
 import com.authorization.infrastructure.cache.newRedisPool
 import com.authorization.infrastructure.db.initDatabase
 import com.authorization.infrastructure.mail.Mailer
@@ -41,12 +42,13 @@ fun Application.module(cfg: Config) {
     val staffRepo        = ExposedStaffRepository(db)
     val invitationRepo   = ExposedInvitationRepository(db, cfg)
     val notificationRepo = ExposedNotificationRepository(db)
-    val gateCache        = RedisGateRepository(redisPool, cfg)
+    val gateCache             = RedisGateRepository(redisPool, cfg)
+    val invitationAuthCache   = RedisInvitationAuthRepository(redisPool, cfg)
 
-    val authUC         = AuthInteractor(staffRepo)
+    val authUC         = AuthInteractor(staffRepo, invitationAuthCache)
     val clientUC       = ClientInteractor(clientRepo)
     val staffUC        = StaffInteractor(staffRepo)
-    val invitationUC   = InvitationInteractor(invitationRepo)
+    val invitationUC   = InvitationInteractor(invitationRepo, invitationAuthCache)
     val gateUC         = GateInteractor(clientRepo, gateCache, cfg)
     val notificationUC = NotificationInteractor(notificationRepo, staffRepo)
     val mailer         = Mailer(cfg.mail)

@@ -25,16 +25,20 @@ module Authorization
 
           return response.redirect_to "#{cfg.app.frontend_url}/error?code=400" if code.nil? || code.empty?
 
+          state_val        = request.params[:state]
+          invitation_token = (state_val && !state_val.empty? && state_val != "state") ? state_val : nil
+
           begin
             token_data = exchange_code_for_token(code, cfg)
             user_info  = fetch_user_info(token_data["access_token"])
 
             dto = ::UseCase::Auth::LoginDto.new(
-              provider:    ::Domain::Staff::Provider::GOOGLE,
-              provider_id: user_info["id"],
-              name:        user_info["name"],
-              email:       user_info["email"],
-              avatar:      user_info["picture"],
+              provider:         ::Domain::Staff::Provider::GOOGLE,
+              provider_id:      user_info["id"],
+              name:             user_info["name"],
+              email:            user_info["email"],
+              avatar:           user_info["picture"],
+              invitation_token: invitation_token,
             )
 
             vo = transaction { container[:auth_uc].login(dto) }
@@ -45,6 +49,8 @@ module Authorization
               "staff_id=#{vo.id}; Path=/; HttpOnly; Max-Age=#{max_age}#{secure_flag}; SameSite=Lax"
 
             response.redirect_to "#{cfg.app.frontend_url}/clients"
+          rescue ::Domain::ForbiddenError
+            response.redirect_to "#{cfg.app.frontend_url}/error?code=403"
           rescue => e
             warn "[google_callback] ERROR: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
             response.redirect_to "#{cfg.app.frontend_url}/error?code=500"

@@ -9,6 +9,7 @@ import (
 	"authorization-go/pkg/apperror"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -130,7 +131,11 @@ func (h *AuthHandler) Invitation(c *gin.Context) {
 // GoogleRedirect は Google OAuth 認証ページへリダイレクトします。
 // GET /auth/google/redirect
 func (h *AuthHandler) GoogleRedirect(c *gin.Context) {
-	url := h.oauthConfig.AuthCodeURL("state", oauth2.AccessTypeOnline)
+	oauthState := c.Query("token")
+	if oauthState == "" {
+		oauthState = "state"
+	}
+	url := h.oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -141,6 +146,11 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	if code == "" {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 		return
+	}
+	stateVal := c.Query("state")
+	invitationToken := ""
+	if stateVal != "" && stateVal != "state" {
+		invitationToken = stateVal
 	}
 
 	oauthToken, err := h.oauthConfig.Exchange(context.Background(), code)
@@ -161,11 +171,12 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	}
 
 	dto := uauth.LoginDto{
-		Provider:   1, // Google
-		ProviderID: userInfo["id"],
-		Name:       userInfo["name"],
-		Email:      userInfo["email"],
-		Avatar:     avatar,
+		Provider:        1, // Google
+		ProviderID:      userInfo["id"],
+		Name:            userInfo["name"],
+		Email:           userInfo["email"],
+		Avatar:          avatar,
+		InvitationToken: invitationToken,
 	}
 
 	var staff *domstaff.Vo
@@ -174,6 +185,11 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		staff, e = h.newAuthUC(tx).Login(dto)
 		return e
 	}); txErr != nil {
+		var appErr *apperror.AppError
+		if errors.As(txErr, &appErr) && appErr.Code == http.StatusForbidden {
+			c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=403")
+			return
+		}
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 		return
 	}

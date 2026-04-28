@@ -4,20 +4,25 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use std::sync::Arc;
-use crate::domain::invitation::{value_objects::Vo, repository::Repository};
+use crate::domain::invitation::{
+    value_objects::Vo,
+    repository::Repository,
+    auth_repository::AuthRepository,
+};
 use super::dto::FindByTokenDto;
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
 /// 招待のユースケース実装。
 pub struct Interactor {
-    repo: Arc<dyn Repository>,
+    repo:      Arc<dyn Repository>,
+    auth_repo: Arc<dyn AuthRepository>,
 }
 
 impl Interactor {
     /// リポジトリを受け取りインタラクターを生成します。
-    pub fn new(repo: Arc<dyn Repository>) -> Self {
-        Self { repo }
+    pub fn new(repo: Arc<dyn Repository>, auth_repo: Arc<dyn AuthRepository>) -> Self {
+        Self { repo, auth_repo }
     }
 
     /// 現在有効な招待トークンの VO を返します。存在しない場合はエラーを返します。
@@ -33,8 +38,10 @@ impl Interactor {
 
     /// トークン文字列で招待 VO を返します。無効な場合はエラーを返します。
     pub async fn find_by_token(&self, dto: FindByTokenDto) -> Result<Vo, UseCaseError> {
-        self.repo.find_by_token(&dto.token).await?
-            .ok_or_else(|| -> UseCaseError { "invitation_not_found".to_string().into() })
+        let vo = self.repo.find_by_token(&dto.token).await?
+            .ok_or_else(|| -> UseCaseError { "invitation_not_found".to_string().into() })?;
+        self.auth_repo.store(&vo.token, 600).await?;
+        Ok(vo)
     }
 }
 
@@ -43,11 +50,14 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use std::sync::Mutex;
-    use crate::domain::invitation::repository::{DomainError, Repository};
+    use crate::domain::invitation::{
+        repository::{DomainError, Repository},
+        auth_repository::AuthRepository,
+    };
 
     struct MockRepo {
-        current: Mutex<Option<Option<Vo>>>,
-        issue:   Mutex<Option<Vo>>,
+        current:  Mutex<Option<Option<Vo>>>,
+        issue:    Mutex<Option<Vo>>,
         by_token: Mutex<Option<Option<Vo>>>,
     }
 
@@ -59,6 +69,15 @@ mod tests {
                 by_token: Mutex::new(None),
             }
         }
+    }
+
+    struct MockAuthRepo;
+
+    #[async_trait]
+    impl AuthRepository for MockAuthRepo {
+        async fn store(&self, _: &str, _: u64) -> Result<(), DomainError> { Ok(()) }
+        async fn find(&self, _: &str) -> Result<Option<String>, DomainError> { Ok(None) }
+        async fn remove(&self, _: &str) -> Result<(), DomainError> { Ok(()) }
     }
 
     fn make_vo() -> Vo {
@@ -82,11 +101,15 @@ mod tests {
         }
     }
 
+    fn make_uc(mock: Arc<MockRepo>) -> Interactor {
+        Interactor::new(mock, Arc::new(MockAuthRepo))
+    }
+
     #[tokio::test]
     async fn test_current_returns_vo() {
         let mock = Arc::new(MockRepo::new());
         *mock.current.lock().unwrap() = Some(Some(make_vo()));
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock);
         let vo = uc.current().await.unwrap();
         assert_eq!(vo.token, "abc123");
     }
@@ -95,7 +118,7 @@ mod tests {
     async fn test_current_returns_error_when_none() {
         let mock = Arc::new(MockRepo::new());
         *mock.current.lock().unwrap() = Some(None);
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock);
         assert!(uc.current().await.is_err());
     }
 
@@ -103,7 +126,7 @@ mod tests {
     async fn test_issue_returns_new_vo() {
         let mock = Arc::new(MockRepo::new());
         *mock.issue.lock().unwrap() = Some(make_vo());
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock);
         let vo = uc.issue().await.unwrap();
         assert!(!vo.token.is_empty());
         assert!(vo.url.contains(&vo.token));
@@ -113,7 +136,7 @@ mod tests {
     async fn test_find_by_token_success() {
         let mock = Arc::new(MockRepo::new());
         *mock.by_token.lock().unwrap() = Some(Some(make_vo()));
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock);
         let vo = uc.find_by_token(FindByTokenDto { token: "abc123".to_string() }).await.unwrap();
         assert_eq!(vo.token, "abc123");
     }
@@ -122,7 +145,7 @@ mod tests {
     async fn test_find_by_token_not_found() {
         let mock = Arc::new(MockRepo::new());
         *mock.by_token.lock().unwrap() = Some(None);
-        let uc = Interactor::new(mock);
+        let uc = make_uc(mock);
         let result = uc.find_by_token(FindByTokenDto { token: "invalid".to_string() }).await;
         assert!(result.is_err());
     }
