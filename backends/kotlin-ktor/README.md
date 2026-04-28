@@ -115,7 +115,7 @@ backends/kotlin-ktor/
 ### 1. 依存パッケージのビルド
 
 ```bash
-./gradlew build
+gradle build
 ```
 
 ### 2. 環境変数の設定
@@ -134,7 +134,7 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ### 3. 起動
 
 ```bash
-./gradlew run
+gradle run
 ```
 
 Docker 環境では `docker compose up -d` で自動起動します。
@@ -144,7 +144,7 @@ Docker 環境では `docker compose up -d` で自動起動します。
 ## :test_tube: テスト
 
 ```bash
-./gradlew test
+gradle test
 ```
 
 ---

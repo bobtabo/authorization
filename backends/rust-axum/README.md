@@ -43,7 +43,7 @@ Domain (src/domain/)
     │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
 Infrastructure (src/infrastructure/)
-    │  SeaORM リポジトリ・Redis キャッシュ
+    │  sqlx リポジトリ・Redis キャッシュ
     ▼
 MySQL / Redis
 ```
@@ -82,8 +82,8 @@ backends/rust-axum/
 │   │   ├── notification/
 │   │   └── gate/
 │   ├── infrastructure/      # インフラ層
-│   │   ├── model/           # SeaORM エンティティ（DB スキーマ定義）
-│   │   ├── persistence/     # SeaORM リポジトリ実装
+│   │   ├── model/           # sqlx 用 DB モデル定義
+│   │   ├── persistence/     # sqlx リポジトリ実装
 │   │   ├── cache/           # Redis キャッシュリポジトリ実装
 │   │   └── db/              # DB 接続
 │   ├── handler/             # Axum ハンドラー層
@@ -100,10 +100,11 @@ backends/rust-axum/
 |---|---|
 | `axum` | HTTP フレームワーク |
 | `tokio` | 非同期ランタイム |
-| `sea-orm` | ORM |
+| `sqlx` | DB アクセス（MySQL） |
 | `jsonwebtoken` | JWT 生成・検証（RS256） |
 | `redis` | Redis クライアント |
 | `lettre` | メール送信（SMTP） |
+| `reqwest` | HTTP クライアント（OAuth） |
 | `serde` | シリアライズ・デシリアライズ |
 | `dotenvy` | `.env` 読み込み |
 
@@ -143,7 +144,11 @@ Docker 環境では `docker compose up -d` で自動起動します。
 ## :test_tube: テスト
 
 ```bash
-cargo test
+# ユニットテスト
+cargo test --lib
+
+# 統合テスト（DB / Redis が必要）
+cargo test --test integration -- --test-threads=1
 ```
 
 ---

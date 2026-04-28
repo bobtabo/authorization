@@ -35,13 +35,13 @@ HTTP Request
 Action (app/actions/)
     │  リクエストのバリデーション・レスポンス整形
     ▼
-UseCase / Interactor (app/use_cases/)
+UseCase / Interactor (app/usecase/)
     │  アプリケーションロジック・DTO 変換
     ▼
 Domain (app/domain/)
     │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-Repository (app/infrastructure/repositories/)
+Repository (app/infrastructure/persistence/)
     │  ROM リポジトリ実装
     ▼
 MySQL / Redis
@@ -72,16 +72,20 @@ backends/ruby-hanami/
 │   │   ├── invitation/
 │   │   ├── notification/
 │   │   └── gate/
-│   ├── use_cases/           # ユースケース層
+│   ├── usecase/             # ユースケース層
 │   │   ├── client/          # DTO・インタラクター
 │   │   ├── staff/
 │   │   ├── auth/
 │   │   ├── invitation/
 │   │   ├── notification/
 │   │   └── gate/
-│   └── infrastructure/      # インフラ層
-│       ├── persistence/     # ROM リポジトリ実装
-│       └── cache/           # Redis キャッシュリポジトリ実装
+│   ├── infrastructure/      # インフラ層
+│   │   ├── model/           # ROM リレーション定義
+│   │   ├── persistence/     # ROM リポジトリ実装
+│   │   ├── cache/           # Redis キャッシュリポジトリ実装
+│   │   ├── mail/            # メール送信
+│   │   └── db/              # DB 接続
+│   └── middleware/          # 認証・エラーハンドリングミドルウェア
 ├── config/
 │   └── routes.rb
 ├── spec/                    # RSpec テスト
@@ -99,9 +103,10 @@ backends/ruby-hanami/
 | `rom` | ORM（リポジトリパターン） |
 | `rom-sql` | SQL アダプター |
 | `jwt` | JWT 生成・検証（RS256） |
-| `omniauth-google-oauth2` | Google OAuth 2.0 連携 |
+| `mail` | メール送信（SMTP） |
 | `redis` | Redis クライアント |
 | `mysql2` | MySQL ドライバー |
+| `dotenv` | `.env` 読み込み |
 | `rspec` | テストフレームワーク |
 
 ---

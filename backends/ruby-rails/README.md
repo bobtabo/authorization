@@ -32,19 +32,18 @@ HTTP Request
 Controller (app/controllers/api/)
     │  リクエストのバリデーション・レスポンス整形
     ▼
-UseCase (app/use_cases/)
+UseCase (app/usecase/)
     │  アプリケーションロジック・DTO 変換
     ▼
-Service (app/domain/*/services/)
-    │  ドメインロジック
+Domain (app/domain/)
+    │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-Repository Interface (app/domain/*/repositories/)
-    │  データアクセス抽象化
+Repository (app/infrastructure/persistence/)
+    │  ActiveRecord リポジトリ実装
     ▼
-ActiveRecord Repository (app/infrastructure/repositories/)
-    │  DB アクセス実装
+ActiveRecord Model (app/infrastructure/model/)
     ▼
-ActiveRecord Model (app/infrastructure/models/)
+MySQL / Redis
 ```
 
 ### ドメイン一覧
@@ -73,16 +72,19 @@ backends/ruby-rails/
 │   │   ├── invitation/
 │   │   ├── notification/
 │   │   └── gate/
-│   ├── use_cases/           # ユースケース層
+│   ├── usecase/             # ユースケース層
 │   │   ├── client/          # DTO・インタラクター
 │   │   ├── staff/
 │   │   ├── auth/
 │   │   ├── invitation/
 │   │   ├── notification/
 │   │   └── gate/
-│   └── infrastructure/      # インフラ層
-│       ├── models/          # ActiveRecord モデル
-│       └── repositories/    # リポジトリ実装
+│   ├── infrastructure/      # インフラ層
+│   │   ├── model/           # ActiveRecord モデル
+│   │   ├── persistence/     # リポジトリ実装
+│   │   ├── cache/           # Redis キャッシュリポジトリ実装
+│   │   └── mail/            # メール送信
+│   └── middleware/          # 認証・エラーハンドリングミドルウェア
 ├── config/
 │   └── routes.rb
 ├── spec/                    # RSpec テスト
@@ -98,9 +100,9 @@ backends/ruby-rails/
 |---|---|
 | `rails` | フレームワーク |
 | `jwt` | JWT 生成・検証（RS256） |
-| `omniauth-google-oauth2` | Google OAuth 2.0 連携 |
 | `redis` | Redis クライアント |
 | `mysql2` | MySQL ドライバー |
+| `dotenv-rails` | `.env` 読み込み |
 | `rspec-rails` | テストフレームワーク |
 
 ---
