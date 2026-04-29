@@ -10,3 +10,5 @@
 /local/app-rb-rails/logs/
 /local/app-rust/logs/
 /local/app-ts/logs/
+/local/app-go-echo/logs/
+/local/app-go-beego/logs/
