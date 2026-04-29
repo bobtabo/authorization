@@ -8,6 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 run() {
     bash "${SCRIPT_DIR}/docker-go.sh"         "${ARG}"
+    bash "${SCRIPT_DIR}/docker-go-echo.sh"    "${ARG}"
+    bash "${SCRIPT_DIR}/docker-go-beego.sh"   "${ARG}"
     bash "${SCRIPT_DIR}/docker-kotlin.sh"     "${ARG}"
     bash "${SCRIPT_DIR}/docker-php.sh"        "${ARG}"
     bash "${SCRIPT_DIR}/docker-python.sh"     "${ARG}"
