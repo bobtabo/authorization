@@ -1,3 +1,4 @@
+// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
@@ -15,6 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// ClientHandler はクライアント関連のHTTPハンドラです。
 type ClientHandler struct {
 	db          *gorm.DB
 	newClientUC func(*gorm.DB) *uclient.Interactor
@@ -22,6 +24,7 @@ type ClientHandler struct {
 	mailer      *mail.Mailer
 }
 
+// NewClientHandler は ClientHandler を生成します。
 func NewClientHandler(
 	db *gorm.DB,
 	newClientUC func(*gorm.DB) *uclient.Interactor,
@@ -36,6 +39,7 @@ func NewClientHandler(
 	}
 }
 
+// Index はクライアント一覧を返します。
 func (h *ClientHandler) Index(c echo.Context) error {
 	cond := domclient.Condition{}
 
@@ -60,18 +64,20 @@ func (h *ClientHandler) Index(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapClientList(clients))
 }
 
+// Show はクライアント詳細を返します。
 func (h *ClientHandler) Show(c echo.Context) error {
 	id, err := parseUint64Param(c, "id")
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
-	client, err := h.newClientUC(h.db).FindByID(id)
+	client, err := h.newClientUC(h.db).FindByID(uclient.FindByIDDto{ID: id})
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, mapClientDetail(client))
 }
 
+// Store はクライアントを新規登録します。
 func (h *ClientHandler) Store(c echo.Context) error {
 	var body struct {
 		Name     string `json:"name"`
@@ -122,6 +128,7 @@ func (h *ClientHandler) Store(c echo.Context) error {
 	return c.JSON(http.StatusCreated, map[string]interface{}{"id": storeVo.ID})
 }
 
+// Update はクライアント情報を更新します。
 func (h *ClientHandler) Update(c echo.Context) error {
 	id, err := parseUint64Param(c, "id")
 	if err != nil {
@@ -168,6 +175,7 @@ func (h *ClientHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapClientDetail(detailVo))
 }
 
+// Destroy はクライアントを論理削除します。
 func (h *ClientHandler) Destroy(c echo.Context) error {
 	id, err := parseUint64Param(c, "id")
 	if err != nil {
@@ -175,7 +183,7 @@ func (h *ClientHandler) Destroy(c echo.Context) error {
 	}
 	executorID := staffIDFromCookie(c)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newClientUC(tx).Destroy(id, executorID)
+		return h.newClientUC(tx).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID})
 	}); txErr != nil {
 		return txErr
 	}

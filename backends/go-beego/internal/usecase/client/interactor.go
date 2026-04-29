@@ -1,3 +1,4 @@
+// Package client はクライアントユースケースを提供します。
 package client
 
 import (
@@ -18,22 +19,26 @@ import (
 	"time"
 )
 
+// Interactor はクライアントユースケースの実装です。
 type Interactor struct {
 	repo domclient.Repository
 }
 
+// NewInteractor は Interactor を生成します。
 func NewInteractor(repo domclient.Repository) *Interactor {
 	return &Interactor{repo: repo}
 }
 
+// AuthenticateByToken はアクセストークンでクライアントを認証します。
 func (uc *Interactor) AuthenticateByToken(token string) (bool, error) {
-	c, err := uc.repo.FindByAccessToken(token)
+	c, err := uc.repo.FindByAccessToken(&domclient.Client{AccessToken: token})
 	if err != nil {
 		return false, err
 	}
 	return c != nil, nil
 }
 
+// FindByCondition は条件に合うクライアント一覧を取得します。
 func (uc *Interactor) FindByCondition(cond domclient.Condition) ([]*domclient.ListItem, error) {
 	clients, err := uc.repo.FindByCondition(cond)
 	if err != nil {
@@ -46,8 +51,9 @@ func (uc *Interactor) FindByCondition(cond domclient.Condition) ([]*domclient.Li
 	return items, nil
 }
 
-func (uc *Interactor) FindByID(id uint64) (*domclient.DetailVo, error) {
-	c, err := uc.repo.FindByID(id)
+// FindByID はIDでクライアント詳細を取得します。
+func (uc *Interactor) FindByID(dto FindByIDDto) (*domclient.DetailVo, error) {
+	c, err := uc.repo.FindByID(&domclient.Client{ID: dto.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -57,14 +63,7 @@ func (uc *Interactor) FindByID(id uint64) (*domclient.DetailVo, error) {
 	return clientToDetailVo(c), nil
 }
 
-func (uc *Interactor) FindByAccessToken(token string) (*domclient.Client, error) {
-	return uc.repo.FindByAccessToken(token)
-}
-
-func (uc *Interactor) FindByIdentifier(identifier string) (*domclient.Client, error) {
-	return uc.repo.FindByIdentifier(identifier)
-}
-
+// Store はクライアントを新規登録します。
 func (uc *Interactor) Store(dto StoreDto) (*domclient.StoreVo, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -124,8 +123,9 @@ func (uc *Interactor) Store(dto StoreDto) (*domclient.StoreVo, error) {
 	}, nil
 }
 
+// Update はクライアント情報を更新します。
 func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
-	c, err := uc.repo.FindByID(dto.ID)
+	c, err := uc.repo.FindByID(&domclient.Client{ID: dto.ID})
 	if err != nil || c == nil {
 		return nil, apperror.NotFound("client_not_found")
 	}
@@ -178,8 +178,9 @@ func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
 	return clientToDetailVo(saved), nil
 }
 
-func (uc *Interactor) Destroy(id uint64, executorID uint) error {
-	c, err := uc.repo.FindByID(id)
+// Destroy はクライアントを論理削除します。
+func (uc *Interactor) Destroy(dto DestroyDto) error {
+	c, err := uc.repo.FindByID(&domclient.Client{ID: dto.ID})
 	if err != nil || c == nil {
 		return apperror.NotFound("client_not_found")
 	}
@@ -187,14 +188,15 @@ func (uc *Interactor) Destroy(id uint64, executorID uint) error {
 	now := time.Now()
 	c.Status = domclient.StatusClosed
 	c.UpdatedAt = now
-	c.UpdatedBy = &executorID
+	c.UpdatedBy = &dto.ExecutorID
 	if _, err = uc.repo.Save(c); err != nil {
 		return err
 	}
 
-	return uc.repo.SoftDelete(id, executorID)
+	return uc.repo.SoftDelete(&domclient.Client{ID: dto.ID, DeletedBy: &dto.ExecutorID})
 }
 
+// clientToListItem はクライアントエンティティを一覧用VOに変換します。
 func clientToListItem(c *domclient.Client) *domclient.ListItem {
 	return &domclient.ListItem{
 		ID:        c.ID,
@@ -207,6 +209,7 @@ func clientToListItem(c *domclient.Client) *domclient.ListItem {
 	}
 }
 
+// clientToDetailVo はクライアントエンティティを詳細VOに変換します。
 func clientToDetailVo(c *domclient.Client) *domclient.DetailVo {
 	return &domclient.DetailVo{
 		ID:         c.ID,
@@ -227,6 +230,7 @@ func clientToDetailVo(c *domclient.Client) *domclient.DetailVo {
 	}
 }
 
+// rsaFingerprint はRSA公開鍵のSHA256フィンガープリントを返します。
 func rsaFingerprint(pub *rsa.PublicKey) string {
 	buf := new(bytes.Buffer)
 
@@ -243,6 +247,7 @@ func rsaFingerprint(pub *rsa.PublicKey) string {
 	return "SHA256:" + strings.TrimRight(base64.StdEncoding.EncodeToString(h[:]), "=")
 }
 
+// generateIdentifier はランダムな16進数識別子を生成します。
 func generateIdentifier() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)

@@ -1,3 +1,4 @@
+// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
@@ -12,23 +13,26 @@ import (
 	"gorm.io/gorm"
 )
 
+// NotificationHandler は通知関連のHTTPハンドラです。
 type NotificationHandler struct {
 	db         *gorm.DB
 	newNotifUC func(*gorm.DB) *unotification.Interactor
 	cfg        *config.Config
 }
 
+// NewNotificationHandler は NotificationHandler を生成します。
 func NewNotificationHandler(db *gorm.DB, newNotifUC func(*gorm.DB) *unotification.Interactor, cfg *config.Config) *NotificationHandler {
 	return &NotificationHandler{db: db, newNotifUC: newNotifUC, cfg: cfg}
 }
 
+// Counts は未読件数と総件数を返します。
 func (h *NotificationHandler) Counts(ctx *beecontext.Context) {
 	staffID := staffIDFromCookie(ctx)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	unread, total, err := h.newNotifUC(h.db).Counts(staffID)
+	unread, total, err := h.newNotifUC(h.db).Counts(unotification.CountsDto{StaffID: staffID})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -36,6 +40,7 @@ func (h *NotificationHandler) Counts(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"unread": unread, "total": total})
 }
 
+// Index は通知一覧をカーソルページングで返します。
 func (h *NotificationHandler) Index(ctx *beecontext.Context) {
 	staffID := staffIDFromCookie(ctx)
 	if staffID == 0 {
@@ -55,7 +60,7 @@ func (h *NotificationHandler) Index(ctx *beecontext.Context) {
 		}
 	}
 
-	page, err := h.newNotifUC(h.db).ListPage(staffID, cursor, limit)
+	page, err := h.newNotifUC(h.db).ListPage(unotification.ListPageDto{StaffID: staffID, Cursor: cursor, Limit: limit})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -67,6 +72,7 @@ func (h *NotificationHandler) Index(ctx *beecontext.Context) {
 	})
 }
 
+// ReadAll は全通知を一括既読にします。
 func (h *NotificationHandler) ReadAll(ctx *beecontext.Context) {
 	staffID := staffIDFromCookie(ctx)
 	if staffID == 0 {
@@ -76,7 +82,7 @@ func (h *NotificationHandler) ReadAll(ctx *beecontext.Context) {
 	var updated int64
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		var e error
-		updated, e = h.newNotifUC(tx).BulkMarkRead(staffID)
+		updated, e = h.newNotifUC(tx).BulkMarkRead(unotification.BulkMarkReadDto{StaffID: staffID})
 		return e
 	}); txErr != nil {
 		writeError(ctx, txErr)
@@ -85,6 +91,7 @@ func (h *NotificationHandler) ReadAll(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"updated": updated})
 }
 
+// Read は指定した通知を既読にします。
 func (h *NotificationHandler) Read(ctx *beecontext.Context) {
 	id, err := strconv.ParseInt(ctx.Input.Param(":id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -92,7 +99,7 @@ func (h *NotificationHandler) Read(ctx *beecontext.Context) {
 		return
 	}
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newNotifUC(tx).MarkRead(id)
+		return h.newNotifUC(tx).MarkRead(unotification.MarkReadDto{ID: id})
 	}); txErr != nil {
 		writeError(ctx, txErr)
 		return
@@ -100,6 +107,7 @@ func (h *NotificationHandler) Read(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"id": id})
 }
 
+// mapNotificationItems は通知一覧をレスポンス用マップに変換します。
 func mapNotificationItems(items []*domnotification.Item) []map[string]interface{} {
 	out := make([]map[string]interface{}, 0, len(items))
 	for _, n := range items {

@@ -1,3 +1,4 @@
+// Package persistence はGORMを使ったリポジトリ実装を提供します。
 package persistence
 
 import (
@@ -9,14 +10,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// GormClientRepository はGORMを使ったクライアントリポジトリ実装です。
 type GormClientRepository struct {
 	db *gorm.DB
 }
 
+// NewGormClientRepository は GormClientRepository を生成します。
 func NewGormClientRepository(db *gorm.DB) *GormClientRepository {
 	return &GormClientRepository{db: db}
 }
 
+// FindByCondition は条件に合うクライアント一覧を取得します。
 func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
 	q := r.db.Unscoped().Order("id ASC")
 	if cond.Keyword != nil && *cond.Keyword != "" {
@@ -42,9 +46,10 @@ func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*dom
 	return out, nil
 }
 
-func (r *GormClientRepository) FindByID(id uint64) (*domclient.Client, error) {
+// FindByID はIDでクライアントを取得します。
+func (r *GormClientRepository) FindByID(c *domclient.Client) (*domclient.Client, error) {
 	var m model.Client
-	if err := r.db.Unscoped().First(&m, id).Error; err != nil {
+	if err := r.db.Unscoped().First(&m, c.ID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -53,9 +58,10 @@ func (r *GormClientRepository) FindByID(id uint64) (*domclient.Client, error) {
 	return clientToDomain(&m), nil
 }
 
-func (r *GormClientRepository) FindByAccessToken(token string) (*domclient.Client, error) {
+// FindByAccessToken はアクセストークンでアクティブなクライアントを取得します。
+func (r *GormClientRepository) FindByAccessToken(c *domclient.Client) (*domclient.Client, error) {
 	var m model.Client
-	if err := r.db.Where("access_token = ? AND status = ?", token, domclient.StatusActive).First(&m).Error; err != nil {
+	if err := r.db.Where("access_token = ? AND status = ?", c.AccessToken, domclient.StatusActive).First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -64,9 +70,10 @@ func (r *GormClientRepository) FindByAccessToken(token string) (*domclient.Clien
 	return clientToDomain(&m), nil
 }
 
-func (r *GormClientRepository) FindByIdentifier(identifier string) (*domclient.Client, error) {
+// FindByIdentifier はidentifierでクライアントを取得します。
+func (r *GormClientRepository) FindByIdentifier(c *domclient.Client) (*domclient.Client, error) {
 	var m model.Client
-	if err := r.db.Where("identifier = ?", identifier).First(&m).Error; err != nil {
+	if err := r.db.Where("identifier = ?", c.Identifier).First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -75,6 +82,7 @@ func (r *GormClientRepository) FindByIdentifier(identifier string) (*domclient.C
 	return clientToDomain(&m), nil
 }
 
+// Save はクライアントを登録または更新します。
 func (r *GormClientRepository) Save(c *domclient.Client) (*domclient.Client, error) {
 	m := clientToModel(c)
 	if err := r.db.Save(m).Error; err != nil {
@@ -83,14 +91,16 @@ func (r *GormClientRepository) Save(c *domclient.Client) (*domclient.Client, err
 	return clientToDomain(m), nil
 }
 
-func (r *GormClientRepository) SoftDelete(id uint64, deletedBy uint) error {
+// SoftDelete はクライアントを論理削除します。
+func (r *GormClientRepository) SoftDelete(c *domclient.Client) error {
 	now := time.Now()
-	return r.db.Model(&model.Client{}).Where("id = ?", id).Updates(map[string]interface{}{
+	return r.db.Model(&model.Client{}).Where("id = ?", c.ID).Updates(map[string]interface{}{
 		"deleted_at": now,
-		"deleted_by": deletedBy,
+		"deleted_by": c.DeletedBy,
 	}).Error
 }
 
+// clientToDomain はモデルをドメインエンティティに変換します。
 func clientToDomain(m *model.Client) *domclient.Client {
 	c := &domclient.Client{
 		ID:          m.ID,
@@ -123,6 +133,7 @@ func clientToDomain(m *model.Client) *domclient.Client {
 	return c
 }
 
+// clientToModel はドメインエンティティをモデルに変換します。
 func clientToModel(c *domclient.Client) *model.Client {
 	m := &model.Client{
 		ID:          c.ID,

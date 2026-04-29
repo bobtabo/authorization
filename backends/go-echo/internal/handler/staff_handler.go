@@ -1,3 +1,4 @@
+// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
@@ -12,15 +13,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// StaffHandler はスタッフ関連のHTTPハンドラです。
 type StaffHandler struct {
 	db         *gorm.DB
 	newStaffUC func(*gorm.DB) *ustaff.Interactor
 }
 
+// NewStaffHandler は StaffHandler を生成します。
 func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor) *StaffHandler {
 	return &StaffHandler{db: db, newStaffUC: newStaffUC}
 }
 
+// Index はスタッフ一覧を返します。
 func (h *StaffHandler) Index(c echo.Context) error {
 	cond := domstaff.Condition{}
 
@@ -36,6 +40,7 @@ func (h *StaffHandler) Index(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"items": mapStaffList(staffs)})
 }
 
+// UpdateRole はスタッフのロールを変更します。
 func (h *StaffHandler) UpdateRole(c echo.Context) error {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
@@ -62,19 +67,21 @@ func (h *StaffHandler) UpdateRole(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"id": id})
 }
 
+// Restore は論理削除したスタッフを復元します。
 func (h *StaffHandler) Restore(c echo.Context) error {
 	id, err := parseUintParam(c, "id")
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newStaffUC(tx).Restore(id)
+		return h.newStaffUC(tx).Restore(ustaff.RestoreDto{ID: id})
 	}); txErr != nil {
 		return txErr
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"id": id})
 }
 
+// Destroy はスタッフを論理削除します。
 func (h *StaffHandler) Destroy(c echo.Context) error {
 	id, err := parseUintParam(c, "id")
 	if err != nil {

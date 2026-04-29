@@ -1,3 +1,4 @@
+// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
@@ -19,6 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// AuthHandler は認証関連のHTTPハンドラです。
 type AuthHandler struct {
 	db          *gorm.DB
 	newAuthUC   func(*gorm.DB) *uauth.Interactor
@@ -27,6 +29,7 @@ type AuthHandler struct {
 	oauthConfig *oauth2.Config
 }
 
+// NewAuthHandler は AuthHandler を生成します。
 func NewAuthHandler(
 	db *gorm.DB,
 	newAuthUC func(*gorm.DB) *uauth.Interactor,
@@ -52,12 +55,13 @@ func NewAuthHandler(
 	}
 }
 
+// GetMyProfile はCookieからスタッフIDを取得してプロフィールを返します。
 func (h *AuthHandler) GetMyProfile(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
-	staff, err := h.newAuthUC(h.db).FindUser(staffID)
+	staff, err := h.newAuthUC(h.db).FindUser(uauth.FindUserDto{ID: staffID})
 	if err != nil {
 		return err
 	}
@@ -69,12 +73,13 @@ func (h *AuthHandler) GetMyProfile(c echo.Context) error {
 	})
 }
 
+// Login はCookieのスタッフIDを検証してログイン状態を返します。
 func (h *AuthHandler) Login(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
-	staff, err := h.newAuthUC(h.db).FindUser(staffID)
+	staff, err := h.newAuthUC(h.db).FindUser(uauth.FindUserDto{ID: staffID})
 	if err != nil {
 		return err
 	}
@@ -86,12 +91,14 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	})
 }
 
+// Logout はスタッフCookieを削除してログアウトします。
 func (h *AuthHandler) Logout(c echo.Context) error {
 	secure := h.cfg.App.Env == "production"
 	clearStaffCookie(c, secure)
 	return c.JSON(http.StatusOK, map[string]interface{}{})
 }
 
+// Invitation は招待トークンを検証してキャッシュに保存します。
 func (h *AuthHandler) Invitation(c echo.Context) error {
 	token := c.Param("token")
 	result, err := h.newInviteUC(h.db).FindByToken(uinvitation.FindByTokenDto{Token: token})
@@ -106,6 +113,7 @@ func (h *AuthHandler) Invitation(c echo.Context) error {
 	})
 }
 
+// GoogleRedirect はGoogle OAuth認証ページへリダイレクトします。
 func (h *AuthHandler) GoogleRedirect(c echo.Context) error {
 	oauthState := c.QueryParam("token")
 	if oauthState == "" {
@@ -115,6 +123,7 @@ func (h *AuthHandler) GoogleRedirect(c echo.Context) error {
 	return c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
+// GoogleCallback はGoogle OAuthコールバックを受けてログイン処理を行います。
 func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 	code := c.QueryParam("code")
 	if code == "" {

@@ -1,3 +1,4 @@
+// Package auth は認証ユースケースを提供します。
 package auth
 
 import (
@@ -7,17 +8,20 @@ import (
 	"time"
 )
 
+// Interactor は認証ユースケースの実装です。
 type Interactor struct {
 	staffRepo          domstaff.Repository
 	invitationAuthRepo dominvitation.AuthRepository
 }
 
+// NewInteractor は Interactor を生成します。
 func NewInteractor(staffRepo domstaff.Repository, invitationAuthRepo dominvitation.AuthRepository) *Interactor {
 	return &Interactor{staffRepo: staffRepo, invitationAuthRepo: invitationAuthRepo}
 }
 
-func (uc *Interactor) FindUser(id uint) (*domstaff.Vo, error) {
-	s, err := uc.staffRepo.FindByID(id)
+// FindUser はIDでスタッフプロフィールを取得します。
+func (uc *Interactor) FindUser(dto FindUserDto) (*domstaff.Vo, error) {
+	s, err := uc.staffRepo.FindByID(&domstaff.Staff{ID: dto.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -27,8 +31,9 @@ func (uc *Interactor) FindUser(id uint) (*domstaff.Vo, error) {
 	return staffToVo(s), nil
 }
 
+// Login はSSOコールバック情報を元にスタッフを登録またはログインします。
 func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
-	existing, err := uc.staffRepo.FindByProvider(dto.Provider, dto.ProviderID)
+	existing, err := uc.staffRepo.FindByProvider(&domstaff.Staff{Provider: dto.Provider, ProviderID: dto.ProviderID})
 	if err != nil {
 		return nil, err
 	}

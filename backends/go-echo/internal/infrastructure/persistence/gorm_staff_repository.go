@@ -1,3 +1,4 @@
+// Package persistence はGORMを使ったリポジトリ実装を提供します。
 package persistence
 
 import (
@@ -9,14 +10,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// GormStaffRepository はGORMを使ったスタッフリポジトリ実装です。
 type GormStaffRepository struct {
 	db *gorm.DB
 }
 
+// NewGormStaffRepository は GormStaffRepository を生成します。
 func NewGormStaffRepository(db *gorm.DB) *GormStaffRepository {
 	return &GormStaffRepository{db: db}
 }
 
+// FindByCondition は条件に合うスタッフ一覧を取得します。
 func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
 	q := r.db.Unscoped().Order("id ASC")
 	if cond.Keyword != nil && *cond.Keyword != "" {
@@ -37,9 +41,10 @@ func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domst
 	return out, nil
 }
 
-func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
+// FindByID はIDでスタッフを取得します。
+func (r *GormStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {
 	var m model.Staff
-	if err := r.db.First(&m, id).Error; err != nil {
+	if err := r.db.First(&m, s.ID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -48,9 +53,10 @@ func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
 	return staffToDomain(&m), nil
 }
 
-func (r *GormStaffRepository) FindByProvider(provider int, providerID string) (*domstaff.Staff, error) {
+// FindByProvider はOAuthプロバイダー情報でスタッフを取得します。
+func (r *GormStaffRepository) FindByProvider(s *domstaff.Staff) (*domstaff.Staff, error) {
 	var m model.Staff
-	if err := r.db.Unscoped().Where("provider = ? AND provider_id = ?", provider, providerID).First(&m).Error; err != nil {
+	if err := r.db.Unscoped().Where("provider = ? AND provider_id = ?", s.Provider, s.ProviderID).First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -59,6 +65,7 @@ func (r *GormStaffRepository) FindByProvider(provider int, providerID string) (*
 	return staffToDomain(&m), nil
 }
 
+// FindAllActive は論理削除されていない全スタッフを取得します。
 func (r *GormStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
 	var ms []*model.Staff
 	if err := r.db.Where("deleted_at IS NULL").Find(&ms).Error; err != nil {
@@ -71,6 +78,7 @@ func (r *GormStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
 	return out, nil
 }
 
+// Save はスタッフを登録または更新します。
 func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 	m := staffToModel(s)
 	if err := r.db.Save(m).Error; err != nil {
@@ -79,28 +87,31 @@ func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 	return staffToDomain(m), nil
 }
 
-func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint) (bool, error) {
+// UpdateRole はスタッフのロールを更新します。
+func (r *GormStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
-		"role":       role,
+	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", s.ID).Updates(map[string]interface{}{
+		"role":       s.Role,
 		"updated_at": now,
-		"updated_by": updatedBy,
+		"updated_by": s.UpdatedBy,
 		"version":    gorm.Expr("version + 1"),
 	})
 	return result.RowsAffected > 0, result.Error
 }
 
-func (r *GormStaffRepository) SoftDelete(id uint, deletedBy uint) (bool, error) {
+// SoftDelete はスタッフを論理削除します。
+func (r *GormStaffRepository) SoftDelete(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
+	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", s.ID).Updates(map[string]interface{}{
 		"deleted_at": now,
-		"deleted_by": deletedBy,
+		"deleted_by": s.DeletedBy,
 	})
 	return result.RowsAffected > 0, result.Error
 }
 
-func (r *GormStaffRepository) Restore(id uint) (bool, error) {
-	result := r.db.Unscoped().Model(&model.Staff{}).Where("id = ? AND deleted_at IS NOT NULL", id).Updates(map[string]interface{}{
+// Restore は論理削除したスタッフを復元します。
+func (r *GormStaffRepository) Restore(s *domstaff.Staff) (bool, error) {
+	result := r.db.Unscoped().Model(&model.Staff{}).Where("id = ? AND deleted_at IS NOT NULL", s.ID).Updates(map[string]interface{}{
 		"deleted_at": nil,
 		"deleted_by": nil,
 	})

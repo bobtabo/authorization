@@ -1,3 +1,4 @@
+// Package notification は通知ユースケースを提供します。
 package notification
 
 import (
@@ -5,23 +6,27 @@ import (
 	domstaff "authorization-go-beego/internal/domain/staff"
 )
 
+// Interactor は通知ユースケースの実装です。
 type Interactor struct {
 	repo      domnotification.Repository
 	staffRepo domstaff.Repository
 }
 
+// NewInteractor は Interactor を生成します。
 func NewInteractor(repo domnotification.Repository, staffRepo domstaff.Repository) *Interactor {
 	return &Interactor{repo: repo, staffRepo: staffRepo}
 }
 
-func (uc *Interactor) ListPage(staffID uint, cursor *string, limit int) (*domnotification.Page, error) {
+// ListPage は通知一覧をカーソルページングで取得します。
+func (uc *Interactor) ListPage(dto ListPageDto) (*domnotification.Page, error) {
+	limit := dto.Limit
 	if limit < 1 {
 		limit = 1
 	}
 	if limit > 100 {
 		limit = 100
 	}
-	notifications, nextCursor, err := uc.repo.ListPage(staffID, cursor, limit)
+	notifications, nextCursor, err := uc.repo.ListPage(dto.StaffID, dto.Cursor, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -32,14 +37,17 @@ func (uc *Interactor) ListPage(staffID uint, cursor *string, limit int) (*domnot
 	return &domnotification.Page{Items: items, NextCursor: nextCursor}, nil
 }
 
-func (uc *Interactor) Counts(staffID uint) (unread, total int64, err error) {
-	return uc.repo.Counts(staffID)
+// Counts は未読件数と総件数を返します。
+func (uc *Interactor) Counts(dto CountsDto) (unread, total int64, err error) {
+	return uc.repo.Counts(dto.StaffID)
 }
 
-func (uc *Interactor) BulkMarkRead(staffID uint) (int64, error) {
-	return uc.repo.BulkMarkRead(int64(staffID), nil, true)
+// BulkMarkRead は全通知を一括既読にします。
+func (uc *Interactor) BulkMarkRead(dto BulkMarkReadDto) (int64, error) {
+	return uc.repo.BulkMarkRead(int64(dto.StaffID), nil, true)
 }
 
+// FanOut は全アクティブスタッフに通知を送信します。
 func (uc *Interactor) FanOut(dto FanOutDto) error {
 	staffs, err := uc.staffRepo.FindAllActive()
 	if err != nil {
@@ -51,11 +59,13 @@ func (uc *Interactor) FanOut(dto FanOutDto) error {
 	return nil
 }
 
-func (uc *Interactor) MarkRead(id int64) error {
-	_, err := uc.repo.Patch(id, map[string]interface{}{"read": true})
+// MarkRead は指定した通知を既読にします。
+func (uc *Interactor) MarkRead(dto MarkReadDto) error {
+	_, err := uc.repo.Patch(dto.ID, map[string]interface{}{"read": true})
 	return err
 }
 
+// notificationToItem は通知エンティティを一覧用アイテムに変換します。
 func notificationToItem(n *domnotification.Notification) *domnotification.Item {
 	return &domnotification.Item{
 		ID:          n.ID,

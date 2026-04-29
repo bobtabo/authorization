@@ -1,3 +1,4 @@
+// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
@@ -16,6 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// ClientHandler はクライアント関連のHTTPハンドラです。
 type ClientHandler struct {
 	db          *gorm.DB
 	newClientUC func(*gorm.DB) *uclient.Interactor
@@ -23,6 +25,7 @@ type ClientHandler struct {
 	mailer      *mail.Mailer
 }
 
+// NewClientHandler は ClientHandler を生成します。
 func NewClientHandler(
 	db *gorm.DB,
 	newClientUC func(*gorm.DB) *uclient.Interactor,
@@ -37,6 +40,7 @@ func NewClientHandler(
 	}
 }
 
+// Index はクライアント一覧を返します。
 func (h *ClientHandler) Index(ctx *beecontext.Context) {
 	cond := domclient.Condition{}
 
@@ -62,13 +66,14 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientList(clients))
 }
 
+// Show はクライアント詳細を返します。
 func (h *ClientHandler) Show(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	client, err := h.newClientUC(h.db).FindByID(id)
+	client, err := h.newClientUC(h.db).FindByID(uclient.FindByIDDto{ID: id})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -76,6 +81,7 @@ func (h *ClientHandler) Show(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientDetail(client))
 }
 
+// Store はクライアントを新規登録します。
 func (h *ClientHandler) Store(ctx *beecontext.Context) {
 	var body struct {
 		Name     string `json:"name"`
@@ -128,6 +134,7 @@ func (h *ClientHandler) Store(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusCreated, map[string]interface{}{"id": storeVo.ID})
 }
 
+// Update はクライアント情報を更新します。
 func (h *ClientHandler) Update(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {
@@ -177,6 +184,7 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientDetail(detailVo))
 }
 
+// Destroy はクライアントを論理削除します。
 func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {
@@ -185,7 +193,7 @@ func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 	}
 	executorID := staffIDFromCookie(ctx)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newClientUC(tx).Destroy(id, executorID)
+		return h.newClientUC(tx).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID})
 	}); txErr != nil {
 		writeError(ctx, txErr)
 		return
@@ -193,6 +201,7 @@ func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{})
 }
 
+// mapClientList はクライアント一覧をレスポンス用マップに変換します。
 func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {
 	out := make([]map[string]interface{}, 0, len(clients))
 	for _, c := range clients {
@@ -209,6 +218,7 @@ func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {
 	return out
 }
 
+// mapClientDetail はクライアント詳細をレスポンス用マップに変換します。
 func mapClientDetail(c *domclient.DetailVo) map[string]interface{} {
 	return map[string]interface{}{
 		"id":         c.ID,

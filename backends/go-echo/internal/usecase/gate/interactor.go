@@ -30,7 +30,7 @@ func NewInteractor(
 }
 
 func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
-	c, err := uc.clientRepo.FindByAccessToken(dto.AccessToken)
+	c, err := uc.clientRepo.FindByAccessToken(&domclient.Client{AccessToken: dto.AccessToken})
 	if err != nil || c == nil {
 		return nil, apperror.Unauthorized("client_not_found")
 	}
@@ -51,7 +51,7 @@ func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 }
 
 func (uc *Interactor) Verify(dto VerifyDto) (*domgate.VerifyVo, error) {
-	c, err := uc.clientRepo.FindByIdentifier(dto.Identifier)
+	c, err := uc.clientRepo.FindByIdentifier(&domclient.Client{Identifier: dto.Identifier})
 	if err != nil || c == nil {
 		return nil, apperror.Forbidden("client_not_found")
 	}

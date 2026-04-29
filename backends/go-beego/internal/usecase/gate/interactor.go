@@ -1,3 +1,4 @@
+// Package gate はゲートウェイ認証ユースケースを提供します。
 package gate
 
 import (
@@ -15,12 +16,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// Interactor はゲートウェイ認証ユースケースの実装です。
 type Interactor struct {
 	clientRepo domclient.Repository
 	cache      domgate.CacheRepository
 	cfg        *config.Config
 }
 
+// NewInteractor は Interactor を生成します。
 func NewInteractor(
 	clientRepo domclient.Repository,
 	cache domgate.CacheRepository,
@@ -29,8 +32,9 @@ func NewInteractor(
 	return &Interactor{clientRepo: clientRepo, cache: cache, cfg: cfg}
 }
 
+// IssueToken はアクセストークンを検証してJWTを発行します。
 func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
-	c, err := uc.clientRepo.FindByAccessToken(dto.AccessToken)
+	c, err := uc.clientRepo.FindByAccessToken(&domclient.Client{AccessToken: dto.AccessToken})
 	if err != nil || c == nil {
 		return nil, apperror.Unauthorized("client_not_found")
 	}
@@ -50,8 +54,9 @@ func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 	return &domgate.IssueVo{Token: token}, nil
 }
 
+// Verify はJWTトークンを検証してクレームを返します。
 func (uc *Interactor) Verify(dto VerifyDto) (*domgate.VerifyVo, error) {
-	c, err := uc.clientRepo.FindByIdentifier(dto.Identifier)
+	c, err := uc.clientRepo.FindByIdentifier(&domclient.Client{Identifier: dto.Identifier})
 	if err != nil || c == nil {
 		return nil, apperror.Forbidden("client_not_found")
 	}
@@ -63,6 +68,7 @@ func (uc *Interactor) Verify(dto VerifyDto) (*domgate.VerifyVo, error) {
 	return &domgate.VerifyVo{Claims: claims}, nil
 }
 
+// issueJwt はRSA秘密鍵でJWTを署名して返します。
 func (uc *Interactor) issueJwt(memberID, identifier, privateKeyPEM, fingerprint string) (string, error) {
 	privKey, err := parseRSAPrivateKey(privateKeyPEM)
 	if err != nil {
@@ -85,6 +91,7 @@ func (uc *Interactor) issueJwt(memberID, identifier, privateKeyPEM, fingerprint 
 	return token.SignedString(privKey)
 }
 
+// verifyJwt はRSA公開鍵でJWTを検証してクレームを返します。
 func (uc *Interactor) verifyJwt(identifier, tokenStr, publicKeyPEM string) (map[string]interface{}, error) {
 	pubKey, err := parseRSAPublicKey(publicKeyPEM)
 	if err != nil {
@@ -115,6 +122,7 @@ func (uc *Interactor) verifyJwt(identifier, tokenStr, publicKeyPEM string) (map[
 	return map[string]interface{}(claims), nil
 }
 
+// parseRSAPrivateKey はPEM文字列からRSA秘密鍵を解析します。
 func parseRSAPrivateKey(pemStr string) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode([]byte(pemStr))
 	if block == nil {
@@ -123,6 +131,7 @@ func parseRSAPrivateKey(pemStr string) (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
+// parseRSAPublicKey はPEM文字列からRSA公開鍵を解析します。
 func parseRSAPublicKey(pemStr string) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode([]byte(pemStr))
 	if block == nil {

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// New はデータベース接続を生成して返します。
 func New(cfg *config.Config) (*gorm.DB, error) {
 	logLevel := logger.Warn
 	if cfg.App.Env == "local" {

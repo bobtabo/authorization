@@ -1,3 +1,4 @@
+// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
@@ -12,28 +13,32 @@ import (
 	"gorm.io/gorm"
 )
 
+// NotificationHandler は通知関連のHTTPハンドラです。
 type NotificationHandler struct {
 	db         *gorm.DB
 	newNotifUC func(*gorm.DB) *unotification.Interactor
 	cfg        *config.Config
 }
 
+// NewNotificationHandler は NotificationHandler を生成します。
 func NewNotificationHandler(db *gorm.DB, newNotifUC func(*gorm.DB) *unotification.Interactor, cfg *config.Config) *NotificationHandler {
 	return &NotificationHandler{db: db, newNotifUC: newNotifUC, cfg: cfg}
 }
 
+// Counts は未読件数と総件数を返します。
 func (h *NotificationHandler) Counts(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
-	unread, total, err := h.newNotifUC(h.db).Counts(staffID)
+	unread, total, err := h.newNotifUC(h.db).Counts(unotification.CountsDto{StaffID: staffID})
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{"unread": unread, "total": total})
 }
 
+// Index は通知一覧をカーソルページングで返します。
 func (h *NotificationHandler) Index(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
@@ -52,7 +57,7 @@ func (h *NotificationHandler) Index(c echo.Context) error {
 		}
 	}
 
-	page, err := h.newNotifUC(h.db).ListPage(staffID, cursor, limit)
+	page, err := h.newNotifUC(h.db).ListPage(unotification.ListPageDto{StaffID: staffID, Cursor: cursor, Limit: limit})
 	if err != nil {
 		return err
 	}
@@ -63,6 +68,7 @@ func (h *NotificationHandler) Index(c echo.Context) error {
 	})
 }
 
+// ReadAll は全通知を一括既読にします。
 func (h *NotificationHandler) ReadAll(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
@@ -71,7 +77,7 @@ func (h *NotificationHandler) ReadAll(c echo.Context) error {
 	var updated int64
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		var e error
-		updated, e = h.newNotifUC(tx).BulkMarkRead(staffID)
+		updated, e = h.newNotifUC(tx).BulkMarkRead(unotification.BulkMarkReadDto{StaffID: staffID})
 		return e
 	}); txErr != nil {
 		return txErr
@@ -79,13 +85,14 @@ func (h *NotificationHandler) ReadAll(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{"updated": updated})
 }
 
+// Read は指定した通知を既読にします。
 func (h *NotificationHandler) Read(c echo.Context) error {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		return apperror.BadRequest("invalid_id")
 	}
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newNotifUC(tx).MarkRead(id)
+		return h.newNotifUC(tx).MarkRead(unotification.MarkReadDto{ID: id})
 	}); txErr != nil {
 		return txErr
 	}
