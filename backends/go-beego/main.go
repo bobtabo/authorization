@@ -1,7 +1,122 @@
 package main
 
-import "fmt"
+import (
+	"authorization-go-beego/internal/config"
+	"authorization-go-beego/internal/handler"
+	"authorization-go-beego/internal/infrastructure/cache"
+	"authorization-go-beego/internal/infrastructure/db"
+	"authorization-go-beego/internal/infrastructure/mail"
+	"authorization-go-beego/internal/infrastructure/persistence"
+	"authorization-go-beego/internal/middleware"
+	uauth "authorization-go-beego/internal/usecase/auth"
+	uclient "authorization-go-beego/internal/usecase/client"
+	ugate "authorization-go-beego/internal/usecase/gate"
+	uinvitation "authorization-go-beego/internal/usecase/invitation"
+	unotification "authorization-go-beego/internal/usecase/notification"
+	ustaff "authorization-go-beego/internal/usecase/staff"
+	"log"
+	"net/http"
+
+	"github.com/beego/beego/v2/server/web"
+	beecontext "github.com/beego/beego/v2/server/web/context"
+	"gorm.io/gorm"
+)
 
 func main() {
-	fmt.Println("authorization-go-beego")
+	cfg := config.Load()
+
+	database, err := db.New(cfg)
+	if err != nil {
+		log.Fatalf("db connect: %v", err)
+	}
+
+	rdb := cache.New(cfg)
+
+	gateCacheRepo := cache.NewRedisGateRepository(rdb, cfg)
+	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, cfg)
+
+	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
+	}
+	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	}
+	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	}
+	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, cfg.App.FrontendURL), invitationAuthRepo)
+	}
+	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+		return unotification.NewInteractor(
+			persistence.NewGormNotificationRepository(tx),
+			persistence.NewGormStaffRepository(tx),
+		)
+	}
+
+	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), gateCacheRepo, cfg)
+
+	mailer := mail.NewMailer(cfg.Mail)
+
+	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
+	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer)
+	staffH := handler.NewStaffHandler(database, newStaffUC)
+	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
+	gateH := handler.NewGateHandler(gateUC)
+	notificationH := handler.NewNotificationHandler(database, newNotifUC, cfg)
+
+	web.BConfig.CopyRequestBody = true
+	web.BConfig.WebConfig.AutoRender = false
+	web.BConfig.Log.AccessLogs = false
+
+	// CORSフィルター（全ルートに適用）
+	web.InsertFilter("*", web.BeforeRouter, func(ctx *beecontext.Context) {
+		ctx.Output.Header("Access-Control-Allow-Origin", cfg.App.FrontendURL)
+		ctx.Output.Header("Access-Control-Allow-Credentials", "true")
+		ctx.Output.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		ctx.Output.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		if ctx.Input.Method() == "OPTIONS" {
+			ctx.Output.Status = http.StatusNoContent
+			_ = ctx.Output.Body([]byte{})
+		}
+	}, web.WithReturnOnOutput(true))
+
+	// Gate APIのクライアント認証フィルター
+	web.InsertFilter("/api/gate/issue", web.BeforeExec,
+		middleware.ClientTokenAuth(newClientUC(database)),
+		web.WithReturnOnOutput(true),
+	)
+
+	web.Get("/auth/google/redirect", authH.GoogleRedirect)
+	web.Get("/auth/google/callback", authH.GoogleCallback)
+
+	web.Get("/api/auth/me", authH.GetMyProfile)
+	web.Get("/api/auth/login", authH.Login)
+	web.Get("/api/auth/logout", authH.Logout)
+	web.Get("/api/auth/invitation/:token", authH.Invitation)
+
+	web.Get("/api/clients", clientH.Index)
+	web.Post("/api/clients/store", clientH.Store)
+	web.Put("/api/clients/:id/update", clientH.Update)
+	web.Get("/api/clients/:id", clientH.Show)
+	web.Delete("/api/clients/:id/delete", clientH.Destroy)
+
+	web.Get("/api/staffs", staffH.Index)
+	web.Patch("/api/staffs/:id/updateRole", staffH.UpdateRole)
+	web.Patch("/api/staffs/:id/restore", staffH.Restore)
+	web.Delete("/api/staffs/:id/delete", staffH.Destroy)
+
+	web.Get("/api/admin/invitation", adminInvitationH.Index)
+	web.Get("/api/admin/invitation/issue", adminInvitationH.Issue)
+
+	web.Get("/api/gate/issue", gateH.Issue)
+	web.Get("/api/gate/client/:identifier/verify", gateH.Verify)
+
+	web.Get("/api/notifications/counts", notificationH.Counts)
+	web.Get("/api/notifications", notificationH.Index)
+	web.Patch("/api/notifications", notificationH.ReadAll)
+	web.Patch("/api/notifications/:id", notificationH.Read)
+
+	log.Printf("starting go-beego server on :%s", cfg.App.Port)
+	web.Run(":" + cfg.App.Port)
 }
