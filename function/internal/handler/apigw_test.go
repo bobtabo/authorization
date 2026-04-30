@@ -67,6 +67,28 @@ func TestHandler_Proxy(t *testing.T) {
 			wantBackend: "/api/health",
 		},
 		{
+			name:        "Go (Beego) バックエンドへ転送",
+			rawPath:     "/function/go-beego/api/clients",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/api/clients",
+		},
+		{
+			name:        "Go (Echo) バックエンドへ転送",
+			rawPath:     "/function/go-echo/api/clients",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/api/clients",
+		},
+		{
+			// /function/go が /function/go-beego に誤マッチしないことを確認する
+			name:        "go-beego パスが go バックエンドに誤ルーティングされない",
+			rawPath:     "/function/go-beego/auth/google/redirect",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/auth/google/redirect",
+		},
+		{
 			name:        "Kotlin バックエンドへ転送",
 			rawPath:     "/function/kotlin/api/clients",
 			method:      "GET",

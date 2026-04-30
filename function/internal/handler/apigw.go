@@ -19,6 +19,8 @@ import (
 var backendURL = map[string]string{
 	"/function/php":      getenv("BACKEND_PHP_URL",      "https://apis.authorization-php.dev"),
 	"/function/go":       getenv("BACKEND_GO_URL",       "https://apis.authorization-go.dev"),
+	"/function/go-beego": getenv("BACKEND_GO_BEEGO_URL", "https://apis.authorization-go-beego.dev"),
+	"/function/go-echo":  getenv("BACKEND_GO_ECHO_URL",  "https://apis.authorization-go-echo.dev"),
 	"/function/kotlin":   getenv("BACKEND_KOTLIN_URL",   "https://apis.authorization-kotlin.dev"),
 	"/function/python":   getenv("BACKEND_PYTHON_URL",   "https://apis.authorization-python.dev"),
 	"/function/rb-hanami":getenv("BACKEND_RB_HANAMI_URL","https://apis.authorization-rb-hanami.dev"),
@@ -111,9 +113,11 @@ func (h *Handler) HandleAPIGatewayV2(
 
 // resolveBackend はパスを見てバックエンドのベース URL と転送先パスを返す。
 // 一致するプレフィックスがなければ空文字列を返す。
+// /function/go が /function/go-beego に誤マッチしないよう、
+// プレフィックスの直後が "/" または末尾であることを確認する。
 func resolveBackend(rawPath string) (base, path string) {
 	for prefix, url := range backendURL {
-		if strings.HasPrefix(rawPath, prefix) {
+		if rawPath == prefix || strings.HasPrefix(rawPath, prefix+"/") {
 			p := strings.TrimPrefix(rawPath, prefix)
 			if p == "" {
 				p = "/"

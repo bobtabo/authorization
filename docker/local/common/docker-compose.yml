@@ -91,6 +91,8 @@ services:
     extra_hosts:
       - "apis.authorization-php.dev:172.19.0.6"
       - "apis.authorization-go.dev:172.19.0.6"
+      - "apis.authorization-go-beego.dev:172.19.0.6"
+      - "apis.authorization-go-echo.dev:172.19.0.6"
       - "apis.authorization-kotlin.dev:172.19.0.6"
       - "apis.authorization-python.dev:172.19.0.6"
       - "apis.authorization-rb-hanami.dev:172.19.0.6"
