@@ -44,6 +44,8 @@ export default defineConfig({
     // 実行例: npx playwright test --project=real-go
     { name: "real-php",       grep: /\[PHP\]/,              use: { ...devices["Desktop Chrome"] } },
     { name: "real-go",        grep: /\[Go\]/,               use: { ...devices["Desktop Chrome"] } },
+    { name: "real-go-beego",  grep: /\[Go \(Beego\)\]/,    use: { ...devices["Desktop Chrome"] } },
+    { name: "real-go-echo",   grep: /\[Go \(Echo\)\]/,     use: { ...devices["Desktop Chrome"] } },
     { name: "real-kotlin",    grep: /\[Kotlin\]/,           use: { ...devices["Desktop Chrome"] } },
     { name: "real-python",    grep: /\[Python\]/,           use: { ...devices["Desktop Chrome"] } },
     { name: "real-rb-hanami", grep: /\[Ruby \(Hanami\)\]/, use: { ...devices["Desktop Chrome"] } },
