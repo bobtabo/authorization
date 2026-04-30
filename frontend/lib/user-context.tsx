@@ -12,7 +12,7 @@ interface UserContextValue {
   user: User | null;
 }
 
-const USER_CACHE_KEY = "cachedUser";
+export const USER_CACHE_KEY = "cachedUser";
 
 function loadCachedUser(): User | null {
   if (typeof window === "undefined") return null;

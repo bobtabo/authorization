@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiGet } from "@/src/api/http";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+import { USER_CACHE_KEY } from "@/lib/user-context";
 
 export default function InvitationLandingPage(): React.JSX.Element {
   const { token: tokenParam } = useParams<{ token: string }>();
@@ -21,6 +22,10 @@ export default function InvitationLandingPage(): React.JSX.Element {
     let cancelled = false;
 
     async function go() {
+      if (localStorage.getItem(USER_CACHE_KEY)) {
+        router.replace("/clients");
+        return;
+      }
       try {
         await apiGet(`/auth/invitation/${token}`);
         if (cancelled) return;
