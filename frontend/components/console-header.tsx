@@ -212,6 +212,7 @@ export function ConsoleHeader(): React.JSX.Element {
                 className="h-9 min-w-[10rem] cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-1.5 pl-3 pr-9 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 sm:min-w-[11rem] sm:text-sm"
               >
                 <option value="go">Go</option>
+                <option value="go-beego">Go (Beego)</option>
                 <option value="go-echo">Go (Echo)</option>
                 <option value="kotlin">Kotlin</option>
                 <option value="php">PHP</option>
