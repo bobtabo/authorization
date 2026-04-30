@@ -7,8 +7,9 @@ import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
 
 const RUNTIME_LABEL: Record<string, string> = {
-  go:       "Go",
-  kotlin:   "Kotlin",
+  go:          "Go",
+  "go-echo":   "Go (Echo)",
+  kotlin:      "Kotlin",
   php:      "PHP",
   python:   "Python",
   "rb-hanami": "Ruby (Hanami)",
