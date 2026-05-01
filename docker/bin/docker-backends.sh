@@ -7,7 +7,7 @@ ARG="${1}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 run() {
-    bash "${SCRIPT_DIR}/docker-go.sh"         "${ARG}"
+    bash "${SCRIPT_DIR}/docker-go-gin.sh"      "${ARG}"
     bash "${SCRIPT_DIR}/docker-go-echo.sh"    "${ARG}"
     bash "${SCRIPT_DIR}/docker-go-beego.sh"   "${ARG}"
     bash "${SCRIPT_DIR}/docker-kotlin.sh"     "${ARG}"

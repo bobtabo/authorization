@@ -69,7 +69,7 @@ test.describe("ヘッダー / バックエンド切り替え", () => {
   test("ランタイムを切り替えるとログアウトしてログインへ遷移する", async ({ page }) => {
     await mockLogout(page, PHP_API);
 
-    await page.getByLabel("Backend:").selectOption("go");
+    await page.getByLabel("Backend:").selectOption("go-gin");
 
     await expect(page).toHaveURL("/login");
   });
@@ -77,7 +77,7 @@ test.describe("ヘッダー / バックエンド切り替え", () => {
   test("切り替え後にログインページが表示される", async ({ page }) => {
     await mockLogout(page, PHP_API);
 
-    await page.getByLabel("Backend:").selectOption("go");
+    await page.getByLabel("Backend:").selectOption("go-gin");
     await expect(page.getByText("Googleで続行")).toBeVisible();
   });
 });

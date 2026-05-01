@@ -25,7 +25,7 @@
 | パス                                                                   | 内容                                                                 |
 |----------------------------------------------------------------------|--------------------------------------------------------------------|
 | [`develop/`](./develop/)                                             | AWSの開発環境用を想定                                                       |
-| [`local/app-go/`](local/app-go/)             | Go（Gin）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                  |
+| [`local/app-go-gin/`](local/app-go-gin/)     | Go（Gin）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                  |
 | [`local/app-go-echo/`](local/app-go-echo/)   | Go（Echo）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
 | [`local/app-go-beego/`](local/app-go-beego/) | Go（Beego）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                |
 | [`local/app-kotlin/`](local/app-kotlin/)     | Kotlin（Ktor）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
@@ -87,7 +87,7 @@ bin/docker-common.sh down
 
 ```bash
 # Go（Gin）環境を起動する
-bin/docker-go.sh up
+bin/docker-go-gin.sh up
 
 # Go（Echo）環境を起動する
 bin/docker-go-echo.sh up
@@ -121,7 +121,7 @@ bin/docker-ts.sh up
 
 ```bash
 # Go（Gin）環境に入る
-bin/docker-go.sh exec
+bin/docker-go-gin.sh exec
 
 # Go（Echo）環境に入る
 bin/docker-go-echo.sh exec
@@ -155,7 +155,7 @@ bin/docker-ts.sh exec
 
 ```bash
 # Go（Gin）環境を破棄する
-bin/docker-go.sh down
+bin/docker-go-gin.sh down
 
 # Go（Echo）環境を破棄する
 bin/docker-go-echo.sh down
