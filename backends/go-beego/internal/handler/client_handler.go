@@ -1,12 +1,13 @@
-// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
 	domclient "authorization-go-beego/internal/domain/client"
 	"authorization-go-beego/internal/infrastructure/mail"
+	"authorization-go-beego/internal/infrastructure/persistence"
 	uclient "authorization-go-beego/internal/usecase/client"
 	unotification "authorization-go-beego/internal/usecase/notification"
 	"authorization-go-beego/pkg/apperror"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,33 +15,30 @@ import (
 	"time"
 
 	beecontext "github.com/beego/beego/v2/server/web/context"
-	"gorm.io/gorm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
-// ClientHandler はクライアント関連のHTTPハンドラです。
 type ClientHandler struct {
-	db          *gorm.DB
-	newClientUC func(*gorm.DB) *uclient.Interactor
-	newNotifUC  func(*gorm.DB) *unotification.Interactor
+	ormer       orm.Ormer
+	newClientUC func(persistence.QueryOrmer) *uclient.Interactor
+	newNotifUC  func(persistence.QueryOrmer) *unotification.Interactor
 	mailer      *mail.Mailer
 }
 
-// NewClientHandler は ClientHandler を生成します。
 func NewClientHandler(
-	db *gorm.DB,
-	newClientUC func(*gorm.DB) *uclient.Interactor,
-	newNotifUC func(*gorm.DB) *unotification.Interactor,
+	ormer orm.Ormer,
+	newClientUC func(persistence.QueryOrmer) *uclient.Interactor,
+	newNotifUC func(persistence.QueryOrmer) *unotification.Interactor,
 	mailer *mail.Mailer,
 ) *ClientHandler {
 	return &ClientHandler{
-		db:          db,
+		ormer:       ormer,
 		newClientUC: newClientUC,
 		newNotifUC:  newNotifUC,
 		mailer:      mailer,
 	}
 }
 
-// Index はクライアント一覧を返します。
 func (h *ClientHandler) Index(ctx *beecontext.Context) {
 	cond := domclient.Condition{}
 
@@ -58,7 +56,7 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 		}
 	}
 
-	clients, err := h.newClientUC(h.db).FindByCondition(cond)
+	clients, err := h.newClientUC(h.ormer).FindByCondition(cond)
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -66,14 +64,13 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientList(clients))
 }
 
-// Show はクライアント詳細を返します。
 func (h *ClientHandler) Show(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	client, err := h.newClientUC(h.db).FindByID(uclient.FindByIDDto{ID: id})
+	client, err := h.newClientUC(h.ormer).FindByID(uclient.FindByIDDto{ID: id})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -81,7 +78,6 @@ func (h *ClientHandler) Show(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientDetail(client))
 }
 
-// Store はクライアントを新規登録します。
 func (h *ClientHandler) Store(ctx *beecontext.Context) {
 	var body struct {
 		Name     string `json:"name"`
@@ -101,7 +97,7 @@ func (h *ClientHandler) Store(ctx *beecontext.Context) {
 	executorID := staffIDFromCookie(ctx)
 
 	var storeVo *domclient.StoreVo
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		var e error
 		storeVo, e = h.newClientUC(tx).Store(uclient.StoreDto{
 			Name:       body.Name,
@@ -121,7 +117,7 @@ func (h *ClientHandler) Store(ctx *beecontext.Context) {
 	}
 
 	notifURL := fmt.Sprintf("/clients/show?id=%d", storeVo.ID)
-	_ = h.newNotifUC(h.db).FanOut(unotification.FanOutDto{
+	_ = h.newNotifUC(h.ormer).FanOut(unotification.FanOutDto{
 		Title:       "新しいクライアントが登録されました",
 		Message:     storeVo.Name,
 		MessageType: 1,
@@ -134,7 +130,6 @@ func (h *ClientHandler) Store(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusCreated, map[string]interface{}{"id": storeVo.ID})
 }
 
-// Update はクライアント情報を更新します。
 func (h *ClientHandler) Update(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {
@@ -161,7 +156,7 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 	executorID := staffIDFromCookie(ctx)
 
 	var detailVo *domclient.DetailVo
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		var e error
 		detailVo, e = h.newClientUC(tx).Update(uclient.UpdateDto{
 			ID:         id,
@@ -184,7 +179,6 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientDetail(detailVo))
 }
 
-// Destroy はクライアントを論理削除します。
 func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {
@@ -192,7 +186,7 @@ func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 		return
 	}
 	executorID := staffIDFromCookie(ctx)
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newClientUC(tx).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID})
 	}); txErr != nil {
 		writeError(ctx, txErr)
@@ -201,7 +195,6 @@ func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{})
 }
 
-// mapClientList はクライアント一覧をレスポンス用マップに変換します。
 func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {
 	out := make([]map[string]interface{}, 0, len(clients))
 	for _, c := range clients {
@@ -218,7 +211,6 @@ func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {
 	return out
 }
 
-// mapClientDetail はクライアント詳細をレスポンス用マップに変換します。
 func mapClientDetail(c *domclient.DetailVo) map[string]interface{} {
 	return map[string]interface{}{
 		"id":         c.ID,

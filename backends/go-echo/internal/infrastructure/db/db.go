@@ -1,21 +1,23 @@
 package db
 
 import (
+	"authorization-go-echo/ent"
 	"authorization-go-echo/internal/config"
+	stdsql "database/sql"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// New はデータベース接続を生成して返します。
-func New(cfg *config.Config) (*gorm.DB, error) {
-	logLevel := logger.Warn
-	if cfg.App.Env == "local" {
-		logLevel = logger.Info
+// New opens an ent client and returns the underlying *sql.DB alongside it.
+// The caller is responsible for closing the ent.Client (which also closes the sql.DB).
+func New(cfg *config.Config) (*ent.Client, *stdsql.DB, error) {
+	rawDB, err := stdsql.Open("mysql", cfg.DB.DSN)
+	if err != nil {
+		return nil, nil, err
 	}
-
-	return gorm.Open(mysql.Open(cfg.DB.DSN), &gorm.Config{
-		Logger: logger.Default.LogMode(logLevel),
-	})
+	drv := entsql.OpenDB(dialect.MySQL, rawDB)
+	client := ent.NewClient(ent.Driver(drv))
+	return client, rawDB, nil
 }

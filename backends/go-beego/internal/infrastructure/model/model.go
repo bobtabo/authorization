@@ -1,89 +1,85 @@
 package model
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
+import "time"
 
 type Client struct {
-	ID          uint64         `gorm:"primaryKey;autoIncrement;column:id"`
-	Name        string         `gorm:"not null;column:name"`
-	Identifier  string         `gorm:"not null;uniqueIndex;column:identifier"`
-	PostCode    string         `gorm:"column:post_code"`
-	Pref        string         `gorm:"column:pref"`
-	City        string         `gorm:"column:city"`
-	Address     string         `gorm:"column:address"`
-	Building    string         `gorm:"column:building"`
-	Tel         string         `gorm:"column:tel"`
-	Email       string         `gorm:"column:email"`
-	AccessToken string         `gorm:"not null;uniqueIndex;column:access_token"`
-	PrivateKey  string         `gorm:"not null;column:private_key"`
-	PublicKey   string         `gorm:"not null;column:public_key"`
-	Fingerprint string         `gorm:"not null;column:fingerprint"`
-	Status      int            `gorm:"not null;default:1;column:status"`
-	StartAt     *time.Time     `gorm:"column:start_at"`
-	StopAt      *time.Time     `gorm:"column:stop_at"`
-	CreatedAt   time.Time      `gorm:"column:created_at"`
-	CreatedBy   *uint          `gorm:"column:created_by"`
-	UpdatedAt   time.Time      `gorm:"column:updated_at"`
-	UpdatedBy   *uint          `gorm:"column:updated_by"`
-	DeletedAt   gorm.DeletedAt `gorm:"index;column:deleted_at"`
-	DeletedBy   *uint          `gorm:"column:deleted_by"`
-	Version     int            `gorm:"default:0;column:version"`
+	ID          uint64     `orm:"pk;auto;column(id)"`
+	Name        string     `orm:"column(name)"`
+	Identifier  string     `orm:"column(identifier)"`
+	PostCode    string     `orm:"column(post_code)"`
+	Pref        string     `orm:"column(pref)"`
+	City        string     `orm:"column(city)"`
+	Address     string     `orm:"column(address)"`
+	Building    string     `orm:"column(building)"`
+	Tel         string     `orm:"column(tel)"`
+	Email       string     `orm:"column(email)"`
+	AccessToken string     `orm:"column(access_token)"`
+	PrivateKey  string     `orm:"column(private_key)"`
+	PublicKey   string     `orm:"column(public_key)"`
+	Fingerprint string     `orm:"column(fingerprint)"`
+	Status      int        `orm:"column(status)"`
+	StartAt     *time.Time `orm:"column(start_at);null"`
+	StopAt      *time.Time `orm:"column(stop_at);null"`
+	CreatedAt   time.Time  `orm:"column(created_at)"`
+	CreatedBy   *uint      `orm:"column(created_by);null"`
+	UpdatedAt   time.Time  `orm:"column(updated_at)"`
+	UpdatedBy   *uint      `orm:"column(updated_by);null"`
+	DeletedAt   *time.Time `orm:"column(deleted_at);null"`
+	DeletedBy   *uint      `orm:"column(deleted_by);null"`
+	Version     int        `orm:"column(version)"`
 }
 
-func (Client) TableName() string { return "clients" }
+func (c *Client) TableName() string { return "clients" }
 
 type Staff struct {
-	ID          uint           `gorm:"primaryKey;autoIncrement;column:id"`
-	Name        string         `gorm:"not null;column:name"`
-	Email       string         `gorm:"not null;uniqueIndex;column:email"`
-	Provider    int            `gorm:"not null;column:provider"`
-	ProviderID  string         `gorm:"not null;column:provider_id"`
-	Avatar      *string        `gorm:"column:avatar"`
-	Role        int            `gorm:"not null;default:2;column:role"`
-	LastLoginAt *time.Time     `gorm:"column:last_login_at"`
-	CreatedAt   time.Time      `gorm:"column:created_at"`
-	CreatedBy   *uint          `gorm:"column:created_by"`
-	UpdatedAt   time.Time      `gorm:"column:updated_at"`
-	UpdatedBy   *uint          `gorm:"column:updated_by"`
-	DeletedAt   gorm.DeletedAt `gorm:"index;column:deleted_at"`
-	DeletedBy   *uint          `gorm:"column:deleted_by"`
-	Version     int            `gorm:"default:0;column:version"`
+	ID          uint       `orm:"pk;auto;column(id)"`
+	Name        string     `orm:"column(name)"`
+	Email       string     `orm:"column(email)"`
+	Provider    int        `orm:"column(provider)"`
+	ProviderID  string     `orm:"column(provider_id)"`
+	Avatar      *string    `orm:"column(avatar);null"`
+	Role        int        `orm:"column(role)"`
+	LastLoginAt *time.Time `orm:"column(last_login_at);null"`
+	CreatedAt   time.Time  `orm:"column(created_at)"`
+	CreatedBy   *uint      `orm:"column(created_by);null"`
+	UpdatedAt   time.Time  `orm:"column(updated_at)"`
+	UpdatedBy   *uint      `orm:"column(updated_by);null"`
+	DeletedAt   *time.Time `orm:"column(deleted_at);null"`
+	DeletedBy   *uint      `orm:"column(deleted_by);null"`
+	Version     int        `orm:"column(version)"`
 }
 
-func (Staff) TableName() string { return "staffs" }
+func (s *Staff) TableName() string { return "staffs" }
 
 type Invitation struct {
-	ID        uint           `gorm:"primaryKey;autoIncrement;column:id"`
-	Token     string         `gorm:"not null;uniqueIndex;column:token"`
-	CreatedAt time.Time      `gorm:"column:created_at"`
-	CreatedBy *uint          `gorm:"column:created_by"`
-	UpdatedAt time.Time      `gorm:"column:updated_at"`
-	UpdatedBy *uint          `gorm:"column:updated_by"`
-	DeletedAt gorm.DeletedAt `gorm:"index;column:deleted_at"`
-	DeletedBy *uint          `gorm:"column:deleted_by"`
-	Version   int            `gorm:"default:0;column:version"`
+	ID        uint       `orm:"pk;auto;column(id)"`
+	Token     string     `orm:"column(token)"`
+	CreatedAt time.Time  `orm:"column(created_at)"`
+	CreatedBy *uint      `orm:"column(created_by);null"`
+	UpdatedAt time.Time  `orm:"column(updated_at)"`
+	UpdatedBy *uint      `orm:"column(updated_by);null"`
+	DeletedAt *time.Time `orm:"column(deleted_at);null"`
+	DeletedBy *uint      `orm:"column(deleted_by);null"`
+	Version   int        `orm:"column(version)"`
 }
 
-func (Invitation) TableName() string { return "invitations" }
+func (i *Invitation) TableName() string { return "invitations" }
 
 type Notification struct {
-	ID          uint64         `gorm:"primaryKey;autoIncrement;column:id"`
-	StaffID     uint           `gorm:"not null;index;column:staff_id"`
-	MessageType int            `gorm:"not null;column:message_type"`
-	Title       string         `gorm:"not null;column:title"`
-	Message     string         `gorm:"not null;column:message"`
-	URL         *string        `gorm:"column:url"`
-	Read        bool           `gorm:"not null;default:false;column:read"`
-	CreatedAt   time.Time      `gorm:"column:created_at"`
-	CreatedBy   *uint          `gorm:"column:created_by"`
-	UpdatedAt   time.Time      `gorm:"column:updated_at"`
-	UpdatedBy   *uint          `gorm:"column:updated_by"`
-	DeletedAt   gorm.DeletedAt `gorm:"index;column:deleted_at"`
-	DeletedBy   *uint          `gorm:"column:deleted_by"`
-	Version     int            `gorm:"default:1;column:version"`
+	ID          uint64     `orm:"pk;auto;column(id)"`
+	StaffID     uint       `orm:"column(staff_id)"`
+	MessageType int        `orm:"column(message_type)"`
+	Title       string     `orm:"column(title)"`
+	Message     string     `orm:"column(message)"`
+	URL         *string    `orm:"column(url);null"`
+	Read        bool       `orm:"column(read)"`
+	CreatedAt   time.Time  `orm:"column(created_at)"`
+	CreatedBy   *uint      `orm:"column(created_by);null"`
+	UpdatedAt   time.Time  `orm:"column(updated_at)"`
+	UpdatedBy   *uint      `orm:"column(updated_by);null"`
+	DeletedAt   *time.Time `orm:"column(deleted_at);null"`
+	DeletedBy   *uint      `orm:"column(deleted_by);null"`
+	Version     int        `orm:"column(version)"`
 }
 
-func (Notification) TableName() string { return "notifications" }
+func (n *Notification) TableName() string { return "notifications" }

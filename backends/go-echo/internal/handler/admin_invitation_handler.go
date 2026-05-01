@@ -1,20 +1,20 @@
 package handler
 
 import (
+	"authorization-go-echo/ent"
 	dominvitation "authorization-go-echo/internal/domain/invitation"
 	uinvitation "authorization-go-echo/internal/usecase/invitation"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"gorm.io/gorm"
 )
 
 type AdminInvitationHandler struct {
-	db          *gorm.DB
-	newInviteUC func(*gorm.DB) *uinvitation.Interactor
+	db          *ent.Client
+	newInviteUC func(*ent.Client) *uinvitation.Interactor
 }
 
-func NewAdminInvitationHandler(db *gorm.DB, newInviteUC func(*gorm.DB) *uinvitation.Interactor) *AdminInvitationHandler {
+func NewAdminInvitationHandler(db *ent.Client, newInviteUC func(*ent.Client) *uinvitation.Interactor) *AdminInvitationHandler {
 	return &AdminInvitationHandler{db: db, newInviteUC: newInviteUC}
 }
 
@@ -28,9 +28,9 @@ func (h *AdminInvitationHandler) Index(c echo.Context) error {
 
 func (h *AdminInvitationHandler) Issue(c echo.Context) error {
 	var result *dominvitation.Vo
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		var e error
-		result, e = h.newInviteUC(tx).Issue()
+		result, e = h.newInviteUC(tx.Client()).Issue()
 		return e
 	}); txErr != nil {
 		return txErr
@@ -40,9 +40,6 @@ func (h *AdminInvitationHandler) Issue(c echo.Context) error {
 
 func mapInvitationVo(v *dominvitation.Vo) map[string]interface{} {
 	return map[string]interface{}{
-		"found":       true,
-		"url":         v.URL,
-		"display_url": v.DisplayURL,
-		"token":       v.Token,
+		"found": true, "url": v.URL, "display_url": v.DisplayURL, "token": v.Token,
 	}
 }

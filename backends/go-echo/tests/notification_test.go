@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -13,7 +14,9 @@ func TestNotification_Counts(t *testing.T) {
 		staff := createStaff(t, nil)
 		createNotification(t, staff.ID, "未読通知1")
 		n2 := createNotification(t, staff.ID, "未読通知2")
-		testDB.Model(n2).Update("read", true)
+		if err := testDB.Notification.UpdateOneID(n2.ID).SetRead(true).Exec(context.Background()); err != nil {
+			t.Fatalf("set read: %v", err)
+		}
 
 		w := do(http.MethodGet, "/api/notifications/counts", nil,
 			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))

@@ -94,10 +94,11 @@ func TestClient_Store(t *testing.T) {
 		clientBody := parseBody(w)
 		clientID := clientBody["id"].(float64)
 
-		var notif model.Notification
-		if err := testDB.Where("staff_id = ?", staff.ID).First(&notif).Error; err != nil {
+		var ms []*model.Notification
+		if _, err := testOrmer.Raw("SELECT * FROM notifications WHERE staff_id=? LIMIT 1", staff.ID).QueryRows(&ms); err != nil || len(ms) == 0 {
 			t.Fatalf("notification not found: %v", err)
 		}
+		notif := ms[0]
 		want := fmt.Sprintf("/clients/show?id=%d", int(clientID))
 		if notif.URL == nil || *notif.URL != want {
 			t.Errorf("want url=%s, got %v", want, notif.URL)

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"authorization-go-echo/ent"
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -54,4 +56,22 @@ func clearStaffCookie(c echo.Context, secure bool) {
 		Secure:   secure,
 		HttpOnly: true,
 	})
+}
+
+func withTx(ctx context.Context, client *ent.Client, fn func(*ent.Tx) error) error {
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if v := recover(); v != nil {
+			_ = tx.Rollback()
+			panic(v)
+		}
+	}()
+	if err = fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }

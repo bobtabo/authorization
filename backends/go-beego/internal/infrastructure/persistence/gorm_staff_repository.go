@@ -1,37 +1,33 @@
-// Package persistence はGORMを使ったリポジトリ実装を提供します。
 package persistence
 
 import (
 	domstaff "authorization-go-beego/internal/domain/staff"
 	"authorization-go-beego/internal/infrastructure/model"
-	"errors"
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
-// GormStaffRepository はGORMを使ったスタッフリポジトリ実装です。
-type GormStaffRepository struct {
-	db *gorm.DB
+type OrmStaffRepository struct {
+	o QueryOrmer
 }
 
-// NewGormStaffRepository は GormStaffRepository を生成します。
-func NewGormStaffRepository(db *gorm.DB) *GormStaffRepository {
-	return &GormStaffRepository{db: db}
+func NewOrmStaffRepository(o QueryOrmer) *OrmStaffRepository {
+	return &OrmStaffRepository{o: o}
 }
 
-// FindByCondition は条件に合うスタッフ一覧を取得します。
-func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
-	q := r.db.Unscoped().Order("id ASC")
+func (r *OrmStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
+	qs := r.o.QueryTable(new(model.Staff)).OrderBy("id")
 	if cond.Keyword != nil && *cond.Keyword != "" {
-		like := "%" + *cond.Keyword + "%"
-		q = q.Where("name LIKE ? OR email LIKE ?", like, like)
+		kw := *cond.Keyword
+		kwCond := orm.NewCondition().And("name__contains", kw).Or("email__contains", kw)
+		qs = qs.SetCond(kwCond)
 	}
 	if len(cond.Roles) > 0 {
-		q = q.Where("role IN ?", cond.Roles)
+		qs = qs.Filter("role__in", cond.Roles)
 	}
 	var ms []*model.Staff
-	if err := q.Find(&ms).Error; err != nil {
+	if _, err := qs.All(&ms); err != nil {
 		return nil, err
 	}
 	out := make([]*domstaff.Staff, 0, len(ms))
@@ -41,34 +37,41 @@ func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domst
 	return out, nil
 }
 
-// FindByID はIDでスタッフを取得します。
-func (r *GormStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {
+func (r *OrmStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {
 	var m model.Staff
-	if err := r.db.First(&m, s.ID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Staff)).
+		Filter("id", s.ID).
+		Filter("deleted_at__isnull", true).
+		One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return staffToDomain(&m), nil
 }
 
-// FindByProvider はプロバイダ情報でスタッフを取得します。
-func (r *GormStaffRepository) FindByProvider(s *domstaff.Staff) (*domstaff.Staff, error) {
+func (r *OrmStaffRepository) FindByProvider(s *domstaff.Staff) (*domstaff.Staff, error) {
 	var m model.Staff
-	if err := r.db.Unscoped().Where("provider = ? AND provider_id = ?", s.Provider, s.ProviderID).First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Staff)).
+		Filter("provider", s.Provider).
+		Filter("provider_id", s.ProviderID).
+		One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return staffToDomain(&m), nil
 }
 
-// FindAllActive は削除されていない全スタッフを取得します。
-func (r *GormStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
+func (r *OrmStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
 	var ms []*model.Staff
-	if err := r.db.Where("deleted_at IS NULL").Find(&ms).Error; err != nil {
+	if _, err := r.o.QueryTable(new(model.Staff)).
+		Filter("deleted_at__isnull", true).
+		All(&ms); err != nil {
 		return nil, err
 	}
 	out := make([]*domstaff.Staff, 0, len(ms))
@@ -78,49 +81,65 @@ func (r *GormStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
 	return out, nil
 }
 
-// Save はスタッフを登録または更新します。
-func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
+func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 	m := staffToModel(s)
-	if err := r.db.Save(m).Error; err != nil {
-		return nil, err
+	if m.ID == 0 {
+		if _, err := r.o.Insert(m); err != nil {
+			return nil, err
+		}
+	} else {
+		_, err := r.o.Update(m,
+			"name", "email", "provider", "provider_id", "avatar", "role", "last_login_at",
+			"created_at", "created_by", "updated_at", "updated_by",
+			"deleted_at", "deleted_by", "version",
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return staffToDomain(m), nil
 }
 
-// UpdateRole はスタッフのロールを更新します。
-func (r *GormStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
+func (r *OrmStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", s.ID).Updates(map[string]interface{}{
-		"role":       s.Role,
-		"updated_at": now,
-		"updated_by": s.UpdatedBy,
-		"version":    gorm.Expr("version + 1"),
-	})
-	return result.RowsAffected > 0, result.Error
+	res, err := r.o.Raw(
+		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND deleted_at IS NULL",
+		s.Role, now, s.UpdatedBy, s.ID,
+	).Exec()
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
 }
 
-// SoftDelete はスタッフを論理削除します。
-func (r *GormStaffRepository) SoftDelete(s *domstaff.Staff) (bool, error) {
+func (r *OrmStaffRepository) SoftDelete(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", s.ID).Updates(map[string]interface{}{
-		"deleted_at": now,
-		"deleted_by": s.DeletedBy,
-	})
-	return result.RowsAffected > 0, result.Error
+	res, err := r.o.Raw(
+		"UPDATE staffs SET deleted_at=?, deleted_by=? WHERE id=? AND deleted_at IS NULL",
+		now, s.DeletedBy, s.ID,
+	).Exec()
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
 }
 
-// Restore は論理削除したスタッフを復元します。
-func (r *GormStaffRepository) Restore(s *domstaff.Staff) (bool, error) {
-	result := r.db.Unscoped().Model(&model.Staff{}).Where("id = ? AND deleted_at IS NOT NULL", s.ID).Updates(map[string]interface{}{
-		"deleted_at": nil,
-		"deleted_by": nil,
-	})
-	return result.RowsAffected > 0, result.Error
+func (r *OrmStaffRepository) Restore(s *domstaff.Staff) (bool, error) {
+	res, err := r.o.Raw(
+		"UPDATE staffs SET deleted_at=NULL, deleted_by=NULL WHERE id=? AND deleted_at IS NOT NULL",
+		s.ID,
+	).Exec()
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
 }
 
-// staffToDomain はモデルをドメインエンティティに変換します。
 func staffToDomain(m *model.Staff) *domstaff.Staff {
-	s := &domstaff.Staff{
+	return &domstaff.Staff{
 		ID:          m.ID,
 		Name:        m.Name,
 		Email:       m.Email,
@@ -133,18 +152,14 @@ func staffToDomain(m *model.Staff) *domstaff.Staff {
 		CreatedBy:   m.CreatedBy,
 		UpdatedAt:   m.UpdatedAt,
 		UpdatedBy:   m.UpdatedBy,
+		DeletedAt:   m.DeletedAt,
 		DeletedBy:   m.DeletedBy,
 		Version:     m.Version,
 	}
-	if m.DeletedAt.Valid {
-		s.DeletedAt = &m.DeletedAt.Time
-	}
-	return s
 }
 
-// staffToModel はドメインエンティティをモデルに変換します。
 func staffToModel(s *domstaff.Staff) *model.Staff {
-	m := &model.Staff{
+	return &model.Staff{
 		ID:          s.ID,
 		Name:        s.Name,
 		Email:       s.Email,
@@ -157,11 +172,8 @@ func staffToModel(s *domstaff.Staff) *model.Staff {
 		CreatedBy:   s.CreatedBy,
 		UpdatedAt:   s.UpdatedAt,
 		UpdatedBy:   s.UpdatedBy,
+		DeletedAt:   s.DeletedAt,
 		DeletedBy:   s.DeletedBy,
 		Version:     s.Version,
 	}
-	if s.DeletedAt != nil {
-		m.DeletedAt = gorm.DeletedAt{Time: *s.DeletedAt, Valid: true}
-	}
-	return m
 }

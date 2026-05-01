@@ -1,16 +1,16 @@
 package tests
 
 import (
+	"authorization-go-echo/ent"
 	"authorization-go-echo/internal/config"
 	"authorization-go-echo/internal/handler"
 	"authorization-go-echo/internal/infrastructure/cache"
 	"authorization-go-echo/internal/infrastructure/db"
 	"authorization-go-echo/internal/infrastructure/mail"
-	"authorization-go-echo/internal/infrastructure/model"
 	"authorization-go-echo/internal/infrastructure/persistence"
 	"authorization-go-echo/internal/middleware"
-	uclient "authorization-go-echo/internal/usecase/client"
 	uauth "authorization-go-echo/internal/usecase/auth"
+	uclient "authorization-go-echo/internal/usecase/client"
 	ugate "authorization-go-echo/internal/usecase/gate"
 	uinvitation "authorization-go-echo/internal/usecase/invitation"
 	unotification "authorization-go-echo/internal/usecase/notification"
@@ -20,6 +20,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	stdsql "database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
@@ -34,11 +35,11 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	redisclient "github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 var (
-	testDB     *gorm.DB
+	testDB     *ent.Client
+	testRawDB  *stdsql.DB
 	testCfg    *config.Config
 	testRouter *echo.Echo
 	testRDB    *redisclient.Client
@@ -51,10 +52,11 @@ func TestMain(m *testing.M) {
 	testCfg = config.Load()
 
 	var err error
-	testDB, err = db.New(testCfg)
+	testDB, testRawDB, err = db.New(testCfg)
 	if err != nil {
 		panic(fmt.Sprintf("test db connect failed: %v", err))
 	}
+	defer testDB.Close()
 
 	testRDB = cache.New(testCfg)
 
@@ -72,26 +74,26 @@ func buildRouter() *echo.Echo {
 	gateCacheRepo := cache.NewRedisGateRepository(rdb, testCfg)
 	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, testCfg)
 
-	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
-		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
+	newAuthUC := func(db *ent.Client) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewEntStaffRepository(db), invitationAuthRepo)
 	}
-	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
-		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	newClientUC := func(db *ent.Client) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewEntClientRepository(db))
 	}
-	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
-		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	newStaffUC := func(db *ent.Client) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewEntStaffRepository(db))
 	}
-	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
-		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, testCfg.App.FrontendURL), invitationAuthRepo)
+	newInviteUC := func(db *ent.Client) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewEntInvitationRepository(db, testCfg.App.FrontendURL), invitationAuthRepo)
 	}
-	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+	newNotifUC := func(db *ent.Client) *unotification.Interactor {
 		return unotification.NewInteractor(
-			persistence.NewGormNotificationRepository(tx),
-			persistence.NewGormStaffRepository(tx),
+			persistence.NewEntNotificationRepository(db),
+			persistence.NewEntStaffRepository(db),
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(testDB), gateCacheRepo, testCfg)
+	gateUC := ugate.NewInteractor(persistence.NewEntClientRepository(testDB), gateCacheRepo, testCfg)
 
 	mailer := mail.NewMailer(testCfg.Mail)
 	authH := handler.NewAuthHandler(testDB, newAuthUC, newInviteUC, testCfg)
@@ -151,7 +153,7 @@ func runSchemaSql() error {
 		if stmt == "" || strings.HasPrefix(stmt, "--") {
 			continue
 		}
-		if err = testDB.Exec(stmt).Error; err != nil {
+		if _, err = testRawDB.Exec(stmt); err != nil {
 			return fmt.Errorf("exec statement: %w\nSQL: %s", err, stmt)
 		}
 	}
@@ -160,12 +162,12 @@ func runSchemaSql() error {
 
 func truncateTables(t *testing.T) {
 	t.Helper()
-	testDB.Exec("SET FOREIGN_KEY_CHECKS=0")
-	testDB.Exec("TRUNCATE TABLE notifications")
-	testDB.Exec("TRUNCATE TABLE invitations")
-	testDB.Exec("TRUNCATE TABLE clients")
-	testDB.Exec("TRUNCATE TABLE staffs")
-	testDB.Exec("SET FOREIGN_KEY_CHECKS=1")
+	testRawDB.Exec("SET FOREIGN_KEY_CHECKS=0")
+	testRawDB.Exec("TRUNCATE TABLE notifications")
+	testRawDB.Exec("TRUNCATE TABLE invitations")
+	testRawDB.Exec("TRUNCATE TABLE clients")
+	testRawDB.Exec("TRUNCATE TABLE staffs")
+	testRawDB.Exec("SET FOREIGN_KEY_CHECKS=1")
 	testRDB.FlushDB(context.Background())
 }
 
@@ -204,37 +206,39 @@ func parseBody(w *httptest.ResponseRecorder) map[string]interface{} {
 	return result
 }
 
-func createStaff(t *testing.T, overrides map[string]interface{}) *model.Staff {
+func createStaff(t *testing.T, overrides map[string]interface{}) *ent.Staff {
 	t.Helper()
+	ctx := context.Background()
 	now := time.Now()
-	staff := &model.Staff{
-		Name:       "テストスタッフ",
-		Email:      "staff@example.com",
-		Provider:   1,
-		ProviderID: "123456789",
-		Role:       1,
-		CreatedAt:  now,
-		UpdatedAt:  now,
-	}
+	q := testDB.Staff.Create().
+		SetName("テストスタッフ").
+		SetEmail("staff@example.com").
+		SetProvider(1).
+		SetProviderID("123456789").
+		SetRole(1).
+		SetCreatedAt(now).
+		SetUpdatedAt(now)
 	if overrides != nil {
 		if v, ok := overrides["email"]; ok {
-			staff.Email = v.(string)
+			q = q.SetEmail(v.(string))
 		}
 		if v, ok := overrides["name"]; ok {
-			staff.Name = v.(string)
+			q = q.SetName(v.(string))
 		}
 		if v, ok := overrides["role"]; ok {
-			staff.Role = v.(int)
+			q = q.SetRole(v.(int))
 		}
 	}
-	if err := testDB.Create(staff).Error; err != nil {
+	s, err := q.Save(ctx)
+	if err != nil {
 		t.Fatalf("createStaff: %v", err)
 	}
-	return staff
+	return s
 }
 
-func createClient(t *testing.T, overrides map[string]interface{}) *model.Client {
+func createClient(t *testing.T, overrides map[string]interface{}) *ent.AppClient {
 	t.Helper()
+	ctx := context.Background()
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatalf("generateKey: %v", err)
@@ -249,67 +253,76 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 	token := hex.EncodeToString(tokenBytes)
 
 	now := time.Now()
-	c := &model.Client{
-		Name:        "テストクライアント",
-		Identifier:  "test-client-001",
-		PostCode:    "100-0001",
-		Pref:        "東京都",
-		City:        "千代田区",
-		Address:     "千代田1-1",
-		Tel:         "0312345678",
-		Email:       "client@example.com",
-		AccessToken: token,
-		PrivateKey:  string(privPEM),
-		PublicKey:   string(pubPEM),
-		Fingerprint: "SHA256:test",
-		Status:      1,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
+	q := testDB.AppClient.Create().
+		SetName("テストクライアント").
+		SetIdentifier("test-client-001").
+		SetPostCode("100-0001").
+		SetPref("東京都").
+		SetCity("千代田区").
+		SetAddress("千代田1-1").
+		SetTel("0312345678").
+		SetEmail("client@example.com").
+		SetAccessToken(token).
+		SetPrivateKey(string(privPEM)).
+		SetPublicKey(string(pubPEM)).
+		SetFingerprint("SHA256:test").
+		SetStatus(1).
+		SetCreatedAt(now).
+		SetUpdatedAt(now)
 	if overrides != nil {
 		if v, ok := overrides["identifier"]; ok {
-			c.Identifier = v.(string)
+			q = q.SetIdentifier(v.(string))
 		}
 		if v, ok := overrides["name"]; ok {
-			c.Name = v.(string)
+			q = q.SetName(v.(string))
 		}
 		if v, ok := overrides["email"]; ok {
-			c.Email = v.(string)
+			q = q.SetEmail(v.(string))
 		}
 		if v, ok := overrides["status"]; ok {
-			c.Status = v.(int)
+			q = q.SetStatus(v.(int))
 		}
 	}
-	if err = testDB.Create(c).Error; err != nil {
+	c, err := q.Save(ctx)
+	if err != nil {
 		t.Fatalf("createClient: %v", err)
 	}
 	return c
 }
 
-func createInvitation(t *testing.T, token string) *model.Invitation {
+func createInvitation(t *testing.T, token string) *ent.Invitation {
 	t.Helper()
-	inv := &model.Invitation{Token: token}
-	if err := testDB.Create(inv).Error; err != nil {
+	ctx := context.Background()
+	now := time.Now()
+	inv, err := testDB.Invitation.Create().
+		SetToken(token).
+		SetCreatedAt(now).
+		SetUpdatedAt(now).
+		Save(ctx)
+	if err != nil {
 		t.Fatalf("createInvitation: %v", err)
 	}
 	return inv
 }
 
-func createNotification(t *testing.T, staffID uint, title string, overrides ...map[string]interface{}) *model.Notification {
+func createNotification(t *testing.T, staffID uint, title string, overrides ...map[string]interface{}) *ent.Notification {
 	t.Helper()
-	n := &model.Notification{
-		StaffID:     staffID,
-		MessageType: 1,
-		Title:       title,
-		Message:     "テスト通知本文",
-	}
+	ctx := context.Background()
+	now := time.Now()
+	q := testDB.Notification.Create().
+		SetStaffID(staffID).
+		SetMessageType(1).
+		SetTitle(title).
+		SetMessage("テスト通知本文").
+		SetCreatedAt(now).
+		SetUpdatedAt(now)
 	if len(overrides) > 0 {
 		if v, ok := overrides[0]["url"]; ok {
-			s := v.(string)
-			n.URL = &s
+			q = q.SetURL(v.(string))
 		}
 	}
-	if err := testDB.Create(n).Error; err != nil {
+	n, err := q.Save(ctx)
+	if err != nil {
 		t.Fatalf("createNotification: %v", err)
 	}
 	return n

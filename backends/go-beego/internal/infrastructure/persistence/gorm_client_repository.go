@@ -1,42 +1,37 @@
-// Package persistence はGORMを使ったリポジトリ実装を提供します。
 package persistence
 
 import (
 	domclient "authorization-go-beego/internal/domain/client"
 	"authorization-go-beego/internal/infrastructure/model"
-	"errors"
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
-// GormClientRepository はGORMを使ったクライアントリポジトリ実装です。
-type GormClientRepository struct {
-	db *gorm.DB
+type OrmClientRepository struct {
+	o QueryOrmer
 }
 
-// NewGormClientRepository は GormClientRepository を生成します。
-func NewGormClientRepository(db *gorm.DB) *GormClientRepository {
-	return &GormClientRepository{db: db}
+func NewOrmClientRepository(o QueryOrmer) *OrmClientRepository {
+	return &OrmClientRepository{o: o}
 }
 
-// FindByCondition は条件に合うクライアント一覧を取得します。
-func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
-	q := r.db.Unscoped().Order("id ASC")
+func (r *OrmClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
+	qs := r.o.QueryTable(new(model.Client)).OrderBy("id")
 	if cond.Keyword != nil && *cond.Keyword != "" {
-		q = q.Where("name LIKE ?", "%"+*cond.Keyword+"%")
+		qs = qs.Filter("name__contains", *cond.Keyword)
 	}
 	if cond.StartFrom != nil {
-		q = q.Where("start_at >= ?", cond.StartFrom)
+		qs = qs.Filter("start_at__gte", cond.StartFrom)
 	}
 	if cond.StartTo != nil {
-		q = q.Where("start_at <= ?", cond.StartTo)
+		qs = qs.Filter("start_at__lte", cond.StartTo)
 	}
 	if len(cond.Statuses) > 0 {
-		q = q.Where("status IN ?", cond.Statuses)
+		qs = qs.Filter("status__in", cond.Statuses)
 	}
 	var ms []*model.Client
-	if err := q.Find(&ms).Error; err != nil {
+	if _, err := qs.All(&ms); err != nil {
 		return nil, err
 	}
 	out := make([]*domclient.Client, 0, len(ms))
@@ -46,63 +41,80 @@ func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*dom
 	return out, nil
 }
 
-// FindByID はIDでクライアントを取得します。
-func (r *GormClientRepository) FindByID(c *domclient.Client) (*domclient.Client, error) {
+func (r *OrmClientRepository) FindByID(c *domclient.Client) (*domclient.Client, error) {
 	var m model.Client
-	if err := r.db.Unscoped().First(&m, c.ID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Client)).Filter("id", c.ID).One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return clientToDomain(&m), nil
 }
 
-// FindByAccessToken はアクセストークンでアクティブなクライアントを取得します。
-func (r *GormClientRepository) FindByAccessToken(c *domclient.Client) (*domclient.Client, error) {
+func (r *OrmClientRepository) FindByAccessToken(c *domclient.Client) (*domclient.Client, error) {
 	var m model.Client
-	if err := r.db.Where("access_token = ? AND status = ?", c.AccessToken, domclient.StatusActive).First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Client)).
+		Filter("access_token", c.AccessToken).
+		Filter("status", domclient.StatusActive).
+		Filter("deleted_at__isnull", true).
+		One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return clientToDomain(&m), nil
 }
 
-// FindByIdentifier はidentifierでクライアントを取得します。
-func (r *GormClientRepository) FindByIdentifier(c *domclient.Client) (*domclient.Client, error) {
+func (r *OrmClientRepository) FindByIdentifier(c *domclient.Client) (*domclient.Client, error) {
 	var m model.Client
-	if err := r.db.Where("identifier = ?", c.Identifier).First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Client)).
+		Filter("identifier", c.Identifier).
+		Filter("deleted_at__isnull", true).
+		One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return clientToDomain(&m), nil
 }
 
-// Save はクライアントを登録または更新します。
-func (r *GormClientRepository) Save(c *domclient.Client) (*domclient.Client, error) {
+func (r *OrmClientRepository) Save(c *domclient.Client) (*domclient.Client, error) {
 	m := clientToModel(c)
-	if err := r.db.Save(m).Error; err != nil {
-		return nil, err
+	if m.ID == 0 {
+		if _, err := r.o.Insert(m); err != nil {
+			return nil, err
+		}
+	} else {
+		_, err := r.o.Update(m,
+			"name", "identifier", "post_code", "pref", "city", "address", "building",
+			"tel", "email", "access_token", "private_key", "public_key", "fingerprint",
+			"status", "start_at", "stop_at", "created_at", "created_by",
+			"updated_at", "updated_by", "deleted_at", "deleted_by", "version",
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return clientToDomain(m), nil
 }
 
-// SoftDelete はクライアントを論理削除します。
-func (r *GormClientRepository) SoftDelete(c *domclient.Client) error {
+func (r *OrmClientRepository) SoftDelete(c *domclient.Client) error {
 	now := time.Now()
-	return r.db.Model(&model.Client{}).Where("id = ?", c.ID).Updates(map[string]interface{}{
-		"deleted_at": now,
-		"deleted_by": c.DeletedBy,
-	}).Error
+	_, err := r.o.Raw(
+		"UPDATE clients SET deleted_at=?, deleted_by=? WHERE id=?",
+		now, c.DeletedBy, c.ID,
+	).Exec()
+	return err
 }
 
-// clientToDomain はモデルをドメインエンティティに変換します。
 func clientToDomain(m *model.Client) *domclient.Client {
-	c := &domclient.Client{
+	return &domclient.Client{
 		ID:          m.ID,
 		Name:        m.Name,
 		Identifier:  m.Identifier,
@@ -124,18 +136,14 @@ func clientToDomain(m *model.Client) *domclient.Client {
 		CreatedBy:   m.CreatedBy,
 		UpdatedAt:   m.UpdatedAt,
 		UpdatedBy:   m.UpdatedBy,
+		DeletedAt:   m.DeletedAt,
 		DeletedBy:   m.DeletedBy,
 		Version:     m.Version,
 	}
-	if m.DeletedAt.Valid {
-		c.DeletedAt = &m.DeletedAt.Time
-	}
-	return c
 }
 
-// clientToModel はドメインエンティティをモデルに変換します。
 func clientToModel(c *domclient.Client) *model.Client {
-	m := &model.Client{
+	return &model.Client{
 		ID:          c.ID,
 		Name:        c.Name,
 		Identifier:  c.Identifier,
@@ -157,11 +165,8 @@ func clientToModel(c *domclient.Client) *model.Client {
 		CreatedBy:   c.CreatedBy,
 		UpdatedAt:   c.UpdatedAt,
 		UpdatedBy:   c.UpdatedBy,
+		DeletedAt:   c.DeletedAt,
 		DeletedBy:   c.DeletedBy,
 		Version:     c.Version,
 	}
-	if c.DeletedAt != nil {
-		m.DeletedAt = gorm.DeletedAt{Time: *c.DeletedAt, Valid: true}
-	}
-	return m
 }

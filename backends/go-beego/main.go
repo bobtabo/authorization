@@ -19,13 +19,12 @@ import (
 
 	"github.com/beego/beego/v2/server/web"
 	beecontext "github.com/beego/beego/v2/server/web/context"
-	"gorm.io/gorm"
 )
 
 func main() {
 	cfg := config.Load()
 
-	database, err := db.New(cfg)
+	ormer, err := db.New(cfg)
 	if err != nil {
 		log.Fatalf("db connect: %v", err)
 	}
@@ -35,35 +34,35 @@ func main() {
 	gateCacheRepo := cache.NewRedisGateRepository(rdb, cfg)
 	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, cfg)
 
-	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
-		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
+	newAuthUC := func(o persistence.QueryOrmer) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewOrmStaffRepository(o), invitationAuthRepo)
 	}
-	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
-		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	newClientUC := func(o persistence.QueryOrmer) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewOrmClientRepository(o))
 	}
-	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
-		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	newStaffUC := func(o persistence.QueryOrmer) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewOrmStaffRepository(o))
 	}
-	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
-		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, cfg.App.FrontendURL), invitationAuthRepo)
+	newInviteUC := func(o persistence.QueryOrmer) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewOrmInvitationRepository(o, cfg.App.FrontendURL), invitationAuthRepo)
 	}
-	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+	newNotifUC := func(o persistence.QueryOrmer) *unotification.Interactor {
 		return unotification.NewInteractor(
-			persistence.NewGormNotificationRepository(tx),
-			persistence.NewGormStaffRepository(tx),
+			persistence.NewOrmNotificationRepository(o),
+			persistence.NewOrmStaffRepository(o),
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), gateCacheRepo, cfg)
+	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(ormer), gateCacheRepo, cfg)
 
 	mailer := mail.NewMailer(cfg.Mail)
 
-	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer)
-	staffH := handler.NewStaffHandler(database, newStaffUC)
-	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
+	authH := handler.NewAuthHandler(ormer, newAuthUC, newInviteUC, cfg)
+	clientH := handler.NewClientHandler(ormer, newClientUC, newNotifUC, mailer)
+	staffH := handler.NewStaffHandler(ormer, newStaffUC)
+	adminInvitationH := handler.NewAdminInvitationHandler(ormer, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)
-	notificationH := handler.NewNotificationHandler(database, newNotifUC, cfg)
+	notificationH := handler.NewNotificationHandler(ormer, newNotifUC, cfg)
 
 	web.BConfig.CopyRequestBody = true
 	web.BConfig.WebConfig.AutoRender = false
@@ -83,7 +82,7 @@ func main() {
 
 	// Gate APIのクライアント認証フィルター
 	web.InsertFilter("/api/gate/issue", web.BeforeExec,
-		middleware.ClientTokenAuth(newClientUC(database)),
+		middleware.ClientTokenAuth(newClientUC(ormer)),
 		web.WithReturnOnOutput(true),
 	)
 

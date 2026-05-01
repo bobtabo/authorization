@@ -13,7 +13,9 @@ func TestNotification_Counts(t *testing.T) {
 		staff := createStaff(t, nil)
 		createNotification(t, staff.ID, "未読通知1")
 		n2 := createNotification(t, staff.ID, "未読通知2")
-		testDB.Model(n2).Update("read", true)
+		if _, err := testOrmer.Raw("UPDATE notifications SET `read`=1 WHERE id=?", n2.ID).Exec(); err != nil {
+			t.Fatalf("set read: %v", err)
+		}
 
 		w := do(http.MethodGet, "/api/notifications/counts", nil,
 			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))

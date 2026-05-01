@@ -1,7 +1,8 @@
 package tests
 
 import (
-	"authorization-go-echo/internal/infrastructure/model"
+	"authorization-go-echo/ent/notification"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -94,8 +95,10 @@ func TestClient_Store(t *testing.T) {
 		clientBody := parseBody(w)
 		clientID := clientBody["id"].(float64)
 
-		var notif model.Notification
-		if err := testDB.Where("staff_id = ?", staff.ID).First(&notif).Error; err != nil {
+		notif, err := testDB.Notification.Query().
+			Where(notification.StaffIDEQ(staff.ID)).
+			First(context.Background())
+		if err != nil {
 			t.Fatalf("notification not found: %v", err)
 		}
 		want := fmt.Sprintf("/clients/show?id=%d", int(clientID))

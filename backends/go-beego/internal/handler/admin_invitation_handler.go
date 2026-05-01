@@ -2,24 +2,26 @@ package handler
 
 import (
 	dominvitation "authorization-go-beego/internal/domain/invitation"
+	"authorization-go-beego/internal/infrastructure/persistence"
 	uinvitation "authorization-go-beego/internal/usecase/invitation"
+	"context"
 	"net/http"
 
 	beecontext "github.com/beego/beego/v2/server/web/context"
-	"gorm.io/gorm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
 type AdminInvitationHandler struct {
-	db          *gorm.DB
-	newInviteUC func(*gorm.DB) *uinvitation.Interactor
+	ormer       orm.Ormer
+	newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor
 }
 
-func NewAdminInvitationHandler(db *gorm.DB, newInviteUC func(*gorm.DB) *uinvitation.Interactor) *AdminInvitationHandler {
-	return &AdminInvitationHandler{db: db, newInviteUC: newInviteUC}
+func NewAdminInvitationHandler(ormer orm.Ormer, newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor) *AdminInvitationHandler {
+	return &AdminInvitationHandler{ormer: ormer, newInviteUC: newInviteUC}
 }
 
 func (h *AdminInvitationHandler) Index(ctx *beecontext.Context) {
-	result, err := h.newInviteUC(h.db).Current()
+	result, err := h.newInviteUC(h.ormer).Current()
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -29,7 +31,7 @@ func (h *AdminInvitationHandler) Index(ctx *beecontext.Context) {
 
 func (h *AdminInvitationHandler) Issue(ctx *beecontext.Context) {
 	var result *dominvitation.Vo
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		var e error
 		result, e = h.newInviteUC(tx).Issue()
 		return e

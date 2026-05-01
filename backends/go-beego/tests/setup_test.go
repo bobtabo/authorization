@@ -31,14 +31,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	"github.com/joho/godotenv"
 	redisclient "github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 var (
-	testDB      *gorm.DB
+	testOrmer   orm.Ormer
 	testCfg     *config.Config
 	testHandler http.Handler
 	testRDB     *redisclient.Client
@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 	testCfg = config.Load()
 
 	var err error
-	testDB, err = db.New(testCfg)
+	testOrmer, err = db.New(testCfg)
 	if err != nil {
 		panic(fmt.Sprintf("test db connect failed: %v", err))
 	}
@@ -72,41 +72,41 @@ func buildRouter() http.Handler {
 	gateCacheRepo := cache.NewRedisGateRepository(rdb, testCfg)
 	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, testCfg)
 
-	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
-		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
+	newAuthUC := func(o persistence.QueryOrmer) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewOrmStaffRepository(o), invitationAuthRepo)
 	}
-	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
-		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	newClientUC := func(o persistence.QueryOrmer) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewOrmClientRepository(o))
 	}
-	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
-		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	newStaffUC := func(o persistence.QueryOrmer) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewOrmStaffRepository(o))
 	}
-	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
-		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, testCfg.App.FrontendURL), invitationAuthRepo)
+	newInviteUC := func(o persistence.QueryOrmer) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewOrmInvitationRepository(o, testCfg.App.FrontendURL), invitationAuthRepo)
 	}
-	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+	newNotifUC := func(o persistence.QueryOrmer) *unotification.Interactor {
 		return unotification.NewInteractor(
-			persistence.NewGormNotificationRepository(tx),
-			persistence.NewGormStaffRepository(tx),
+			persistence.NewOrmNotificationRepository(o),
+			persistence.NewOrmStaffRepository(o),
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(testDB), gateCacheRepo, testCfg)
+	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(testOrmer), gateCacheRepo, testCfg)
 
 	mailer := mail.NewMailer(testCfg.Mail)
-	authH := handler.NewAuthHandler(testDB, newAuthUC, newInviteUC, testCfg)
-	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer)
-	staffH := handler.NewStaffHandler(testDB, newStaffUC)
+	authH := handler.NewAuthHandler(testOrmer, newAuthUC, newInviteUC, testCfg)
+	clientH := handler.NewClientHandler(testOrmer, newClientUC, newNotifUC, mailer)
+	staffH := handler.NewStaffHandler(testOrmer, newStaffUC)
 	gateH := handler.NewGateHandler(gateUC)
-	notificationH := handler.NewNotificationHandler(testDB, newNotifUC, testCfg)
-	adminInvH := handler.NewAdminInvitationHandler(testDB, newInviteUC)
+	notificationH := handler.NewNotificationHandler(testOrmer, newNotifUC, testCfg)
+	adminInvH := handler.NewAdminInvitationHandler(testOrmer, newInviteUC)
 
 	web.BConfig.CopyRequestBody = true
 	web.BConfig.WebConfig.AutoRender = false
 	web.BConfig.Log.AccessLogs = false
 
 	web.InsertFilter("/api/gate/issue", web.BeforeExec,
-		middleware.ClientTokenAuth(newClientUC(testDB)),
+		middleware.ClientTokenAuth(newClientUC(testOrmer)),
 		web.WithReturnOnOutput(true),
 	)
 
@@ -154,7 +154,7 @@ func runSchemaSql() error {
 		if stmt == "" || strings.HasPrefix(stmt, "--") {
 			continue
 		}
-		if err = testDB.Exec(stmt).Error; err != nil {
+		if _, err = testOrmer.Raw(stmt).Exec(); err != nil {
 			return fmt.Errorf("exec statement: %w\nSQL: %s", err, stmt)
 		}
 	}
@@ -163,12 +163,12 @@ func runSchemaSql() error {
 
 func truncateTables(t *testing.T) {
 	t.Helper()
-	testDB.Exec("SET FOREIGN_KEY_CHECKS=0")
-	testDB.Exec("TRUNCATE TABLE notifications")
-	testDB.Exec("TRUNCATE TABLE invitations")
-	testDB.Exec("TRUNCATE TABLE clients")
-	testDB.Exec("TRUNCATE TABLE staffs")
-	testDB.Exec("SET FOREIGN_KEY_CHECKS=1")
+	testOrmer.Raw("SET FOREIGN_KEY_CHECKS=0").Exec()
+	testOrmer.Raw("TRUNCATE TABLE notifications").Exec()
+	testOrmer.Raw("TRUNCATE TABLE invitations").Exec()
+	testOrmer.Raw("TRUNCATE TABLE clients").Exec()
+	testOrmer.Raw("TRUNCATE TABLE staffs").Exec()
+	testOrmer.Raw("SET FOREIGN_KEY_CHECKS=1").Exec()
 	testRDB.FlushDB(context.Background())
 }
 
@@ -230,7 +230,7 @@ func createStaff(t *testing.T, overrides map[string]interface{}) *model.Staff {
 			staff.Role = v.(int)
 		}
 	}
-	if err := testDB.Create(staff).Error; err != nil {
+	if _, err := testOrmer.Insert(staff); err != nil {
 		t.Fatalf("createStaff: %v", err)
 	}
 	return staff
@@ -283,7 +283,7 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 			c.Status = v.(int)
 		}
 	}
-	if err = testDB.Create(c).Error; err != nil {
+	if _, err = testOrmer.Insert(c); err != nil {
 		t.Fatalf("createClient: %v", err)
 	}
 	return c
@@ -291,8 +291,13 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 
 func createInvitation(t *testing.T, token string) *model.Invitation {
 	t.Helper()
-	inv := &model.Invitation{Token: token}
-	if err := testDB.Create(inv).Error; err != nil {
+	now := time.Now()
+	inv := &model.Invitation{
+		Token:     token,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	if _, err := testOrmer.Insert(inv); err != nil {
 		t.Fatalf("createInvitation: %v", err)
 	}
 	return inv
@@ -300,11 +305,14 @@ func createInvitation(t *testing.T, token string) *model.Invitation {
 
 func createNotification(t *testing.T, staffID uint, title string, overrides ...map[string]interface{}) *model.Notification {
 	t.Helper()
+	now := time.Now()
 	n := &model.Notification{
 		StaffID:     staffID,
 		MessageType: 1,
 		Title:       title,
 		Message:     "テスト通知本文",
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	if len(overrides) > 0 {
 		if v, ok := overrides[0]["url"]; ok {
@@ -312,9 +320,8 @@ func createNotification(t *testing.T, staffID uint, title string, overrides ...m
 			n.URL = &s
 		}
 	}
-	if err := testDB.Create(n).Error; err != nil {
+	if _, err := testOrmer.Insert(n); err != nil {
 		t.Fatalf("createNotification: %v", err)
 	}
 	return n
 }
-

@@ -5,35 +5,38 @@ import (
 	"authorization-go-beego/internal/infrastructure/model"
 	"crypto/rand"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
-type GormInvitationRepository struct {
-	db          *gorm.DB
+type OrmInvitationRepository struct {
+	o           QueryOrmer
 	frontendURL string
 }
 
-func NewGormInvitationRepository(db *gorm.DB, frontendURL string) *GormInvitationRepository {
-	return &GormInvitationRepository{db: db, frontendURL: frontendURL}
+func NewOrmInvitationRepository(o QueryOrmer, frontendURL string) *OrmInvitationRepository {
+	return &OrmInvitationRepository{o: o, frontendURL: frontendURL}
 }
 
-func (r *GormInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
+func (r *OrmInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 	var m model.Invitation
-	if err := r.db.Order("id DESC").First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Invitation)).
+		Filter("deleted_at__isnull", true).
+		OrderBy("-id").
+		One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return r.buildVo(m.Token), nil
 }
 
-func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
+func (r *OrmInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	token, err := generateInvitationToken()
 	if err != nil {
 		return nil, err
@@ -47,24 +50,28 @@ func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 		UpdatedAt: now,
 		UpdatedBy: &zero,
 	}
-	if err = r.db.Create(&m).Error; err != nil {
+	if _, err = r.o.Insert(&m); err != nil {
 		return nil, err
 	}
 	return r.buildVo(token), nil
 }
 
-func (r *GormInvitationRepository) FindByToken(token string) (*dominvitation.Vo, error) {
+func (r *OrmInvitationRepository) FindByToken(token string) (*dominvitation.Vo, error) {
 	var m model.Invitation
-	if err := r.db.Where("token = ?", token).First(&m).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	err := r.o.QueryTable(new(model.Invitation)).
+		Filter("token", token).
+		Filter("deleted_at__isnull", true).
+		One(&m)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return r.buildVo(m.Token), nil
 }
 
-func (r *GormInvitationRepository) buildVo(token string) *dominvitation.Vo {
+func (r *OrmInvitationRepository) buildVo(token string) *dominvitation.Vo {
 	url := fmt.Sprintf("%s/invitation/%s", r.frontendURL, token)
 	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: buildDisplayURL(url)}
 }

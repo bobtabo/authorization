@@ -1,9 +1,9 @@
-// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
 	"authorization-go-beego/internal/config"
 	domstaff "authorization-go-beego/internal/domain/staff"
+	"authorization-go-beego/internal/infrastructure/persistence"
 	uauth "authorization-go-beego/internal/usecase/auth"
 	uinvitation "authorization-go-beego/internal/usecase/invitation"
 	"authorization-go-beego/pkg/apperror"
@@ -15,25 +15,23 @@ import (
 	"net/http"
 
 	beecontext "github.com/beego/beego/v2/server/web/context"
+	"github.com/beego/beego/v2/client/orm"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"gorm.io/gorm"
 )
 
-// AuthHandler は認証関連のHTTPハンドラです。
 type AuthHandler struct {
-	db          *gorm.DB
-	newAuthUC   func(*gorm.DB) *uauth.Interactor
-	newInviteUC func(*gorm.DB) *uinvitation.Interactor
+	ormer       orm.Ormer
+	newAuthUC   func(persistence.QueryOrmer) *uauth.Interactor
+	newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor
 	cfg         *config.Config
 	oauthConfig *oauth2.Config
 }
 
-// NewAuthHandler は AuthHandler を生成します。
 func NewAuthHandler(
-	db *gorm.DB,
-	newAuthUC func(*gorm.DB) *uauth.Interactor,
-	newInviteUC func(*gorm.DB) *uinvitation.Interactor,
+	ormer orm.Ormer,
+	newAuthUC func(persistence.QueryOrmer) *uauth.Interactor,
+	newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor,
 	cfg *config.Config,
 ) *AuthHandler {
 	oauthCfg := &oauth2.Config{
@@ -47,7 +45,7 @@ func NewAuthHandler(
 		Endpoint: google.Endpoint,
 	}
 	return &AuthHandler{
-		db:          db,
+		ormer:       ormer,
 		newAuthUC:   newAuthUC,
 		newInviteUC: newInviteUC,
 		cfg:         cfg,
@@ -55,14 +53,13 @@ func NewAuthHandler(
 	}
 }
 
-// GetMyProfile はCookieからスタッフIDを取得してプロフィールを返します。
 func (h *AuthHandler) GetMyProfile(ctx *beecontext.Context) {
 	staffID := staffIDFromCookie(ctx)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	staff, err := h.newAuthUC(h.db).FindUser(uauth.FindUserDto{ID: staffID})
+	staff, err := h.newAuthUC(h.ormer).FindUser(uauth.FindUserDto{ID: staffID})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -75,14 +72,13 @@ func (h *AuthHandler) GetMyProfile(ctx *beecontext.Context) {
 	})
 }
 
-// Login はCookieのスタッフIDを検証してログイン状態を返します。
 func (h *AuthHandler) Login(ctx *beecontext.Context) {
 	staffID := staffIDFromCookie(ctx)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
 	}
-	staff, err := h.newAuthUC(h.db).FindUser(uauth.FindUserDto{ID: staffID})
+	staff, err := h.newAuthUC(h.ormer).FindUser(uauth.FindUserDto{ID: staffID})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -95,17 +91,15 @@ func (h *AuthHandler) Login(ctx *beecontext.Context) {
 	})
 }
 
-// Logout はスタッフCookieを削除してログアウトします。
 func (h *AuthHandler) Logout(ctx *beecontext.Context) {
 	secure := h.cfg.App.Env == "production"
 	clearStaffCookie(ctx, secure)
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{})
 }
 
-// Invitation は招待トークンを検証してキャッシュに保存します。
 func (h *AuthHandler) Invitation(ctx *beecontext.Context) {
 	token := ctx.Input.Param(":token")
-	result, err := h.newInviteUC(h.db).FindByToken(uinvitation.FindByTokenDto{Token: token})
+	result, err := h.newInviteUC(h.ormer).FindByToken(uinvitation.FindByTokenDto{Token: token})
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -118,7 +112,6 @@ func (h *AuthHandler) Invitation(ctx *beecontext.Context) {
 	})
 }
 
-// GoogleRedirect はGoogle OAuth認証ページへリダイレクトします。
 func (h *AuthHandler) GoogleRedirect(ctx *beecontext.Context) {
 	oauthState := ctx.Input.Query("token")
 	if oauthState == "" {
@@ -128,7 +121,6 @@ func (h *AuthHandler) GoogleRedirect(ctx *beecontext.Context) {
 	http.Redirect(ctx.ResponseWriter, ctx.Request, url, http.StatusTemporaryRedirect)
 }
 
-// GoogleCallback はGoogle OAuthコールバックを受けてログイン処理を行います。
 func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
 	code := ctx.Input.Query("code")
 	if code == "" {
@@ -168,7 +160,7 @@ func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
 	}
 
 	var staff *domstaff.Vo
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		var e error
 		staff, e = h.newAuthUC(tx).Login(dto)
 		return e
@@ -188,7 +180,6 @@ func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
 	http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/clients", http.StatusTemporaryRedirect)
 }
 
-// fetchGoogleUserInfo はGoogle APIからユーザー情報を取得します。
 func fetchGoogleUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]string, error) {
 	client := cfg.Client(context.Background(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")

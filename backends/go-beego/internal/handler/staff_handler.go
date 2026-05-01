@@ -1,31 +1,29 @@
-// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
 	domstaff "authorization-go-beego/internal/domain/staff"
+	"authorization-go-beego/internal/infrastructure/persistence"
 	ustaff "authorization-go-beego/internal/usecase/staff"
 	"authorization-go-beego/pkg/apperror"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 
 	beecontext "github.com/beego/beego/v2/server/web/context"
-	"gorm.io/gorm"
+	"github.com/beego/beego/v2/client/orm"
 )
 
-// StaffHandler はスタッフ関連のHTTPハンドラです。
 type StaffHandler struct {
-	db         *gorm.DB
-	newStaffUC func(*gorm.DB) *ustaff.Interactor
+	ormer      orm.Ormer
+	newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor
 }
 
-// NewStaffHandler は StaffHandler を生成します。
-func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{db: db, newStaffUC: newStaffUC}
+func NewStaffHandler(ormer orm.Ormer, newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor) *StaffHandler {
+	return &StaffHandler{ormer: ormer, newStaffUC: newStaffUC}
 }
 
-// Index はスタッフ一覧を返します。
 func (h *StaffHandler) Index(ctx *beecontext.Context) {
 	cond := domstaff.Condition{}
 
@@ -34,7 +32,7 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 	}
 	cond.Roles = parseIntList(ctx.Request.URL.Query()["roles"])
 
-	staffs, err := h.newStaffUC(h.db).FindByCondition(cond)
+	staffs, err := h.newStaffUC(h.ormer).FindByCondition(cond)
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -42,7 +40,6 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"items": mapStaffList(staffs)})
 }
 
-// UpdateRole はスタッフのロールを変更します。
 func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 	id, err := parseUintParam(ctx, ":id")
 	if err != nil {
@@ -59,7 +56,7 @@ func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 	}
 
 	executorID := staffIDFromCookie(ctx)
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
 			Role:       body.Role,
@@ -72,14 +69,13 @@ func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"id": id})
 }
 
-// Restore は論理削除したスタッフを復元します。
 func (h *StaffHandler) Restore(ctx *beecontext.Context) {
 	id, err := parseUintParam(ctx, ":id")
 	if err != nil {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).Restore(ustaff.RestoreDto{ID: id})
 	}); txErr != nil {
 		writeError(ctx, txErr)
@@ -88,7 +84,6 @@ func (h *StaffHandler) Restore(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"id": id})
 }
 
-// Destroy はスタッフを論理削除します。
 func (h *StaffHandler) Destroy(ctx *beecontext.Context) {
 	id, err := parseUintParam(ctx, ":id")
 	if err != nil {
@@ -96,7 +91,7 @@ func (h *StaffHandler) Destroy(ctx *beecontext.Context) {
 		return
 	}
 	executorID := staffIDFromCookie(ctx)
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).Destroy(ustaff.DestroyDto{
 			ID:         id,
 			ExecutorID: executorID,
@@ -108,7 +103,6 @@ func (h *StaffHandler) Destroy(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{"id": id})
 }
 
-// mapStaffList はスタッフ一覧をレスポンス用マップに変換します。
 func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 	out := make([]map[string]interface{}, 0, len(staffs))
 	for _, s := range staffs {
@@ -125,13 +119,11 @@ func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 	return out
 }
 
-// parseUintParam はパスパラメータを uint に変換します。
 func parseUintParam(ctx *beecontext.Context, key string) (uint, error) {
 	v, err := strconv.ParseUint(ctx.Input.Param(key), 10, 32)
 	return uint(v), err
 }
 
-// parseIntList はクエリパラメータの文字列リストを int スライスに変換します。
 func parseIntList(raw []string) []int {
 	var out []int
 	for _, v := range raw {

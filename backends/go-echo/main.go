@@ -1,6 +1,7 @@
 package main
 
 import (
+	"authorization-go-echo/ent"
 	"authorization-go-echo/internal/config"
 	"authorization-go-echo/internal/handler"
 	"authorization-go-echo/internal/infrastructure/cache"
@@ -19,42 +20,42 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echomw "github.com/labstack/echo/v4/middleware"
-	"gorm.io/gorm"
 )
 
 func main() {
 	cfg := config.Load()
 
-	database, err := db.New(cfg)
+	database, _, err := db.New(cfg)
 	if err != nil {
 		log.Fatalf("db connect: %v", err)
 	}
+	defer database.Close()
 
 	rdb := cache.New(cfg)
 
 	gateCacheRepo := cache.NewRedisGateRepository(rdb, cfg)
 	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, cfg)
 
-	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
-		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
+	newAuthUC := func(db *ent.Client) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewEntStaffRepository(db), invitationAuthRepo)
 	}
-	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
-		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	newClientUC := func(db *ent.Client) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewEntClientRepository(db))
 	}
-	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
-		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	newStaffUC := func(db *ent.Client) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewEntStaffRepository(db))
 	}
-	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
-		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, cfg.App.FrontendURL), invitationAuthRepo)
+	newInviteUC := func(db *ent.Client) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewEntInvitationRepository(db, cfg.App.FrontendURL), invitationAuthRepo)
 	}
-	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+	newNotifUC := func(db *ent.Client) *unotification.Interactor {
 		return unotification.NewInteractor(
-			persistence.NewGormNotificationRepository(tx),
-			persistence.NewGormStaffRepository(tx),
+			persistence.NewEntNotificationRepository(db),
+			persistence.NewEntStaffRepository(db),
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), gateCacheRepo, cfg)
+	gateUC := ugate.NewInteractor(persistence.NewEntClientRepository(database), gateCacheRepo, cfg)
 
 	mailer := mail.NewMailer(cfg.Mail)
 

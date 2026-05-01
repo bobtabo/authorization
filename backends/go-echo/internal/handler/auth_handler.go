@@ -1,7 +1,7 @@
-// Package handler はHTTPハンドラを提供します。
 package handler
 
 import (
+	"authorization-go-echo/ent"
 	"authorization-go-echo/internal/config"
 	domstaff "authorization-go-echo/internal/domain/staff"
 	uauth "authorization-go-echo/internal/usecase/auth"
@@ -17,23 +17,20 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"gorm.io/gorm"
 )
 
-// AuthHandler は認証関連のHTTPハンドラです。
 type AuthHandler struct {
-	db          *gorm.DB
-	newAuthUC   func(*gorm.DB) *uauth.Interactor
-	newInviteUC func(*gorm.DB) *uinvitation.Interactor
+	db          *ent.Client
+	newAuthUC   func(*ent.Client) *uauth.Interactor
+	newInviteUC func(*ent.Client) *uinvitation.Interactor
 	cfg         *config.Config
 	oauthConfig *oauth2.Config
 }
 
-// NewAuthHandler は AuthHandler を生成します。
 func NewAuthHandler(
-	db *gorm.DB,
-	newAuthUC func(*gorm.DB) *uauth.Interactor,
-	newInviteUC func(*gorm.DB) *uinvitation.Interactor,
+	db *ent.Client,
+	newAuthUC func(*ent.Client) *uauth.Interactor,
+	newInviteUC func(*ent.Client) *uinvitation.Interactor,
 	cfg *config.Config,
 ) *AuthHandler {
 	oauthCfg := &oauth2.Config{
@@ -46,16 +43,9 @@ func NewAuthHandler(
 		},
 		Endpoint: google.Endpoint,
 	}
-	return &AuthHandler{
-		db:          db,
-		newAuthUC:   newAuthUC,
-		newInviteUC: newInviteUC,
-		cfg:         cfg,
-		oauthConfig: oauthCfg,
-	}
+	return &AuthHandler{db: db, newAuthUC: newAuthUC, newInviteUC: newInviteUC, cfg: cfg, oauthConfig: oauthCfg}
 }
 
-// GetMyProfile はCookieからスタッフIDを取得してプロフィールを返します。
 func (h *AuthHandler) GetMyProfile(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
@@ -66,14 +56,10 @@ func (h *AuthHandler) GetMyProfile(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"staff_id": staff.ID,
-		"name":     staff.Name,
-		"avatar":   staff.Avatar,
-		"role":     staff.Role,
+		"staff_id": staff.ID, "name": staff.Name, "avatar": staff.Avatar, "role": staff.Role,
 	})
 }
 
-// Login はCookieのスタッフIDを検証してログイン状態を返します。
 func (h *AuthHandler) Login(c echo.Context) error {
 	staffID := staffIDFromCookie(c)
 	if staffID == 0 {
@@ -84,21 +70,16 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"staff_id": staff.ID,
-		"name":     staff.Name,
-		"avatar":   staff.Avatar,
-		"role":     staff.Role,
+		"staff_id": staff.ID, "name": staff.Name, "avatar": staff.Avatar, "role": staff.Role,
 	})
 }
 
-// Logout はスタッフCookieを削除してログアウトします。
 func (h *AuthHandler) Logout(c echo.Context) error {
 	secure := h.cfg.App.Env == "production"
 	clearStaffCookie(c, secure)
 	return c.JSON(http.StatusOK, map[string]interface{}{})
 }
 
-// Invitation は招待トークンを検証してキャッシュに保存します。
 func (h *AuthHandler) Invitation(c echo.Context) error {
 	token := c.Param("token")
 	result, err := h.newInviteUC(h.db).FindByToken(uinvitation.FindByTokenDto{Token: token})
@@ -106,14 +87,10 @@ func (h *AuthHandler) Invitation(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"found":       true,
-		"url":         result.URL,
-		"display_url": result.DisplayURL,
-		"token":       result.Token,
+		"found": true, "url": result.URL, "display_url": result.DisplayURL, "token": result.Token,
 	})
 }
 
-// GoogleRedirect はGoogle OAuth認証ページへリダイレクトします。
 func (h *AuthHandler) GoogleRedirect(c echo.Context) error {
 	oauthState := c.QueryParam("token")
 	if oauthState == "" {
@@ -123,7 +100,6 @@ func (h *AuthHandler) GoogleRedirect(c echo.Context) error {
 	return c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-// GoogleCallback はGoogle OAuthコールバックを受けてログイン処理を行います。
 func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 	code := c.QueryParam("code")
 	if code == "" {
@@ -134,35 +110,26 @@ func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 	if stateVal != "" && stateVal != "state" {
 		invitationToken = stateVal
 	}
-
 	oauthToken, err := h.oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
-
 	userInfo, err := fetchGoogleUserInfo(h.oauthConfig, oauthToken)
 	if err != nil {
 		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
-
 	var avatar *string
 	if pic := userInfo["picture"]; pic != "" {
 		avatar = &pic
 	}
-
 	dto := uauth.LoginDto{
-		Provider:        1,
-		ProviderID:      userInfo["id"],
-		Name:            userInfo["name"],
-		Email:           userInfo["email"],
-		Avatar:          avatar,
-		InvitationToken: invitationToken,
+		Provider: 1, ProviderID: userInfo["id"], Name: userInfo["name"],
+		Email: userInfo["email"], Avatar: avatar, InvitationToken: invitationToken,
 	}
-
 	var staff *domstaff.Vo
-	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		var e error
-		staff, e = h.newAuthUC(tx).Login(dto)
+		staff, e = h.newAuthUC(tx.Client()).Login(dto)
 		return e
 	}); txErr != nil {
 		var appErr *apperror.AppError
@@ -171,7 +138,6 @@ func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 		}
 		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
-
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
 	setStaffCookie(c, staff.ID, maxAge, secure)
@@ -185,28 +151,21 @@ func fetchGoogleUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]st
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-
 	var raw map[string]interface{}
 	if err = json.Unmarshal(body, &raw); err != nil {
 		return nil, err
 	}
-
 	str := func(key string) string {
 		if v, ok := raw[key]; ok {
 			return fmt.Sprintf("%v", v)
 		}
 		return ""
 	}
-
 	return map[string]string{
-		"id":      str("id"),
-		"name":    str("name"),
-		"email":   str("email"),
-		"picture": str("picture"),
+		"id": str("id"), "name": str("name"), "email": str("email"), "picture": str("picture"),
 	}, nil
 }
