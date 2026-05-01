@@ -3,7 +3,7 @@
 &nbsp;&nbsp;
 <a href="https://hanamirb.org/" target="_blank"><img src="https://avatars.githubusercontent.com/u/3210273" height="72" alt="Hanami"></a>
 &nbsp;&nbsp;
-<a href="https://rom-rb.org/" target="_blank"><img src="https://rom-rb.org/images/logo--hero.svg" height="72" alt="ROM"></a>
+<a href="https://rom-rb.org/" target="_blank"><img src="https://avatars.githubusercontent.com/u/4589832" height="72" alt="ROM"></a>
 </p>
 
 <p align="center">
