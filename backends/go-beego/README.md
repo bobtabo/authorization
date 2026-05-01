@@ -6,7 +6,7 @@
 
 <p align="center">
 <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.24.2-00ADD8?logo=go&logoColor=white" alt="Go 1.24.2"></a>
-<a href="https://github.com/beego/beego"><img src="https://img.shields.io/badge/Beego-v2.3.10-00ADD8?logo=go&logoColor=white" alt="Beego v2.3.10"></a>
+<a href="https://github.com/beego/beego"><img src="https://img.shields.io/badge/Beego-v2.3.10-f74955?logo=beego&logoColor=white" alt="Beego v2.3.10"></a>
 </p>
 
 ---

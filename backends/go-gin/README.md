@@ -8,8 +8,8 @@
 
 <p align="center">
 <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.24.0-00ADD8?logo=go&logoColor=white" alt="Go 1.24.0"></a>
-<a href="https://github.com/gin-gonic/gin"><img src="https://img.shields.io/badge/Gin-1.10.0-00ADD8?logo=go&logoColor=white" alt="Gin 1.10.0"></a>
-<a href="https://gorm.io/"><img src="https://img.shields.io/badge/GORM-1.25.12-00ADD8?logo=go&logoColor=white" alt="GORM 1.25.12"></a>
+<a href="https://github.com/gin-gonic/gin"><img src="https://img.shields.io/badge/Gin-1.10.0-0090D1?logo=gin&logoColor=white" alt="Gin 1.10.0"></a>
+<a href="https://gorm.io/"><img src="https://img.shields.io/badge/GORM-1.25.12-38B6FF?logo=gorm&logoColor=white" alt="GORM 1.25.12"></a>
 </p>
 
 ---

@@ -7,9 +7,9 @@
 </p>
 
 <p align="center">
-<a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/Ruby-latest-CF251F?logo=ruby&logoColor=white" alt="Ruby"></a>
-<a href="https://hanamirb.org/"><img src="https://img.shields.io/badge/Hanami-latest-DC350F?logo=hanami&logoColor=white" alt="Hanami"></a>
-<a href="https://rom-rb.org/"><img src="https://img.shields.io/badge/ROM-latest-DE0C35?logo=rom&logoColor=white" alt="ROM"></a>
+<a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/Ruby-latest-CC342D?logo=ruby&logoColor=white" alt="Ruby"></a>
+<a href="https://hanamirb.org/"><img src="https://img.shields.io/badge/Hanami-latest-FF6C89?logo=hanami&logoColor=white" alt="Hanami"></a>
+<a href="https://rom-rb.org/"><img src="https://img.shields.io/badge/ROM-latest-0063FF?logo=rom&logoColor=white" alt="ROM"></a>
 </p>
 
 ---

@@ -8,8 +8,8 @@
 
 <p align="center">
 <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.24.0-00ADD8?logo=go&logoColor=white" alt="Go 1.24.0"></a>
-<a href="https://github.com/labstack/echo"><img src="https://img.shields.io/badge/Echo-v4.13.3-00ADD8?logo=go&logoColor=white" alt="Echo v4.13.3"></a>
-<a href="https://entgo.io/"><img src="https://img.shields.io/badge/ent-v0.14.6-00ADD8?logo=go&logoColor=white" alt="ent v0.14.6"></a>
+<a href="https://github.com/labstack/echo"><img src="https://img.shields.io/badge/Echo-v4.13.3-4AE1FF?logo=echo&logoColor=white" alt="Echo v4.13.3"></a>
+<a href="https://entgo.io/"><img src="https://img.shields.io/badge/ent-v0.14.6-8DBED9?logo=ent&logoColor=white" alt="ent v0.14.6"></a>
 </p>
 
 ---
