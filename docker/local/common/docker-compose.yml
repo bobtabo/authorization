@@ -90,7 +90,7 @@ services:
       - authorization
     extra_hosts:
       - "apis.authorization-php.dev:172.19.0.6"
-      - "apis.authorization-go.dev:172.19.0.6"
+      - "apis.authorization-go-gin.dev:172.19.0.6"
       - "apis.authorization-go-beego.dev:172.19.0.6"
       - "apis.authorization-go-echo.dev:172.19.0.6"
       - "apis.authorization-kotlin.dev:172.19.0.6"

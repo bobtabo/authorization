@@ -18,7 +18,7 @@ import (
 // 環境変数で上書き可能（本番デプロイ時など）。
 var backendURL = map[string]string{
 	"/function/php":      getenv("BACKEND_PHP_URL",      "https://apis.authorization-php.dev"),
-	"/function/go":       getenv("BACKEND_GO_URL",       "https://apis.authorization-go.dev"),
+	"/function/go-gin":   getenv("BACKEND_GO_GIN_URL",   "https://apis.authorization-go-gin.dev"),
 	"/function/go-beego": getenv("BACKEND_GO_BEEGO_URL", "https://apis.authorization-go-beego.dev"),
 	"/function/go-echo":  getenv("BACKEND_GO_ECHO_URL",  "https://apis.authorization-go-echo.dev"),
 	"/function/kotlin":   getenv("BACKEND_KOTLIN_URL",   "https://apis.authorization-kotlin.dev"),
