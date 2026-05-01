@@ -1,3 +1,8 @@
+/**
+ * Redis クライアントモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import Redis from "ioredis";
 import { config } from "../config.js";
 

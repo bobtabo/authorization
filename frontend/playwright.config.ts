@@ -15,6 +15,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"]],
+  expect: { timeout: 15000 },
   use: {
     baseURL: "http://127.0.0.1:3001",
     trace: "on-first-retry",
@@ -39,6 +40,18 @@ export default defineConfig({
         screenshot: { mode: "on", fullPage: true },
       },
     },
+    // ── 実バックエンド E2E（バックエンド起動＋ seed.sql 適用が前提）──────────
+    // 実行例: npx playwright test --project=real-go-gin
+    { name: "real-php",       grep: /\[PHP\]/,              use: { ...devices["Desktop Chrome"] } },
+    { name: "real-go-gin",    grep: /\[Go \(Gin\)\]/,       use: { ...devices["Desktop Chrome"] } },
+    { name: "real-go-beego",  grep: /\[Go \(Beego\)\]/,    use: { ...devices["Desktop Chrome"] } },
+    { name: "real-go-echo",   grep: /\[Go \(Echo\)\]/,     use: { ...devices["Desktop Chrome"] } },
+    { name: "real-kotlin",    grep: /\[Kotlin\]/,           use: { ...devices["Desktop Chrome"] } },
+    { name: "real-python",    grep: /\[Python\]/,           use: { ...devices["Desktop Chrome"] } },
+    { name: "real-rb-hanami", grep: /\[Ruby \(Hanami\)\]/, use: { ...devices["Desktop Chrome"] } },
+    { name: "real-rb-rails",  grep: /\[Ruby \(Rails\)\]/,  use: { ...devices["Desktop Chrome"] } },
+    { name: "real-rust",      grep: /\[Rust\]/,             use: { ...devices["Desktop Chrome"] } },
+    { name: "real-ts",        grep: /\[TypeScript\]/,       use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
     // dev サーバーと共存できるよう、E2E 専用に build → start する。

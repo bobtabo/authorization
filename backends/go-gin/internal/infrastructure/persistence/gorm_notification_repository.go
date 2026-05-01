@@ -1,3 +1,4 @@
+// Package persistence はインフラストラクチャ層の GORM リポジトリ実装を提供します。
 package persistence
 
 import (
@@ -17,13 +18,21 @@ type GormNotificationRepository struct {
 	db *gorm.DB
 }
 
+// NewGormNotificationRepository は GormNotificationRepository を生成します。
+//
+// db: GORM DB インスタンス
 func NewGormNotificationRepository(db *gorm.DB) *GormNotificationRepository {
 	return &GormNotificationRepository{db: db}
 }
 
-// ListPage はカーソルページングで通知一覧を返します。
-// cursor = base64(unix_timestamp,id) 形式
-func (r *GormNotificationRepository) ListPage(staffID uint, cursor *string, limit int) (*domnotification.Page, error) {
+// ListPage はカーソルページングで通知エンティティ一覧とカーソルを返します。
+// cursor は base64(unix_timestamp,id) 形式で、nil または空文字の場合は先頭から取得します。
+//
+// staffID: スタッフID
+// cursor: ページカーソル
+// limit: 取得件数上限
+// 戻り値: 通知エンティティのスライス、次ページカーソル、またはエラー
+func (r *GormNotificationRepository) ListPage(staffID uint, cursor *string, limit int) ([]*domnotification.Notification, *string, error) {
 	q := r.db.Where("staff_id = ?", staffID).Order("created_at DESC, id DESC")
 
 	if cursor != nil && *cursor != "" {
@@ -36,7 +45,7 @@ func (r *GormNotificationRepository) ListPage(staffID uint, cursor *string, limi
 
 	var ms []*model.Notification
 	if err := q.Limit(limit + 1).Find(&ms).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var nextCursor *string
@@ -47,11 +56,11 @@ func (r *GormNotificationRepository) ListPage(staffID uint, cursor *string, limi
 		nextCursor = &c
 	}
 
-	items := make([]*domnotification.Notification, 0, len(ms))
+	notifications := make([]*domnotification.Notification, 0, len(ms))
 	for _, m := range ms {
-		items = append(items, notificationToDomain(m))
+		notifications = append(notifications, notificationToDomain(m))
 	}
-	return &domnotification.Page{Items: items, NextCursor: nextCursor}, nil
+	return notifications, nextCursor, nil
 }
 
 func (r *GormNotificationRepository) Counts(staffID uint) (unread, total int64, err error) {

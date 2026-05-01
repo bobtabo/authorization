@@ -1,3 +1,8 @@
+"""
+SQLAlchemy ORM モデルモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, func
@@ -9,6 +14,8 @@ class Base(DeclarativeBase):
 
 
 class ClientModel(Base):
+    """clients テーブルの ORM モデル。"""
+
     __tablename__ = "clients"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -38,6 +45,8 @@ class ClientModel(Base):
 
 
 class StaffModel(Base):
+    """staffs テーブルの ORM モデル。"""
+
     __tablename__ = "staffs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -47,12 +56,17 @@ class StaffModel(Base):
     provider_id: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     role: Mapped[int] = mapped_column(Integer, default=0)
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
 class InvitationModel(Base):
+    """invitations テーブルの ORM モデル。"""
+
     __tablename__ = "invitations"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -62,6 +76,8 @@ class InvitationModel(Base):
 
 
 class NotificationModel(Base):
+    """notifications テーブルの ORM モデル。"""
+
     __tablename__ = "notifications"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)

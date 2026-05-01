@@ -1,3 +1,8 @@
+"""
+エラーハンドラーミドルウェアモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from app.exceptions import AppError

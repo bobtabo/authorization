@@ -22,7 +22,9 @@ import {
   readAllNotifications,
   readNotification,
 } from "@/src/api/notifications";
+import { getAuthLogout } from "@/src/api/auth";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+import { USER_CACHE_KEY } from "@/lib/user-context";
 
 const TONE_MAP: Record<number, "info" | "warn" | "ok"> = { 1: "info", 2: "warn", 3: "ok" };
 
@@ -211,9 +213,15 @@ export function ConsoleHeader(): React.JSX.Element {
                 onChange={handleRuntimeChange}
                 className="h-9 min-w-[10rem] cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-1.5 pl-3 pr-9 text-xs font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 sm:min-w-[11rem] sm:text-sm"
               >
-                <option value="go">Go</option>
+                <option value="go-gin">Go (Gin)</option>
+                <option value="go-beego">Go (Beego)</option>
+                <option value="go-echo">Go (Echo)</option>
+                <option value="kotlin">Kotlin</option>
                 <option value="php">PHP</option>
                 <option value="python">Python</option>
+                <option value="rb-hanami">Ruby (Hanami)</option>
+                <option value="rb-rails">Ruby (Rails)</option>
+                <option value="rust">Rust</option>
                 <option value="ts">TypeScript</option>
               </select>
               <ChevronDown
@@ -419,14 +427,20 @@ export function ConsoleHeader(): React.JSX.Element {
                   exit={{ opacity: 0, y: -6 }}
                   className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden z-20"
                 >
-                  <Link
-                    href="/login"
-                    onClick={() => setAccountMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAccountMenuOpen(false);
+                      getAuthLogout().catch(() => {}).finally(() => {
+                        localStorage.removeItem(USER_CACHE_KEY);
+                        window.location.href = "/login";
+                      });
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     <LogOut size={15} />
                     <span>ログアウト</span>
-                  </Link>
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>

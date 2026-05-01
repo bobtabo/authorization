@@ -1,6 +1,11 @@
+"""
+招待ドメイン リポジトリインターフェースモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from abc import ABC, abstractmethod
 from typing import Optional
-from app.domain.invitation.entity import Invitation
+
 from app.domain.invitation.value_objects import InvitationVo
 
 
@@ -9,12 +14,30 @@ class InvitationRepository(ABC):
 
     @abstractmethod
     def get_current(self) -> Optional[InvitationVo]:
+        """最新の招待情報の Vo を返します。
+
+        Returns:
+            InvitationVo、または None
+        """
         ...
 
     @abstractmethod
     def issue(self) -> InvitationVo:
+        """新しい招待トークンを生成して保存し、Vo を返します。
+
+        Returns:
+            InvitationVo インスタンス
+        """
         ...
 
     @abstractmethod
-    def find_by_token(self, token: str) -> Optional[Invitation]:
+    def find_by_token(self, token: str) -> Optional[InvitationVo]:
+        """トークンで招待情報の Vo を返します。存在しない場合は None を返します。
+
+        Args:
+            token: 招待トークン
+
+        Returns:
+            InvitationVo、または None
+        """
         ...

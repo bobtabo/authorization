@@ -1,5 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
-import { mockCommon, BACKENDS } from "./helpers";
+import { test, expect, stubRoute, mockCommon, BACKENDS, type Page } from "./helpers";
 
 // ─── ヘルパー ────────────────────────────────────────────────────────────────
 
@@ -43,21 +42,15 @@ for (const backend of BACKENDS) {
   const API = backend.apiPrefix;
 
   test.describe(`招待URL [${backend.label}]`, () => {
-    test.beforeEach(async ({ page }) => {
-      await mockCommon(page, API);
-      await page.route(`${API}/admin/invitation`, (route) =>
-        route.fulfill({
-          json: {
-            found: true,
-            url: "http://localhost:3000/invitation/current-token-abc123",
-            display_url: "localhost:3000/invitation/current-token-abc123",
-            token: "current-token-abc123",
-          },
-        }),
-      );
-      await page.route(`${API}/clients*`, (route) =>
-        route.fulfill({ json: [] }),
-      );
+    test.beforeEach(async ({ page, isReal }) => {
+      await mockCommon(page, API, isReal);
+      await stubRoute(page, `${API}/admin/invitation`, {
+        found: true,
+        url: "http://localhost:3000/invitation/e2e-tkn-001",
+        display_url: "localhost:3000/invitation/e2e-tkn-001",
+        token: "e2e-tkn-001",
+      }, isReal);
+      await stubRoute(page, `${API}/clients*`, [], false);
 
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);
@@ -105,12 +98,13 @@ for (const backend of BACKENDS) {
       await openInvitationModal(page);
       const urlField = page.locator("#invitation-url-field");
       await expect(urlField).toBeVisible();
-      await expect(urlField).toHaveValue(/current-token-abc123/);
+      await expect(urlField).toHaveValue(/\/invitation\//, { timeout: 15000 });
     });
 
     // ── 再発行 ───────────────────────────────────────────────────────────────
 
     test("URLを再発行すると新しいURLが表示される", async ({ page }) => {
+      // issue レスポンスは常にモック（特定トークン値をアサートするため）
       await page.route(`${API}/admin/invitation/issue`, (route) =>
         route.fulfill({
           json: {
@@ -124,7 +118,7 @@ for (const backend of BACKENDS) {
 
       await openInvitationModal(page);
       const urlField = page.locator("#invitation-url-field");
-      await expect(urlField).toHaveValue(/current-token-abc123/);
+      await expect(urlField).toHaveValue(/\/invitation\//, { timeout: 15000 });
 
       await page.getByRole("button", { name: "URLを再発行" }).click();
       await expect(urlField).toHaveValue(/new-token-xyz789/);
@@ -133,6 +127,7 @@ for (const backend of BACKENDS) {
     // ── エラー・モック警告 ────────────────────────────────────────────────────
 
     test("GET /admin/invitation エラー時にモック警告バナーが表示される", async ({ page }) => {
+      // エラー UI のテストのため常にモック
       await page.route(`${API}/admin/invitation`, (route) =>
         route.fulfill({ status: 500, json: { message: "internal_server_error" } }),
       );
@@ -144,12 +139,13 @@ for (const backend of BACKENDS) {
     });
 
     test("再発行エラー時にモック警告バナーが表示される", async ({ page }) => {
+      // エラー UI のテストのため常にモック
       await page.route(`${API}/admin/invitation/issue`, (route) =>
         route.fulfill({ status: 500, json: { message: "internal_server_error" } }),
       );
 
       await openInvitationModal(page);
-      await expect(page.locator("#invitation-url-field")).toHaveValue(/current-token-abc123/);
+      await expect(page.locator("#invitation-url-field")).toHaveValue(/\/invitation\//, { timeout: 15000 });
 
       await page.getByRole("button", { name: "URLを再発行" }).click();
       await expect(
@@ -163,7 +159,7 @@ for (const backend of BACKENDS) {
       await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
 
       await openInvitationModal(page);
-      await expect(page.locator("#invitation-url-field")).toHaveValue(/current-token-abc123/);
+      await expect(page.locator("#invitation-url-field")).toHaveValue(/\/invitation\//, { timeout: 15000 });
 
       await page.getByRole("button", { name: /クリップボードにコピー/ }).click();
       await expect(page.getByRole("button", { name: /コピーしました/ })).toBeVisible();

@@ -1,8 +1,8 @@
 package notification
 
-// Page はカーソルページングの結果です。
+// Page はカーソルページングの結果値オブジェクトです。
 type Page struct {
-	Items      []*Notification
+	Items      []*Item
 	NextCursor *string
 }
 

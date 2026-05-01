@@ -1,3 +1,8 @@
+"""
+クライアントドメイン 検索条件モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass
 from typing import Optional
 

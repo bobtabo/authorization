@@ -90,9 +90,14 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
-    public function googleRedirect(): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
-    {
-        return Socialite::driver('google')->stateless()->redirect();
+    public function googleRedirect(Request $request
+    ): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse {
+        $token = (string)$request->query('token', '');
+        $driver = Socialite::driver('google')->stateless();
+        if ($token !== '') {
+            $driver = $driver->with(['state' => $token]);
+        }
+        return $driver->redirect();
     }
 
     /**
@@ -101,7 +106,7 @@ class AuthController extends Controller
      * @param AuthService $service 認証Service
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function googleCallback(AuthService $service): RedirectResponse|Redirector
+    public function googleCallback(Request $request, AuthService $service): RedirectResponse|Redirector
     {
         $appConfig = config('authorization.app');
 
@@ -116,6 +121,7 @@ class AuthController extends Controller
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
+                'invitationToken' => (string)$request->query('state', '') ?: null
             ]);
 
             $vo = DB::transaction(function () use ($service, $dto) {
@@ -133,6 +139,8 @@ class AuthController extends Controller
                     $secure,
                     true
                 );
+        } catch (AppException $e) {
+            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode());
         } catch (Exception $e) {
             Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
             return redirect($appConfig['frontend_url'] . '/error?code=500');

@@ -1,3 +1,8 @@
+/**
+ * Hono アプリケーション構築モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { AppError } from "./lib/errors.js";
@@ -9,6 +14,7 @@ import adminInvitationRoutes from "./routes/adminInvitations.js";
 import gateRoutes from "./routes/gate.js";
 import notificationRoutes from "./routes/notifications.js";
 
+/** Hono アプリケーションを生成して返します。 */
 export function createApp(): Hono {
   const app = new Hono();
 

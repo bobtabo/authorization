@@ -14,10 +14,14 @@ type GormStaffRepository struct {
 	db *gorm.DB
 }
 
+// NewGormStaffRepository は GormStaffRepository を生成します。
+//
+// db: GORM DB インスタンス
 func NewGormStaffRepository(db *gorm.DB) *GormStaffRepository {
 	return &GormStaffRepository{db: db}
 }
 
+// FindByCondition は検索条件に合致するスタッフエンティティを返します。
 func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
 	q := r.db.Unscoped().Order("id ASC")
 	if cond.Keyword != nil && *cond.Keyword != "" {
@@ -38,6 +42,7 @@ func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domst
 	return out, nil
 }
 
+// FindByID はIDでスタッフエンティティを返します。存在しない場合は nil を返します。
 func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
 	var m model.Staff
 	if err := r.db.First(&m, id).Error; err != nil {
@@ -49,6 +54,7 @@ func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
 	return staffToDomain(&m), nil
 }
 
+// FindByProvider はプロバイダーとプロバイダーIDでスタッフエンティティを返します。
 func (r *GormStaffRepository) FindByProvider(provider int, providerID string) (*domstaff.Staff, error) {
 	var m model.Staff
 	if err := r.db.Unscoped().Where("provider = ? AND provider_id = ?", provider, providerID).First(&m).Error; err != nil {
@@ -60,6 +66,7 @@ func (r *GormStaffRepository) FindByProvider(provider int, providerID string) (*
 	return staffToDomain(&m), nil
 }
 
+// FindAllActive は論理削除されていないスタッフエンティティを全件返します。
 func (r *GormStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
 	var ms []*model.Staff
 	if err := r.db.Where("deleted_at IS NULL").Find(&ms).Error; err != nil {
@@ -72,6 +79,7 @@ func (r *GormStaffRepository) FindAllActive() ([]*domstaff.Staff, error) {
 	return out, nil
 }
 
+// Save はスタッフエンティティを保存（新規作成または更新）して返します。
 func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 	m := staffToModel(s)
 	if err := r.db.Save(m).Error; err != nil {
@@ -80,6 +88,7 @@ func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 	return staffToDomain(m), nil
 }
 
+// UpdateRole はスタッフのロールを更新して更新件数の有無を返します。
 func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint) (bool, error) {
 	now := time.Now()
 	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
@@ -91,6 +100,7 @@ func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint) (boo
 	return result.RowsAffected > 0, result.Error
 }
 
+// SoftDelete はスタッフを論理削除して更新件数の有無を返します。
 func (r *GormStaffRepository) SoftDelete(id uint, deletedBy uint) (bool, error) {
 	now := time.Now()
 	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
@@ -100,6 +110,7 @@ func (r *GormStaffRepository) SoftDelete(id uint, deletedBy uint) (bool, error) 
 	return result.RowsAffected > 0, result.Error
 }
 
+// Restore はスタッフの論理削除を復元して更新件数の有無を返します。
 func (r *GormStaffRepository) Restore(id uint) (bool, error) {
 	result := r.db.Unscoped().Model(&model.Staff{}).Where("id = ? AND deleted_at IS NOT NULL", id).Updates(map[string]interface{}{
 		"deleted_at": nil,

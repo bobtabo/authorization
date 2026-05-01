@@ -31,3 +31,12 @@ type DetailVo struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+
+// StoreVo はクライアント登録結果の値オブジェクトです。
+// メール送信・通知配信に必要なフィールドを含みます。
+type StoreVo struct {
+	ID          uint64
+	Name        string
+	Email       string
+	AccessToken string
+}

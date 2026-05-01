@@ -1,7 +1,12 @@
+"""
+通知ルーターモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from app.routers.deps import get_notification_interactor, require_staff_id
-from app.usecase.notification.interactor import NotificationInteractor, map_notification
+from app.usecase.notification.interactor import NotificationInteractor
 from app.config.settings import get_settings, Settings
 
 router = APIRouter()
@@ -27,7 +32,20 @@ def index(
     lim = limit if (limit and limit > 0) else settings.notification_default_limit
     page = interactor.list_page(staff_id, cursor, lim)
     return {
-        "items": [map_notification(n) for n in page.items],
+        "items": [
+            {
+                "id": n.id,
+                "staff_id": n.staff_id,
+                "message_type": n.message_type,
+                "title": n.title,
+                "message": n.message,
+                "url": n.url,
+                "read": n.read,
+                "created_at": n.created_at,
+                "updated_at": n.updated_at,
+            }
+            for n in page.items
+        ],
         "next_cursor": page.next_cursor,
     }
 

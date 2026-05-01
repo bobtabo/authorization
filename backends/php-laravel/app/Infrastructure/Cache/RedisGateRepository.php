@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\Cache;
+
+use App\Domain\Gate\Repositories\GateRepository;
+use App\Support\Repositories\AbstractCacheRepository;
+
+/**
+ * 認可Repositoryクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Infrastructure\Cache
+ */
+class RedisGateRepository extends AbstractCacheRepository implements GateRepository
+{
+    private const string TAG = 'gate.jwt';
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function putJwt(string $identifier, string $memberId, string $token, int $ttl): void
+    {
+        $this->put(self::TAG, "{$identifier}.{$memberId}", $token, $ttl);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function getJwt(string $identifier, string $memberId): ?string
+    {
+        $value = $this->get(self::TAG, "{$identifier}.{$memberId}");
+        return is_string($value) ? $value : null;
+    }
+}

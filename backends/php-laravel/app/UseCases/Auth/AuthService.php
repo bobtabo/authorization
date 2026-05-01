@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\UseCases\Auth;
 
+use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Enums\StaffRole;
@@ -30,8 +31,15 @@ use Carbon\Carbon;
  */
 class AuthService extends AbstractService
 {
+    /**
+     * コンストラクタ。
+     *
+     * @param StaffRepository $staffRepository スタッフRepository
+     * @param InvitationAuthRepository $invitationAuthRepository 招待認証Repository
+     */
     public function __construct(
-        private readonly StaffRepository $repository,
+        private readonly StaffRepository $staffRepository,
+        private readonly InvitationAuthRepository $invitationAuthRepository,
     ) {
     }
 
@@ -46,7 +54,7 @@ class AuthService extends AbstractService
         $condition = new StaffCondition();
         $condition->id = $dto->id;
 
-        $entity = $this->repository->findById($condition);
+        $entity = $this->staffRepository->findById($condition);
         if (empty($entity)) {
             throw AppException::notFound('user_not_found');
         }
@@ -65,21 +73,28 @@ class AuthService extends AbstractService
     {
         /** @var StaffCondition $condition */
         $condition = SimpleMapper::map($dto, StaffCondition::class);
-        $entity = $this->repository->findByProvider($condition);
+        $entity = $this->staffRepository->findByProvider($condition);
 
         $vo = new StaffVo();
         if (empty($entity)) {
+            // 新規ユーザー: 招待トークンを検証
+            $token = $dto->invitationToken;
+            if (empty($token) || $this->invitationAuthRepository->find($token) === null) {
+                throw AppException::forbidden('invitation_required');
+            }
+            $this->invitationAuthRepository->remove($token);
+
             $newEntity = new Staff();
             $newEntity->assign($dto->attributes());
             $newEntity->role = StaffRole::Member;
             $newEntity->lastLoginAt = Carbon::now();
             $newEntity->assignCreated(0);
-            $saved = $this->repository->persist($newEntity);
+            $saved = $this->staffRepository->persist($newEntity);
         } else {
             $entity->avatar = $dto->avatar;
             $entity->lastLoginAt = Carbon::now();
             $entity->assignUpdated($entity->id);
-            $saved = $this->repository->persist($entity);
+            $saved = $this->staffRepository->persist($entity);
         }
         $vo->assign($saved->attributes());
 

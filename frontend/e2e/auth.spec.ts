@@ -1,5 +1,4 @@
-import { test, expect } from "@playwright/test";
-import { mockCommon, mockClients, BACKENDS } from "./helpers";
+import { test, expect, stubRoute, mockCommon, mockClients, BACKENDS } from "./helpers";
 
 test.describe("認証", () => {
   test("ルートにアクセスするとログインページへリダイレクトされる", async ({ page }) => {
@@ -17,11 +16,9 @@ test.describe("認証", () => {
 
 for (const backend of BACKENDS) {
   test.describe(`認証 [${backend.label}]`, () => {
-    test("E2E モードでログインするとクライアント一覧へ遷移する", async ({ page }) => {
-      await mockCommon(page, backend.apiPrefix);
-      await page.route(`${backend.apiPrefix}/clients*`, (route) =>
-        route.fulfill({ json: mockClients }),
-      );
+    test("E2E モードでログインするとクライアント一覧へ遷移する", async ({ page, isReal }) => {
+      await mockCommon(page, backend.apiPrefix, isReal);
+      await stubRoute(page, `${backend.apiPrefix}/clients*`, mockClients, isReal);
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);
       }, backend.value);
@@ -31,6 +28,41 @@ for (const backend of BACKENDS) {
 
       await expect(page).toHaveURL("/clients");
       await expect(page.getByText("クライアント一覧")).toBeVisible();
+    });
+  });
+}
+
+for (const backend of BACKENDS) {
+  test.describe(`バックエンド: ${backend.label}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.route(`${backend.apiPrefix}/auth/me`, (route) =>
+        route.fulfill({
+          json: { staff_id: 1, name: "テストスタッフ", avatar: null, role: 1 },
+        }),
+      );
+      await page.route(`${backend.apiPrefix}/notifications/counts`, (route) =>
+        route.fulfill({ json: { unread: 0, total: 0 } }),
+      );
+      await page.route(`${backend.apiPrefix}/notifications*`, (route) =>
+        route.fulfill({ json: [] }),
+      );
+      await page.route(`${backend.apiPrefix}/clients*`, (route) =>
+        route.fulfill({ json: [] }),
+      );
+
+      await page.addInitScript((runtime) => {
+        localStorage.setItem("backend-runtime", runtime);
+      }, backend.value);
+
+      await page.goto("/clients");
+    });
+
+    test("ヘッダーに正しいランタイムが表示される", async ({ page }) => {
+      await expect(page.getByLabel("Backend:")).toHaveValue(backend.value);
+    });
+
+    test("auth/me が返るとログイン済みユーザーが表示される", async ({ page }) => {
+      await expect(page.getByText("テストスタッフ")).toBeVisible();
     });
   });
 }

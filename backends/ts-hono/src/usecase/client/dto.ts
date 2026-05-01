@@ -1,3 +1,10 @@
+/**
+ * クライアントユースケース DTO モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+
+/** クライアント登録入力 DTO。 */
 export interface ClientStoreInput {
   name: string;
   postCode?: string;
@@ -10,6 +17,7 @@ export interface ClientStoreInput {
   executorId?: number;
 }
 
+/** クライアント更新入力 DTO。 */
 export interface ClientUpdateInput {
   name?: string;
   postCode?: string;

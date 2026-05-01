@@ -12,9 +12,9 @@ namespace App\UseCases\Gate;
 
 use App\Domain\Client\Condition\ClientCondition;
 use App\Domain\Client\Repositories\ClientRepository;
+use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Gate\ValueObjects\GateIssueVo;
 use App\Domain\Gate\ValueObjects\GateVerifyVo;
-use App\Infrastructure\Gate\GateCacheRepository;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
@@ -34,19 +34,21 @@ use Throwable;
 class GateService extends AbstractService
 {
     /**
+     * コンストラクタ。
+     *
      * @param ClientRepository $clientRepository クライアントリポジトリ
-     * @param GateCacheRepository $cacheRepository JWT キャッシュリポジトリ
+     * @param GateRepository $gateRepository 認可リポジトリ
      */
     public function __construct(
         private readonly ClientRepository $clientRepository,
-        private readonly GateCacheRepository $cacheRepository,
+        private readonly GateRepository $gateRepository,
     ) {
     }
 
     /**
-     * 会員ID に紐づく JWT 発行結果を取得します。
+     * JWTを発行します。
      *
-     * @param GateIssueDto $dto JWT 発行リクエスト用 DTO
+     * @param GateIssueDto $dto JWT発行DTO
      * @return GateIssueVo JWT 発行結果 ValueObject
      * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
      */
@@ -58,30 +60,27 @@ class GateService extends AbstractService
             throw AppException::unauthorized('client_not_found');
         }
 
-        /** @var array{issuer: string, algorithm: string, ttl: int, cache_ttl: int} $jwt */
-        $jwt = config('authorization.app.jwt');
+        /** @var array{issuer: string, algorithm: string, ttl: int, cache_ttl: int} $configs */
+        $configs = config('authorization.app.jwt');
         $identifier = (string)$client->identifier;
-        $token = $this->cacheRepository->getJwt($identifier, $dto->memberId);
+        $token = $this->gateRepository->getJwt($identifier, $dto->memberId);
 
         if ($token === null) {
             $token = $this->issueJwt(
-                $jwt,
+                $configs,
                 $dto->memberId,
                 $identifier,
                 (string)$client->privateKey,
                 (string)$client->fingerprint,
             );
-            $this->cacheRepository->putJwt($identifier, $dto->memberId, $token, $jwt['cache_ttl']);
+            $this->gateRepository->putJwt($identifier, $dto->memberId, $token, $configs['cache_ttl']);
         }
 
-        $vo = new GateIssueVo();
-        $vo->assign(['token' => $token]);
-
-        return $vo;
+        return new GateIssueVo()->assign(['token' => $token]);
     }
 
     /**
-     * JWT を検証しクレームを返します。
+     * JWTを検証します。
      *
      * @param GateVerifyDto $dto JWT 検証リクエスト用 DTO
      * @return GateVerifyVo JWT 検証結果（Payload 相当）ValueObject
@@ -110,7 +109,7 @@ class GateService extends AbstractService
     /**
      * RS256 で署名した JWT を発行します。
      *
-     * @param array{issuer: string, algorithm: string, ttl: int} $jwt JWT 設定
+     * @param array{issuer: string, algorithm: string, ttl: int} $configs JWT 設定
      * @param string $memberId クライアント会員ID（sub）
      * @param string $identifier クライアント識別名（aud）
      * @param string $privateKey 署名用 RSA 秘密鍵（PEM 形式）
@@ -118,7 +117,7 @@ class GateService extends AbstractService
      * @return string 発行した JWT 文字列
      */
     private function issueJwt(
-        array $jwt,
+        array $configs,
         string $memberId,
         string $identifier,
         string $privateKey,
@@ -126,16 +125,16 @@ class GateService extends AbstractService
     ): string {
         $now = time();
         $payload = [
-            'iss' => $jwt['issuer'],
+            'iss' => $configs['issuer'],
             'sub' => $memberId,
             'aud' => $identifier,
-            'exp' => $now + $jwt['ttl'],
+            'exp' => $now + $configs['ttl'],
             'iat' => $now,
             'nbf' => $now,
             'jti' => (string)Str::uuid(),
         ];
 
-        return JWT::encode($payload, $privateKey, $jwt['algorithm'], $fingerprint);
+        return JWT::encode($payload, $privateKey, $configs['algorithm'], $fingerprint);
     }
 
     /**

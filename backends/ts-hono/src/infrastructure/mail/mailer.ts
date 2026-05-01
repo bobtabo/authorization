@@ -1,3 +1,8 @@
+/**
+ * メール送信インフラモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import nodemailer from "nodemailer";
 import { config } from "../../config.js";
 
@@ -13,6 +18,12 @@ function mailSubject(subject: string): string {
   return label ? `[${label}]${subject}` : subject;
 }
 
+/**
+ * クライアントのアクセストークンをメール送信します。
+ * @param to - 送信先メールアドレス
+ * @param clientName - クライアント名
+ * @param token - アクセストークン
+ */
 export async function sendAccessToken(to: string, clientName: string, token: string): Promise<void> {
   if (!to) return;
 

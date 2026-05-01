@@ -1,3 +1,4 @@
+// Package invitation は招待ユースケースを提供します。
 package invitation
 
 import (
@@ -7,14 +8,21 @@ import (
 
 // Interactor は招待のユースケースを実装します。
 type Interactor struct {
-	repo dominvitation.Repository
+	repo     dominvitation.Repository
+	authRepo dominvitation.AuthRepository
 }
 
-func NewInteractor(repo dominvitation.Repository) *Interactor {
-	return &Interactor{repo: repo}
+// NewInteractor は Interactor を生成します。
+//
+// repo: 招待リポジトリ
+// authRepo: 招待認証キャッシュリポジトリ
+func NewInteractor(repo dominvitation.Repository, authRepo dominvitation.AuthRepository) *Interactor {
+	return &Interactor{repo: repo, authRepo: authRepo}
 }
 
-// Current は最新の招待情報を取得します。
+// Current は最新の招待情報の値オブジェクトを返します。
+//
+// 戻り値: 招待 Vo、またはエラー
 func (uc *Interactor) Current() (*dominvitation.Vo, error) {
 	result, err := uc.repo.GetCurrent()
 	if err != nil {
@@ -26,12 +34,17 @@ func (uc *Interactor) Current() (*dominvitation.Vo, error) {
 	return result, nil
 }
 
-// Issue は新しい招待を発行します。
+// Issue は新しい招待トークンを発行し、招待情報の値オブジェクトを返します。
+//
+// 戻り値: 招待 Vo、またはエラー
 func (uc *Interactor) Issue() (*dominvitation.Vo, error) {
 	return uc.repo.Issue()
 }
 
-// FindByToken はトークンで招待を検索します。
+// FindByToken はトークンで招待情報を返し、招待認証トークンをキャッシュします。
+//
+// dto: トークン検索 Dto
+// 戻り値: 招待 Vo、またはエラー
 func (uc *Interactor) FindByToken(dto FindByTokenDto) (*dominvitation.Vo, error) {
 	if dto.Token == "" {
 		return nil, apperror.BadRequest("invitation_invalid")
@@ -42,6 +55,9 @@ func (uc *Interactor) FindByToken(dto FindByTokenDto) (*dominvitation.Vo, error)
 	}
 	if result == nil {
 		return nil, apperror.BadRequest("invitation_invalid")
+	}
+	if err := uc.authRepo.Store(result.Token, 600); err != nil {
+		return nil, err
 	}
 	return result, nil
 }

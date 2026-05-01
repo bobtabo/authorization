@@ -1,5 +1,11 @@
+/**
+ * クライアントドメイン リポジトリインターフェースモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import type { Client } from "./entity.js";
 
+/** クライアントのリポジトリインターフェース。 */
 export interface ClientRepository {
   findAll(keyword?: string, status?: number): Promise<Client[]>;
   findById(id: number): Promise<Client | undefined>;

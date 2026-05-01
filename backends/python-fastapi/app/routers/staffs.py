@@ -1,8 +1,13 @@
+"""
+スタッフルーターモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from app.routers.deps import get_staff_interactor, get_staff_id_from_cookie
-from app.usecase.staff.interactor import StaffInteractor, staff_status
+from app.usecase.staff.interactor import StaffInteractor
 from app.usecase.staff.dto import StaffUpdateRoleDto, StaffDestroyDto
 
 router = APIRouter()
@@ -14,7 +19,7 @@ def _map_staff(s) -> dict:
         "name": s.name,
         "email": s.email,
         "role": s.role,
-        "status": staff_status(s),
+        "status": s.status,
         "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
         "updated_at": s.updated_at.strftime("%Y-%m-%d %H:%M") if s.updated_at else None,
     }

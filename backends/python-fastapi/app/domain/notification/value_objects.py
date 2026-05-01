@@ -1,18 +1,39 @@
+"""
+通知ドメイン バリューオブジェクトモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass, field
 from typing import Optional
-from app.domain.notification.entity import Notification
+
+
+@dataclass(frozen=True)
+class NotificationItem:
+    """通知一覧レスポンス用バリューオブジェクト。"""
+
+    id: int
+    staff_id: int
+    message_type: int
+    title: str
+    message: str
+    url: Optional[str]
+    read: bool
+    created_at: str  # "YYYY-MM-DD HH:MM" 形式
+    updated_at: str  # "YYYY-MM-DD HH:MM" 形式
 
 
 @dataclass
 class NotificationPage:
     """通知ページングバリューオブジェクト。"""
-    items: list[Notification]
+
+    items: list[NotificationItem]
     next_cursor: Optional[str]
 
 
 @dataclass(frozen=True)
 class NotificationCountsVo:
     """通知カウントバリューオブジェクト。"""
+
     unread: int
     total: int
 
@@ -20,6 +41,7 @@ class NotificationCountsVo:
 @dataclass(frozen=True)
 class NotificationPatchVo:
     """通知パッチバリューオブジェクト。"""
+
     read: Optional[bool] = None
     title: Optional[str] = None
     message: Optional[str] = None
@@ -28,6 +50,7 @@ class NotificationPatchVo:
 @dataclass(frozen=True)
 class NotificationBulkPatchVo:
     """通知一括既読バリューオブジェクト。"""
+
     executor_id: int
     ids: list[int] = field(default_factory=list)
     all_flag: bool = False

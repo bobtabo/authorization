@@ -1,3 +1,4 @@
+// Package middleware は Gin ミドルウェアを提供します。
 package middleware
 
 import (

@@ -12,18 +12,38 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
+// ClientHandler はクライアント関連のHTTPハンドラーを提供します。
 type ClientHandler struct {
-	clientUC       *uclient.Interactor
-	notificationUC *unotification.Interactor
-	mailer         *mail.Mailer
+	db           *gorm.DB
+	newClientUC  func(*gorm.DB) *uclient.Interactor
+	newNotifUC   func(*gorm.DB) *unotification.Interactor
+	mailer       *mail.Mailer
 }
 
-func NewClientHandler(clientUC *uclient.Interactor, notificationUC *unotification.Interactor, mailer *mail.Mailer) *ClientHandler {
-	return &ClientHandler{clientUC: clientUC, notificationUC: notificationUC, mailer: mailer}
+// NewClientHandler は ClientHandler を生成します。
+//
+// db: GORM DB インスタンス
+// newClientUC: クライアントユースケースファクトリ
+// newNotifUC: 通知ユースケースファクトリ
+// mailer: メール送信サービス
+func NewClientHandler(
+	db *gorm.DB,
+	newClientUC func(*gorm.DB) *uclient.Interactor,
+	newNotifUC func(*gorm.DB) *unotification.Interactor,
+	mailer *mail.Mailer,
+) *ClientHandler {
+	return &ClientHandler{
+		db:          db,
+		newClientUC: newClientUC,
+		newNotifUC:  newNotifUC,
+		mailer:      mailer,
+	}
 }
 
+// Index は検索条件に合致するクライアント一覧を返します。
 // GET /api/clients
 func (h *ClientHandler) Index(c *gin.Context) {
 	cond := domclient.Condition{}
@@ -42,7 +62,7 @@ func (h *ClientHandler) Index(c *gin.Context) {
 		}
 	}
 
-	clients, err := h.clientUC.FindByCondition(cond)
+	clients, err := h.newClientUC(h.db).FindByCondition(cond)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -50,6 +70,7 @@ func (h *ClientHandler) Index(c *gin.Context) {
 	c.JSON(http.StatusOK, mapClientList(clients))
 }
 
+// Show はIDでクライアント詳細を返します。
 // GET /api/clients/:id
 func (h *ClientHandler) Show(c *gin.Context) {
 	id, err := parseUint64Param(c, "id")
@@ -57,7 +78,7 @@ func (h *ClientHandler) Show(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	client, err := h.clientUC.FindByID(id)
+	client, err := h.newClientUC(h.db).FindByID(id)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -65,6 +86,7 @@ func (h *ClientHandler) Show(c *gin.Context) {
 	c.JSON(http.StatusOK, mapClientDetail(client))
 }
 
+// Store はクライアントを新規登録します。
 // POST /api/clients/store
 func (h *ClientHandler) Store(c *gin.Context) {
 	var body struct {
@@ -84,38 +106,43 @@ func (h *ClientHandler) Store(c *gin.Context) {
 
 	executorID := staffIDFromCookie(c)
 
-	client, err := h.clientUC.Store(uclient.StoreDto{
-		Name:       body.Name,
-		PostCode:   body.PostCode,
-		Pref:       body.Pref,
-		City:       body.City,
-		Address:    body.Address,
-		Building:   body.Building,
-		Tel:        body.Tel,
-		Email:      body.Email,
-		ExecutorID: executorID,
-	})
-	if err != nil {
-		_ = c.Error(err)
+	var storeVo *domclient.StoreVo
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		var e error
+		storeVo, e = h.newClientUC(tx).Store(uclient.StoreDto{
+			Name:       body.Name,
+			PostCode:   body.PostCode,
+			Pref:       body.Pref,
+			City:       body.City,
+			Address:    body.Address,
+			Building:   body.Building,
+			Tel:        body.Tel,
+			Email:      body.Email,
+			ExecutorID: executorID,
+		})
+		return e
+	}); txErr != nil {
+		_ = c.Error(txErr)
 		return
 	}
 
-	// 全スタッフへ通知配信
-	notifURL := fmt.Sprintf("/clients/show?id=%d", client.ID)
-	_ = h.notificationUC.FanOut(unotification.FanOutDto{
+	// 全スタッフへ通知配信（トランザクション外・ベストエフォート）
+	notifURL := fmt.Sprintf("/clients/show?id=%d", storeVo.ID)
+	_ = h.newNotifUC(h.db).FanOut(unotification.FanOutDto{
 		Title:       "新しいクライアントが登録されました",
-		Message:     client.Name,
+		Message:     storeVo.Name,
 		MessageType: 1,
 		ExecutorID:  executorID,
 		URL:         notifURL,
 	})
 
-	// アクセストークンメール送信
-	go h.mailer.SendAccessToken(client.Email, client.Name, client.AccessToken)
+	// アクセストークンメール送信（非同期）
+	go h.mailer.SendAccessToken(storeVo.Email, storeVo.Name, storeVo.AccessToken)
 
-	c.JSON(http.StatusCreated, gin.H{"id": client.ID})
+	c.JSON(http.StatusCreated, gin.H{"id": storeVo.ID})
 }
 
+// Update はクライアントを更新して詳細を返します。
 // PUT /api/clients/:id/update
 func (h *ClientHandler) Update(c *gin.Context) {
 	id, err := parseUint64Param(c, "id")
@@ -142,26 +169,31 @@ func (h *ClientHandler) Update(c *gin.Context) {
 
 	executorID := staffIDFromCookie(c)
 
-	client, err := h.clientUC.Update(uclient.UpdateDto{
-		ID:         id,
-		Name:       body.Name,
-		PostCode:   body.PostCode,
-		Pref:       body.Pref,
-		City:       body.City,
-		Address:    body.Address,
-		Building:   body.Building,
-		Tel:        body.Tel,
-		Email:      body.Email,
-		Status:     body.Status,
-		ExecutorID: executorID,
-	})
-	if err != nil {
-		_ = c.Error(err)
+	var detailVo *domclient.DetailVo
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		var e error
+		detailVo, e = h.newClientUC(tx).Update(uclient.UpdateDto{
+			ID:         id,
+			Name:       body.Name,
+			PostCode:   body.PostCode,
+			Pref:       body.Pref,
+			City:       body.City,
+			Address:    body.Address,
+			Building:   body.Building,
+			Tel:        body.Tel,
+			Email:      body.Email,
+			Status:     body.Status,
+			ExecutorID: executorID,
+		})
+		return e
+	}); txErr != nil {
+		_ = c.Error(txErr)
 		return
 	}
-	c.JSON(http.StatusOK, mapClientDetail(client))
+	c.JSON(http.StatusOK, mapClientDetail(detailVo))
 }
 
+// Destroy はクライアントを論理削除します。
 // DELETE /api/clients/:id/delete
 func (h *ClientHandler) Destroy(c *gin.Context) {
 	id, err := parseUint64Param(c, "id")
@@ -170,8 +202,10 @@ func (h *ClientHandler) Destroy(c *gin.Context) {
 		return
 	}
 	executorID := staffIDFromCookie(c)
-	if err = h.clientUC.Destroy(id, executorID); err != nil {
-		_ = c.Error(err)
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		return h.newClientUC(tx).Destroy(id, executorID)
+	}); txErr != nil {
+		_ = c.Error(txErr)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
@@ -179,7 +213,8 @@ func (h *ClientHandler) Destroy(c *gin.Context) {
 
 // ---------- 変換ヘルパー ----------
 
-func mapClientList(clients []*domclient.Client) []gin.H {
+// mapClientList はクライアント一覧 Vo をレスポンス用マップのスライスに変換します。
+func mapClientList(clients []*domclient.ListItem) []gin.H {
 	out := make([]gin.H, 0, len(clients))
 	for _, c := range clients {
 		out = append(out, gin.H{
@@ -195,7 +230,8 @@ func mapClientList(clients []*domclient.Client) []gin.H {
 	return out
 }
 
-func mapClientDetail(c *domclient.Client) gin.H {
+// mapClientDetail はクライアント詳細 Vo をレスポンス用マップに変換します。
+func mapClientDetail(c *domclient.DetailVo) gin.H {
 	return gin.H{
 		"id":         c.ID,
 		"name":       c.Name,
@@ -215,6 +251,7 @@ func mapClientDetail(c *domclient.Client) gin.H {
 	}
 }
 
+// parseUint64Param はパスパラメータを uint64 に変換します。
 func parseUint64Param(c *gin.Context, key string) (uint64, error) {
 	return strconv.ParseUint(c.Param(key), 10, 64)
 }

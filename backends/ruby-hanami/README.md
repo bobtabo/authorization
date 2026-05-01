@@ -1,15 +1,15 @@
 <p align="center">
 <a href="https://www.ruby-lang.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ruby/ruby-original.svg" height="72" alt="Ruby"></a>
 &nbsp;&nbsp;
-<a href="https://gin-gonic.com/" target="_blank"><img src="https://avatars.githubusercontent.com/u/3210273" height="72" alt="Hanami"></a>
+<a href="https://hanamirb.org/" target="_blank"><img src="https://avatars.githubusercontent.com/u/3210273" height="72" alt="Hanami"></a>
 &nbsp;&nbsp;
-<a href="https://rom-rb.org/" target="_blank"><img src="https://rom-rb.org/images/logo--hero.svg" height="72" alt="ROM"></a>
+<a href="https://rom-rb.org/" target="_blank"><img src="https://avatars.githubusercontent.com/u/4589832" height="72" alt="ROM"></a>
 </p>
 
 <p align="center">
-<a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/Ruby-4.0.2-CF251F?logo=ruby&logoColor=white" alt="Ruby 4.0.2"></a>
-<a href="https://github.com/gin-gonic/gin"><img src="https://img.shields.io/badge/Hanami-2.3.0-DC350F?logo=hanami&logoColor=white" alt="Hanami 2.3.0"></a>
-<a href="https://rom-rb.org/"><img src="https://img.shields.io/badge/ROM-5.1.0-DE0C35?logo=rom&logoColor=white" alt="ROM 5.1.0"></a>
+<a href="https://www.ruby-lang.org/"><img src="https://img.shields.io/badge/Ruby-latest-CC342D?logo=ruby&logoColor=white" alt="Ruby"></a>
+<a href="https://hanamirb.org/"><img src="https://img.shields.io/badge/Hanami-latest-FF6C89?logo=hanami&logoColor=white" alt="Hanami"></a>
+<a href="https://rom-rb.org/"><img src="https://img.shields.io/badge/ROM-latest-0063FF?logo=rom&logoColor=white" alt="ROM"></a>
 </p>
 
 ---
@@ -32,18 +32,17 @@ DDD + クリーンアーキテクチャを採用しています。
 HTTP Request
     │
     ▼
-Handler (internal/handler/)
-    │  リクエスト解析・レスポンス整形
+Action (app/actions/)
+    │  リクエストのバリデーション・レスポンス整形
     ▼
-UseCase / Interactor (internal/usecase/)
-    │  ビジネスロジック・鍵ペア生成・JWT 操作
-    │  Domain Repository インターフェースに依存（依存性逆転）
+UseCase / Interactor (app/usecase/)
+    │  アプリケーションロジック・DTO 変換
     ▼
-Domain (internal/domain/)
+Domain (app/domain/)
     │  エンティティ・リポジトリインターフェース・値オブジェクト
     ▼
-Infrastructure (internal/infrastructure/)
-    │  GORM 実装リポジトリ・Redis キャッシュ
+Repository (app/infrastructure/persistence/)
+    │  ROM リポジトリ実装
     ▼
 MySQL / Redis
 ```
@@ -65,23 +64,59 @@ MySQL / Redis
 
 ```
 backends/ruby-hanami/
+├── app/
+│   ├── actions/             # Hanami Actions（Controller に相当）
+│   ├── domain/              # ドメイン層
+│   │   ├── client/          # エンティティ・リポジトリ IF・値オブジェクト
+│   │   ├── staff/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── usecase/             # ユースケース層
+│   │   ├── client/          # DTO・インタラクター
+│   │   ├── staff/
+│   │   ├── auth/
+│   │   ├── invitation/
+│   │   ├── notification/
+│   │   └── gate/
+│   ├── infrastructure/      # インフラ層
+│   │   ├── model/           # ROM リレーション定義
+│   │   ├── persistence/     # ROM リポジトリ実装
+│   │   ├── cache/           # Redis キャッシュリポジトリ実装
+│   │   ├── mail/            # メール送信
+│   │   └── db/              # DB 接続
+│   └── middleware/          # 認証・エラーハンドリングミドルウェア
+├── config/
+│   └── routes.rb
+├── spec/                    # RSpec テスト
+├── Gemfile
+└── Gemfile.lock
 ```
 
 ---
 
-## :package: 主要パッケージ
+## :package: 主要 Gem
 
-| パッケージ | 用途 |
+| Gem | 用途 |
 |---|---|
+| `hanami` | フレームワーク |
+| `rom` | ORM（リポジトリパターン） |
+| `rom-sql` | SQL アダプター |
+| `jwt` | JWT 生成・検証（RS256） |
+| `mail` | メール送信（SMTP） |
+| `redis` | Redis クライアント |
+| `mysql2` | MySQL ドライバー |
+| `dotenv` | `.env` 読み込み |
+| `rspec` | テストフレームワーク |
 
 ---
 
 ## :rocket: セットアップ
 
-### 1. 依存パッケージの取得
+### 1. 依存 Gem のインストール
 
 ```bash
-go mod tidy
+bundle install
 ```
 
 ### 2. 環境変数の設定
@@ -100,10 +135,18 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ### 3. 起動
 
 ```bash
-go run ./cmd/main.go
+bundle exec hanami server
 ```
 
 Docker 環境では `docker compose up -d` で自動起動します。
+
+---
+
+## :test_tube: テスト
+
+```bash
+bundle exec rspec
+```
 
 ---
 

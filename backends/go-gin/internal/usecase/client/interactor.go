@@ -1,3 +1,4 @@
+// Package client はクライアントユースケースを提供します。
 package client
 
 import (
@@ -23,11 +24,17 @@ type Interactor struct {
 	repo domclient.Repository
 }
 
+// NewInteractor は Interactor を生成します。
+//
+// repo: クライアントリポジトリ
 func NewInteractor(repo domclient.Repository) *Interactor {
 	return &Interactor{repo: repo}
 }
 
 // AuthenticateByToken はBearerトークンでクライアントを認証します。
+//
+// token: アクセストークン
+// 戻り値: 認証成功の場合 true、またはエラー
 func (uc *Interactor) AuthenticateByToken(token string) (bool, error) {
 	c, err := uc.repo.FindByAccessToken(token)
 	if err != nil {
@@ -36,13 +43,27 @@ func (uc *Interactor) AuthenticateByToken(token string) (bool, error) {
 	return c != nil, nil
 }
 
-// FindByCondition は検索条件に合致するクライアント一覧を返します。
-func (uc *Interactor) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
-	return uc.repo.FindByCondition(cond)
+// FindByCondition は検索条件に合致するクライアント一覧の値オブジェクトを返します。
+//
+// cond: 検索条件
+// 戻り値: クライアント一覧 Vo のスライス、またはエラー
+func (uc *Interactor) FindByCondition(cond domclient.Condition) ([]*domclient.ListItem, error) {
+	clients, err := uc.repo.FindByCondition(cond)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*domclient.ListItem, 0, len(clients))
+	for _, c := range clients {
+		items = append(items, clientToListItem(c))
+	}
+	return items, nil
 }
 
-// FindByID は ID でクライアントを取得します。
-func (uc *Interactor) FindByID(id uint64) (*domclient.Client, error) {
+// FindByID はIDでクライアント詳細の値オブジェクトを返します。
+//
+// id: クライアントID
+// 戻り値: クライアント詳細 Vo、またはエラー
+func (uc *Interactor) FindByID(id uint64) (*domclient.DetailVo, error) {
 	c, err := uc.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -50,44 +71,49 @@ func (uc *Interactor) FindByID(id uint64) (*domclient.Client, error) {
 	if c == nil {
 		return nil, apperror.NotFound("client_not_found")
 	}
-	return c, nil
+	return clientToDetailVo(c), nil
 }
 
-// FindByAccessToken はアクセストークンでクライアントを取得します。
+// FindByAccessToken はアクセストークンでクライアントエンティティを返します。
+//
+// token: アクセストークン
+// 戻り値: クライアントエンティティ、またはエラー
 func (uc *Interactor) FindByAccessToken(token string) (*domclient.Client, error) {
 	return uc.repo.FindByAccessToken(token)
 }
 
-// FindByIdentifier は identifier でクライアントを取得します。
+// FindByIdentifier はidentifierでクライアントエンティティを返します。
+//
+// identifier: クライアント識別子
+// 戻り値: クライアントエンティティ、またはエラー
 func (uc *Interactor) FindByIdentifier(identifier string) (*domclient.Client, error) {
 	return uc.repo.FindByIdentifier(identifier)
 }
 
-// Store はクライアントを新規登録します（RSA鍵ペア・アクセストークンを自動生成）。
-func (uc *Interactor) Store(dto StoreDto) (*domclient.Client, error) {
-	// RSA 4096bit 鍵ペアを生成
+// Store はクライアントを新規登録し、登録結果の値オブジェクトを返します。
+// RSA鍵ペア・アクセストークンを自動生成します。
+//
+// dto: クライアント登録 Dto
+// 戻り値: 登録結果 Vo（メール送信・通知配信に使用）、またはエラー
+func (uc *Interactor) Store(dto StoreDto) (*domclient.StoreVo, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return nil, fmt.Errorf("rsa key generation: %w", err)
 	}
 
-	// 秘密鍵 PEM
 	privPEM := pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
 
-	// 公開鍵 PEM
 	pubDER, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubDER})
 
-	// フィンガープリント（SSH wire format SHA256）
 	fingerprint := rsaFingerprint(&privateKey.PublicKey)
 
-	// アクセストークン（64バイト hex）
 	tokenBytes := make([]byte, 32)
 	if _, err = rand.Read(tokenBytes); err != nil {
 		return nil, err
@@ -116,11 +142,23 @@ func (uc *Interactor) Store(dto StoreDto) (*domclient.Client, error) {
 		UpdatedBy:   &dto.ExecutorID,
 	}
 
-	return uc.repo.Save(c)
+	saved, err := uc.repo.Save(c)
+	if err != nil {
+		return nil, err
+	}
+	return &domclient.StoreVo{
+		ID:          saved.ID,
+		Name:        saved.Name,
+		Email:       saved.Email,
+		AccessToken: saved.AccessToken,
+	}, nil
 }
 
-// Update はクライアントを更新します。
-func (uc *Interactor) Update(dto UpdateDto) (*domclient.Client, error) {
+// Update はクライアントを更新し、更新後の詳細値オブジェクトを返します。
+//
+// dto: クライアント更新 Dto
+// 戻り値: クライアント詳細 Vo、またはエラー
+func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
 	c, err := uc.repo.FindByID(dto.ID)
 	if err != nil || c == nil {
 		return nil, apperror.NotFound("client_not_found")
@@ -151,7 +189,6 @@ func (uc *Interactor) Update(dto UpdateDto) (*domclient.Client, error) {
 		c.Email = *dto.Email
 	}
 
-	// ステータス遷移
 	if dto.Status != nil {
 		c.Status = *dto.Status
 		now := time.Now()
@@ -168,10 +205,18 @@ func (uc *Interactor) Update(dto UpdateDto) (*domclient.Client, error) {
 	c.UpdatedAt = now
 	c.UpdatedBy = &dto.ExecutorID
 
-	return uc.repo.Save(c)
+	saved, err := uc.repo.Save(c)
+	if err != nil {
+		return nil, err
+	}
+	return clientToDetailVo(saved), nil
 }
 
 // Destroy はクライアントをステータス Closed(4) に更新してから論理削除します。
+//
+// id: クライアントID
+// executorID: 操作者スタッフID
+// 戻り値: エラー
 func (uc *Interactor) Destroy(id uint64, executorID uint) error {
 	c, err := uc.repo.FindByID(id)
 	if err != nil || c == nil {
@@ -187,6 +232,42 @@ func (uc *Interactor) Destroy(id uint64, executorID uint) error {
 	}
 
 	return uc.repo.SoftDelete(id, executorID)
+}
+
+// ---------- 変換ヘルパー ----------
+
+// clientToListItem はクライアントエンティティを一覧用 Vo に変換します。
+func clientToListItem(c *domclient.Client) *domclient.ListItem {
+	return &domclient.ListItem{
+		ID:        c.ID,
+		Name:      c.Name,
+		Status:    c.Status,
+		StartAt:   c.StartAt,
+		StopAt:    c.StopAt,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
+}
+
+// clientToDetailVo はクライアントエンティティを詳細用 Vo に変換します。
+func clientToDetailVo(c *domclient.Client) *domclient.DetailVo {
+	return &domclient.DetailVo{
+		ID:         c.ID,
+		Name:       c.Name,
+		Identifier: c.Identifier,
+		PostCode:   c.PostCode,
+		Pref:       c.Pref,
+		City:       c.City,
+		Address:    c.Address,
+		Building:   c.Building,
+		Tel:        c.Tel,
+		Email:      c.Email,
+		Status:     c.Status,
+		StartAt:    c.StartAt,
+		StopAt:     c.StopAt,
+		CreatedAt:  c.CreatedAt,
+		UpdatedAt:  c.UpdatedAt,
+	}
 }
 
 // ---------- プライベートヘルパー ----------
@@ -208,6 +289,7 @@ func rsaFingerprint(pub *rsa.PublicKey) string {
 	return "SHA256:" + strings.TrimRight(base64.StdEncoding.EncodeToString(h[:]), "=")
 }
 
+// generateIdentifier はランダムな16進数文字列の識別子を生成します。
 func generateIdentifier() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)

@@ -9,14 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GateHandler はゲート関連のHTTPハンドラーを提供します。
 type GateHandler struct {
 	gateUC *ugate.Interactor
 }
 
+// NewGateHandler は GateHandler を生成します。
+//
+// gateUC: ゲートユースケース
 func NewGateHandler(gateUC *ugate.Interactor) *GateHandler {
 	return &GateHandler{gateUC: gateUC}
 }
 
+// Issue はクライアント会員向け JWT を発行します。
 // GET /api/gate/issue   (client.token ミドルウェア適用済み)
 func (h *GateHandler) Issue(c *gin.Context) {
 	member := c.Query("member")
@@ -28,7 +33,7 @@ func (h *GateHandler) Issue(c *gin.Context) {
 	auth := c.GetHeader("Authorization")
 	accessToken := strings.TrimPrefix(auth, "Bearer ")
 
-	token, err := h.gateUC.IssueToken(ugate.IssueDto{
+	vo, err := h.gateUC.IssueToken(ugate.IssueDto{
 		AccessToken: accessToken,
 		MemberID:    member,
 	})
@@ -36,9 +41,10 @@ func (h *GateHandler) Issue(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": vo.Token})
 }
 
+// Verify は JWT を検証してペイロードを返します。
 // GET /api/gate/client/:identifier/verify
 func (h *GateHandler) Verify(c *gin.Context) {
 	identifier := c.Param("identifier")
@@ -48,7 +54,7 @@ func (h *GateHandler) Verify(c *gin.Context) {
 		return
 	}
 
-	payload, err := h.gateUC.Verify(ugate.VerifyDto{
+	vo, err := h.gateUC.Verify(ugate.VerifyDto{
 		Identifier: identifier,
 		Token:      token,
 	})
@@ -56,5 +62,5 @@ func (h *GateHandler) Verify(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, payload)
+	c.JSON(http.StatusOK, vo.Claims)
 }

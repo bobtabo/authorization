@@ -1,9 +1,16 @@
+"""
+クライアントユースケース Dto モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from dataclasses import dataclass
 from typing import Optional
 
 
 @dataclass
 class ClientStoreDto:
+    """クライアント登録 Dto。"""
+
     name: str
     post_code: str = ""
     pref: str = ""
@@ -17,6 +24,8 @@ class ClientStoreDto:
 
 @dataclass
 class ClientUpdateDto:
+    """クライアント更新 Dto。"""
+
     client_id: int
     name: Optional[str] = None
     post_code: Optional[str] = None

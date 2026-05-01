@@ -15,7 +15,7 @@ use App\Domain\Client\Entities\Client;
 use Illuminate\Support\Collection;
 
 /**
- * クライアントを取得・条件検索・永続化するRepositoryのインターフェースです。
+ * クライアントRepositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Client\Repositories

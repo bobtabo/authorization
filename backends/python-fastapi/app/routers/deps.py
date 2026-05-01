@@ -1,3 +1,8 @@
+"""
+ルーター依存性注入モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from typing import Optional
 from fastapi import Cookie, Depends, Header
 from sqlalchemy.orm import Session
@@ -9,7 +14,8 @@ from app.infrastructure.persistence.sqlalchemy_client_repository import SqlAlche
 from app.infrastructure.persistence.sqlalchemy_staff_repository import SqlAlchemyStaffRepository
 from app.infrastructure.persistence.sqlalchemy_invitation_repository import SqlAlchemyInvitationRepository
 from app.infrastructure.persistence.sqlalchemy_notification_repository import SqlAlchemyNotificationRepository
-from app.infrastructure.cache.gate_cache_repository import GateCacheRepository
+from app.infrastructure.cache.redis_gate_repository import RedisGateRepository
+from app.infrastructure.cache.redis_invitation_auth_repository import RedisInvitationAuthRepository
 from app.domain.client.repository import ClientRepository
 from app.domain.staff.repository import StaffRepository
 from app.usecase.auth.interactor import AuthInteractor
@@ -33,8 +39,15 @@ def get_staff_repo(db: Session = Depends(get_db)) -> StaffRepository:
     return SqlAlchemyStaffRepository(db)
 
 
-def get_auth_interactor(staff_repo: StaffRepository = Depends(get_staff_repo)) -> AuthInteractor:
-    return AuthInteractor(staff_repo)
+def get_invitation_auth_repo(rdb: redis_lib.Redis = Depends(get_redis_client)) -> RedisInvitationAuthRepository:
+    return RedisInvitationAuthRepository(rdb)
+
+
+def get_auth_interactor(
+    staff_repo: StaffRepository = Depends(get_staff_repo),
+    invitation_auth_repo: RedisInvitationAuthRepository = Depends(get_invitation_auth_repo),
+) -> AuthInteractor:
+    return AuthInteractor(staff_repo, invitation_auth_repo)
 
 
 def get_client_interactor(client_repo: ClientRepository = Depends(get_client_repo)) -> ClientInteractor:
@@ -48,16 +61,17 @@ def get_staff_interactor(staff_repo: StaffRepository = Depends(get_staff_repo)) 
 def get_invitation_interactor(
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
+    invitation_auth_repo: RedisInvitationAuthRepository = Depends(get_invitation_auth_repo),
 ) -> InvitationInteractor:
     repo = SqlAlchemyInvitationRepository(db, settings.frontend_url)
-    return InvitationInteractor(repo)
+    return InvitationInteractor(repo, invitation_auth_repo)
 
 
 def get_gate_interactor(
     client_repo: ClientRepository = Depends(get_client_repo),
     rdb: redis_lib.Redis = Depends(get_redis_client),
 ) -> GateInteractor:
-    cache_repo = GateCacheRepository(rdb)
+    cache_repo = RedisGateRepository(rdb)
     return GateInteractor(client_repo, cache_repo)
 
 
@@ -94,7 +108,5 @@ def require_client_token(
     token: str = Depends(get_bearer_token),
     client_interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    client = client_interactor.authenticate_by_token(token)
-    if client is None:
+    if not client_interactor.authenticate_by_token(token):
         raise unauthorized("invalid_token")
-    return client

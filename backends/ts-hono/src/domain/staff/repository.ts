@@ -1,12 +1,18 @@
+/**
+ * スタッフドメイン リポジトリインターフェースモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import type { Staff } from "./entity.js";
 
+/** スタッフのリポジトリインターフェース。 */
 export interface StaffRepository {
   findAll(keyword?: string, roles?: number[]): Promise<Staff[]>;
   findById(id: number): Promise<Staff | undefined>;
   findByIdUnscoped(id: number): Promise<Staff | undefined>;
   findByProvider(provider: number, providerId: string): Promise<Staff | undefined>;
   findAllActive(): Promise<Staff[]>;
-  upsert(data: Omit<Staff, "id" | "createdAt" | "updatedAt" | "deletedAt"> & { avatar?: string | null; role?: number | null }): Promise<Staff>;
+  upsert(data: Omit<Staff, "id" | "createdAt" | "updatedAt" | "deletedAt" | "createdBy" | "updatedBy" | "version"> & { avatar?: string | null; role?: number | null; lastLoginAt?: Date | null }): Promise<Staff>;
   updateRole(id: number, role: number): Promise<void>;
   softDelete(id: number): Promise<void>;
   restore(id: number): Promise<void>;

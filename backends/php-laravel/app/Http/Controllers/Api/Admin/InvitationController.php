@@ -53,8 +53,10 @@ class InvitationController extends Controller
      */
     public function issue(AppRequest $request, InvitationService $service): JsonResponse
     {
-        $vo = DB::transaction(function () use ($service) {
-            return $service->issue(new InvitationDto());
+        $dto = new InvitationDto();
+        $dto->executorId = $this->staffIdFromCookie($request);
+        $vo = DB::transaction(function () use ($service, $dto) {
+            return $service->issue($dto);
         });
 
         $response = new InvitationIssueResponse();

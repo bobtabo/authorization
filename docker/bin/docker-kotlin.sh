@@ -15,7 +15,7 @@ if [ "${ARG}" = "up" ]; then
 elif [ "${ARG}" = "down" ]; then
     docker-compose -p app-kotlin -f docker-compose.yml down --rmi all --volumes
 elif [ "${ARG}" = "exec" ]; then
-    docker-compose -p app-kotlin exec --user 1000 kotlin bash
+    docker-compose -p app-kotlin -f docker-compose.yml exec --user 1000 kotlin bash
 else
     echo "使い方: $0 {up|down|exec}"
     exit 1

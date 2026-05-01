@@ -1,3 +1,8 @@
+/**
+ * アプリケーション設定モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
 import { config as loadEnv } from "dotenv";
 
 const envFile = process.env.ENV_FILE || ".env";

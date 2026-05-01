@@ -1,3 +1,8 @@
+"""
+Gate ルーターモジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 from fastapi import APIRouter, Depends, Query
 from app.routers.deps import get_gate_interactor, get_bearer_token
 from app.usecase.gate.interactor import GateInteractor
@@ -13,8 +18,8 @@ def issue(
     interactor: GateInteractor = Depends(get_gate_interactor),
 ):
     dto = GateIssueDto(access_token=token, member=member)
-    jwt_token = interactor.issue_token(dto)
-    return {"token": jwt_token}
+    vo = interactor.issue_token(dto)
+    return {"token": vo.token}
 
 
 @router.get("/gate/client/{identifier}/verify")
@@ -24,4 +29,10 @@ def verify(
     interactor: GateInteractor = Depends(get_gate_interactor),
 ):
     dto = GateVerifyDto(identifier=identifier, token=token)
-    return interactor.verify(dto)
+    vo = interactor.verify(dto)
+    return {
+        "identifier": vo.identifier,
+        "member": vo.member,
+        "fingerprint": vo.fingerprint,
+        "payload": vo.payload,
+    }

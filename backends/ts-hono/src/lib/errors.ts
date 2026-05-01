@@ -1,3 +1,10 @@
+/**
+ * アプリケーション共通 エラーモジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+
+/** HTTP ステータスコードを持つアプリケーション例外。 */
 export class AppError extends Error {
   constructor(
     public readonly statusCode: number,

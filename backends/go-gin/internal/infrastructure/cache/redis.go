@@ -1,3 +1,4 @@
+// Package cache はキャッシュ基盤の実装を提供します。
 package cache
 
 import (
@@ -6,6 +7,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// New は設定を元に Redis クライアントを生成します。
+//
+// cfg: アプリケーション設定
 func New(cfg *config.Config) *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr,

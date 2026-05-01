@@ -1,3 +1,4 @@
+// Package main は go-gin バックエンドのエントリポイントです。
 package main
 
 import (
@@ -8,8 +9,8 @@ import (
 	"authorization-go/internal/infrastructure/mail"
 	"authorization-go/internal/infrastructure/persistence"
 	"authorization-go/internal/middleware"
-	uclient "authorization-go/internal/usecase/client"
 	uauth "authorization-go/internal/usecase/auth"
+	uclient "authorization-go/internal/usecase/client"
 	ugate "authorization-go/internal/usecase/gate"
 	uinvitation "authorization-go/internal/usecase/invitation"
 	unotification "authorization-go/internal/usecase/notification"
@@ -18,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -32,31 +34,43 @@ func main() {
 	// --- Redis ---
 	rdb := cache.New(cfg)
 
-	// --- Infrastructure Repositories ---
-	clientRepo := persistence.NewGormClientRepository(database)
-	staffRepo := persistence.NewGormStaffRepository(database)
-	invitationRepo := persistence.NewGormInvitationRepository(database, cfg.App.FrontendURL)
-	notificationRepo := persistence.NewGormNotificationRepository(database)
-	gateCacheRepo := cache.NewGateCacheRepository(rdb, cfg)
+	// --- Infrastructure: 読み取り専用リポジトリ（トランザクション不要）---
+	gateCacheRepo      := cache.NewRedisGateRepository(rdb, cfg)
+	invitationAuthRepo := cache.NewRedisInvitationAuthRepository(rdb, cfg)
 
-	// --- Usecases ---
-	authUC := uauth.NewInteractor(staffRepo)
-	clientUC := uclient.NewInteractor(clientRepo)
-	staffUC := ustaff.NewInteractor(staffRepo)
-	invitationUC := uinvitation.NewInteractor(invitationRepo)
-	gateUC := ugate.NewInteractor(clientRepo, gateCacheRepo, cfg)
-	notificationUC := unotification.NewInteractor(notificationRepo, staffRepo)
+	// --- ユースケースファクトリ（書き込み系ハンドラーへ注入）---
+	newAuthUC := func(tx *gorm.DB) *uauth.Interactor {
+		return uauth.NewInteractor(persistence.NewGormStaffRepository(tx), invitationAuthRepo)
+	}
+	newClientUC := func(tx *gorm.DB) *uclient.Interactor {
+		return uclient.NewInteractor(persistence.NewGormClientRepository(tx))
+	}
+	newStaffUC := func(tx *gorm.DB) *ustaff.Interactor {
+		return ustaff.NewInteractor(persistence.NewGormStaffRepository(tx))
+	}
+	newInviteUC := func(tx *gorm.DB) *uinvitation.Interactor {
+		return uinvitation.NewInteractor(persistence.NewGormInvitationRepository(tx, cfg.App.FrontendURL), invitationAuthRepo)
+	}
+	newNotifUC := func(tx *gorm.DB) *unotification.Interactor {
+		return unotification.NewInteractor(
+			persistence.NewGormNotificationRepository(tx),
+			persistence.NewGormStaffRepository(tx),
+		)
+	}
+
+	// --- Gate ユースケース（キャッシュのみ、GORM トランザクション不要）---
+	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), gateCacheRepo, cfg)
 
 	// --- Mail ---
 	mailer := mail.NewMailer(cfg.Mail)
 
 	// --- Handlers ---
-	authH := handler.NewAuthHandler(authUC, invitationUC, cfg)
-	clientH := handler.NewClientHandler(clientUC, notificationUC, mailer)
-	staffH := handler.NewStaffHandler(staffUC)
-	adminInvitationH := handler.NewAdminInvitationHandler(invitationUC)
+	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
+	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer)
+	staffH := handler.NewStaffHandler(database, newStaffUC)
+	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)
-	notificationH := handler.NewNotificationHandler(notificationUC, cfg)
+	notificationH := handler.NewNotificationHandler(database, newNotifUC, cfg)
 
 	// --- Router ---
 	if cfg.App.Env == "production" {
@@ -111,7 +125,7 @@ func main() {
 
 		// --- gate ---
 		api.GET("/gate/issue",
-			middleware.ClientTokenAuth(clientUC),
+			middleware.ClientTokenAuth(newClientUC(database)),
 			gateH.Issue,
 		)
 		api.GET("/gate/client/:identifier/verify", gateH.Verify)

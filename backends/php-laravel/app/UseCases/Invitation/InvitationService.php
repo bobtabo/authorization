@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\UseCases\Invitation;
 
 use App\Domain\Invitation\Condition\InvitationCondition;
+use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Domain\Invitation\ValueObjects\InvitationVo;
 use App\Support\Exceptions\AppException;
@@ -28,10 +29,14 @@ use Random\RandomException;
 class InvitationService extends AbstractService
 {
     /**
-     * @param InvitationRepository $repository 招待Repository
+     * コンストラクタ。
+     *
+     * @param InvitationRepository $invitationRepository 招待Repository
+     * @param InvitationAuthRepository $invitationAuthRepository 招待認証Repository
      */
     public function __construct(
-        private readonly InvitationRepository $repository,
+        private readonly InvitationRepository $invitationRepository,
+        private readonly InvitationAuthRepository $invitationAuthRepository,
     ) {
     }
 
@@ -44,15 +49,16 @@ class InvitationService extends AbstractService
     public function current(InvitationDto $dto): InvitationVo
     {
         unset($dto);
-        $entity = $this->repository->getCurrent();
+        $entity = $this->invitationRepository->getCurrent();
         if ($entity === null) {
             throw AppException::notFound('invitation_not_found');
         }
 
-        return (new InvitationVo())->assign([
+        $url = $this->buildUrl($entity->token);
+        return new InvitationVo()->assign([
             'found' => true,
-            'url' => $entity->url,
-            'displayUrl' => $entity->displayUrl,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
             'token' => $entity->token,
         ]);
     }
@@ -66,13 +72,17 @@ class InvitationService extends AbstractService
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
-        $entity = $this->repository->issue();
+        $entity = $this->invitationRepository->getCurrent();
+        $entity->token = bin2hex(random_bytes(16));
+        $entity->assignUpdated($dto->executorId);
+        $saved = $this->invitationRepository->persist($entity);
 
+        $url = $this->buildUrl($saved->token);
         return new InvitationVo()->assign([
             'found' => true,
-            'url' => $entity->url,
-            'displayUrl' => $entity->displayUrl,
-            'token' => $entity->token,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
+            'token' => $saved->token,
         ]);
     }
 
@@ -90,16 +100,61 @@ class InvitationService extends AbstractService
         }
 
         $condition = SimpleMapper::map($dto, InvitationCondition::class);
-        $entity = $this->repository->findByToken($condition);
+        $entity = $this->invitationRepository->findByToken($condition);
         if ($entity === null) {
             throw AppException::badRequest('invitation_invalid');
         }
 
-        return (new InvitationVo())->assign([
+        // 招待トークンを一時保存（10分間）
+        $this->invitationAuthRepository->store($entity->token, 600);
+
+        $url = $this->buildUrl($entity->token);
+        return new InvitationVo()->assign([
             'found' => true,
-            'url' => $entity->url,
-            'displayUrl' => $entity->displayUrl,
+            'url' => $url,
+            'displayUrl' => $this->buildDisplayUrl($url),
             'token' => $entity->token,
         ]);
+    }
+
+    /**
+     * トークンから完全な招待 URL を生成します。
+     *
+     * @param string $token 招待トークン
+     * @return string 完全 URL
+     */
+    private function buildUrl(string $token): string
+    {
+        $base = rtrim((string)config('authorization.app.frontend_url'), '/');
+        return $base . '/invitation/' . $token;
+    }
+
+    /**
+     * 表示用に `/invitation/` 以降のトークンを省略した URL を返します。
+     *
+     * @param string $url 完全 URL
+     * @param int $head トークン先頭から表示する文字数
+     * @param int $tail トークン末尾から表示する文字数
+     * @return string 省略表示用 URL
+     */
+    private function buildDisplayUrl(string $url, int $head = 6, int $tail = 4): string
+    {
+        $segment = '/invitation/';
+        $idx = strpos($url, $segment);
+        if ($idx === false) {
+            return strlen($url) > 72 ? substr($url, 0, 68) . '...' : $url;
+        }
+
+        $base = substr($url, 0, $idx + strlen($segment));
+        $after = substr($url, $idx + strlen($segment));
+        $suffixLen = strcspn($after, '?#');
+        $token = substr($after, 0, $suffixLen);
+        $suffix = substr($after, $suffixLen);
+
+        if (strlen($token) <= $head + $tail + 3) {
+            return $url;
+        }
+
+        return $base . substr($token, 0, $head) . '...' . substr($token, -$tail) . $suffix;
     }
 }

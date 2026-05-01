@@ -5,12 +5,19 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+import { USER_CACHE_KEY } from "@/lib/user-context";
 
 const RUNTIME_LABEL: Record<string, string> = {
-  php:    "PHP",
-  go:     "Go",
-  python: "Python",
-  ts:     "TypeScript",
+  go:           "Go",
+  "go-beego":   "Go (Beego)",
+  "go-echo":    "Go (Echo)",
+  kotlin:       "Kotlin",
+  php:      "PHP",
+  python:   "Python",
+  "rb-hanami": "Ruby (Hanami)",
+  "rb-rails":  "Ruby (Rails)",
+  rust:     "Rust",
+  ts:       "TypeScript",
 };
 
 export default function LoginPage(): React.JSX.Element {
@@ -18,14 +25,23 @@ export default function LoginPage(): React.JSX.Element {
   const e2eLogin = process.env.NEXT_PUBLIC_E2E === "1";
   const [runtime, setRuntime] = useState<string>("php");
   const [connectionDetail, setConnectionDetail] = useState<string>("");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (localStorage.getItem(USER_CACHE_KEY)) {
+      router.replace("/clients");
+      return;
+    }
+    localStorage.removeItem(USER_CACHE_KEY);
     const stored = localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php";
     setRuntime(stored);
     setConnectionDetail(getBackendConnectionDetail());
-  }, []);
+    setReady(true);
+  }, [router]);
 
   const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
+
+  if (!ready) return <></>;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f8fa]">

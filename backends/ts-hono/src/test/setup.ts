@@ -34,10 +34,14 @@ CREATE TABLE \`staffs\` (
   \`provider\`      INT             NOT NULL,
   \`provider_id\`   VARCHAR(255)    NOT NULL,
   \`avatar\`        VARCHAR(255),
-  \`role\`          INT             NOT NULL DEFAULT 0,
+  \`role\`          INT UNSIGNED    DEFAULT 2,
+  \`last_login_at\` DATETIME        NULL,
   \`created_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP,
+  \`created_by\`    INT UNSIGNED    NULL,
   \`updated_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  \`updated_by\`    INT UNSIGNED    NULL,
   \`deleted_at\`    DATETIME        NULL,
+  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 1,
   PRIMARY KEY (\`id\`),
   UNIQUE KEY \`staffs_email_unique\` (\`email\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -75,7 +79,12 @@ CREATE TABLE \`invitations\` (
   \`id\`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   \`token\`         VARCHAR(255)    NOT NULL,
   \`created_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP,
+  \`created_by\`    INT UNSIGNED    NULL,
   \`updated_at\`    DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  \`updated_by\`    INT UNSIGNED    NULL,
+  \`deleted_at\`    DATETIME        NULL,
+  \`deleted_by\`    INT UNSIGNED    NULL,
+  \`version\`       INT UNSIGNED    NOT NULL DEFAULT 1,
   PRIMARY KEY (\`id\`),
   UNIQUE KEY \`invitations_token_unique\` (\`token\`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

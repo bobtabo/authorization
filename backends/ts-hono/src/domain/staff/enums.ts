@@ -1,3 +1,10 @@
+/**
+ * スタッフドメイン 列挙定数モジュール。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+
+/** スタッフロール定数。 */
 export const StaffRole = {
   MEMBER: 0,
   ADMIN: 1,
@@ -5,6 +12,7 @@ export const StaffRole = {
 
 export type StaffRoleValue = typeof StaffRole[keyof typeof StaffRole];
 
+/** OAuth プロバイダー定数。 */
 export const Provider = {
   GOOGLE: 1,
 } as const;

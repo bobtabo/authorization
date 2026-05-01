@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,10 +19,15 @@ type GormInvitationRepository struct {
 	frontendURL string
 }
 
+// NewGormInvitationRepository は GormInvitationRepository を生成します。
+//
+// db: GORM DB インスタンス
+// frontendURL: フロントエンドのベース URL（招待 URL 生成に使用）
 func NewGormInvitationRepository(db *gorm.DB, frontendURL string) *GormInvitationRepository {
 	return &GormInvitationRepository{db: db, frontendURL: frontendURL}
 }
 
+// GetCurrent は最新の招待情報の値オブジェクトを返します。
 func (r *GormInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 	var m model.Invitation
 	if err := r.db.Order("id DESC").First(&m).Error; err != nil {
@@ -33,16 +39,20 @@ func (r *GormInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 	return r.buildVo(m.Token), nil
 }
 
+// Issue は新しい招待トークンを生成して保存し、値オブジェクトを返します。
 func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	token, err := generateInvitationToken()
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now()
+	now  := time.Now()
+	zero := uint(0)
 	m := model.Invitation{
 		Token:     token,
 		CreatedAt: now,
+		CreatedBy: &zero,
 		UpdatedAt: now,
+		UpdatedBy: &zero,
 	}
 	if err = r.db.Create(&m).Error; err != nil {
 		return nil, err
@@ -50,6 +60,7 @@ func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	return r.buildVo(token), nil
 }
 
+// FindByToken はトークンで招待情報の値オブジェクトを返します。
 func (r *GormInvitationRepository) FindByToken(token string) (*dominvitation.Vo, error) {
 	var m model.Invitation
 	if err := r.db.Where("token = ?", token).First(&m).Error; err != nil {
@@ -62,12 +73,34 @@ func (r *GormInvitationRepository) FindByToken(token string) (*dominvitation.Vo,
 }
 
 func (r *GormInvitationRepository) buildVo(token string) *dominvitation.Vo {
-	url := fmt.Sprintf("%s/register?token=%s", r.frontendURL, token)
-	displayURL := url
-	if len(displayURL) > 50 {
-		displayURL = displayURL[:20] + "..." + displayURL[len(displayURL)-20:]
+	url := fmt.Sprintf("%s/invitation/%s", r.frontendURL, token)
+	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: buildDisplayURL(url)}
+}
+
+// buildDisplayURL は PHP の buildDisplayUrl と同じロジックで表示用 URL を生成します。
+// /invitation/ より手前はそのまま保持し、トークン部分だけを head+...+tail に省略します。
+func buildDisplayURL(url string) string {
+	const segment = "/invitation/"
+	idx := strings.Index(url, segment)
+	if idx == -1 {
+		if len(url) > 72 {
+			return url[:68] + "..."
+		}
+		return url
 	}
-	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: displayURL}
+	base := url[:idx+len(segment)]
+	after := url[idx+len(segment):]
+	tokenEnd := strings.IndexAny(after, "?#")
+	if tokenEnd == -1 {
+		tokenEnd = len(after)
+	}
+	tok := after[:tokenEnd]
+	suffix := after[tokenEnd:]
+	const head, tail = 6, 4
+	if len(tok) <= head+tail+3 {
+		return url
+	}
+	return base + tok[:head] + "..." + tok[len(tok)-tail:] + suffix
 }
 
 func generateInvitationToken() (string, error) {

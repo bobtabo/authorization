@@ -1,3 +1,8 @@
+"""
+メール送信モジュール。
+
+Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+"""
 import logging
 import smtplib
 from datetime import datetime
@@ -18,11 +23,27 @@ _ENV_LABELS = {
 
 
 def _mail_subject(env: str, subject: str) -> str:
+    """環境ラベルを付与したメール件名を返します。
+
+    Args:
+        env: アプリケーション環境名
+        subject: 件名
+
+    Returns:
+        ラベル付き件名文字列
+    """
     label = _ENV_LABELS.get(env, "")
     return f"[{label}]{subject}" if label else subject
 
 
 def send_access_token(to: str, client_name: str, token: str) -> None:
+    """クライアントにアクセストークンをメール送信します。
+
+    Args:
+        to: 送信先メールアドレス
+        client_name: クライアント名
+        token: アクセストークン
+    """
     if not to:
         return
     settings = get_settings()
@@ -45,6 +66,16 @@ def send_access_token(to: str, client_name: str, token: str) -> None:
 
 
 def _build_html(name: str, token: str, app_name: str) -> str:
+    """アクセストークン通知メールの HTML 本文を生成します。
+
+    Args:
+        name: クライアント名
+        token: アクセストークン
+        app_name: アプリケーション名
+
+    Returns:
+        HTML 文字列
+    """
     year = datetime.now().year
     return f"""<!DOCTYPE html>
 <html lang="ja">

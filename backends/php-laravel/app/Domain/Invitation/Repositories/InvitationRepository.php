@@ -14,7 +14,7 @@ use App\Domain\Invitation\Condition\InvitationCondition;
 use App\Domain\Invitation\Entities\Invitation;
 
 /**
- * 招待の現在値取得と発行を担うRepositoryのインターフェースです。
+ * 招待Repositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\Invitation\Repositories
@@ -29,11 +29,12 @@ interface InvitationRepository
     public function getCurrent(): ?Invitation;
 
     /**
-     * 新しい招待を発行します。
+     * 招待を更新します。
      *
-     * @return Invitation 発行された招待
+     * @param Invitation $entity 招待エンティティ
+     * @return Invitation 更新された招待
      */
-    public function issue(): Invitation;
+    public function persist(Invitation $entity): Invitation;
 
     /**
      * トークンから招待情報を解決します（未登録・不正なら null）。

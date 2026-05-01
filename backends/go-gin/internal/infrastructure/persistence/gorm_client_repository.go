@@ -14,10 +14,14 @@ type GormClientRepository struct {
 	db *gorm.DB
 }
 
+// NewGormClientRepository は GormClientRepository を生成します。
+//
+// db: GORM DB インスタンス
 func NewGormClientRepository(db *gorm.DB) *GormClientRepository {
 	return &GormClientRepository{db: db}
 }
 
+// FindByCondition は検索条件に合致するクライアントエンティティを返します。
 func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
 	q := r.db.Unscoped().Order("id ASC")
 	if cond.Keyword != nil && *cond.Keyword != "" {
@@ -43,6 +47,7 @@ func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*dom
 	return out, nil
 }
 
+// FindByID はIDでクライアントエンティティを返します。存在しない場合は nil を返します。
 func (r *GormClientRepository) FindByID(id uint64) (*domclient.Client, error) {
 	var m model.Client
 	if err := r.db.Unscoped().First(&m, id).Error; err != nil {
@@ -54,6 +59,7 @@ func (r *GormClientRepository) FindByID(id uint64) (*domclient.Client, error) {
 	return clientToDomain(&m), nil
 }
 
+// FindByAccessToken はアクセストークンでアクティブなクライアントエンティティを返します。
 func (r *GormClientRepository) FindByAccessToken(token string) (*domclient.Client, error) {
 	var m model.Client
 	if err := r.db.Where("access_token = ? AND status = ?", token, domclient.StatusActive).First(&m).Error; err != nil {
@@ -65,6 +71,7 @@ func (r *GormClientRepository) FindByAccessToken(token string) (*domclient.Clien
 	return clientToDomain(&m), nil
 }
 
+// FindByIdentifier は識別子でクライアントエンティティを返します。
 func (r *GormClientRepository) FindByIdentifier(identifier string) (*domclient.Client, error) {
 	var m model.Client
 	if err := r.db.Where("identifier = ?", identifier).First(&m).Error; err != nil {
@@ -76,6 +83,7 @@ func (r *GormClientRepository) FindByIdentifier(identifier string) (*domclient.C
 	return clientToDomain(&m), nil
 }
 
+// Save はクライアントエンティティを保存（新規作成または更新）して返します。
 func (r *GormClientRepository) Save(c *domclient.Client) (*domclient.Client, error) {
 	m := clientToModel(c)
 	if err := r.db.Save(m).Error; err != nil {
@@ -84,6 +92,7 @@ func (r *GormClientRepository) Save(c *domclient.Client) (*domclient.Client, err
 	return clientToDomain(m), nil
 }
 
+// SoftDelete はクライアントを論理削除します。
 func (r *GormClientRepository) SoftDelete(id uint64, deletedBy uint) error {
 	now := time.Now()
 	return r.db.Model(&model.Client{}).Where("id = ?", id).Updates(map[string]interface{}{
