@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
@@ -21,7 +21,17 @@ const RUNTIME_LABEL: Record<string, string> = {
 };
 
 export default function LoginPage(): React.JSX.Element {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent(): React.JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const invitationToken = searchParams.get("token") ?? "";
   const e2eLogin = process.env.NEXT_PUBLIC_E2E === "1";
   const [runtime, setRuntime] = useState<string>("php");
   const [connectionDetail, setConnectionDetail] = useState<string>("");
@@ -85,11 +95,9 @@ export default function LoginPage(): React.JSX.Element {
             <button
               type="button"
               onClick={() => {
-                if (e2eLogin) {
-                  router.push("/clients");
-                  return;
-                }
-                window.location.href = `/function/${runtime}/auth/google/redirect`;
+                if (e2eLogin) { router.push("/clients"); return; }
+                const params = invitationToken ? `?token=${encodeURIComponent(invitationToken)}` : "";
+                window.location.href = `/function/${runtime}/auth/google/redirect${params}`;
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#d0d7de] bg-white px-3 py-2.5 text-sm font-medium text-[#24292f] shadow-sm transition hover:bg-gray-50 hover:border-[#b6bcc3] active:bg-gray-100"
             >
@@ -100,11 +108,9 @@ export default function LoginPage(): React.JSX.Element {
             <button
               type="button"
               onClick={() => {
-                if (e2eLogin) {
-                  router.push("/clients");
-                  return;
-                }
-                window.location.href = `/function/${runtime}/auth/github/redirect`;
+                if (e2eLogin) { router.push("/clients"); return; }
+                const params = invitationToken ? `?token=${encodeURIComponent(invitationToken)}` : "";
+                window.location.href = `/function/${runtime}/auth/github/redirect${params}`;
               }}
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#d0d7de] bg-white px-3 py-2.5 text-sm font-medium text-[#24292f] shadow-sm transition hover:bg-gray-50 hover:border-[#b6bcc3] active:bg-gray-100"
             >
