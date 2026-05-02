@@ -27,6 +27,11 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 
+const GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize";
+const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
+const GITHUB_USER_URL = "https://api.github.com/user";
+const GITHUB_EMAILS_URL = "https://api.github.com/user/emails";
+
 app.get("/auth/me", async (c) => {
   const staffId = getStaffIdFromCookie(c);
   if (!staffId) throw unauthorized("unauthenticated");
@@ -54,13 +59,14 @@ app.get("/auth/invitation/:token", async (c) => {
 
 oauthApp.get("/auth/google/redirect", (c) => {
   const token = c.req.query("token");
+  const oauthState = token ? `${config.app.runtime}|${token}` : config.app.runtime;
   const params = new URLSearchParams({
     client_id: config.oauth.googleClientId,
     redirect_uri: config.oauth.googleRedirectUrl,
     response_type: "code",
     scope: "openid email profile",
     access_type: "offline",
-    state: token ?? "state",
+    state: oauthState,
   });
   return c.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`, 302);
 });
@@ -69,7 +75,7 @@ oauthApp.get("/auth/google/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) throw badRequest("code_required");
   const stateVal = c.req.query("state");
-  const invitationToken = stateVal && stateVal !== "state" ? stateVal : undefined;
+  const invitationToken = stateVal?.includes("|") ? stateVal.split("|")[1] : undefined;
 
   const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
@@ -95,6 +101,80 @@ oauthApp.get("/auth/google/callback", async (c) => {
     await db.transaction(async (tx) => {
       const uc = new AuthInteractor(new DrizzleStaffRepository(asTx(tx)), invitationAuthRepo);
       const staff = await uc.login({ provider: 1, providerId: userInfo.id, name: userInfo.name ?? "", email: userInfo.email ?? "", avatar: userInfo.picture, invitationToken });
+      staffId = staff.id;
+    });
+  } catch (e) {
+    if (e instanceof AppError && e.statusCode === 403) {
+      return c.redirect(`${config.app.frontendUrl}/error?code=403`, 302);
+    }
+    throw e;
+  }
+
+  const maxAge = config.app.staffCookieLifetime * 60;
+  setCookie(c, "staff_id", String(staffId), { maxAge, httpOnly: true, sameSite: "Lax", path: "/" });
+  return c.redirect(`${config.app.frontendUrl}/clients`, 302);
+});
+
+oauthApp.get("/auth/github/redirect", (c) => {
+  const token = c.req.query("token");
+  const oauthState = token ? `${config.app.runtime}|${token}` : config.app.runtime;
+  const params = new URLSearchParams({
+    client_id: config.oauth.githubClientId,
+    redirect_uri: config.oauth.githubRedirectUrl,
+    scope: "user:email",
+    state: oauthState,
+  });
+  return c.redirect(`${GITHUB_AUTH_URL}?${params.toString()}`, 302);
+});
+
+oauthApp.get("/auth/github/callback", async (c) => {
+  const code = c.req.query("code");
+  if (!code) throw badRequest("code_required");
+  const stateVal = c.req.query("state");
+  const invitationToken = stateVal?.includes("|") ? stateVal.split("|")[1] : undefined;
+
+  const tokenRes = await fetch(GITHUB_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Accept": "application/json",
+    },
+    body: new URLSearchParams({
+      client_id: config.oauth.githubClientId,
+      client_secret: config.oauth.githubClientSecret,
+      redirect_uri: config.oauth.githubRedirectUrl,
+      code,
+    }),
+  });
+  const tokenData = await tokenRes.json() as { access_token?: string };
+  if (!tokenData.access_token) throw unauthorized("token_exchange_failed");
+
+  const userRes = await fetch(GITHUB_USER_URL, {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      Accept: "application/json",
+    },
+  });
+  const githubUser = await userRes.json() as { id: number; login: string; name?: string | null; avatar_url?: string | null };
+
+  const emailsRes = await fetch(GITHUB_EMAILS_URL, {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      Accept: "application/json",
+    },
+  });
+  const emails = await emailsRes.json() as Array<{ email: string; primary: boolean; verified: boolean }>;
+  const primaryEmail = emails.find((e) => e.primary && e.verified);
+  if (!primaryEmail) throw unauthorized("primary_email_not_found");
+
+  const name = githubUser.name ?? githubUser.login;
+  const providerId = String(githubUser.id);
+
+  let staffId!: number;
+  try {
+    await db.transaction(async (tx) => {
+      const uc = new AuthInteractor(new DrizzleStaffRepository(asTx(tx)), invitationAuthRepo);
+      const staff = await uc.login({ provider: 2, providerId, name, email: primaryEmail.email, avatar: githubUser.avatar_url ?? undefined, invitationToken });
       staffId = staff.id;
     });
   } catch (e) {

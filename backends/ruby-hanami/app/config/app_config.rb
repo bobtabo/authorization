@@ -1,7 +1,7 @@
 # auto_register: false
 
 AppConfig = Struct.new(
-  :env, :port, :frontend_url, :staff_cookie_lifetime, :notification_default_limit, :cache_prefix,
+  :env, :port, :runtime, :frontend_url, :staff_cookie_lifetime, :notification_default_limit, :cache_prefix,
   keyword_init: true
 )
 
@@ -9,7 +9,11 @@ DbConfig = Struct.new(:dsn, keyword_init: true)
 
 RedisConfig = Struct.new(:host, :port, :password, :db, keyword_init: true)
 
-OAuthConfig = Struct.new(:google_client_id, :google_client_secret, :google_redirect_url, keyword_init: true)
+OAuthConfig = Struct.new(
+  :google_client_id, :google_client_secret, :google_redirect_url,
+  :github_client_id, :github_client_secret, :github_redirect_url,
+  keyword_init: true
+)
 
 JwtConfig = Struct.new(:issuer, :algorithm, :ttl, :cache_ttl, keyword_init: true)
 
@@ -32,6 +36,7 @@ module ConfigLoader
       app: AppConfig.new(
         env:                        ENV.fetch('APP_ENV', 'local'),
         port:                       ENV.fetch('APP_PORT', '8080'),
+        runtime:                    ENV.fetch('APP_RUNTIME', 'rb-hanami'),
         frontend_url:               ENV.fetch('FRONTEND_URL', 'http://localhost:3000'),
         staff_cookie_lifetime:      ENV.fetch('STAFF_COOKIE_LIFETIME', '60').to_i,
         notification_default_limit: ENV.fetch('NOTIFICATION_DEFAULT_LIMIT', '10').to_i,
@@ -48,6 +53,9 @@ module ConfigLoader
         google_client_id:     ENV.fetch('GOOGLE_CLIENT_ID', ''),
         google_client_secret: ENV.fetch('GOOGLE_CLIENT_SECRET', ''),
         google_redirect_url:  ENV.fetch('GOOGLE_REDIRECT_URL', ''),
+        github_client_id:     ENV.fetch('GITHUB_CLIENT_ID', ''),
+        github_client_secret: ENV.fetch('GITHUB_CLIENT_SECRET', ''),
+        github_redirect_url:  ENV.fetch('GITHUB_REDIRECT_URL', ''),
       ),
       jwt: JwtConfig.new(
         issuer:    'authorization',

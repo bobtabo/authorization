@@ -14,18 +14,22 @@ import (
 	"io"
 	"net/http"
 
+	"strings"
+
 	beecontext "github.com/beego/beego/v2/server/web/context"
 	"github.com/beego/beego/v2/client/orm"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/github"
 	"golang.org/x/oauth2/google"
 )
 
 type AuthHandler struct {
-	ormer       orm.Ormer
-	newAuthUC   func(persistence.QueryOrmer) *uauth.Interactor
-	newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor
-	cfg         *config.Config
-	oauthConfig *oauth2.Config
+	ormer             orm.Ormer
+	newAuthUC         func(persistence.QueryOrmer) *uauth.Interactor
+	newInviteUC       func(persistence.QueryOrmer) *uinvitation.Interactor
+	cfg               *config.Config
+	oauthConfig       *oauth2.Config
+	githubOauthConfig *oauth2.Config
 }
 
 func NewAuthHandler(
@@ -44,12 +48,20 @@ func NewAuthHandler(
 		},
 		Endpoint: google.Endpoint,
 	}
+	githubCfg := &oauth2.Config{
+		ClientID:     cfg.OAuth.GithubClientID,
+		ClientSecret: cfg.OAuth.GithubClientSecret,
+		RedirectURL:  cfg.OAuth.GithubRedirectURL,
+		Scopes:       []string{"user:email"},
+		Endpoint:     github.Endpoint,
+	}
 	return &AuthHandler{
-		ormer:       ormer,
-		newAuthUC:   newAuthUC,
-		newInviteUC: newInviteUC,
-		cfg:         cfg,
-		oauthConfig: oauthCfg,
+		ormer:             ormer,
+		newAuthUC:         newAuthUC,
+		newInviteUC:       newInviteUC,
+		cfg:               cfg,
+		oauthConfig:       oauthCfg,
+		githubOauthConfig: githubCfg,
 	}
 }
 
@@ -180,6 +192,76 @@ func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
 	http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/clients", http.StatusTemporaryRedirect)
 }
 
+func (h *AuthHandler) GithubRedirect(ctx *beecontext.Context) {
+	token := ctx.Input.Query("token")
+	state := h.cfg.OAuth.Runtime
+	if token != "" {
+		state = h.cfg.OAuth.Runtime + "|" + token
+	}
+	url := h.githubOauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
+	http.Redirect(ctx.ResponseWriter, ctx.Request, url, http.StatusTemporaryRedirect)
+}
+
+func (h *AuthHandler) GithubCallback(ctx *beecontext.Context) {
+	code := ctx.Input.Query("code")
+	if code == "" {
+		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
+		return
+	}
+	stateVal := ctx.Input.Query("state")
+	invitationToken := ""
+	parts := strings.SplitN(stateVal, "|", 2)
+	if len(parts) == 2 {
+		invitationToken = parts[1]
+	}
+
+	oauthToken, err := h.githubOauthConfig.Exchange(context.Background(), code)
+	if err != nil {
+		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
+		return
+	}
+
+	userInfo, err := fetchGithubUserInfo(h.githubOauthConfig, oauthToken)
+	if err != nil {
+		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
+		return
+	}
+
+	var avatar *string
+	if pic := userInfo["avatar"]; pic != "" {
+		avatar = &pic
+	}
+
+	dto := uauth.LoginDto{
+		Provider:        domstaff.ProviderGithub,
+		ProviderID:      userInfo["id"],
+		Name:            userInfo["name"],
+		Email:           userInfo["email"],
+		Avatar:          avatar,
+		InvitationToken: invitationToken,
+	}
+
+	var staff *domstaff.Vo
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
+		var e error
+		staff, e = h.newAuthUC(tx).Login(dto)
+		return e
+	}); txErr != nil {
+		var appErr *apperror.AppError
+		if errors.As(txErr, &appErr) && appErr.Code == http.StatusForbidden {
+			http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=403", http.StatusTemporaryRedirect)
+			return
+		}
+		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
+		return
+	}
+
+	secure := h.cfg.App.Env == "production"
+	maxAge := h.cfg.App.StaffCookieLifetime * 60
+	setStaffCookie(ctx, staff.ID, maxAge, secure)
+	http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/clients", http.StatusTemporaryRedirect)
+}
+
 func fetchGoogleUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]string, error) {
 	client := cfg.Client(context.Background(), token)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
@@ -210,5 +292,72 @@ func fetchGoogleUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]st
 		"name":    str("name"),
 		"email":   str("email"),
 		"picture": str("picture"),
+	}, nil
+}
+
+// fetchGithubUserInfo は GitHub OAuth トークンからユーザー情報を取得します。
+func fetchGithubUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]string, error) {
+	client := cfg.Client(context.Background(), token)
+
+	// ユーザー基本情報
+	resp, err := client.Get("https://api.github.com/user")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var raw map[string]interface{}
+	if err = json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+
+	id := fmt.Sprintf("%v", raw["id"])
+
+	name := ""
+	if v, ok := raw["name"]; ok && v != nil && fmt.Sprintf("%v", v) != "" && fmt.Sprintf("%v", v) != "<nil>" {
+		name = fmt.Sprintf("%v", v)
+	}
+	if name == "" {
+		if v, ok := raw["login"]; ok && v != nil {
+			name = fmt.Sprintf("%v", v)
+		}
+	}
+
+	avatar := ""
+	if v, ok := raw["avatar_url"]; ok && v != nil {
+		avatar = fmt.Sprintf("%v", v)
+	}
+
+	// メールアドレス（/user/emails から primary:true を取得）
+	email := ""
+	emailResp, err := client.Get("https://api.github.com/user/emails")
+	if err == nil {
+		defer emailResp.Body.Close()
+		emailBody, err := io.ReadAll(emailResp.Body)
+		if err == nil {
+			var emails []map[string]interface{}
+			if err = json.Unmarshal(emailBody, &emails); err == nil {
+				for _, e := range emails {
+					if primary, ok := e["primary"]; ok {
+						if b, ok := primary.(bool); ok && b {
+							if v, ok := e["email"]; ok && v != nil {
+								email = fmt.Sprintf("%v", v)
+							}
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return map[string]string{
+		"id":     id,
+		"name":   name,
+		"email":  email,
+		"avatar": avatar,
 	}, nil
 }

@@ -37,9 +37,13 @@ type RedisConfig struct {
 }
 
 type OAuthConfig struct {
+	Runtime            string
 	GoogleClientID     string
 	GoogleClientSecret string
 	GoogleRedirectURL  string
+	GithubClientID     string
+	GithubClientSecret string
+	GithubRedirectURL  string
 }
 
 type JWTConfig struct {
@@ -84,9 +88,13 @@ func Load() *Config {
 			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		OAuth: OAuthConfig{
+			Runtime:            getEnv("APP_RUNTIME", ""),
 			GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 			GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 			GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
+			GithubClientID:     getEnv("GITHUB_CLIENT_ID", ""),
+			GithubClientSecret: getEnv("GITHUB_CLIENT_SECRET", ""),
+			GithubRedirectURL:  getEnv("GITHUB_REDIRECT_URL", ""),
 		},
 		JWT: JWTConfig{
 			Issuer:    "authorization",

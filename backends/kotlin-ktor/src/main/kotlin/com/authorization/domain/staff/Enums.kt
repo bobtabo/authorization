@@ -25,4 +25,6 @@ object StaffRole {
 object StaffProvider {
     /** Google OAuth */
     const val GOOGLE: Int = 1
+    /** GitHub OAuth */
+    const val GITHUB: Int = 2
 }

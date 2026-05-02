@@ -88,6 +88,8 @@ func main() {
 
 	web.Get("/auth/google/redirect", authH.GoogleRedirect)
 	web.Get("/auth/google/callback", authH.GoogleCallback)
+	web.Get("/auth/github/redirect", authH.GithubRedirect)
+	web.Get("/auth/github/callback", authH.GithubCallback)
 
 	web.Get("/api/auth/me", authH.GetMyProfile)
 	web.Get("/api/auth/login", authH.Login)

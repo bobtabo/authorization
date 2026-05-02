@@ -18,6 +18,8 @@ pub fn build_router(state: AppState) -> Router {
     Router::new()
         .route("/auth/google/redirect", get(handler::auth::google_redirect))
         .route("/auth/google/callback", get(handler::auth::google_callback))
+        .route("/auth/github/redirect", get(handler::auth::github_redirect))
+        .route("/auth/github/callback", get(handler::auth::github_callback))
         .nest("/api", api_routes())
         .with_state(state)
 }

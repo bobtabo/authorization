@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 #
-# Google OAuth コールバックアクションを定義するモジュール。
+# GitHub OAuth コールバックアクションを定義するモジュール。
 #
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
@@ -11,9 +11,9 @@ require "uri"
 module Authorization
   module Actions
     module Auth
-      # Google OAuth 認証後のコールバックを処理するアクションです。
+      # GitHub OAuth 認証後のコールバックを処理するアクションです。
       # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
-      class GoogleCallback < Authorization::Action
+      class GithubCallback < Authorization::Action
         include Authorization::Actions::Base
 
         # @param request [Hanami::Action::Request] リクエスト
@@ -30,15 +30,18 @@ module Authorization
           invitation_token = parts.length == 2 ? parts[1] : nil
 
           begin
-            token_data = exchange_code_for_token(code, cfg)
-            user_info  = fetch_user_info(token_data["access_token"])
+            token_data   = exchange_code_for_token(code, cfg)
+            access_token = token_data["access_token"]
+            user_info    = fetch_user_info(access_token)
+            email        = fetch_primary_email(access_token)
+            name         = user_info["name"].to_s.empty? ? user_info["login"] : user_info["name"]
 
             dto = ::UseCase::Auth::LoginDto.new(
-              provider:         ::Domain::Staff::Provider::GOOGLE,
-              provider_id:      user_info["id"],
-              name:             user_info["name"],
-              email:            user_info["email"],
-              avatar:           user_info["picture"],
+              provider:         ::Domain::Staff::Provider::GITHUB,
+              provider_id:      user_info["id"].to_s,
+              name:             name,
+              email:            email,
+              avatar:           user_info["avatar_url"],
               invitation_token: invitation_token,
             )
 
@@ -53,7 +56,7 @@ module Authorization
           rescue ::Domain::ForbiddenError
             response.redirect_to "#{cfg.app.frontend_url}/error?code=403"
           rescue => e
-            warn "[google_callback] ERROR: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+            warn "[github_callback] ERROR: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
             response.redirect_to "#{cfg.app.frontend_url}/error?code=500"
           end
         end
@@ -61,16 +64,15 @@ module Authorization
         private
 
         def exchange_code_for_token(code, cfg)
-          uri  = URI("https://oauth2.googleapis.com/token")
+          uri  = URI("https://github.com/login/oauth/access_token")
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
-          req      = Net::HTTP::Post.new(uri.path, "Content-Type" => "application/x-www-form-urlencoded")
+          req      = Net::HTTP::Post.new(uri.path, "Content-Type" => "application/x-www-form-urlencoded", "Accept" => "application/json")
           req.body = URI.encode_www_form(
-            client_id:     cfg.oauth.google_client_id,
-            client_secret: cfg.oauth.google_client_secret,
-            redirect_uri:  cfg.oauth.google_redirect_url,
+            client_id:     cfg.oauth.github_client_id,
+            client_secret: cfg.oauth.github_client_secret,
+            redirect_uri:  cfg.oauth.github_redirect_url,
             code:          code,
-            grant_type:    "authorization_code",
           )
           res = http.request(req)
           raise "token_exchange_failed: #{res.body}" unless res.is_a?(Net::HTTPSuccess)
@@ -78,14 +80,29 @@ module Authorization
         end
 
         def fetch_user_info(access_token)
-          uri  = URI("https://www.googleapis.com/oauth2/v2/userinfo")
+          uri  = URI("https://api.github.com/user")
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
           req = Net::HTTP::Get.new(uri.path)
           req["Authorization"] = "Bearer #{access_token}"
+          req["Accept"]        = "application/json"
           res = http.request(req)
           raise "userinfo_fetch_failed: #{res.body}" unless res.is_a?(Net::HTTPSuccess)
           JSON.parse(res.body)
+        end
+
+        def fetch_primary_email(access_token)
+          uri  = URI("https://api.github.com/user/emails")
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = true
+          req = Net::HTTP::Get.new(uri.path)
+          req["Authorization"] = "Bearer #{access_token}"
+          req["Accept"]        = "application/json"
+          res = http.request(req)
+          raise "email_fetch_failed: #{res.body}" unless res.is_a?(Net::HTTPSuccess)
+          emails = JSON.parse(res.body)
+          primary = emails.find { |e| e["primary"] == true }
+          primary ? primary["email"] : emails.first&.dig("email")
         end
       end
     end

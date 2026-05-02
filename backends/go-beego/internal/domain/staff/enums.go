@@ -7,4 +7,5 @@ const (
 
 const (
 	ProviderGoogle = 1
+	ProviderGithub = 2
 )

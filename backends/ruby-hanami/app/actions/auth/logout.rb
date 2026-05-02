@@ -16,6 +16,7 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
+          response.headers["Set-Cookie"] = "staff_id=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax"
           json_response(response, {})
         end
       end

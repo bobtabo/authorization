@@ -97,6 +97,8 @@ func main() {
 	// OAuth はブラウザリダイレクトのため /api 外に配置（PHP と同じパス構造）
 	r.GET("/auth/google/redirect", authH.GoogleRedirect)
 	r.GET("/auth/google/callback", authH.GoogleCallback)
+	r.GET("/auth/github/redirect", authH.GithubRedirect)
+	r.GET("/auth/github/callback", authH.GithubCallback)
 
 	api := r.Group("/api")
 	{

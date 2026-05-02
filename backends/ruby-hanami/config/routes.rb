@@ -3,6 +3,8 @@ module Authorization
     # OAuth（ブラウザリダイレクトのため /api 外）
     get '/auth/google/redirect', to: 'auth.google_redirect'
     get '/auth/google/callback',  to: 'auth.google_callback'
+    get '/auth/github/redirect', to: 'auth.github_redirect'
+    get '/auth/github/callback',  to: 'auth.github_callback'
 
     # --- auth ---
     get '/api/auth/me',               to: 'auth.me'
