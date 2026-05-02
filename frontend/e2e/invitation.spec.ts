@@ -8,31 +8,15 @@ async function openInvitationModal(page: Page) {
   await page.getByRole("button", { name: "招待URL" }).click();
 }
 
-// ─── 招待ランディングページ（バックエンド非依存・静的レンダリング） ──────────────
+// ─── 招待ランディングページ（バックエンド非依存） ────────────────────────────
 
 test.describe("招待ランディングページ", () => {
-  test("短いトークンはそのまま表示される", async ({ page }) => {
-    await page.goto("/invitation/abc123");
-    await expect(page.getByText("abc123")).toBeVisible();
-  });
-
-  test("長いトークンは先頭6文字+末尾4文字に省略される", async ({ page }) => {
-    // 20文字 > head(6)+tail(4)+3=13 → 省略される
-    await page.goto("/invitation/abcdefghijklmnopqrst");
-    await expect(page.getByText(/abcdef\.\.\.qrst/)).toBeVisible();
-  });
-
-  test("ちょうど13文字のトークンは省略されない", async ({ page }) => {
-    // head(6)+tail(4)+3=13 以下 → そのまま表示
-    await page.goto("/invitation/abc1234567890");
-    await expect(page.getByText("abc1234567890")).toBeVisible();
-  });
-
-  test("ログインへリンクが /login を指している", async ({ page }) => {
+  test("招待リンクを踏むとトークン付きログインページへリダイレクトされる", async ({ page }) => {
+    await page.route("**/auth/invitation/some-token", (route) =>
+      route.fulfill({ json: { found: true, token: "some-token" } }),
+    );
     await page.goto("/invitation/some-token");
-    const link = page.getByRole("link", { name: "ログインへ" });
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute("href", "/login");
+    await expect(page).toHaveURL(/\/login\?token=some-token/, { timeout: 5000 });
   });
 });
 

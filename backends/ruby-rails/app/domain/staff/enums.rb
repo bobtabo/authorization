@@ -15,6 +15,7 @@ module Domain
     # 認証プロバイダーの定数です。
     module Provider
       GOOGLE = 1
+      GITHUB = 2
     end
   end
 end

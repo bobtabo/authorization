@@ -10,3 +10,5 @@ pub const ROLE_MEMBER: i32 = 2;
 
 /// OAuth プロバイダー: Google。
 pub const PROVIDER_GOOGLE: i32 = 1;
+/// OAuth プロバイダー: GitHub。
+pub const PROVIDER_GITHUB: i32 = 2;

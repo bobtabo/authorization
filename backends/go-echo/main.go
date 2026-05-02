@@ -87,6 +87,8 @@ func main() {
 
 	e.GET("/auth/google/redirect", authH.GoogleRedirect)
 	e.GET("/auth/google/callback", authH.GoogleCallback)
+	e.GET("/auth/github/redirect", authH.GithubRedirect)
+	e.GET("/auth/github/callback", authH.GithubCallback)
 
 	api := e.Group("/api")
 

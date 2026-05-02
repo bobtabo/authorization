@@ -39,7 +39,7 @@ export default function App() {
                 className="w-full h-auto rounded"
               />
               <div className="mt-3 p-2 bg-purple-50 rounded text-xs">
-                <div className="font-semibold text-purple-900">GoogleアカウントSSO認証</div>
+                <div className="font-semibold text-purple-900">各種アカウントでSSO認証</div>
               </div>
             </div>
 

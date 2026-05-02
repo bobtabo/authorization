@@ -3,6 +3,9 @@ info:
   title: Authorization API
   description: 認可サーバーのAPI群です。
   version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
   contact:
     name: API開発チーム
     email: satoshi.nagashiba@gmail.com
@@ -14,21 +17,35 @@ servers:
     description: ステージング環境
   - url: https://apis-dev.authorization.com
     description: 開発環境
-  - url: https://apis.authorization-go.dev/api
-    description: ローカルGo環境
   - url: https://apis.authorization-php.dev/api
-    description: ローカルPHP環境
+    description: ローカルPHP（Laravel）環境
+  - url: https://apis.authorization-go-gin.dev/api
+    description: ローカルGo（Gin）環境
+  - url: https://apis.authorization-go-beego.dev/api
+    description: ローカルGo（Beego）環境
+  - url: https://apis.authorization-go-echo.dev/api
+    description: ローカルGo（Echo）環境
+  - url: https://apis.authorization-kotlin.dev/api
+    description: ローカルKotlin（Ktor）環境
   - url: https://apis.authorization-python.dev/api
-    description: ローカルPython環境
+    description: ローカルPython（FastAPI）環境
+  - url: https://apis.authorization-rb-hanami.dev/api
+    description: ローカルRuby（Hanami）環境
+  - url: https://apis.authorization-rb-rails.dev/api
+    description: ローカルRuby（Rails）環境
+  - url: https://apis.authorization-rust.dev/api
+    description: ローカルRust（Axum）環境
   - url: https://apis.authorization-ts.dev/api
-    description: ローカルTypeScript環境
+    description: ローカルTypeScript（Hono）環境
 
 paths:
   /auth/login:
     get:
+      operationId: getLogin
       summary: ログイン情報を取得します
       tags:
         - auth
+      security: []
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -37,9 +54,11 @@ paths:
 
   /auth/invitation/{token}:
     get:
+      operationId: getInvitation
       summary: 招待URLトークンを検証し、ログイン情報を取得します
       tags:
         - auth
+      security: []
       parameters:
         - name: token
           in: path
@@ -63,22 +82,38 @@ paths:
         description: ステージング環境
       - url: https://apis-dev.authorization.com
         description: 開発環境
-      - url: https://apis.authorization-go.dev
-        description: ローカルGo環境
       - url: https://apis.authorization-php.dev
-        description: ローカルPHP環境
+        description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-go-gin.dev
+        description: ローカルGo（Gin）環境
+      - url: https://apis.authorization-go-beego.dev
+        description: ローカルGo（Beego）環境
+      - url: https://apis.authorization-go-echo.dev
+        description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-kotlin.dev
+        description: ローカルKotlin（Ktor）環境
       - url: https://apis.authorization-python.dev
-        description: ローカルPython環境
+        description: ローカルPython（FastAPI）環境
+      - url: https://apis.authorization-rb-hanami.dev
+        description: ローカルRuby（Hanami）環境
+      - url: https://apis.authorization-rb-rails.dev
+        description: ローカルRuby（Rails）環境
+      - url: https://apis.authorization-rust.dev
+        description: ローカルRust（Axum）環境
       - url: https://apis.authorization-ts.dev
-        description: ローカルTypeScript環境
+        description: ローカルTypeScript（Hono）環境
     get:
+      operationId: googleRedirect
       summary: Googleログインページへリダイレクトします
       description: ブラウザリダイレクトのため /api 外に配置
       tags:
         - auth
+      security: []
       responses:
-        '200':
-          description: 成功時にレスポンスを返します。
+        '302':
+          description: Google 認証ページへリダイレクト
+        '400':
+          description: リクエストが不正です
         '500':
           description: Googleログインに失敗した場合のエラー
 
@@ -90,31 +125,162 @@ paths:
         description: ステージング環境
       - url: https://apis-dev.authorization.com
         description: 開発環境
-      - url: https://apis.authorization-go.dev
-        description: ローカルGo環境
       - url: https://apis.authorization-php.dev
-        description: ローカルPHP環境
+        description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-go-gin.dev
+        description: ローカルGo（Gin）環境
+      - url: https://apis.authorization-go-beego.dev
+        description: ローカルGo（Beego）環境
+      - url: https://apis.authorization-go-echo.dev
+        description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-kotlin.dev
+        description: ローカルKotlin（Ktor）環境
       - url: https://apis.authorization-python.dev
-        description: ローカルPython環境
+        description: ローカルPython（FastAPI）環境
+      - url: https://apis.authorization-rb-hanami.dev
+        description: ローカルRuby（Hanami）環境
+      - url: https://apis.authorization-rb-rails.dev
+        description: ローカルRuby（Rails）環境
+      - url: https://apis.authorization-rust.dev
+        description: ローカルRust（Axum）環境
       - url: https://apis.authorization-ts.dev
-        description: ローカルTypeScript環境
+        description: ローカルTypeScript（Hono）環境
     get:
+      operationId: googleCallback
       summary: Googleログインからのコールバックを受け取ります
       description: ブラウザリダイレクトのため /api 外に配置
       tags:
         - auth
+      security: []
       responses:
-        '200':
-          description: 成功時にレスポンスを返します。
+        '302':
+          description: ログイン成功後フロントエンドへリダイレクト
+        '403':
+          description: 招待フローで招待トークンが無効な場合
         '500':
           description: Googleログインに失敗した場合のエラー
 
+  /auth/github/redirect:
+    servers:
+      - url: https://apis.authorization.com
+        description: 本番環境
+      - url: https://apis-stg.authorization.com
+        description: ステージング環境
+      - url: https://apis-dev.authorization.com
+        description: 開発環境
+      - url: https://apis.authorization-php.dev
+        description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-go-gin.dev
+        description: ローカルGo（Gin）環境
+      - url: https://apis.authorization-go-beego.dev
+        description: ローカルGo（Beego）環境
+      - url: https://apis.authorization-go-echo.dev
+        description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-kotlin.dev
+        description: ローカルKotlin（Ktor）環境
+      - url: https://apis.authorization-python.dev
+        description: ローカルPython（FastAPI）環境
+      - url: https://apis.authorization-rb-hanami.dev
+        description: ローカルRuby（Hanami）環境
+      - url: https://apis.authorization-rb-rails.dev
+        description: ローカルRuby（Rails）環境
+      - url: https://apis.authorization-rust.dev
+        description: ローカルRust（Axum）環境
+      - url: https://apis.authorization-ts.dev
+        description: ローカルTypeScript（Hono）環境
+    get:
+      operationId: githubRedirect
+      summary: GitHubログインページへリダイレクトします
+      description: |
+        ブラウザリダイレクトのため /api 外に配置。
+        state パラメータにバックエンド識別子（例: go-gin）を含め、
+        GitHub からのコールバックを正しいバックエンドへ振り分けるために使用する。
+      tags:
+        - auth
+      security: []
+      parameters:
+        - name: token
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 招待トークン（招待フロー経由の場合のみ）
+      responses:
+        '302':
+          description: GitHub 認証ページへリダイレクト
+        '400':
+          description: リクエストが不正です
+        '500':
+          description: GitHubログインに失敗した場合のエラー
+
+  /auth/github/callback:
+    servers:
+      - url: https://apis.authorization.com
+        description: 本番環境
+      - url: https://apis-stg.authorization.com
+        description: ステージング環境
+      - url: https://apis-dev.authorization.com
+        description: 開発環境
+      - url: https://apis.authorization-php.dev
+        description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-go-gin.dev
+        description: ローカルGo（Gin）環境
+      - url: https://apis.authorization-go-beego.dev
+        description: ローカルGo（Beego）環境
+      - url: https://apis.authorization-go-echo.dev
+        description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-kotlin.dev
+        description: ローカルKotlin（Ktor）環境
+      - url: https://apis.authorization-python.dev
+        description: ローカルPython（FastAPI）環境
+      - url: https://apis.authorization-rb-hanami.dev
+        description: ローカルRuby（Hanami）環境
+      - url: https://apis.authorization-rb-rails.dev
+        description: ローカルRuby（Rails）環境
+      - url: https://apis.authorization-rust.dev
+        description: ローカルRust（Axum）環境
+      - url: https://apis.authorization-ts.dev
+        description: ローカルTypeScript（Hono）環境
+    get:
+      operationId: githubCallback
+      summary: GitHubログインからのコールバックを受け取ります
+      description: |
+        ブラウザリダイレクトのため /api 外に配置。
+        GitHub は redirect_uri を1つしか登録できないため、フロントエンドの
+        /auth/github/callback（Next.js ディスパッチャー）が state を読み取り、
+        /function/{backend}/auth/github/callback へ転送してからこのエンドポイントに到達する。
+      tags:
+        - auth
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: GitHub から発行される認可コード
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "バックエンド識別子（例: go-gin）。ディスパッチャーがルーティングに使用する"
+      responses:
+        '302':
+          description: ログイン成功後フロントエンドへリダイレクト
+        '403':
+          description: 招待フローで招待トークンが無効な場合
+        '500':
+          description: GitHubログインに失敗した場合のエラー
+
   /auth/me:
     get:
+      operationId: getMe
       summary: 自分自身のプロフィールを取得します
       description: staff_id クッキーで認証済みのユーザー情報を返します。ログイン判定・ヘッダー表示などに使用します。
       tags:
         - auth
+      security: []
       responses:
         '200':
           description: 成功
@@ -129,20 +295,26 @@ paths:
 
   /auth/logout:
     get:
+      operationId: logout
       summary: ログアウトします
       tags:
         - auth
+      security: []
       responses:
         '200':
           description: 成功時にレスポンスを返します。
+        '401':
+          description: 未認証
         '500':
           description: ログアウトに失敗した場合のエラー
 
   /clients:
     get:
+      operationId: listClients
       summary: クライアント一覧
       tags:
         - clients
+      security: []
       parameters:
         - name: keyword
           in: query
@@ -186,9 +358,11 @@ paths:
 
   /clients/{id}:
     get:
+      operationId: getClient
       summary: クライアント検索
       tags:
         - clients
+      security: []
       parameters:
         - name: id
           in: path
@@ -209,9 +383,11 @@ paths:
 
   /clients/store:
     post:
+      operationId: createClient
       summary: クライアント登録
       tags:
         - clients
+      security: []
       requestBody:
         required: true
         content:
@@ -236,9 +412,11 @@ paths:
 
   /clients/{id}/update:
     put:
+      operationId: updateClient
       summary: クライアント変更
       tags:
         - clients
+      security: []
       parameters:
         - name: id
           in: path
@@ -271,9 +449,11 @@ paths:
 
   /clients/{id}/delete:
     delete:
+      operationId: deleteClient
       summary: クライアント削除
       tags:
         - clients
+      security: []
       parameters:
         - name: id
           in: path
@@ -298,9 +478,11 @@ paths:
 
   /staffs:
     get:
+      operationId: listStaffs
       summary: スタッフ一覧
       tags:
         - staff
+      security: []
       parameters:
         - name: keyword
           in: query
@@ -340,9 +522,11 @@ paths:
 
   /staffs/{id}/updateRole:
     patch:
+      operationId: updateStaffRole
       summary: 権限を更新します
       tags:
         - staff
+      security: []
       parameters:
         - name: id
           in: path
@@ -389,9 +573,11 @@ paths:
 
   /staffs/{id}/restore:
     patch:
+      operationId: restoreStaff
       summary: スタッフの論理削除を復元します
       tags:
         - staff
+      security: []
       parameters:
         - name: id
           in: path
@@ -429,9 +615,11 @@ paths:
 
   /staffs/{id}/delete:
     delete:
+      operationId: deleteStaff
       summary: スタッフを論理削除します
       tags:
         - staff
+      security: []
       parameters:
         - name: id
           in: path
@@ -469,9 +657,11 @@ paths:
 
   /admin/invitation:
     get:
+      operationId: getAdminInvitation
       summary: 招待URLを取得します
       tags:
         - admin
+      security: []
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -489,9 +679,11 @@ paths:
 
   /admin/invitation/issue:
     get:
+      operationId: issueAdminInvitation
       summary: 招待URLを発行します
       tags:
         - admin
+      security: []
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -504,9 +696,14 @@ paths:
                     type: string
                     description: 招待用トークン（ハッシュ）を含むURL
                     example: "/auth/invitation/7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
+        '401':
+          description: 未認証
+        '500':
+          description: サーバーエラー
 
   /gate/issue:
     get:
+      operationId: issueGate
       summary: JWTを発行する
       tags:
         - gate
@@ -538,9 +735,12 @@ paths:
 
   /gate/client/{identifier}/verify:
     get:
+      operationId: verifyGate
       summary: JWTを検証する
       tags:
         - gate
+      security:
+        - bearerAuth: []
       parameters:
         - name: identifier
           in: path
@@ -571,6 +771,7 @@ paths:
 
   /notifications:
     get:
+      operationId: listNotifications
       summary: 通知一覧（メタデータ含む）
       description: |
         通知の一覧を返す。各アイテムにメタデータを含む。
@@ -626,6 +827,7 @@ paths:
 
   /notifications/counts:
     get:
+      operationId: getNotificationCounts
       summary: 未読・全件などのサマリー
       description: |
         未読件数・全件数など、通知まわりの集計を返す。
@@ -785,7 +987,7 @@ components:
         id:
           type: integer
           format: int64
-          example: "1"
+          example: 1
         name:
           type: string
           example: "株式会社モックデータ商事"
@@ -919,17 +1121,17 @@ components:
           type: integer
           format: int64
           description: UNIXタイムスタンプ（秒単位）
-          example: "1560000000"
+          example: 1560000000
         iat:
           type: integer
           format: int64
           description: UNIXタイムスタンプ（秒単位）
-          example: "1560000000"
+          example: 1560000000
         nbf:
           type: integer
           format: int64
           description: UNIXタイムスタンプ（秒単位）
-          example: "1560000000"
+          example: 1560000000
         jti:
           type: string
           format: uuid
@@ -975,11 +1177,11 @@ components:
         created_at:
           type: string
           format: date-time
-          example: "2026-01-01 10:00"
+          example: "2026-01-01T10:00:00+09:00"
         updated_at:
           type: string
           format: date-time
-          example: "2026-01-01 10:00"
+          example: "2026-01-01T10:00:00+09:00"
 
     NotificationListResponse:
       type: object

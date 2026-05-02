@@ -9,4 +9,5 @@ const (
 // Provider はソーシャルログインプロバイダーの定数です。
 const (
 	ProviderGoogle = 1
+	ProviderGithub = 2
 )

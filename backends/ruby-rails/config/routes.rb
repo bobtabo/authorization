@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   # OAuth（ブラウザリダイレクトのため /api 外）
   get  'auth/google/redirect', to: 'api/auth#google_redirect'
   get  'auth/google/callback',  to: 'api/auth#google_callback'
+  get  'auth/github/redirect', to: 'api/auth#github_redirect'
+  get  'auth/github/callback',  to: 'api/auth#github_callback'
 
   namespace :api, defaults: { format: :json } do
     # --- auth ---

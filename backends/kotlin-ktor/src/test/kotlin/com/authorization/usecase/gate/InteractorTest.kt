@@ -36,6 +36,7 @@ class InteractorTest {
     private fun makeConfig() = Config(
         app = AppConfig(
             env = "test", port = 8080,
+            runtime = "kotlin",
             frontendUrl = "http://localhost:3000",
             staffCookieLifetime = 60L,
             notificationDefaultLimit = 10L,
@@ -43,7 +44,10 @@ class InteractorTest {
         ),
         db    = DbConfig(dsn = "", username = "", password = ""),
         redis = RedisConfig(host = "localhost", port = 6379, password = "", db = 0),
-        oauth = OAuthConfig(googleClientId = "", googleClientSecret = "", googleRedirectUrl = ""),
+        oauth = OAuthConfig(
+            googleClientId = "", googleClientSecret = "", googleRedirectUrl = "",
+            githubClientId = "", githubClientSecret = "", githubRedirectUrl = "",
+        ),
         jwt   = JwtConfig(issuer = "authorization", algorithm = "RS256", ttl = 1800L, cacheTtl = 1800L),
         mail  = MailConfig(
             host = "localhost", port = "1025", username = "", password = "",

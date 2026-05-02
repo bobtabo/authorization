@@ -9,6 +9,7 @@ data class AppConfig(
     val staffCookieLifetime: Long,
     val notificationDefaultLimit: Long,
     val cachePrefix: String,
+    val runtime: String,
 )
 
 data class DbConfig(
@@ -28,6 +29,9 @@ data class OAuthConfig(
     val googleClientId: String,
     val googleClientSecret: String,
     val googleRedirectUrl: String,
+    val githubClientId: String,
+    val githubClientSecret: String,
+    val githubRedirectUrl: String,
 )
 
 data class JwtConfig(
@@ -83,6 +87,7 @@ object ConfigLoader {
                 staffCookieLifetime      = long("STAFF_COOKIE_LIFETIME", 60),
                 notificationDefaultLimit = long("NOTIFICATION_DEFAULT_LIMIT", 10),
                 cachePrefix              = str("CACHE_PREFIX", ""),
+                runtime                  = str("APP_RUNTIME", "kotlin"),
             ),
             db = DbConfig(
                 dsn      = dsn,
@@ -99,6 +104,9 @@ object ConfigLoader {
                 googleClientId     = str("GOOGLE_CLIENT_ID", ""),
                 googleClientSecret = str("GOOGLE_CLIENT_SECRET", ""),
                 googleRedirectUrl  = str("GOOGLE_REDIRECT_URL", ""),
+                githubClientId     = str("GITHUB_CLIENT_ID", ""),
+                githubClientSecret = str("GITHUB_CLIENT_SECRET", ""),
+                githubRedirectUrl  = str("GITHUB_REDIRECT_URL", ""),
             ),
             jwt = JwtConfig(
                 issuer    = "authorization",

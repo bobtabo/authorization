@@ -24,5 +24,4 @@ enum Provider: int
 
     case Google = 1;
     case Github = 2;
-    case Microsoft = 3;
 }

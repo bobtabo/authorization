@@ -20,6 +20,7 @@ export const config = {
   app: {
     env: env("APP_ENV", "local"),
     port: envInt("APP_PORT", 3000),
+    runtime: env("APP_RUNTIME", "ts"),
     frontendUrl: env("FRONTEND_URL", "http://localhost:3000"),
     staffCookieLifetime: envInt("STAFF_COOKIE_LIFETIME", 60),
     notificationDefaultLimit: envInt("NOTIFICATION_DEFAULT_LIMIT", 10),
@@ -42,6 +43,9 @@ export const config = {
     googleClientId: env("GOOGLE_CLIENT_ID"),
     googleClientSecret: env("GOOGLE_CLIENT_SECRET"),
     googleRedirectUrl: env("GOOGLE_REDIRECT_URL"),
+    githubClientId: env("GITHUB_CLIENT_ID"),
+    githubClientSecret: env("GITHUB_CLIENT_SECRET"),
+    githubRedirectUrl: env("GITHUB_REDIRECT_URL"),
   },
   jwt: {
     issuer: "authorization",

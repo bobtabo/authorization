@@ -7,6 +7,8 @@
 return [
     //フロントエンドURL
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+    //バックエンドランタイム識別子（GitHub コールバック dispatcher の振り分けに使用）
+    'runtime' => env('APP_RUNTIME', 'php'),
     //スタッフクッキー有効期間（分）
     'staff_cookie_lifetime' => (int)env('STAFF_COOKIE_LIFETIME', 60 * 24 * 7),
     //通知一覧デフォルト取得件数

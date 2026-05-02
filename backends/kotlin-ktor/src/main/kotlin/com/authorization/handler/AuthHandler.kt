@@ -154,7 +154,90 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun logout(call: ApplicationCall) {
+        call.response.cookies.append(
+            Cookie(name = "staff_id", value = "", maxAge = 0, path = "/", httpOnly = true)
+        )
         call.respond(HttpStatusCode.OK, buildJsonObject {})
+    }
+
+    /**
+     * GitHub OAuth 認証画面へリダイレクトします。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun githubRedirect(call: ApplicationCall) {
+        val token = call.request.queryParameters["token"]
+        val oauthState = if (!token.isNullOrEmpty()) {
+            URLEncoder.encode("${cfg.app.runtime}|$token", "UTF-8")
+        } else {
+            URLEncoder.encode(cfg.app.runtime, "UTF-8")
+        }
+        val url = "https://github.com/login/oauth/authorize" +
+            "?client_id=${cfg.oauth.githubClientId}" +
+            "&redirect_uri=${URLEncoder.encode(cfg.oauth.githubRedirectUrl, "UTF-8")}" +
+            "&scope=user:email" +
+            "&state=$oauthState"
+        call.respondRedirect(url, permanent = false)
+    }
+
+    /**
+     * GitHub OAuth コールバックを処理します。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun githubCallback(call: ApplicationCall) {
+        val code = call.request.queryParameters["code"]
+        if (code.isNullOrEmpty()) {
+            call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
+            return
+        }
+        val stateVal = call.request.queryParameters["state"] ?: ""
+        val parts = stateVal.split("|", limit = 2)
+        val invitationToken = if (parts.size == 2) parts[1].ifEmpty { null } else null
+
+        val accessToken = try {
+            exchangeGithubCodeForToken(code, cfg.oauth)
+        } catch (e: Exception) {
+            call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
+            return
+        }
+
+        val userInfo = try {
+            fetchGithubUserInfo(accessToken)
+        } catch (e: Exception) {
+            call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
+            return
+        }
+
+        val dto = LoginDto(
+            provider        = 2,
+            providerId      = userInfo["id"] ?: "",
+            name            = userInfo["name"] ?: "",
+            email           = userInfo["email"] ?: "",
+            avatar          = userInfo["avatar"]?.ifEmpty { null },
+            invitationToken = invitationToken,
+        )
+        val staff = try {
+            authUC.login(dto)
+        } catch (e: AppException) {
+            if (e.statusCode == 403) {
+                call.respondRedirect(cfg.app.frontendUrl + "/error?code=403", permanent = false)
+            } else {
+                call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
+            }
+            return
+        } catch (e: Exception) {
+            call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
+            return
+        }
+
+        val secure = cfg.app.env == "production"
+        val maxAge = (cfg.app.staffCookieLifetime * 60).toInt()
+        call.response.cookies.append(
+            Cookie(name = "staff_id", value = staff.id.toString(), maxAge = maxAge,
+                   path = "/", secure = secure, httpOnly = true)
+        )
+        call.respondRedirect(cfg.app.frontendUrl + "/clients", permanent = false)
     }
 
     private suspend fun exchangeCodeForToken(code: String, oauth: OAuthConfig): String =
@@ -190,6 +273,57 @@ class AuthHandler(
                 "name"    to (json["name"]?.jsonPrimitive?.content ?: ""),
                 "email"   to (json["email"]?.jsonPrimitive?.content ?: ""),
                 "picture" to (json["picture"]?.jsonPrimitive?.content ?: ""),
+            )
+        }
+
+    private suspend fun exchangeGithubCodeForToken(code: String, oauth: OAuthConfig): String =
+        withContext(Dispatchers.IO) {
+            val body = mapOf(
+                "client_id"     to oauth.githubClientId,
+                "client_secret" to oauth.githubClientSecret,
+                "code"          to code,
+            ).entries.joinToString("&") { "${it.key}=${URLEncoder.encode(it.value, "UTF-8")}" }
+
+            val conn = URL("https://github.com/login/oauth/access_token").openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+            conn.setRequestProperty("Accept", "application/json")
+            conn.outputStream.use { it.write(body.toByteArray()) }
+
+            val response = conn.inputStream.reader().readText()
+            Json.parseToJsonElement(response).jsonObject["access_token"]
+                ?.jsonPrimitive?.content ?: error("no access_token")
+        }
+
+    private suspend fun fetchGithubUserInfo(accessToken: String): Map<String, String> =
+        withContext(Dispatchers.IO) {
+            val userConn = URL("https://api.github.com/user").openConnection() as HttpURLConnection
+            userConn.setRequestProperty("Authorization", "Bearer $accessToken")
+            userConn.setRequestProperty("Accept", "application/json")
+            val userJson = Json.parseToJsonElement(userConn.inputStream.reader().readText()).jsonObject
+
+            val name = userJson["name"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null }
+                ?: (userJson["login"]?.jsonPrimitive?.content ?: "")
+            val id = userJson["id"]?.jsonPrimitive?.content ?: ""
+            val avatar = userJson["avatar_url"]?.jsonPrimitive?.content ?: ""
+
+            // メールアドレスが null の場合は /user/emails から取得
+            val email = userJson["email"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null }
+                ?: run {
+                    val emailConn = URL("https://api.github.com/user/emails").openConnection() as HttpURLConnection
+                    emailConn.setRequestProperty("Authorization", "Bearer $accessToken")
+                    emailConn.setRequestProperty("Accept", "application/json")
+                    val emails = Json.parseToJsonElement(emailConn.inputStream.reader().readText()).jsonArray
+                    emails.firstOrNull { it.jsonObject["primary"]?.jsonPrimitive?.boolean == true }
+                        ?.jsonObject?.get("email")?.jsonPrimitive?.content ?: ""
+                }
+
+            mapOf(
+                "id"     to id,
+                "name"   to name,
+                "email"  to email,
+                "avatar" to avatar,
             )
         }
 

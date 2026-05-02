@@ -4,6 +4,7 @@
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 PROVIDER_GOOGLE = 1
+PROVIDER_GITHUB = 2
 
 ROLE_VIEWER = 0
 ROLE_EDITOR = 1

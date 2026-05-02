@@ -66,6 +66,8 @@ fun Application.module(cfg: Config) {
         // OAuth（ブラウザリダイレクトのため /api 外）
         get("/auth/google/redirect") { authH.googleRedirect(call) }
         get("/auth/google/callback") { authH.googleCallback(call) }
+        get("/auth/github/redirect") { authH.githubRedirect(call) }
+        get("/auth/github/callback") { authH.githubCallback(call) }
 
         route("/api") {
             // --- auth ---

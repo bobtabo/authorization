@@ -175,6 +175,7 @@ mod tests {
         Arc::new(Config {
             app: AppConfig {
                 env: "test".to_string(), port: "8080".to_string(),
+                runtime: "rust".to_string(),
                 frontend_url: "http://localhost:3000".to_string(),
                 staff_cookie_lifetime: 60, notification_default_limit: 10,
                 cache_prefix: "test".to_string(),
@@ -184,6 +185,8 @@ mod tests {
             oauth: OAuthConfig {
                 google_client_id: "".to_string(), google_client_secret: "".to_string(),
                 google_redirect_url: "".to_string(),
+                github_client_id: "".to_string(), github_client_secret: "".to_string(),
+                github_redirect_url: "".to_string(),
             },
             jwt: JwtConfig { issuer: "authorization".to_string(), algorithm: "RS256".to_string(), ttl: 1800, cache_ttl: 1800 },
             mail: MailConfig {

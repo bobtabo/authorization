@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 #
-# Google OAuth リダイレクトアクションを定義するモジュール。
+# GitHub OAuth リダイレクトアクションを定義するモジュール。
 #
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
@@ -9,9 +9,9 @@ require "cgi"
 module Authorization
   module Actions
     module Auth
-      # Google OAuth 認証ページへリダイレクトするアクションです。
+      # GitHub OAuth 認証ページへリダイレクトするアクションです。
       # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
-      class GoogleRedirect < Authorization::Action
+      class GithubRedirect < Authorization::Action
         include Authorization::Actions::Base
 
         # @param request [Hanami::Action::Request] リクエスト
@@ -21,10 +21,10 @@ module Authorization
           cfg   = container[:cfg]
           token = request.params[:token]
           state = (token && !token.empty?) ? "#{cfg.app.runtime}|#{token}" : cfg.app.runtime
-          url = "https://accounts.google.com/o/oauth2/auth" \
-                "?client_id=#{cfg.oauth.google_client_id}" \
-                "&redirect_uri=#{CGI.escape(cfg.oauth.google_redirect_url)}" \
-                "&response_type=code&scope=email+profile&access_type=online" \
+          url = "https://github.com/login/oauth/authorize" \
+                "?client_id=#{cfg.oauth.github_client_id}" \
+                "&redirect_uri=#{CGI.escape(cfg.oauth.github_redirect_url)}" \
+                "&scope=user:email" \
                 "&state=#{CGI.escape(state)}"
           response.redirect_to url
         end

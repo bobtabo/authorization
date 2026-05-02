@@ -24,6 +24,11 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
+GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
+GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
+GITHUB_USER_URL = "https://api.github.com/user"
+GITHUB_EMAIL_URL = "https://api.github.com/user/emails"
+
 
 @router.get("/auth/me")
 def get_my_profile(
@@ -118,6 +123,83 @@ def google_callback(
         if hasattr(e, "status_code") and e.status_code == 403:
             return RedirectResponse(url=f"{settings.frontend_url}/error?code=403", status_code=302)
         raise
+
+    max_age = settings.staff_cookie_lifetime * 60
+    redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
+    redirect.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
+    return redirect
+
+
+@oauth_router.get("/auth/github/redirect")
+def github_redirect(token: str = "", settings: Settings = Depends(get_settings)):
+    state = f"{settings.app_runtime}|{token}" if token else settings.app_runtime
+    params = {
+        "client_id": settings.github_client_id,
+        "redirect_uri": settings.github_redirect_url,
+        "scope": "user:email",
+        "state": state,
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return RedirectResponse(url=f"{GITHUB_AUTH_URL}?{query}", status_code=302)
+
+
+@oauth_router.get("/auth/github/callback")
+def github_callback(
+    code: str = "",
+    state: str = "",
+    settings: Settings = Depends(get_settings),
+    interactor: AuthInteractor = Depends(get_auth_interactor),
+):
+    if not code:
+        return RedirectResponse(url=f"{settings.frontend_url}/error?code=500", status_code=302)
+
+    parts = state.split("|", 1)
+    invitation_token = parts[1] if len(parts) == 2 and parts[1] else None
+
+    with httpx.Client() as client:
+        token_resp = client.post(
+            GITHUB_TOKEN_URL,
+            data={
+                "client_id": settings.github_client_id,
+                "client_secret": settings.github_client_secret,
+                "code": code,
+            },
+            headers={"Accept": "application/json"},
+        )
+        token_data = token_resp.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            return RedirectResponse(url=f"{settings.frontend_url}/error?code=500", status_code=302)
+
+        auth_headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
+        user_resp = client.get(GITHUB_USER_URL, headers=auth_headers)
+        user_info = user_resp.json()
+
+        # name が null の場合は login を使う
+        name = user_info.get("name") or user_info.get("login", "")
+
+        # email が null の場合は /user/emails から primary を取得
+        email = user_info.get("email")
+        if not email:
+            emails_resp = client.get(GITHUB_EMAIL_URL, headers=auth_headers)
+            emails = emails_resp.json()
+            primary = next((e for e in emails if e.get("primary")), None)
+            email = primary["email"] if primary else ""
+
+    dto = AuthLoginDto(
+        provider=2,  # Provider::Github
+        provider_id=str(user_info["id"]),
+        name=name,
+        email=email,
+        avatar=user_info.get("avatar_url"),
+        invitation_token=invitation_token,
+    )
+    try:
+        staff = interactor.login(dto)
+    except Exception as e:
+        if hasattr(e, "status_code") and e.status_code == 403:
+            return RedirectResponse(url=f"{settings.frontend_url}/error?code=403", status_code=302)
+        return RedirectResponse(url=f"{settings.frontend_url}/error?code=500", status_code=302)
 
     max_age = settings.staff_cookie_lifetime * 60
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)

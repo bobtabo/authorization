@@ -31,9 +31,15 @@ class Settings(BaseSettings):
     redis_password: str = ""
     redis_db: int = 0
 
+    app_runtime: str = "python"
+
     google_client_id: str = ""
     google_client_secret: str = ""
     google_redirect_url: str = ""
+
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    github_redirect_url: str = ""
 
     gate_jwt_cache_ttl: int = 1800
 

@@ -19,6 +19,7 @@ pub struct Config {
 pub struct AppConfig {
     pub env:                        String,
     pub port:                       String,
+    pub runtime:                    String,
     pub frontend_url:               String,
     pub staff_cookie_lifetime:      i64,
     pub notification_default_limit: i64,
@@ -42,6 +43,9 @@ pub struct OAuthConfig {
     pub google_client_id:     String,
     pub google_client_secret: String,
     pub google_redirect_url:  String,
+    pub github_client_id:     String,
+    pub github_client_secret: String,
+    pub github_redirect_url:  String,
 }
 
 #[derive(Clone)]
@@ -83,6 +87,7 @@ impl Config {
             app: AppConfig {
                 env:                        get_env("APP_ENV", "local"),
                 port:                       get_env("APP_PORT", "8080"),
+                runtime:                    get_env("APP_RUNTIME", "rust"),
                 frontend_url:               get_env("FRONTEND_URL", "http://localhost:3000"),
                 staff_cookie_lifetime:      get_env_i64("STAFF_COOKIE_LIFETIME", 60),
                 notification_default_limit: get_env_i64("NOTIFICATION_DEFAULT_LIMIT", 10),
@@ -100,6 +105,9 @@ impl Config {
                 google_client_id:     get_env("GOOGLE_CLIENT_ID", ""),
                 google_client_secret: get_env("GOOGLE_CLIENT_SECRET", ""),
                 google_redirect_url:  get_env("GOOGLE_REDIRECT_URL", ""),
+                github_client_id:     get_env("GITHUB_CLIENT_ID", ""),
+                github_client_secret: get_env("GITHUB_CLIENT_SECRET", ""),
+                github_redirect_url:  get_env("GITHUB_REDIRECT_URL", ""),
             },
             jwt: JwtConfig {
                 issuer:    "authorization".to_string(),

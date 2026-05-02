@@ -1,10 +1,32 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
 import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
 import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+
+const ERROR_TITLE: Record<number | "default", string> = {
+  400: "リクエストが不正です",
+  401: "認証が必要です",
+  403: "アクセスが拒否されました",
+  404: "ページが見つかりませんでした",
+  429: "リクエストが多すぎます",
+  500: "サーバーエラーが発生しました",
+  503: "サービスが利用できません",
+  default: "エラーが発生しました",
+};
+
+const ERROR_MESSAGE: Record<number | "default", string> = {
+  400: "入力内容に問題があります。内容を確認してから再度お試しください。",
+  401: "ログインセッションが無効です。ログインページから再度サインインしてください。",
+  403: "このページへのアクセス権限がありません。招待リンクから登録手続きを行ってください。",
+  404: "お探しのページは移動したか、URL が間違っている可能性があります。",
+  429: "短時間に多くのリクエストが送信されました。しばらく時間をおいてから再度お試しください。",
+  500: "サーバーで予期しない問題が発生しました。時間をおいてから再度お試しください。",
+  503: "現在メンテナンス中か、サーバーが高負荷状態です。しばらくお待ちください。",
+  default: "しばらく時間をおいてから、もう一度お試しください。",
+};
 
 const RUNTIME_LABEL: Record<string, string> = {
   go:       "Go",
@@ -41,19 +63,19 @@ export function ErrorPage({
   secondaryTo,
   secondaryLabel = "ひとつ前へ",
 }: ErrorPageProps): React.JSX.Element {
-  const resolvedTitle =
-    title ??
-    (statusCode === 404 ? "ページが見つかりませんでした" : "エラーが発生しました");
-  const resolvedMessage =
-    message ??
-    (statusCode === 404
-      ? "お探しのページは移動したか、URL が間違っている可能性があります。"
-      : "しばらく時間をおいてから、もう一度お試しください。");
+  const resolvedTitle = title ?? ERROR_TITLE[statusCode] ?? ERROR_TITLE.default;
+  const resolvedMessage = message ?? ERROR_MESSAGE[statusCode] ?? ERROR_MESSAGE.default;
 
   const isNotFound = statusCode === 404;
-  const runtime = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem(RUNTIME_STORAGE_KEY) : null) ?? "php", []);
+  const [runtime, setRuntime] = useState<string>("php");
+  const [connectionDetail, setConnectionDetail] = useState<string>("");
+
+  useEffect(() => {
+    setRuntime(localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php");
+    setConnectionDetail(getBackendConnectionDetail());
+  }, []);
+
   const runtimeLabel = RUNTIME_LABEL[runtime] ?? runtime;
-  const connectionDetail = useMemo(() => getBackendConnectionDetail(), []);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6f8fa]">
