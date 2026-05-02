@@ -148,6 +148,82 @@ class AuthController extends Controller
     }
 
     /**
+     * GitHub へリダイレクトします。
+     *
+     * state に "{runtime}|{invitationToken}" を埋め込み、
+     * コールバック dispatcher がバックエンドを識別できるようにします。
+     *
+     * @param Request $request HTTP リクエスト
+     * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     */
+    public function githubRedirect(Request $request
+    ): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse {
+        $appConfig = config('authorization.app');
+        $token   = (string)$request->query('token', '');
+        $runtime = (string)$appConfig['runtime'];
+        $state   = $token !== '' ? "{$runtime}|{$token}" : $runtime;
+
+        return Socialite::driver('github')
+            ->stateless()
+            ->with(['state' => $state])
+            ->redirect();
+    }
+
+    /**
+     * GitHub からのコールバックを処理します。
+     *
+     * state フォーマット: "{runtime}" または "{runtime}|{invitationToken}"
+     *
+     * @param Request $request HTTP リクエスト
+     * @param AuthService $service 認証Service
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
+    public function githubCallback(Request $request, AuthService $service): RedirectResponse|Redirector
+    {
+        $appConfig = config('authorization.app');
+
+        try {
+            $githubUser = Socialite::driver('github')->stateless()->user();
+
+            $state = (string)$request->query('state', '');
+            $parts = explode('|', $state, 2);
+            $invitationToken = isset($parts[1]) && $parts[1] !== '' ? $parts[1] : null;
+
+            $dto = new SocialDto();
+            $dto->assign([
+                'provider'        => Provider::Github,
+                'providerId'      => (string)$githubUser->getId(),
+                'nickname'        => $githubUser->getNickname(),
+                'name'            => $githubUser->getName() ?? $githubUser->getNickname(),
+                'email'           => $githubUser->getEmail(),
+                'avatar'          => $githubUser->getAvatar(),
+                'invitationToken' => $invitationToken,
+            ]);
+
+            $vo = DB::transaction(function () use ($service, $dto) {
+                return $service->login($dto);
+            });
+
+            $secure = config('app.env') === 'production';
+            return redirect($appConfig['frontend_url'] . '/clients')
+                ->cookie(
+                    'staff_id',
+                    (string)$vo->getId(),
+                    $appConfig['staff_cookie_lifetime'],
+                    '/',
+                    null,
+                    $secure,
+                    true
+                );
+        } catch (AppException $e) {
+            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode());
+        } catch (Exception $e) {
+            Log::error('githubCallback error: ' . $e->getMessage(), ['exception' => $e]);
+            return redirect($appConfig['frontend_url'] . '/error?code=500');
+        }
+    }
+
+    /**
      * 自分自身のプロフィールを返します（staff_id クッキーで認証済みのユーザー）。
      *
      * @param Request $request HTTP リクエスト

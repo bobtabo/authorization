@@ -15,7 +15,7 @@ for (const backend of BACKENDS) {
     // 一覧
     // -----------------------------------------------------------------------
     test.describe("一覧", () => {
-      test.beforeEach(async ({ page, isReal }) => {
+      test.beforeEach(async ({ page }) => {
         await stubRoute(page, `${API}/clients*`, mockClients, false);
         await page.goto("/clients");
       });
@@ -73,7 +73,7 @@ for (const backend of BACKENDS) {
         await expect(page).toHaveURL("/clients/create");
       });
 
-      test("登録成功で一覧へ遷移する", async ({ page, isReal }) => {
+      test("登録成功で一覧へ遷移する", async ({ page }) => {
         await stubRoute(page, `${API}/clients/store`, { id: 3 }, false);
         await stubRoute(page, `${API}/clients*`, mockClients, false);
 
@@ -96,7 +96,7 @@ for (const backend of BACKENDS) {
     // 詳細
     // -----------------------------------------------------------------------
     test.describe("詳細", () => {
-      test.beforeEach(async ({ page, isReal }) => {
+      test.beforeEach(async ({ page }) => {
         await stubRoute(page, `${API}/clients/1`, mockClientDetail, false);
         await page.goto("/clients/show?id=1");
       });
@@ -115,7 +115,7 @@ for (const backend of BACKENDS) {
     // 論理削除済みレコードの表示
     // -----------------------------------------------------------------------
     test.describe("論理削除済みレコードの表示", () => {
-      test.beforeEach(async ({ page, isReal }) => {
+      test.beforeEach(async ({ page }) => {
         await stubRoute(page, `${API}/clients*`, mockClientsWithDeleted, false);
         await page.goto("/clients");
       });
@@ -124,7 +124,7 @@ for (const backend of BACKENDS) {
         await expect(page.getByText("ガンマシステム株式会社")).toBeVisible();
       });
 
-      test("論理削除済みクライアントの詳細が表示される", async ({ page, isReal }) => {
+      test("論理削除済みクライアントの詳細が表示される", async ({ page }) => {
         await stubRoute(page, `${API}/clients/3`, mockSoftDeletedClientDetail, false);
         await page.goto("/clients/show?id=3");
         await expect(page.getByText("ガンマシステム株式会社")).toBeVisible();
@@ -135,7 +135,7 @@ for (const backend of BACKENDS) {
     // 編集
     // -----------------------------------------------------------------------
     test.describe("編集", () => {
-      test.beforeEach(async ({ page, isReal }) => {
+      test.beforeEach(async ({ page }) => {
         await stubRoute(page, `${API}/clients/1`, mockClientDetail, false);
         await page.goto("/clients/edit?id=1");
       });
@@ -149,7 +149,7 @@ for (const backend of BACKENDS) {
         ).toHaveValue("info@alpha-tech.example.com");
       });
 
-      test("更新成功で一覧へ遷移する", async ({ page, isReal }) => {
+      test("更新成功で一覧へ遷移する", async ({ page }) => {
         await stubRoute(page, `${API}/clients/1/update`, mockClientDetail, false);
         await stubRoute(page, `${API}/clients*`, mockClients, false);
 
