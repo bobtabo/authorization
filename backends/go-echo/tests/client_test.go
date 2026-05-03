@@ -122,7 +122,7 @@ func TestClient_Update(t *testing.T) {
 		c := createClient(t, nil)
 		newName := "更新後クライアント名"
 		w := do(http.MethodPut, fmt.Sprintf("/api/clients/%d/update", c.ID),
-			map[string]string{"name": newName})
+			map[string]interface{}{"name": newName, "version": c.Version})
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -132,8 +132,18 @@ func TestClient_Update(t *testing.T) {
 		}
 	})
 
+	t.Run("バージョン不一致で409が返る", func(t *testing.T) {
+		truncateTables(t)
+		c := createClient(t, nil)
+		w := do(http.MethodPut, fmt.Sprintf("/api/clients/%d/update", c.ID),
+			map[string]interface{}{"name": "競合テスト", "version": c.Version + 99})
+		if w.Code != http.StatusConflict {
+			t.Errorf("want 409, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
-		w := do(http.MethodPut, "/api/clients/99999/update", map[string]string{"name": "test"})
+		w := do(http.MethodPut, "/api/clients/99999/update", map[string]interface{}{"name": "test", "version": 0})
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}
@@ -145,15 +155,27 @@ func TestClient_Destroy(t *testing.T) {
 
 	t.Run("クライアントが削除できる", func(t *testing.T) {
 		c := createClient(t, nil)
-		w := do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID), nil)
+		w := do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID),
+			map[string]interface{}{"version": c.Version})
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
 	})
 
+	t.Run("バージョン不一致で409が返る", func(t *testing.T) {
+		truncateTables(t)
+		c := createClient(t, nil)
+		w := do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID),
+			map[string]interface{}{"version": c.Version + 99})
+		if w.Code != http.StatusConflict {
+			t.Errorf("want 409, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
 		truncateTables(t)
-		w := do(http.MethodDelete, "/api/clients/99999/delete", nil)
+		w := do(http.MethodDelete, "/api/clients/99999/delete",
+			map[string]interface{}{"version": 0})
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}
@@ -165,7 +187,8 @@ func TestClient_SoftDelete(t *testing.T) {
 
 	t.Run("論理削除済みのクライアントが一覧に含まれる", func(t *testing.T) {
 		c := createClient(t, nil)
-		do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID), nil)
+		do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID),
+			map[string]interface{}{"version": c.Version})
 		w := do(http.MethodGet, "/api/clients", nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d", w.Code)
@@ -180,7 +203,8 @@ func TestClient_SoftDelete(t *testing.T) {
 	t.Run("論理削除済みのクライアント詳細が取得できる", func(t *testing.T) {
 		truncateTables(t)
 		c := createClient(t, nil)
-		do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID), nil)
+		do(http.MethodDelete, fmt.Sprintf("/api/clients/%d/delete", c.ID),
+			map[string]interface{}{"version": c.Version})
 		w := do(http.MethodGet, fmt.Sprintf("/api/clients/%d", c.ID), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200 for soft-deleted client, got %d: %s", w.Code, w.Body.String())

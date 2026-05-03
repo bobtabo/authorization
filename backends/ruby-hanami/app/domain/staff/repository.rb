@@ -31,17 +31,20 @@ module Domain
       # @param id [Integer] スタッフ ID
       # @param role [Integer] 新しいロール
       # @param updated_by [Integer] 更新者 ID
+      # @param version [Integer] 楽観排他バージョン
       # @return [void]
-      def update_role(id, role, updated_by)         = raise NotImplementedError
+      def update_role(id, role, updated_by, version) = raise NotImplementedError
 
       # @param id [Integer] スタッフ ID
       # @param deleted_by [Integer] 削除者 ID
+      # @param version [Integer] 楽観排他バージョン
       # @return [Boolean] 削除成否
-      def soft_delete(id, deleted_by)               = raise NotImplementedError
+      def soft_delete(id, deleted_by, version)       = raise NotImplementedError
 
       # @param id [Integer] スタッフ ID
+      # @param version [Integer] 楽観排他バージョン
       # @return [void]
-      def restore(id)                               = raise NotImplementedError
+      def restore(id, version)                       = raise NotImplementedError
     end
   end
 end

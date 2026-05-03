@@ -13,7 +13,7 @@ namespace App\Support\Models;
 /**
  * 基底トランザクションModelクラスです。
  *
- * @author @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Models
  */
 class AppTransactionModel extends AppModel

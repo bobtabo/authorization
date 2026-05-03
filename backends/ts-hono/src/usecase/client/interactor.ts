@@ -157,7 +157,7 @@ export class ClientInteractor {
       if (data.status === 2) patch.startedAt = now;
       else if (data.status === 3) patch.stoppedAt = now;
     }
-    await this.repo.update(id, patch);
+    await this.repo.update(id, patch, client.version);
     const updated = await this.repo.findById(id);
     return toDetailVo(updated!);
   }
@@ -170,7 +170,7 @@ export class ClientInteractor {
   async destroyClient(id: number): Promise<void> {
     const client = await this.repo.findById(id);
     if (!client) throw notFound("client_not_found");
-    await this.repo.update(id, { status: 4 });
-    await this.repo.softDelete(id);
+    await this.repo.update(id, { status: 4 }, client.version);
+    await this.repo.softDelete(id, client.version + 1);
   }
 }

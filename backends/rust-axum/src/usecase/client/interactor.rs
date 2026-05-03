@@ -95,10 +95,14 @@ impl Interactor {
         })
     }
 
-    /// クライアントを更新し、更新後の詳細 VO を返します。
+    /// クライアントを更新し、更新後の詳細 VO を返します。楽観排他エラー時は Err を返します。
     pub async fn update(&self, dto: UpdateDto) -> Result<DetailVo, UseCaseError> {
         let mut c = self.repo.find_by_id(dto.id).await?
             .ok_or_else(|| simple_err("client_not_found"))?;
+
+        if c.version != dto.version {
+            return Err("optimistic_lock_conflict".to_string().into());
+        }
 
         if let Some(v) = dto.name        { c.name      = v; }
         if let Some(v) = dto.post_code   { c.post_code = v; }
@@ -129,10 +133,14 @@ impl Interactor {
         Ok(to_detail_vo(saved))
     }
 
-    /// クライアントを論理削除します。
-    pub async fn destroy(&self, id: u64, executor_id: u32) -> Result<(), UseCaseError> {
+    /// クライアントを論理削除します。楽観排他エラー時は Err を返します。
+    pub async fn destroy(&self, id: u64, executor_id: u32, version: i32) -> Result<(), UseCaseError> {
         let mut c = self.repo.find_by_id(id).await?
             .ok_or_else(|| simple_err("client_not_found"))?;
+
+        if c.version != version {
+            return Err("optimistic_lock_conflict".to_string().into());
+        }
 
         let now = chrono::Utc::now();
         c.status     = 4;
@@ -381,7 +389,33 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.find_by_id.lock().unwrap() = Some(None);
         let uc = Interactor::new(mock);
-        let result = uc.destroy(99, 1).await;
+        let result = uc.destroy(99, 1, 0).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_destroy_returns_conflict_when_version_mismatch() {
+        let mock = Arc::new(MockRepo::new());
+        *mock.find_by_id.lock().unwrap() = Some(Some(make_client(1)));
+        let uc = Interactor::new(mock);
+        // make_client sets version = 0, but we pass version = 99
+        let result = uc.destroy(1, 1, 99).await;
+        assert!(result.is_err());
+        assert_eq!(result.err().unwrap().to_string(), "optimistic_lock_conflict");
+    }
+
+    #[tokio::test]
+    async fn test_update_returns_conflict_when_version_mismatch() {
+        let mock = Arc::new(MockRepo::new());
+        *mock.find_by_id.lock().unwrap() = Some(Some(make_client(1)));
+        let uc = Interactor::new(mock);
+        let dto = UpdateDto {
+            id: 1, name: None, post_code: None, pref: None, city: None,
+            address: None, building: None, tel: None, email: None,
+            status: None, executor_id: 1, version: 99,
+        };
+        let result = uc.update(dto).await;
+        assert!(result.is_err());
+        assert_eq!(result.err().unwrap().to_string(), "optimistic_lock_conflict");
     }
 }

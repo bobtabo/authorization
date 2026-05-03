@@ -5,8 +5,10 @@ package client
 type Repository interface {
 	// FindByCondition は条件に合うクライアント一覧を取得します。
 	FindByCondition(cond Condition) ([]*Client, error)
-	// FindByID はIDでクライアントを取得します。
+	// FindByID はIDでクライアントを取得します（論理削除済みも含む）。
 	FindByID(c *Client) (*Client, error)
+	// FindByIDIncludeDeleted はIDでクライアントを取得します（論理削除済みも含む）。
+	FindByIDIncludeDeleted(c *Client) (*Client, error)
 	// FindByAccessToken はアクセストークンでクライアントを取得します。
 	FindByAccessToken(c *Client) (*Client, error)
 	// FindByIdentifier はidentifierでクライアントを取得します。

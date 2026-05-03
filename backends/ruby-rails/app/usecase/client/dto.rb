@@ -18,6 +18,9 @@ module UseCase
       keyword_init: true
     )
 
+    # クライアント削除時に渡す DTO です。
+    DestroyDto = Struct.new(:id, :executor_id, :version, keyword_init: true)
+
     # クライアント一覧取得時に渡す DTO です。
     ListConditionDto = Struct.new(:keyword, :start_from, :start_to, :statuses, keyword_init: true)
   end

@@ -28,7 +28,14 @@ pub struct IndexQuery {
 /// スタッフロール更新リクエストボディ。
 #[derive(Deserialize)]
 pub struct UpdateRoleBody {
-    pub role: i32,
+    pub role:    i32,
+    pub version: i32,
+}
+
+/// スタッフ論理削除リクエストボディ。
+#[derive(Deserialize)]
+pub struct DestroyBody {
+    pub version: i32,
 }
 
 /// スタッフ一覧を返します。
@@ -73,8 +80,11 @@ pub async fn update_role(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
     };
 
-    if let Err(_) = state.staff_uc.update_role(UpdateRoleDto { id, role: body.role, executor_id }).await {
+    if let Err(e) = state.staff_uc.update_role(UpdateRoleDto { id, role: body.role, executor_id, version: body.version }).await {
         let _ = tx.rollback().await;
+        if e.to_string() == "optimistic_lock_conflict" {
+            return (StatusCode::CONFLICT, Json(json!({"error": "optimistic_lock_conflict"})));
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
     }
 
@@ -112,6 +122,7 @@ pub async fn destroy(
     State(state): State<AppState>,
     jar: CookieJar,
     Path(id): Path<u32>,
+    Json(body): Json<DestroyBody>,
 ) -> (StatusCode, Json<Value>) {
     let executor_id = staff_id_from_cookie(&jar);
 
@@ -120,8 +131,11 @@ pub async fn destroy(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
     };
 
-    if let Err(_) = state.staff_uc.destroy(DestroyDto { id, executor_id }).await {
+    if let Err(e) = state.staff_uc.destroy(DestroyDto { id, executor_id, version: body.version }).await {
         let _ = tx.rollback().await;
+        if e.to_string() == "optimistic_lock_conflict" {
+            return (StatusCode::CONFLICT, Json(json!({"error": "optimistic_lock_conflict"})));
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
     }
 

@@ -9,6 +9,8 @@ type UpdateRoleDto struct {
 	Role int
 	// ExecutorID は操作を実行したスタッフID。
 	ExecutorID uint
+	// Version は楽観排他ロック用バージョン番号。
+	Version int
 }
 
 // DestroyDto はスタッフ削除の入力データです。
@@ -17,10 +19,14 @@ type DestroyDto struct {
 	ID uint
 	// ExecutorID は操作を実行したスタッフID。
 	ExecutorID uint
+	// Version は楽観排他ロック用バージョン番号。
+	Version int
 }
 
 // RestoreDto はスタッフ復元の入力データです。
 type RestoreDto struct {
 	// ID はスタッフID。
 	ID uint
+	// Version は楽観排他ロック用バージョン番号。
+	Version int
 }

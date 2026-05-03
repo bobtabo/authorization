@@ -3,6 +3,7 @@ package persistence
 import (
 	domstaff "authorization-go-beego/internal/domain/staff"
 	"authorization-go-beego/internal/infrastructure/model"
+	"authorization-go-beego/pkg/apperror"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -88,14 +89,37 @@ func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 			return nil, err
 		}
 	} else {
-		_, err := r.o.Update(m,
-			"name", "email", "provider", "provider_id", "avatar", "role", "last_login_at",
-			"created_at", "created_by", "updated_at", "updated_by",
-			"deleted_at", "deleted_by", "version",
-		)
+		var avatar, lastLoginAt, createdBy, updatedBy interface{}
+		if m.Avatar != nil {
+			avatar = m.Avatar
+		}
+		if m.LastLoginAt != nil {
+			lastLoginAt = m.LastLoginAt
+		}
+		if m.CreatedBy != nil {
+			createdBy = m.CreatedBy
+		}
+		if m.UpdatedBy != nil {
+			updatedBy = m.UpdatedBy
+		}
+		res, err := r.o.Raw(
+			`UPDATE staffs SET
+				name=?, email=?, provider=?, provider_id=?, avatar=?, role=?, last_login_at=?,
+				created_at=?, created_by=?, updated_at=?, updated_by=?,
+				version=version+1
+			WHERE id=? AND version=?`,
+			m.Name, m.Email, m.Provider, m.ProviderID, avatar, m.Role, lastLoginAt,
+			m.CreatedAt, createdBy, m.UpdatedAt, updatedBy,
+			m.ID, m.Version,
+		).Exec()
 		if err != nil {
 			return nil, err
 		}
+		n, _ := res.RowsAffected()
+		if n == 0 {
+			return nil, apperror.Conflict("optimistic_lock_conflict")
+		}
+		m.Version++
 	}
 	return staffToDomain(m), nil
 }
@@ -103,27 +127,33 @@ func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 func (r *OrmStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
 	res, err := r.o.Raw(
-		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND deleted_at IS NULL",
-		s.Role, now, s.UpdatedBy, s.ID,
+		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND version=? AND deleted_at IS NULL",
+		s.Role, now, s.UpdatedBy, s.ID, s.Version,
 	).Exec()
 	if err != nil {
 		return false, err
 	}
 	n, _ := res.RowsAffected()
-	return n > 0, nil
+	if n == 0 {
+		return false, apperror.Conflict("optimistic_lock_conflict")
+	}
+	return true, nil
 }
 
 func (r *OrmStaffRepository) SoftDelete(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
 	res, err := r.o.Raw(
-		"UPDATE staffs SET deleted_at=?, deleted_by=? WHERE id=? AND deleted_at IS NULL",
-		now, s.DeletedBy, s.ID,
+		"UPDATE staffs SET deleted_at=?, deleted_by=?, version=version+1 WHERE id=? AND version=? AND deleted_at IS NULL",
+		now, s.DeletedBy, s.ID, s.Version,
 	).Exec()
 	if err != nil {
 		return false, err
 	}
 	n, _ := res.RowsAffected()
-	return n > 0, nil
+	if n == 0 {
+		return false, apperror.Conflict("optimistic_lock_conflict")
+	}
+	return true, nil
 }
 
 func (r *OrmStaffRepository) Restore(s *domstaff.Staff) (bool, error) {

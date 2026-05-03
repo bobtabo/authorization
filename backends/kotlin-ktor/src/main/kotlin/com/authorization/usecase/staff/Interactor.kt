@@ -8,6 +8,7 @@ package com.authorization.usecase.staff
 import com.authorization.domain.staff.Condition
 import com.authorization.domain.staff.ListItem
 import com.authorization.domain.staff.Repository
+import com.authorization.support.AppException
 
 /**
  * スタッフユースケースの Interactor です。
@@ -59,6 +60,7 @@ class Interactor(private val repo: Repository) {
      * @param dto 削除 DTO
      */
     suspend fun destroy(dto: DestroyDto) {
-        repo.softDelete(dto.id, dto.executorId)
+        val staff = repo.findById(dto.id) ?: throw AppException(404, "staff_not_found")
+        repo.softDelete(dto.id, dto.executorId, staff.version)
     }
 }

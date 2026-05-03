@@ -14,17 +14,19 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Support\Models\Traits\OptimisticLock;
 
 /**
  * 基底Modelクラスです。
  *
- * @author @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Models
  */
 abstract class AppModel extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use OptimisticLock;
 
     /**
      * @var bool キャッシュ設定

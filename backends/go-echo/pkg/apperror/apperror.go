@@ -32,6 +32,10 @@ func Internal(message string) *AppError {
 	return &AppError{Code: http.StatusInternalServerError, Message: message}
 }
 
+func Conflict(message string) *AppError {
+	return &AppError{Code: http.StatusConflict, Message: message}
+}
+
 func Is(err error) (*AppError, bool) {
 	var appErr *AppError
 	if errors.As(err, &appErr) {

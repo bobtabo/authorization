@@ -29,7 +29,7 @@ module UseCase
       end
 
       def destroy(dto)
-        @repo.soft_delete(dto.id, dto.executor_id)
+        @repo.soft_delete(dto.id, dto.executor_id, dto.version)
         nil
       end
     end

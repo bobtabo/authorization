@@ -52,6 +52,19 @@ func (r *EntClientRepository) FindByID(c *domclient.Client) (*domclient.Client, 
 	return entAppClientToDomain(m), nil
 }
 
+func (r *EntClientRepository) FindByIDIncludeDeleted(c *domclient.Client) (*domclient.Client, error) {
+	m, err := r.db.AppClient.Query().
+		Where(appclient.IDEQ(c.ID)).
+		First(context.Background())
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return entAppClientToDomain(m), nil
+}
+
 func (r *EntClientRepository) FindByAccessToken(c *domclient.Client) (*domclient.Client, error) {
 	m, err := r.db.AppClient.Query().
 		Where(appclient.AccessTokenEQ(c.AccessToken), appclient.StatusEQ(domclient.StatusActive), appclient.DeletedAtIsNil()).

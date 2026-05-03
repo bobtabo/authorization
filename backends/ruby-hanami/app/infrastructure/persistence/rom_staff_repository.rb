@@ -52,7 +52,7 @@ module Infrastructure
           )
           r = @ds.where(id: id).first
         else
-          @ds.where(id: entity.id).update(
+          affected = @ds.where(id: entity.id, version: entity.version).update(
             name:          entity.name,
             email:         entity.email,
             avatar:        entity.avatar,
@@ -62,25 +62,37 @@ module Infrastructure
             updated_by:    entity.updated_by,
             version:       Sequel[:version] + 1,
           )
+          raise Domain::ConflictError if affected == 0
           r = @ds.where(id: entity.id).first
         end
         row_to_entity(r)
       end
 
-      def update_role(id, role, updated_by)
-        @ds.where(id: id).update(role: role, updated_at: Time.now, updated_by: updated_by) > 0
+      def update_role(id, role, updated_by, version)
+        affected = @ds.where(id: id, version: version)
+                      .update(role: role, updated_at: Time.now, updated_by: updated_by,
+                              version: Sequel[:version] + 1)
+        raise Domain::ConflictError if affected == 0
+        true
       end
 
-      def soft_delete(id, deleted_by)
-        now = Time.now
-        @ds.where(id: id).update(
+      def soft_delete(id, deleted_by, version)
+        now      = Time.now
+        affected = @ds.where(id: id, version: version).update(
           deleted_at: now, deleted_by: deleted_by,
           updated_at: now, updated_by: deleted_by,
-        ) > 0
+          version:    Sequel[:version] + 1,
+        )
+        raise Domain::ConflictError if affected == 0
+        true
       end
 
-      def restore(id)
-        @ds.where(id: id).update(deleted_at: nil, deleted_by: nil, updated_at: Time.now) > 0
+      def restore(id, version)
+        affected = @ds.where(id: id, version: version)
+                      .update(deleted_at: nil, deleted_by: nil, updated_at: Time.now,
+                              version: Sequel[:version] + 1)
+        raise Domain::ConflictError if affected == 0
+        true
       end
 
       private

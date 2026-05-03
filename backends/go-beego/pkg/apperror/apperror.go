@@ -28,6 +28,10 @@ func NotFound(message string) *AppError {
 	return &AppError{Code: http.StatusNotFound, Message: message}
 }
 
+func Conflict(message string) *AppError {
+	return &AppError{Code: http.StatusConflict, Message: message}
+}
+
 func Internal(message string) *AppError {
 	return &AppError{Code: http.StatusInternalServerError, Message: message}
 }

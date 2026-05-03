@@ -8,4 +8,8 @@
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 class ApplicationController < ActionController::API
   include ActionController::Cookies
+
+  rescue_from Domain::ConflictError do |e|
+    render json: { error: e.message }, status: :conflict
+  end
 end

@@ -116,6 +116,7 @@ func (h *ClientHandler) Update(c echo.Context) error {
 		Tel      *string `json:"tel"`
 		Email    *string `json:"email"`
 		Status   *int    `json:"status"`
+		Version  int     `json:"version"`
 	}
 	if err = c.Bind(&body); err != nil {
 		return apperror.BadRequest("validation_error")
@@ -128,6 +129,7 @@ func (h *ClientHandler) Update(c echo.Context) error {
 			ID: id, Name: body.Name, PostCode: body.PostCode, Pref: body.Pref,
 			City: body.City, Address: body.Address, Building: body.Building,
 			Tel: body.Tel, Email: body.Email, Status: body.Status, ExecutorID: executorID,
+			Version: body.Version,
 		})
 		return e
 	}); txErr != nil {
@@ -141,9 +143,15 @@ func (h *ClientHandler) Destroy(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
+	var body struct {
+		Version int `json:"version"`
+	}
+	if err = c.Bind(&body); err != nil {
+		return apperror.BadRequest("validation_error")
+	}
 	executorID := staffIDFromCookie(c)
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
-		return h.newClientUC(tx.Client()).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID})
+		return h.newClientUC(tx.Client()).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID, Version: body.Version})
 	}); txErr != nil {
 		return txErr
 	}

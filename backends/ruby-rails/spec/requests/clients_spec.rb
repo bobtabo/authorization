@@ -76,7 +76,8 @@ RSpec.describe "Clients", type: :request do
       staff  = create_staff
       client = create_client
       delete "/api/clients/#{client.id}/delete",
-             headers: { "Cookie" => "staff_id=#{staff.id}" }
+             params:  { version: 1 }.to_json,
+             headers: { "Cookie" => "staff_id=#{staff.id}", "Content-Type" => "application/json" }
       expect(response).to have_http_status(200)
     end
   end

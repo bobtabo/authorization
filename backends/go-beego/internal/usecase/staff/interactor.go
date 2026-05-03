@@ -34,7 +34,14 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 	if dto.Role != domstaff.RoleAdmin && dto.Role != domstaff.RoleMember {
 		return apperror.BadRequest("role_invalid")
 	}
-	ok, err := uc.repo.UpdateRole(&domstaff.Staff{ID: dto.ID, Role: dto.Role, UpdatedBy: &dto.ExecutorID})
+	s, err := uc.repo.FindByID(&domstaff.Staff{ID: dto.ID})
+	if err != nil {
+		return err
+	}
+	if s == nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	ok, err := uc.repo.UpdateRole(&domstaff.Staff{ID: dto.ID, Role: dto.Role, UpdatedBy: &dto.ExecutorID, Version: s.Version})
 	if err != nil {
 		return err
 	}
@@ -46,7 +53,14 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 
 // Destroy はスタッフを論理削除します。
 func (uc *Interactor) Destroy(dto DestroyDto) error {
-	ok, err := uc.repo.SoftDelete(&domstaff.Staff{ID: dto.ID, DeletedBy: &dto.ExecutorID})
+	s, err := uc.repo.FindByID(&domstaff.Staff{ID: dto.ID})
+	if err != nil {
+		return err
+	}
+	if s == nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	ok, err := uc.repo.SoftDelete(&domstaff.Staff{ID: dto.ID, DeletedBy: &dto.ExecutorID, Version: s.Version})
 	if err != nil {
 		return err
 	}

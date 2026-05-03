@@ -444,6 +444,8 @@ paths:
                     example: "SUCCESS"
         '400':
           description: リクエストが不正です
+        '409':
+          description: 楽観排他ロック競合（他のリクエストが先に更新済み）
         '500':
           description: サーバーエラー
 
@@ -462,6 +464,19 @@ paths:
             type: integer
             format: int64
           description: クライアントID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - version
+              properties:
+                version:
+                  type: integer
+                  format: int64
+                  description: 楽観排他ロック用バージョン番号
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -475,6 +490,8 @@ paths:
                     example: "SUCCESS"
         '404':
           description: ユーザーが存在しない場合のエラー
+        '409':
+          description: 楽観排他ロック競合（他のリクエストが先に更新済み）
 
   /staffs:
     get:
@@ -543,12 +560,17 @@ paths:
               type: object
               required:
                 - role
+                - version
                 - executor_id
               properties:
                 role:
                   type: integer
                   format: int64
                   description: 権限種別（1=管理者、2=メンバー）
+                version:
+                  type: integer
+                  format: int64
+                  description: 楽観排他ロック用バージョン番号
                 executor_id:
                   type: integer
                   format: int64
@@ -568,6 +590,8 @@ paths:
           description: リクエストが不正です
         '404':
           description: スタッフが存在しない場合のエラー
+        '409':
+          description: 楽観排他ロック競合（他のリクエストが先に更新済み）
         '500':
           description: サーバーエラー
 
@@ -635,8 +659,13 @@ paths:
             schema:
               type: object
               required:
+                - version
                 - executor_id
               properties:
+                version:
+                  type: integer
+                  format: int64
+                  description: 楽観排他ロック用バージョン番号
                 executor_id:
                   type: integer
                   format: int64
@@ -654,6 +683,8 @@ paths:
                     format: int64
         '404':
           description: スタッフが存在しない場合のエラー
+        '409':
+          description: 楽観排他ロック競合（他のリクエストが先に更新済み）
 
   /admin/invitation:
     get:
@@ -943,6 +974,8 @@ components:
     ClientUpdate:
       type: object
       description: クライアント更新情報（対象 ID はパス /clients/{id}/update で指定。サーバではルートとボディをマージします）。
+      required:
+        - version
       properties:
         name:
           type: string
@@ -966,6 +999,10 @@ components:
           format: email
         status:
           type: integer
+        version:
+          type: integer
+          format: int64
+          description: 楽観排他ロック用バージョン番号
 
     Client:
       type: object
@@ -1034,6 +1071,11 @@ components:
           type: string
           format: date-time
           example: "2025-11-01T10:00:00Z"
+        version:
+          type: integer
+          format: int64
+          description: 楽観排他ロック用バージョン番号
+          example: 1
 
     Clients:
       type: array
@@ -1081,6 +1123,11 @@ components:
           type: string
           description: 更新日時（Y-m-d H:i 形式）
           example: "2026-01-20 10:00"
+        version:
+          type: integer
+          format: int64
+          description: 楽観排他ロック用バージョン番号
+          example: 1
 
     StaffList:
       type: object

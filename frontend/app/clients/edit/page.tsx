@@ -21,6 +21,7 @@ export default function ClientEditPage(): React.JSX.Element {
   const [building, setBuilding] = useState<string>("");
   const [tel, setTel] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [version, setVersion] = useState<number>(1);
   const [saving, setSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
@@ -54,6 +55,7 @@ export default function ClientEditPage(): React.JSX.Element {
       setBuilding(d.building as string ?? "");
       setTel(d.tel as string ?? "");
       setEmail(d.email as string ?? "");
+      setVersion((d.version as number) ?? 1);
     });
   }, []);
 
@@ -98,6 +100,7 @@ export default function ClientEditPage(): React.JSX.Element {
       building,
       tel,
       email,
+      version,
     }).then(() => {
       setConfirmOpen(false);
       sessionStorage.setItem("flashMessage", "クライアントを更新しました。");

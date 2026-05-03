@@ -64,7 +64,7 @@ RSpec.describe "Clients" do
       staff  = create_staff
       client = create_client
       put "/api/clients/#{client[:id]}/update",
-          { name: "更新後クライアント名" }.to_json,
+          { name: "更新後クライアント名", version: client[:version] }.to_json,
           { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
@@ -76,8 +76,9 @@ RSpec.describe "Clients" do
     it "クライアントを削除して200を返す" do
       staff  = create_staff
       client = create_client
-      delete "/api/clients/#{client[:id]}/delete", {},
-             { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      delete "/api/clients/#{client[:id]}/delete",
+             { version: client[:version] }.to_json,
+             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
       expect(last_response.status).to eq(200)
     end
   end

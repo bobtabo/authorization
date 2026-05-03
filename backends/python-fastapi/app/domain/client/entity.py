@@ -32,3 +32,4 @@ class Client:
     updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
     executor_id: int = 0
+    version: int = 1

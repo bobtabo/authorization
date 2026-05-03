@@ -29,6 +29,7 @@ pub struct UpdateDto {
     pub email:       Option<String>,
     pub status:      Option<i32>,
     pub executor_id: u32,
+    pub version:     i32,
 }
 
 /// クライアント一覧検索条件 DTO。

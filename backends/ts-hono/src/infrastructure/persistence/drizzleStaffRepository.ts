@@ -8,6 +8,7 @@ import { staffs } from "../model/schema.js";
 import type { StaffRepository } from "../../domain/staff/repository.js";
 import type { Staff } from "../../domain/staff/entity.js";
 import type { DB } from "../../db/client.js";
+import { conflict } from "../../lib/errors.js";
 
 export class DrizzleStaffRepository implements StaffRepository {
   constructor(private readonly db: DB) {}
@@ -50,15 +51,24 @@ export class DrizzleStaffRepository implements StaffRepository {
     return (await this.db.select().from(staffs).where(and(eq(staffs.provider, data.provider), eq(staffs.providerId, data.providerId))).limit(1))[0]!;
   }
 
-  async updateRole(id: number, role: number): Promise<void> {
-    await this.db.update(staffs).set({ role, updatedAt: new Date() }).where(eq(staffs.id, id));
+  async updateRole(id: number, role: number, version: number): Promise<void> {
+    const [result] = await this.db.update(staffs)
+      .set({ role, version: version + 1, updatedAt: new Date() })
+      .where(and(eq(staffs.id, id), eq(staffs.version, version)));
+    if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
   }
 
-  async softDelete(id: number): Promise<void> {
-    await this.db.update(staffs).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(staffs.id, id));
+  async softDelete(id: number, version: number): Promise<void> {
+    const [result] = await this.db.update(staffs)
+      .set({ deletedAt: new Date(), version: version + 1, updatedAt: new Date() })
+      .where(and(eq(staffs.id, id), eq(staffs.version, version)));
+    if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
   }
 
-  async restore(id: number): Promise<void> {
-    await this.db.update(staffs).set({ deletedAt: null, updatedAt: new Date() }).where(eq(staffs.id, id));
+  async restore(id: number, version: number): Promise<void> {
+    const [result] = await this.db.update(staffs)
+      .set({ deletedAt: null, version: version + 1, updatedAt: new Date() })
+      .where(and(eq(staffs.id, id), eq(staffs.version, version)));
+    if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
   }
 }

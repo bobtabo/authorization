@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from app.domain.client.entity import Client
 from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
+from app.exceptions import conflict
 from app.infrastructure.model.model import ClientModel
 
 
@@ -45,6 +46,7 @@ def _to_entity(m: ClientModel) -> Client:
         created_at=m.created_at,
         updated_at=m.updated_at,
         deleted_at=m.deleted_at,
+        version=m.version,
     )
 
 
@@ -139,6 +141,9 @@ class SqlAlchemyClientRepository(ClientRepository):
             m = self.db.query(ClientModel).filter(ClientModel.id == client.id).first()
             if m is None:
                 raise ValueError(f"Client {client.id} not found")
+            if m.version != client.version:
+                raise conflict("optimistic_lock")
+            m.version += 1
         else:
             m = ClientModel()
 
@@ -176,5 +181,8 @@ class SqlAlchemyClientRepository(ClientRepository):
         """
         m = self.db.query(ClientModel).filter(ClientModel.id == client.id).first()
         if m:
+            if m.version != client.version:
+                raise conflict("optimistic_lock")
+            m.version += 1
             m.deleted_at = datetime.now(timezone.utc)
             self.db.flush()

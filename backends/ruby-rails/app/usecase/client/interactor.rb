@@ -103,9 +103,8 @@ module UseCase
         entity_to_detail_vo(saved)
       end
 
-      def destroy(id, executor_id)
-        @repo.find_by_id(id)
-        @repo.soft_delete(id, executor_id)
+      def destroy(dto)
+        @repo.soft_delete(dto.id, dto.executor_id, dto.version)
         nil
       end
 

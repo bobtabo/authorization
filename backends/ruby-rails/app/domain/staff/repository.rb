@@ -36,8 +36,9 @@ module Domain
 
       # @param id [Integer] スタッフ ID
       # @param deleted_by [Integer] 削除者 ID
+      # @param version [Integer] 削除対象の期待バージョン
       # @return [Boolean] 削除成否
-      def soft_delete(id, deleted_by)               = raise NotImplementedError
+      def soft_delete(id, deleted_by, version)      = raise NotImplementedError
 
       # @param id [Integer] スタッフ ID
       # @return [void]

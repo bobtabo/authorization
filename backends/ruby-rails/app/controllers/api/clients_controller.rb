@@ -128,7 +128,9 @@ class Api::ClientsController < Api::BaseController
   def destroy
     executor_id = staff_id_from_cookie
     ActiveRecord::Base.transaction do
-      container[:client_uc].destroy(params[:id].to_i, executor_id)
+      container[:client_uc].destroy(
+        UseCase::Client::DestroyDto.new(id: params[:id].to_i, executor_id: executor_id, version: params[:version].to_i)
+      )
     end
     render json: {}
   end

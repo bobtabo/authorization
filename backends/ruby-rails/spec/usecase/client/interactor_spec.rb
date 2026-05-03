@@ -94,9 +94,12 @@ RSpec.describe UseCase::Client::Interactor do
   end
 
   describe "#destroy" do
-    it "raises when client not found" do
-      allow(stub_repo).to receive(:find_by_id).and_raise("client_not_found")
-      expect { described_class.new(stub_repo).destroy(99, 1) }.to raise_error(RuntimeError)
+    it "calls soft_delete and returns nil" do
+      allow(stub_repo).to receive(:soft_delete).and_return(nil)
+      result = described_class.new(stub_repo).destroy(
+        UseCase::Client::DestroyDto.new(id: 1, executor_id: 2, version: 1)
+      )
+      expect(result).to be_nil
     end
   end
 

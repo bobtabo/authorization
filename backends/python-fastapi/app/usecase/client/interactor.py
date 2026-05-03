@@ -263,5 +263,5 @@ class ClientInteractor:
         if client is None:
             raise not_found("client_not_found")
         client.status = 4
-        self.repository.save_client(client)
-        self.repository.soft_delete_client(client)
+        saved = self.repository.save_client(client)
+        self.repository.soft_delete_client(saved)

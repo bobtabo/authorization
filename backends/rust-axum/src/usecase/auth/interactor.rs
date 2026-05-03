@@ -162,8 +162,8 @@ mod tests {
             let result = self.saved.lock().unwrap().take().unwrap_or(s);
             Ok(result)
         }
-        async fn update_role(&self, _: u32, _: i32, _: u32) -> Result<bool, DomainError> { Ok(true) }
-        async fn soft_delete(&self, _: u32, _: u32) -> Result<bool, DomainError> { Ok(true) }
+        async fn update_role(&self, _: u32, _: i32, _: u32, _: i32) -> Result<bool, DomainError> { Ok(true) }
+        async fn soft_delete(&self, _: u32, _: u32, _: i32) -> Result<bool, DomainError> { Ok(true) }
         async fn restore(&self, _: u32) -> Result<bool, DomainError> { Ok(true) }
     }
 

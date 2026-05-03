@@ -9,6 +9,7 @@ import type { NotificationRepository } from "../../domain/notification/repositor
 import type { Notification } from "../../domain/notification/entity.js";
 import type { NotificationCounts } from "../../domain/notification/valueObjects.js";
 import type { DB } from "../../db/client.js";
+import { conflict } from "../../lib/errors.js";
 
 function encodeCursor(ts: number, id: number): string {
   return Buffer.from(`${ts},${id}`).toString("base64");
@@ -66,7 +67,10 @@ export class DrizzleNotificationRepository implements NotificationRepository {
     const updated = filtered.length;
     if (updated > 0) {
       for (const n of filtered) {
-        await this.db.update(notifications).set({ read: true, updatedAt: new Date() }).where(eq(notifications.id, n.id));
+        const [result] = await this.db.update(notifications)
+          .set({ read: true, version: n.version + 1, updatedAt: new Date() })
+          .where(and(eq(notifications.id, n.id), eq(notifications.version, n.version)));
+        if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
       }
     }
     return updated;
@@ -81,7 +85,10 @@ export class DrizzleNotificationRepository implements NotificationRepository {
     return rows[0];
   }
 
-  async patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>): Promise<void> {
-    await this.db.update(notifications).set({ ...data, updatedAt: new Date() }).where(eq(notifications.id, id));
+  async patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>, version: number): Promise<void> {
+    const [result] = await this.db.update(notifications)
+      .set({ ...data, version: version + 1, updatedAt: new Date() })
+      .where(and(eq(notifications.id, id), eq(notifications.version, version)));
+    if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
   }
 }

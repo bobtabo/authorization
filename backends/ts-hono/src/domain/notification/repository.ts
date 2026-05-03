@@ -45,6 +45,7 @@ export interface NotificationRepository {
    * 通知を部分更新します。
    * @param id - 通知ID
    * @param data - 更新データ
+   * @param version - 楽観排他ロック用バージョン
    */
-  patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>): Promise<void>;
+  patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>, version: number): Promise<void>;
 }

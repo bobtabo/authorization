@@ -161,5 +161,28 @@ for (const backend of BACKENDS) {
         await expect(page).toHaveURL("/clients", { timeout: 15000 });
       });
     });
+
+    // -----------------------------------------------------------------------
+    // 楽観排他ロック (編集) ─ real-* プロジェクトのみ実行
+    // -----------------------------------------------------------------------
+    test.describe("楽観排他ロック (編集)", () => {
+      test("競合時にエラーが表示される", async ({ page, isReal }) => {
+        test.skip(!isReal, "requires real backend");
+
+        // GET はモック（存在しない version=999999 をページにロードさせる）
+        await page.route(`${API}/clients/1`, (route) =>
+          route.fulfill({ json: { ...mockClientDetail, version: 999999 } })
+        );
+
+        await page.goto("/clients/edit?id=1");
+        await expect(page.getByPlaceholder("株式会社モックデータ商事")).toHaveValue("株式会社アルファテック", { timeout: 15000 });
+
+        // PUT は実バックエンドへ（version=999999 は DB に存在しない → 409）
+        await page.getByRole("button", { name: "更新" }).click();
+        await page.getByRole("button", { name: "更新する" }).click();
+
+        await expect(page.locator(".bg-red-50")).toBeVisible();
+      });
+    });
   });
 }

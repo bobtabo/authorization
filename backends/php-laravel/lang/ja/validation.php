@@ -200,6 +200,10 @@ return [
         'token_required' => 'token を指定してください。',
         'client_not_found' => 'クライアントが存在しません。',
         'jwt_invalid' => 'JWT が無効です。',
+        // 排他
+        'optimistic' => [
+            'lock' => '編集中に、他のユーザーが更新しました。'
+        ],
     ],
 
     /*

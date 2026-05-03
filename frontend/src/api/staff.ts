@@ -18,7 +18,7 @@ export async function getStaffs(params?: StaffsQuery): Promise<unknown> {
 /** PATCH /staffs/{id}/updateRole */
 export async function updateStaffRole(
   id: number | string,
-  body: { role: number },
+  body: { role: number; version: number },
   executorId?: number | null,
 ): Promise<unknown> {
   return apiPatch(`/staffs/${id}/updateRole`, body, { headers: executorHeader(executorId) });
@@ -35,7 +35,8 @@ export async function restoreStaff(
 /** DELETE /staffs/{id}/delete */
 export async function deleteStaff(
   id: number | string,
+  body: { version: number },
   executorId?: number | null,
 ): Promise<unknown> {
-  return apiDelete(`/staffs/${id}/delete`, { headers: executorHeader(executorId) });
+  return apiDelete(`/staffs/${id}/delete`, { data: body, headers: executorHeader(executorId) });
 }

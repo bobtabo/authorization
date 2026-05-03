@@ -125,9 +125,12 @@ func (uc *Interactor) Store(dto StoreDto) (*domclient.StoreVo, error) {
 
 // Update はクライアント情報を更新します。
 func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
-	c, err := uc.repo.FindByID(&domclient.Client{ID: dto.ID})
+	c, err := uc.repo.FindByIDIncludeDeleted(&domclient.Client{ID: dto.ID})
 	if err != nil || c == nil {
 		return nil, apperror.NotFound("client_not_found")
+	}
+	if c.Version != dto.Version {
+		return nil, apperror.Conflict("optimistic_lock")
 	}
 
 	if dto.Name != nil {
@@ -180,9 +183,12 @@ func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
 
 // Destroy はクライアントを論理削除します。
 func (uc *Interactor) Destroy(dto DestroyDto) error {
-	c, err := uc.repo.FindByID(&domclient.Client{ID: dto.ID})
+	c, err := uc.repo.FindByIDIncludeDeleted(&domclient.Client{ID: dto.ID})
 	if err != nil || c == nil {
 		return apperror.NotFound("client_not_found")
+	}
+	if c.Version != dto.Version {
+		return apperror.Conflict("optimistic_lock")
 	}
 
 	now := time.Now()

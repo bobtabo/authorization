@@ -32,6 +32,7 @@ module Authorization
                 email:       p[:email],
                 status:      p[:status]&.to_i,
                 executor_id: executor_id,
+                version:     p[:version].to_i,
               )
             )
           end
@@ -52,6 +53,8 @@ module Authorization
             created_at: client.created_at.strftime(TIME_FORMAT),
             updated_at: client.updated_at.strftime(TIME_FORMAT),
           })
+        rescue ::Domain::ConflictError => e
+          json_response(response, { error: e.message }, status: 409)
         end
       end
     end

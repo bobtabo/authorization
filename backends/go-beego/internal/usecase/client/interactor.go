@@ -189,11 +189,12 @@ func (uc *Interactor) Destroy(dto DestroyDto) error {
 	c.Status = domclient.StatusClosed
 	c.UpdatedAt = now
 	c.UpdatedBy = &dto.ExecutorID
-	if _, err = uc.repo.Save(c); err != nil {
+	saved, err := uc.repo.Save(c)
+	if err != nil {
 		return err
 	}
 
-	return uc.repo.SoftDelete(&domclient.Client{ID: dto.ID, DeletedBy: &dto.ExecutorID})
+	return uc.repo.SoftDelete(&domclient.Client{ID: dto.ID, DeletedBy: &dto.ExecutorID, Version: saved.Version})
 }
 
 // clientToListItem はクライアントエンティティを一覧用VOに変換します。

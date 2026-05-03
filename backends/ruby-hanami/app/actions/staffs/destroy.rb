@@ -20,10 +20,16 @@ module Authorization
           id = request.params[:id].to_i
           transaction do
             container[:staff_uc].destroy(
-              ::UseCase::Staff::DestroyDto.new(id: id, executor_id: executor_id)
+              ::UseCase::Staff::DestroyDto.new(
+                id:          id,
+                executor_id: executor_id,
+                version:     request.params[:version].to_i,
+              )
             )
           end
           json_response(response, { id: id })
+        rescue ::Domain::ConflictError => e
+          json_response(response, { error: e.message }, status: 409)
         end
       end
     end

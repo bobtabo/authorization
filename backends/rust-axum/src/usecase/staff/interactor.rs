@@ -31,12 +31,9 @@ impl Interactor {
         Ok(staffs.into_iter().map(to_list_item).collect())
     }
 
-    /// スタッフのロールを更新します。
+    /// スタッフのロールを更新します。楽観排他エラーまたは未存在の場合は Err を返します。
     pub async fn update_role(&self, dto: UpdateRoleDto) -> Result<(), UseCaseError> {
-        let ok = self.repo.update_role(dto.id, dto.role, dto.executor_id).await?;
-        if !ok {
-            return Err("staff_not_found".to_string().into());
-        }
+        self.repo.update_role(dto.id, dto.role, dto.executor_id, dto.version).await?;
         Ok(())
     }
 
@@ -49,12 +46,9 @@ impl Interactor {
         Ok(())
     }
 
-    /// スタッフを論理削除します。
+    /// スタッフを論理削除します。楽観排他エラーまたは未存在の場合は Err を返します。
     pub async fn destroy(&self, dto: DestroyDto) -> Result<(), UseCaseError> {
-        let ok = self.repo.soft_delete(dto.id, dto.executor_id).await?;
-        if !ok {
-            return Err("staff_not_found".to_string().into());
-        }
+        self.repo.soft_delete(dto.id, dto.executor_id, dto.version).await?;
         Ok(())
     }
 }
@@ -139,11 +133,13 @@ mod tests {
         async fn save(&self, s: Staff) -> Result<Staff, DomainError> {
             Ok(s)
         }
-        async fn update_role(&self, _: u32, _: i32, _: u32) -> Result<bool, DomainError> {
-            Ok(*self.update_role_ok.lock().unwrap())
+        async fn update_role(&self, _: u32, _: i32, _: u32, _: i32) -> Result<bool, DomainError> {
+            let ok = *self.update_role_ok.lock().unwrap();
+            if ok { Ok(true) } else { Err("optimistic_lock_conflict".to_string().into()) }
         }
-        async fn soft_delete(&self, _: u32, _: u32) -> Result<bool, DomainError> {
-            Ok(*self.soft_delete_ok.lock().unwrap())
+        async fn soft_delete(&self, _: u32, _: u32, _: i32) -> Result<bool, DomainError> {
+            let ok = *self.soft_delete_ok.lock().unwrap();
+            if ok { Ok(true) } else { Err("optimistic_lock_conflict".to_string().into()) }
         }
         async fn restore(&self, _: u32) -> Result<bool, DomainError> {
             Ok(*self.restore_ok.lock().unwrap())
@@ -168,16 +164,16 @@ mod tests {
     async fn test_update_role_success() {
         let mock = Arc::new(MockRepo::new());
         let uc = Interactor::new(mock);
-        let dto = UpdateRoleDto { id: 1, role: 1, executor_id: 99 };
+        let dto = UpdateRoleDto { id: 1, role: 1, executor_id: 99, version: 0 };
         assert!(uc.update_role(dto).await.is_ok());
     }
 
     #[tokio::test]
-    async fn test_update_role_not_found() {
+    async fn test_update_role_conflict() {
         let mock = Arc::new(MockRepo::new());
         *mock.update_role_ok.lock().unwrap() = false;
         let uc = Interactor::new(mock);
-        let dto = UpdateRoleDto { id: 999, role: 1, executor_id: 99 };
+        let dto = UpdateRoleDto { id: 999, role: 1, executor_id: 99, version: 0 };
         assert!(uc.update_role(dto).await.is_err());
     }
 
@@ -185,7 +181,7 @@ mod tests {
     async fn test_destroy_success() {
         let mock = Arc::new(MockRepo::new());
         let uc = Interactor::new(mock);
-        let dto = DestroyDto { id: 1, executor_id: 99 };
+        let dto = DestroyDto { id: 1, executor_id: 99, version: 0 };
         assert!(uc.destroy(dto).await.is_ok());
     }
 

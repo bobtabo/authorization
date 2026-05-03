@@ -146,8 +146,8 @@ class Interactor(private val repo: Repository) {
         var c = repo.findById(id) ?: error("client_not_found")
         val now = LocalDateTime.now()
         c = c.copy(status = ClientStatus.CLOSED, updatedAt = now, updatedBy = executorId)
-        repo.save(c)
-        repo.softDelete(id, executorId)
+        val saved = repo.save(c)
+        repo.softDelete(id, executorId, saved.version)
     }
 
     /**
