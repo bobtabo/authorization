@@ -92,6 +92,19 @@ func (r *OrmClientRepository) Save(c *domclient.Client) (*domclient.Client, erro
 			return nil, err
 		}
 	} else {
+		var startAt, stopAt, createdBy, updatedBy interface{}
+		if m.StartAt != nil {
+			startAt = m.StartAt
+		}
+		if m.StopAt != nil {
+			stopAt = m.StopAt
+		}
+		if m.CreatedBy != nil {
+			createdBy = m.CreatedBy
+		}
+		if m.UpdatedBy != nil {
+			updatedBy = m.UpdatedBy
+		}
 		res, err := r.o.Raw(
 			`UPDATE clients SET
 				name=?, identifier=?, post_code=?, pref=?, city=?, address=?, building=?,
@@ -102,8 +115,8 @@ func (r *OrmClientRepository) Save(c *domclient.Client) (*domclient.Client, erro
 			WHERE id=? AND version=?`,
 			m.Name, m.Identifier, m.PostCode, m.Pref, m.City, m.Address, m.Building,
 			m.Tel, m.Email, m.AccessToken, m.PrivateKey, m.PublicKey, m.Fingerprint,
-			m.Status, m.StartAt, m.StopAt,
-			m.CreatedAt, m.CreatedBy, m.UpdatedAt, m.UpdatedBy,
+			m.Status, startAt, stopAt,
+			m.CreatedAt, createdBy, m.UpdatedAt, updatedBy,
 			m.ID, m.Version,
 		).Exec()
 		if err != nil {

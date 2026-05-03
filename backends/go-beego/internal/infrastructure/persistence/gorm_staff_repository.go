@@ -89,14 +89,27 @@ func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 			return nil, err
 		}
 	} else {
+		var avatar, lastLoginAt, createdBy, updatedBy interface{}
+		if m.Avatar != nil {
+			avatar = m.Avatar
+		}
+		if m.LastLoginAt != nil {
+			lastLoginAt = m.LastLoginAt
+		}
+		if m.CreatedBy != nil {
+			createdBy = m.CreatedBy
+		}
+		if m.UpdatedBy != nil {
+			updatedBy = m.UpdatedBy
+		}
 		res, err := r.o.Raw(
 			`UPDATE staffs SET
 				name=?, email=?, provider=?, provider_id=?, avatar=?, role=?, last_login_at=?,
 				created_at=?, created_by=?, updated_at=?, updated_by=?,
 				version=version+1
 			WHERE id=? AND version=?`,
-			m.Name, m.Email, m.Provider, m.ProviderID, m.Avatar, m.Role, m.LastLoginAt,
-			m.CreatedAt, m.CreatedBy, m.UpdatedAt, m.UpdatedBy,
+			m.Name, m.Email, m.Provider, m.ProviderID, avatar, m.Role, lastLoginAt,
+			m.CreatedAt, createdBy, m.UpdatedAt, updatedBy,
 			m.ID, m.Version,
 		).Exec()
 		if err != nil {
