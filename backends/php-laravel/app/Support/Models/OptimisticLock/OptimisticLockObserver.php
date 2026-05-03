@@ -73,26 +73,19 @@ class OptimisticLockObserver
      * 排他を確認します。
      *
      * @param AppModel $model モデル
-     * @param $msgType
      * @return void
      */
     private function exclusion(AppModel $model): void
     {
-        if (!$this->isProperty($model)) {
-            return;
-        }
-
         //現在バージョンを取得します
         $key = $model->getKeyName();
         $current = $model->withTrashed()->find($model->$key);
 
         //更新されているかチェック
-        if ($model->{self::OPTIMISTIC_LOCK_COLUMN} != $current->version) {
+        if ($model->getOriginal('version') != $current?->version) {
             //楽観ロック
             throw AppException::internal('optimistic lock');
         }
-
-        unset($model->{self::OPTIMISTIC_LOCK_COLUMN});
     }
 
     /**

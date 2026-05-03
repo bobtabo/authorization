@@ -32,16 +32,12 @@ trait OptimisticLock
     }
 
     /**
-     * バージョンお設定します。
+     * バージョンを設定します。
      */
     protected function version(): Attribute
     {
         return Attribute::make(
-            set: function (int|null $value) {
-                return [
-                    OptimisticLockObserver::OPTIMISTIC_LOCK_COLUMN => $value ?: 1,
-                ];
-            },
+            set: fn (int|null $value) => ['version' => $value ?: 1],
         );
     }
 }
