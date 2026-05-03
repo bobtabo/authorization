@@ -8,6 +8,7 @@ import { clients } from "../model/schema.js";
 import type { ClientRepository } from "../../domain/client/repository.js";
 import type { Client } from "../../domain/client/entity.js";
 import type { DB } from "../../db/client.js";
+import { conflict } from "../../lib/errors.js";
 
 export class DrizzleClientRepository implements ClientRepository {
   constructor(private readonly db: DB) {}
@@ -42,11 +43,17 @@ export class DrizzleClientRepository implements ClientRepository {
     return rows[0]!;
   }
 
-  async update(id: number, data: Partial<typeof clients.$inferInsert>): Promise<void> {
-    await this.db.update(clients).set({ ...data, updatedAt: new Date() }).where(eq(clients.id, id));
+  async update(id: number, data: Partial<typeof clients.$inferInsert>, version: number): Promise<void> {
+    const [result] = await this.db.update(clients)
+      .set({ ...data, version: version + 1, updatedAt: new Date() })
+      .where(and(eq(clients.id, id), eq(clients.version, version)));
+    if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
   }
 
-  async softDelete(id: number): Promise<void> {
-    await this.db.update(clients).set({ deletedAt: new Date(), updatedAt: new Date() }).where(eq(clients.id, id));
+  async softDelete(id: number, version: number): Promise<void> {
+    const [result] = await this.db.update(clients)
+      .set({ deletedAt: new Date(), version: version + 1, updatedAt: new Date() })
+      .where(and(eq(clients.id, id), eq(clients.version, version)));
+    if (result.affectedRows === 0) throw conflict("optimistic_lock_conflict");
   }
 }

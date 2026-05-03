@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.notification.entity import Notification
 from app.domain.notification.repository import NotificationRepository
+from app.exceptions import conflict
 from app.infrastructure.model.model import NotificationModel
 
 
@@ -192,6 +193,9 @@ class SqlAlchemyNotificationRepository(NotificationRepository):
         ).first()
         if m is None:
             return
+        if m.version != notification.version:
+            raise conflict("optimistic_lock")
+        m.version += 1
         allowed = {"read", "title", "message"}
         for key, val in data.items():
             if key in allowed:

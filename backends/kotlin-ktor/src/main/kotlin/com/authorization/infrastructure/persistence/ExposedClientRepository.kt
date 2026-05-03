@@ -10,6 +10,7 @@ import com.authorization.domain.client.ClientStatus
 import com.authorization.domain.client.Condition
 import com.authorization.domain.client.Repository
 import com.authorization.infrastructure.model.Clients
+import com.authorization.support.AppException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -121,6 +122,12 @@ class ExposedClientRepository(private val db: Database) : Repository {
             }
             c.copy(id = newId.value)
         } else {
+            val currentVersion = Clients.selectAll()
+                .where { Clients.id eq c.id }
+                .firstOrNull()
+                ?.get(Clients.version)
+                ?: throw AppException.conflict()
+            if (currentVersion != c.version) throw AppException.conflict()
             Clients.update({ Clients.id eq c.id }) {
                 it[name]      = c.name
                 it[postCode]  = c.postCode
@@ -146,14 +153,21 @@ class ExposedClientRepository(private val db: Database) : Repository {
      *
      * @param id クライアント ID
      * @param deletedBy 削除者スタッフ ID
+     * @param version 楽観排他ロック用バージョン
      */
-    override suspend fun softDelete(id: Long, deletedBy: Long) = newSuspendedTransaction(db = db) {
+    override suspend fun softDelete(id: Long, deletedBy: Long, version: Int) = newSuspendedTransaction(db = db) {
+        val currentVersion = Clients.selectAll()
+            .where { Clients.id eq id }
+            .firstOrNull()
+            ?.get(Clients.version)
+            ?: throw AppException.conflict()
+        if (currentVersion != version) throw AppException.conflict()
         val now = LocalDateTime.now()
         Clients.update({ Clients.id eq id }) {
-            it[deletedAt]       = now
+            it[deletedAt]         = now
             it[Clients.deletedBy] = deletedBy.toInt()
-            it[updatedAt]       = now
-            it[updatedBy]       = deletedBy.toInt()
+            it[updatedAt]         = now
+            it[updatedBy]         = deletedBy.toInt()
         }
         Unit
     }

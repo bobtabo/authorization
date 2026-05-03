@@ -54,6 +54,7 @@ module Infrastructure
           row_to_entity(r)
         else
           r = @model.find(entity.id)
+          raise Domain::ConflictError if r.version != entity.version
           r.update!(
             name:          entity.name,
             email:         entity.email,
@@ -76,7 +77,9 @@ module Infrastructure
         ) > 0
       end
 
-      def soft_delete(id, deleted_by)
+      def soft_delete(id, deleted_by, version)
+        current = @model.find_by(id: id)
+        raise Domain::ConflictError if current.nil? || current.version != version
         now = Time.current
         @model.where(id: id).update_all(
           deleted_at: now,

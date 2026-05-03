@@ -21,11 +21,16 @@ module Authorization
           transaction do
             container[:staff_uc].update_role(
               ::UseCase::Staff::UpdateRoleDto.new(
-                id: id, role: request.params[:role].to_i, executor_id: executor_id
+                id:          id,
+                role:        request.params[:role].to_i,
+                executor_id: executor_id,
+                version:     request.params[:version].to_i,
               )
             )
           end
           json_response(response, { id: id })
+        rescue ::Domain::ConflictError => e
+          json_response(response, { error: e.message }, status: 409)
         end
       end
     end

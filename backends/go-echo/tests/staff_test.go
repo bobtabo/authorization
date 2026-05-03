@@ -43,7 +43,7 @@ func TestStaff_UpdateRole(t *testing.T) {
 		staff := createStaff(t, map[string]interface{}{"email": "target@example.com", "role": 2})
 		executor := createStaff(t, map[string]interface{}{"email": "executor@example.com", "role": 1})
 		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
-			map[string]int{"role": 1},
+			map[string]interface{}{"role": 1, "version": staff.Version},
 			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
 		)
 		if w.Code != http.StatusOK {
@@ -51,10 +51,23 @@ func TestStaff_UpdateRole(t *testing.T) {
 		}
 	})
 
+	t.Run("バージョン不一致で409が返る", func(t *testing.T) {
+		truncateTables(t)
+		staff := createStaff(t, map[string]interface{}{"email": "ver@example.com", "role": 2})
+		executor := createStaff(t, map[string]interface{}{"email": "exec_ver@example.com", "role": 1})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
+			map[string]interface{}{"role": 1, "version": staff.Version + 99},
+			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
+		)
+		if w.Code != http.StatusConflict {
+			t.Errorf("want 409, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "exec2@example.com"})
 		w := do(http.MethodPatch, "/api/staffs/99999/updateRole",
-			map[string]int{"role": 1},
+			map[string]interface{}{"role": 1, "version": 0},
 			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
 		)
 		if w.Code != http.StatusNotFound {
@@ -69,7 +82,8 @@ func TestStaff_Destroy(t *testing.T) {
 	t.Run("スタッフが削除できる", func(t *testing.T) {
 		staff := createStaff(t, map[string]interface{}{"email": "del@example.com"})
 		executor := createStaff(t, map[string]interface{}{"email": "exec@example.com"})
-		w := do(http.MethodDelete, fmt.Sprintf("/api/staffs/%d/delete", staff.ID), nil,
+		w := do(http.MethodDelete, fmt.Sprintf("/api/staffs/%d/delete", staff.ID),
+			map[string]interface{}{"version": staff.Version},
 			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
 		)
 		if w.Code != http.StatusOK {
@@ -77,9 +91,23 @@ func TestStaff_Destroy(t *testing.T) {
 		}
 	})
 
+	t.Run("バージョン不一致で409が返る", func(t *testing.T) {
+		truncateTables(t)
+		staff := createStaff(t, map[string]interface{}{"email": "del_ver@example.com"})
+		executor := createStaff(t, map[string]interface{}{"email": "exec_del_ver@example.com"})
+		w := do(http.MethodDelete, fmt.Sprintf("/api/staffs/%d/delete", staff.ID),
+			map[string]interface{}{"version": staff.Version + 99},
+			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
+		)
+		if w.Code != http.StatusConflict {
+			t.Errorf("want 409, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "exec3@example.com"})
-		w := do(http.MethodDelete, "/api/staffs/99999/delete", nil,
+		w := do(http.MethodDelete, "/api/staffs/99999/delete",
+			map[string]interface{}{"version": 0},
 			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
 		)
 		if w.Code != http.StatusNotFound {

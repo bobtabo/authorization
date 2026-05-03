@@ -159,11 +159,11 @@ impl Repository for SqlxStaffRepository {
             let new_id = result.last_insert_id() as u32;
             Ok(self.fetch_by_id(new_id).await?.unwrap())
         } else {
-            sqlx::query(
+            let result = sqlx::query(
                 "UPDATE staffs SET name = ?, email = ?, provider = ?, provider_id = ?, avatar = ?, \
                  role = ?, last_login_at = ?, updated_at = ?, updated_by = ?, \
                  deleted_at = ?, deleted_by = ?, version = version + 1 \
-                 WHERE id = ?"
+                 WHERE id = ? AND version = ?"
             )
             .bind(&s.name)
             .bind(&s.email)
@@ -177,39 +177,51 @@ impl Repository for SqlxStaffRepository {
             .bind(s.deleted_at)
             .bind(s.deleted_by)
             .bind(s.id)
+            .bind(s.version)
             .execute(&self.pool)
             .await?;
+            if result.rows_affected() == 0 {
+                return Err("optimistic_lock_conflict".to_string().into());
+            }
             Ok(self.fetch_by_id(s.id).await?.unwrap())
         }
     }
 
-    async fn update_role(&self, id: u32, role: i32, updated_by: u32) -> Result<bool, DomainError> {
+    async fn update_role(&self, id: u32, role: i32, updated_by: u32, version: i32) -> Result<bool, DomainError> {
         let now = chrono::Utc::now();
         let result = sqlx::query(
             "UPDATE staffs SET role = ?, updated_at = ?, updated_by = ?, version = version + 1 \
-             WHERE id = ? AND deleted_at IS NULL"
+             WHERE id = ? AND deleted_at IS NULL AND version = ?"
         )
         .bind(role)
         .bind(now)
         .bind(updated_by)
         .bind(id)
+        .bind(version)
         .execute(&self.pool)
         .await?;
-        Ok(result.rows_affected() > 0)
+        if result.rows_affected() == 0 {
+            return Err("optimistic_lock_conflict".to_string().into());
+        }
+        Ok(true)
     }
 
-    async fn soft_delete(&self, id: u32, deleted_by: u32) -> Result<bool, DomainError> {
+    async fn soft_delete(&self, id: u32, deleted_by: u32, version: i32) -> Result<bool, DomainError> {
         let now = chrono::Utc::now();
         let result = sqlx::query(
             "UPDATE staffs SET deleted_at = ?, deleted_by = ? \
-             WHERE id = ? AND deleted_at IS NULL"
+             WHERE id = ? AND deleted_at IS NULL AND version = ?"
         )
         .bind(now)
         .bind(deleted_by)
         .bind(id)
+        .bind(version)
         .execute(&self.pool)
         .await?;
-        Ok(result.rows_affected() > 0)
+        if result.rows_affected() == 0 {
+            return Err("optimistic_lock_conflict".to_string().into());
+        }
+        Ok(true)
     }
 
     async fn restore(&self, id: u32) -> Result<bool, DomainError> {

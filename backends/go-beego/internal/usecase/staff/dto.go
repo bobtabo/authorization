@@ -7,6 +7,8 @@ type UpdateRoleDto struct {
 	ID uint
 	// Role は変更後のロール。
 	Role int
+	// Version は楽観排他用バージョン番号。
+	Version int
 	// ExecutorID は操作を実行したスタッフID。
 	ExecutorID uint
 }
@@ -15,6 +17,8 @@ type UpdateRoleDto struct {
 type DestroyDto struct {
 	// ID はスタッフID。
 	ID uint
+	// Version は楽観排他用バージョン番号。
+	Version int
 	// ExecutorID は操作を実行したスタッフID。
 	ExecutorID uint
 }

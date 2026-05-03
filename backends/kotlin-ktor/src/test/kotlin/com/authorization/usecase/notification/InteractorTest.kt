@@ -48,7 +48,7 @@ class InteractorTest {
         override suspend fun findAllActive()                                             = active
         override suspend fun save(s: Staff)                                              = s
         override suspend fun updateRole(id: Long, role: Int, updatedBy: Long)            = true
-        override suspend fun softDelete(id: Long, deletedBy: Long)                       = true
+        override suspend fun softDelete(id: Long, deletedBy: Long, version: Int)          = true
         override suspend fun restore(id: Long)                                           = true
     }
 

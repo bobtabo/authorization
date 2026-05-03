@@ -9,6 +9,7 @@ import com.authorization.domain.staff.Condition
 import com.authorization.domain.staff.Repository
 import com.authorization.domain.staff.Staff
 import com.authorization.infrastructure.model.Staffs
+import com.authorization.support.AppException
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
@@ -104,6 +105,12 @@ class ExposedStaffRepository(private val db: Database) : Repository {
             }
             s.copy(id = newId.value)
         } else {
+            val currentVersion = Staffs.selectAll()
+                .where { Staffs.id eq s.id }
+                .firstOrNull()
+                ?.get(Staffs.version)
+                ?: throw AppException.conflict()
+            if (currentVersion != s.version) throw AppException.conflict()
             Staffs.update({ Staffs.id eq s.id }) {
                 it[name]        = s.name
                 it[email]       = s.email
@@ -140,9 +147,16 @@ class ExposedStaffRepository(private val db: Database) : Repository {
      *
      * @param id スタッフ ID
      * @param deletedBy 削除者スタッフ ID
+     * @param version 楽観排他ロック用バージョン
      * @return 削除成功なら true
      */
-    override suspend fun softDelete(id: Long, deletedBy: Long): Boolean = newSuspendedTransaction(db = db) {
+    override suspend fun softDelete(id: Long, deletedBy: Long, version: Int): Boolean = newSuspendedTransaction(db = db) {
+        val currentVersion = Staffs.selectAll()
+            .where { Staffs.id eq id }
+            .firstOrNull()
+            ?.get(Staffs.version)
+            ?: throw AppException.conflict()
+        if (currentVersion != version) throw AppException.conflict()
         val now = LocalDateTime.now()
         val count = Staffs.update({ Staffs.id eq id }) {
             it[deletedAt]         = now

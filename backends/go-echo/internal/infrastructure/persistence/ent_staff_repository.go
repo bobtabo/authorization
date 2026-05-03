@@ -49,6 +49,19 @@ func (r *EntStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error
 	return entStaffToDomain(m), nil
 }
 
+func (r *EntStaffRepository) FindByIDIncludeDeleted(s *domstaff.Staff) (*domstaff.Staff, error) {
+	m, err := r.db.Staff.Query().
+		Where(staff.IDEQ(s.ID)).
+		First(context.Background())
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return entStaffToDomain(m), nil
+}
+
 func (r *EntStaffRepository) FindByProvider(s *domstaff.Staff) (*domstaff.Staff, error) {
 	m, err := r.db.Staff.Query().
 		Where(staff.ProviderEQ(s.Provider), staff.ProviderIDEQ(s.ProviderID)).

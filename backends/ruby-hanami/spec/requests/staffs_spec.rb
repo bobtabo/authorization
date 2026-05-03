@@ -29,7 +29,7 @@ RSpec.describe "Staffs" do
       target   = create_staff(email: "target@example.com", role: 2)
       executor = create_staff(email: "exec@example.com",   role: 1)
       patch "/api/staffs/#{target[:id]}/updateRole",
-            { role: 1 }.to_json,
+            { role: 1, version: target[:version] }.to_json,
             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{executor[:id]}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
@@ -41,7 +41,10 @@ RSpec.describe "Staffs" do
     it "削除済みスタッフを復元して id を返す" do
       staff = create_staff
       db[:staffs].where(id: staff[:id]).update(deleted_at: Time.now, updated_at: Time.now)
-      patch "/api/staffs/#{staff[:id]}/restore"
+      current_version = db[:staffs].where(id: staff[:id]).first[:version]
+      patch "/api/staffs/#{staff[:id]}/restore",
+            { version: current_version }.to_json,
+            { "CONTENT_TYPE" => "application/json" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["id"]).to eq(staff[:id])
@@ -52,8 +55,9 @@ RSpec.describe "Staffs" do
     it "スタッフを論理削除して id を返す" do
       executor = create_staff(email: "exec@example.com")
       target   = create_staff(email: "target@example.com")
-      delete "/api/staffs/#{target[:id]}/delete", {},
-             { "HTTP_COOKIE" => "staff_id=#{executor[:id]}" }
+      delete "/api/staffs/#{target[:id]}/delete",
+             { version: target[:version] }.to_json,
+             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{executor[:id]}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["id"]).to eq(target[:id])

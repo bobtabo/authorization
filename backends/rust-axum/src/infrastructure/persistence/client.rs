@@ -184,12 +184,12 @@ impl Repository for SqlxClientRepository {
             let new_id = result.last_insert_id();
             Ok(self.fetch_by_id(new_id).await?.unwrap())
         } else {
-            sqlx::query(
+            let result = sqlx::query(
                 "UPDATE clients SET name = ?, identifier = ?, post_code = ?, pref = ?, city = ?, \
                  address = ?, building = ?, tel = ?, email = ?, access_token = ?, private_key = ?, \
                  public_key = ?, fingerprint = ?, status = ?, start_at = ?, stop_at = ?, \
                  updated_at = ?, updated_by = ?, deleted_at = ?, deleted_by = ?, version = version + 1 \
-                 WHERE id = ?"
+                 WHERE id = ? AND version = ?"
             )
             .bind(&c.name)
             .bind(&c.identifier)
@@ -212,8 +212,12 @@ impl Repository for SqlxClientRepository {
             .bind(c.deleted_at)
             .bind(c.deleted_by)
             .bind(c.id)
+            .bind(c.version)
             .execute(&self.pool)
             .await?;
+            if result.rows_affected() == 0 {
+                return Err("optimistic_lock_conflict".to_string().into());
+            }
             Ok(self.fetch_by_id(c.id).await?.unwrap())
         }
     }

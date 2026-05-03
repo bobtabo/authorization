@@ -40,7 +40,8 @@ func (h *StaffHandler) UpdateRole(c echo.Context) error {
 		return apperror.BadRequest("invalid_id")
 	}
 	var body struct {
-		Role int `json:"role"`
+		Role    int `json:"role"`
+		Version int `json:"version"`
 	}
 	if err = c.Bind(&body); err != nil || body.Role == 0 {
 		return apperror.BadRequest("validation_error")
@@ -48,7 +49,7 @@ func (h *StaffHandler) UpdateRole(c echo.Context) error {
 	executorID := staffIDFromCookie(c)
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		return h.newStaffUC(tx.Client()).UpdateRole(ustaff.UpdateRoleDto{
-			ID: id, Role: body.Role, ExecutorID: executorID,
+			ID: id, Role: body.Role, ExecutorID: executorID, Version: body.Version,
 		})
 	}); txErr != nil {
 		return txErr
@@ -61,8 +62,14 @@ func (h *StaffHandler) Restore(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
+	var body struct {
+		Version int `json:"version"`
+	}
+	if err = c.Bind(&body); err != nil {
+		return apperror.BadRequest("validation_error")
+	}
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
-		return h.newStaffUC(tx.Client()).Restore(ustaff.RestoreDto{ID: id})
+		return h.newStaffUC(tx.Client()).Restore(ustaff.RestoreDto{ID: id, Version: body.Version})
 	}); txErr != nil {
 		return txErr
 	}
@@ -74,9 +81,15 @@ func (h *StaffHandler) Destroy(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
+	var body struct {
+		Version int `json:"version"`
+	}
+	if err = c.Bind(&body); err != nil {
+		return apperror.BadRequest("validation_error")
+	}
 	executorID := staffIDFromCookie(c)
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
-		return h.newStaffUC(tx.Client()).Destroy(ustaff.DestroyDto{ID: id, ExecutorID: executorID})
+		return h.newStaffUC(tx.Client()).Destroy(ustaff.DestroyDto{ID: id, ExecutorID: executorID, Version: body.Version})
 	}); txErr != nil {
 		return txErr
 	}

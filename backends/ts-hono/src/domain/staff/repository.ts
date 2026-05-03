@@ -13,7 +13,7 @@ export interface StaffRepository {
   findByProvider(provider: number, providerId: string): Promise<Staff | undefined>;
   findAllActive(): Promise<Staff[]>;
   upsert(data: Omit<Staff, "id" | "createdAt" | "updatedAt" | "deletedAt" | "createdBy" | "updatedBy" | "version"> & { avatar?: string | null; role?: number | null; lastLoginAt?: Date | null }): Promise<Staff>;
-  updateRole(id: number, role: number): Promise<void>;
-  softDelete(id: number): Promise<void>;
-  restore(id: number): Promise<void>;
+  updateRole(id: number, role: number, version: number): Promise<void>;
+  softDelete(id: number, version: number): Promise<void>;
+  restore(id: number, version: number): Promise<void>;
 }

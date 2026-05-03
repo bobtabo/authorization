@@ -34,6 +34,16 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 	if dto.Role != domstaff.RoleAdmin && dto.Role != domstaff.RoleMember {
 		return apperror.BadRequest("role_invalid")
 	}
+	current, err := uc.repo.FindByIDIncludeDeleted(&domstaff.Staff{ID: dto.ID})
+	if err != nil {
+		return err
+	}
+	if current == nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	if current.Version != dto.Version {
+		return apperror.Conflict("optimistic_lock")
+	}
 	ok, err := uc.repo.UpdateRole(&domstaff.Staff{ID: dto.ID, Role: dto.Role, UpdatedBy: &dto.ExecutorID})
 	if err != nil {
 		return err
@@ -46,6 +56,16 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 
 // Destroy はスタッフを論理削除します。
 func (uc *Interactor) Destroy(dto DestroyDto) error {
+	current, err := uc.repo.FindByIDIncludeDeleted(&domstaff.Staff{ID: dto.ID})
+	if err != nil {
+		return err
+	}
+	if current == nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	if current.Version != dto.Version {
+		return apperror.Conflict("optimistic_lock")
+	}
 	ok, err := uc.repo.SoftDelete(&domstaff.Staff{ID: dto.ID, DeletedBy: &dto.ExecutorID})
 	if err != nil {
 		return err
@@ -58,6 +78,16 @@ func (uc *Interactor) Destroy(dto DestroyDto) error {
 
 // Restore は論理削除したスタッフを復元します。
 func (uc *Interactor) Restore(dto RestoreDto) error {
+	current, err := uc.repo.FindByIDIncludeDeleted(&domstaff.Staff{ID: dto.ID})
+	if err != nil {
+		return err
+	}
+	if current == nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	if current.Version != dto.Version {
+		return apperror.Conflict("optimistic_lock")
+	}
 	ok, err := uc.repo.Restore(&domstaff.Staff{ID: dto.ID})
 	if err != nil {
 		return err

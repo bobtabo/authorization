@@ -42,7 +42,14 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 	if dto.Role != domstaff.RoleAdmin && dto.Role != domstaff.RoleMember {
 		return apperror.BadRequest("role_invalid")
 	}
-	ok, err := uc.repo.UpdateRole(dto.ID, dto.Role, dto.ExecutorID)
+	s, err := uc.repo.FindByID(dto.ID)
+	if err != nil {
+		return err
+	}
+	if s == nil || s.DeletedAt != nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	ok, err := uc.repo.UpdateRole(dto.ID, dto.Role, dto.ExecutorID, s.Version)
 	if err != nil {
 		return err
 	}
@@ -57,7 +64,14 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 // dto: 論理削除 Dto
 // 戻り値: エラー
 func (uc *Interactor) Destroy(dto DestroyDto) error {
-	ok, err := uc.repo.SoftDelete(dto.ID, dto.ExecutorID)
+	s, err := uc.repo.FindByID(dto.ID)
+	if err != nil {
+		return err
+	}
+	if s == nil || s.DeletedAt != nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	ok, err := uc.repo.SoftDelete(dto.ID, dto.ExecutorID, s.Version)
 	if err != nil {
 		return err
 	}
@@ -72,7 +86,14 @@ func (uc *Interactor) Destroy(dto DestroyDto) error {
 // id: スタッフID
 // 戻り値: エラー
 func (uc *Interactor) Restore(id uint) error {
-	ok, err := uc.repo.Restore(id)
+	s, err := uc.repo.FindByIDUnscoped(id)
+	if err != nil {
+		return err
+	}
+	if s == nil || s.DeletedAt == nil {
+		return apperror.NotFound("staff_not_found")
+	}
+	ok, err := uc.repo.Restore(id, s.Version)
 	if err != nil {
 		return err
 	}

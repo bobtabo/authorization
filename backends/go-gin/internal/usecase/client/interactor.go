@@ -227,11 +227,12 @@ func (uc *Interactor) Destroy(id uint64, executorID uint) error {
 	c.Status = domclient.StatusClosed
 	c.UpdatedAt = now
 	c.UpdatedBy = &executorID
-	if _, err = uc.repo.Save(c); err != nil {
+	saved, err := uc.repo.Save(c)
+	if err != nil {
 		return err
 	}
 
-	return uc.repo.SoftDelete(id, executorID)
+	return uc.repo.SoftDelete(id, executorID, saved.Version)
 }
 
 // ---------- 変換ヘルパー ----------

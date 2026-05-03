@@ -60,7 +60,7 @@ module Infrastructure
           )
           r = @ds.where(id: id).first
         else
-          @ds.where(id: entity.id).update(
+          affected = @ds.where(id: entity.id, version: entity.version).update(
             name:       entity.name,
             post_code:  entity.post_code,
             pref:       entity.pref,
@@ -76,19 +76,22 @@ module Infrastructure
             updated_by: entity.updated_by,
             version:    Sequel[:version] + 1,
           )
+          raise Domain::ConflictError if affected == 0
           r = @ds.where(id: entity.id).first
         end
         row_to_entity(r)
       end
 
-      def soft_delete(id, deleted_by)
-        now = Time.now
-        @ds.where(id: id).update(
+      def soft_delete(id, deleted_by, version)
+        now      = Time.now
+        affected = @ds.where(id: id, version: version).update(
           deleted_at: now,
           deleted_by: deleted_by,
           updated_at: now,
           updated_by: deleted_by,
+          version:    Sequel[:version] + 1,
         )
+        raise Domain::ConflictError if affected == 0
         nil
       end
 

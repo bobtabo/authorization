@@ -12,6 +12,6 @@ type Repository interface {
 	FindByIdentifier(identifier string) (*Client, error)
 	// Save はクライアントエンティティを保存（新規作成または更新）して返します。
 	Save(c *Client) (*Client, error)
-	// SoftDelete はクライアントを論理削除します。
-	SoftDelete(id uint64, deletedBy uint) error
+	// SoftDelete はクライアントを論理削除します。version が DB と一致しない場合は楽観排他エラーを返します。
+	SoftDelete(id uint64, deletedBy uint, version int) error
 }

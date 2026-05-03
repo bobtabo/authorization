@@ -17,8 +17,18 @@ module Authorization
         # @return [void]
         def handle(request, response)
           executor_id = staff_id_from_cookie(request)
-          transaction { container[:client_uc].destroy(request.params[:id].to_i, executor_id) }
+          transaction do
+            container[:client_uc].destroy(
+              ::UseCase::Client::DestroyDto.new(
+                id:          request.params[:id].to_i,
+                executor_id: executor_id,
+                version:     request.params[:version].to_i,
+              )
+            )
+          end
           json_response(response, {})
+        rescue ::Domain::ConflictError => e
+          json_response(response, { error: e.message }, status: 409)
         end
       end
     end

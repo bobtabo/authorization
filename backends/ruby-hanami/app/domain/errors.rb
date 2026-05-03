@@ -14,4 +14,14 @@ module Domain
       @code = 403
     end
   end
+
+  # HTTP 409 Conflict に対応する楽観排他エラーです。
+  class ConflictError < StandardError
+    attr_reader :code
+
+    def initialize(msg = "optimistic lock")
+      super(msg)
+      @code = 409
+    end
+  end
 end

@@ -19,17 +19,17 @@ module UseCase
       end
 
       def update_role(dto)
-        @repo.update_role(dto.id, dto.role, dto.executor_id)
+        @repo.update_role(dto.id, dto.role, dto.executor_id, dto.version)
         nil
       end
 
-      def restore(id)
-        @repo.restore(id)
+      def restore(dto)
+        @repo.restore(dto.id, dto.version)
         nil
       end
 
       def destroy(dto)
-        @repo.soft_delete(dto.id, dto.executor_id)
+        @repo.soft_delete(dto.id, dto.executor_id, dto.version)
         nil
       end
     end

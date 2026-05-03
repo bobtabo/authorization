@@ -42,7 +42,7 @@ export class StaffInteractor {
     if (staffId === executorId) throw badRequest("cannot_update_own_role");
     const staff = await this.repo.findById(staffId);
     if (!staff) throw notFound("staff_not_found");
-    await this.repo.updateRole(staffId, role);
+    await this.repo.updateRole(staffId, role, staff.version);
   }
 
   /**
@@ -53,7 +53,7 @@ export class StaffInteractor {
   async restore(staffId: number): Promise<void> {
     const staff = await this.repo.findByIdUnscoped(staffId);
     if (!staff) throw notFound("staff_not_found");
-    await this.repo.restore(staffId);
+    await this.repo.restore(staffId, staff.version);
   }
 
   /**
@@ -66,6 +66,6 @@ export class StaffInteractor {
     if (staffId === executorId) throw badRequest("cannot_delete_self");
     const staff = await this.repo.findById(staffId);
     if (!staff) throw notFound("staff_not_found");
-    await this.repo.softDelete(staffId);
+    await this.repo.softDelete(staffId, staff.version);
   }
 }

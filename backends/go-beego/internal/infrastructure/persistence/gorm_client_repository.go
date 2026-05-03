@@ -3,6 +3,7 @@ package persistence
 import (
 	domclient "authorization-go-beego/internal/domain/client"
 	"authorization-go-beego/internal/infrastructure/model"
+	"authorization-go-beego/pkg/apperror"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -91,26 +92,47 @@ func (r *OrmClientRepository) Save(c *domclient.Client) (*domclient.Client, erro
 			return nil, err
 		}
 	} else {
-		_, err := r.o.Update(m,
-			"name", "identifier", "post_code", "pref", "city", "address", "building",
-			"tel", "email", "access_token", "private_key", "public_key", "fingerprint",
-			"status", "start_at", "stop_at", "created_at", "created_by",
-			"updated_at", "updated_by", "deleted_at", "deleted_by", "version",
-		)
+		res, err := r.o.Raw(
+			`UPDATE clients SET
+				name=?, identifier=?, post_code=?, pref=?, city=?, address=?, building=?,
+				tel=?, email=?, access_token=?, private_key=?, public_key=?, fingerprint=?,
+				status=?, start_at=?, stop_at=?,
+				created_at=?, created_by=?, updated_at=?, updated_by=?,
+				deleted_at=?, deleted_by=?, version=version+1
+			WHERE id=? AND version=?`,
+			m.Name, m.Identifier, m.PostCode, m.Pref, m.City, m.Address, m.Building,
+			m.Tel, m.Email, m.AccessToken, m.PrivateKey, m.PublicKey, m.Fingerprint,
+			m.Status, m.StartAt, m.StopAt,
+			m.CreatedAt, m.CreatedBy, m.UpdatedAt, m.UpdatedBy,
+			m.DeletedAt, m.DeletedBy,
+			m.ID, m.Version,
+		).Exec()
 		if err != nil {
 			return nil, err
 		}
+		n, _ := res.RowsAffected()
+		if n == 0 {
+			return nil, apperror.Conflict("optimistic_lock_conflict")
+		}
+		m.Version++
 	}
 	return clientToDomain(m), nil
 }
 
 func (r *OrmClientRepository) SoftDelete(c *domclient.Client) error {
 	now := time.Now()
-	_, err := r.o.Raw(
-		"UPDATE clients SET deleted_at=?, deleted_by=? WHERE id=?",
-		now, c.DeletedBy, c.ID,
+	res, err := r.o.Raw(
+		"UPDATE clients SET deleted_at=?, deleted_by=?, version=version+1 WHERE id=? AND version=?",
+		now, c.DeletedBy, c.ID, c.Version,
 	).Exec()
-	return err
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return apperror.Conflict("optimistic_lock_conflict")
+	}
+	return nil
 }
 
 func clientToDomain(m *model.Client) *domclient.Client {

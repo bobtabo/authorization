@@ -186,8 +186,8 @@ mod tests {
             Ok(self.active_staffs.lock().unwrap().drain(..).collect())
         }
         async fn save(&self, s: Staff) -> Result<Staff, StaffDomainError> { Ok(s) }
-        async fn update_role(&self, _: u32, _: i32, _: u32) -> Result<bool, StaffDomainError> { Ok(true) }
-        async fn soft_delete(&self, _: u32, _: u32) -> Result<bool, StaffDomainError> { Ok(true) }
+        async fn update_role(&self, _: u32, _: i32, _: u32, _: i32) -> Result<bool, StaffDomainError> { Ok(true) }
+        async fn soft_delete(&self, _: u32, _: u32, _: i32) -> Result<bool, StaffDomainError> { Ok(true) }
         async fn restore(&self, _: u32) -> Result<bool, StaffDomainError> { Ok(true) }
     }
 

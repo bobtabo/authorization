@@ -57,6 +57,7 @@ interface Repository {
      *
      * @param id クライアント ID
      * @param deletedBy 削除者スタッフ ID
+     * @param version 楽観排他ロック用バージョン
      */
-    suspend fun softDelete(id: Long, deletedBy: Long)
+    suspend fun softDelete(id: Long, deletedBy: Long, version: Int)
 }

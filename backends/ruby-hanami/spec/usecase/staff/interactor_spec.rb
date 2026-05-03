@@ -36,7 +36,9 @@ RSpec.describe UseCase::Staff::Interactor do
 
   describe "#restore" do
     it "calls repo and returns nil" do
-      result = described_class.new(stub_repo).restore(1)
+      result = described_class.new(stub_repo).restore(
+        UseCase::Staff::RestoreDto.new(id: 1, version: 1)
+      )
       expect(result).to be_nil
     end
   end

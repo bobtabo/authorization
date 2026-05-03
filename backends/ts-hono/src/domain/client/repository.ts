@@ -12,6 +12,6 @@ export interface ClientRepository {
   findByToken(token: string): Promise<Client | undefined>;
   findByIdentifier(identifier: string): Promise<Client | undefined>;
   insert(data: Omit<Client, "id" | "createdAt" | "updatedAt">): Promise<Client>;
-  update(id: number, data: Partial<Omit<Client, "id">>): Promise<void>;
-  softDelete(id: number): Promise<void>;
+  update(id: number, data: Partial<Omit<Client, "id">>, version: number): Promise<void>;
+  softDelete(id: number, version: number): Promise<void>;
 }

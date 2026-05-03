@@ -54,6 +54,13 @@ pub struct UpdateBody {
     pub tel:       Option<String>,
     pub email:     Option<String>,
     pub status:    Option<i32>,
+    pub version:   i32,
+}
+
+/// クライアント論理削除リクエストボディ。
+#[derive(Deserialize)]
+pub struct DestroyBody {
+    pub version: i32,
 }
 
 /// クライアント一覧を返します。
@@ -190,6 +197,7 @@ pub async fn update(
         email:       body.email,
         status:      body.status,
         executor_id,
+        version:     body.version,
     };
 
     let tx = match state.pool.begin().await {
@@ -199,8 +207,11 @@ pub async fn update(
 
     let result = match state.client_uc.update(dto).await {
         Ok(r) => r,
-        Err(_) => {
+        Err(e) => {
             let _ = tx.rollback().await;
+            if e.to_string() == "optimistic_lock_conflict" {
+                return (StatusCode::CONFLICT, Json(json!({"error": "optimistic_lock_conflict"})));
+            }
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
         }
     };
@@ -233,6 +244,7 @@ pub async fn destroy(
     State(state): State<AppState>,
     jar: CookieJar,
     Path(id): Path<u64>,
+    Json(body): Json<DestroyBody>,
 ) -> (StatusCode, Json<Value>) {
     let executor_id = staff_id_from_cookie(&jar);
 
@@ -241,8 +253,11 @@ pub async fn destroy(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
     };
 
-    if let Err(_) = state.client_uc.destroy(id, executor_id).await {
+    if let Err(e) = state.client_uc.destroy(id, executor_id, body.version).await {
         let _ = tx.rollback().await;
+        if e.to_string() == "optimistic_lock_conflict" {
+            return (StatusCode::CONFLICT, Json(json!({"error": "optimistic_lock_conflict"})));
+        }
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
     }
 

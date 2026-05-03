@@ -39,7 +39,7 @@ class InteractorTest {
         override suspend fun findByAccessToken(token: String) = byToken
         override suspend fun findByIdentifier(id: String)     = byIdentifier
         override suspend fun save(c: Client)                  = saveResult ?: c
-        override suspend fun softDelete(id: Long, deletedBy: Long) = Unit
+        override suspend fun softDelete(id: Long, deletedBy: Long, version: Int) = Unit
     }
 
     @Test

@@ -28,7 +28,7 @@ class InteractorTest {
         override suspend fun findAllActive()                                    = staffs.filter { it.deletedAt == null }
         override suspend fun save(s: Staff)                                     = s
         override suspend fun updateRole(id: Long, role: Int, updatedBy: Long)   = true
-        override suspend fun softDelete(id: Long, deletedBy: Long)              = true
+        override suspend fun softDelete(id: Long, deletedBy: Long, version: Int) = true
         override suspend fun restore(id: Long)                                  = true
     }
 
@@ -58,8 +58,8 @@ class InteractorTest {
     @Test
     fun `destroy delegates softDelete to repository`() = runBlocking {
         var deletedId = 0L
-        val repo = object : Repository by mockRepo() {
-            override suspend fun softDelete(id: Long, deletedBy: Long): Boolean {
+        val repo = object : Repository by mockRepo(listOf(makeStaff(3L))) {
+            override suspend fun softDelete(id: Long, deletedBy: Long, version: Int): Boolean {
                 deletedId = id; return true
             }
         }

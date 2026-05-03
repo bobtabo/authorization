@@ -88,6 +88,6 @@ export class NotificationInteractor {
   async patch(id: number, data: Partial<Pick<Notification, "read" | "title" | "message">>): Promise<void> {
     const n = await this.repo.findById(id);
     if (!n) throw notFound("notification_not_found");
-    await this.repo.patch(id, data);
+    await this.repo.patch(id, data, n.version);
   }
 }

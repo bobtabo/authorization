@@ -45,7 +45,7 @@ RSpec.describe UseCase::Staff::Interactor do
     it "calls soft_delete and returns nil" do
       allow(stub_repo).to receive(:soft_delete).and_return(true)
       result = described_class.new(stub_repo).destroy(
-        UseCase::Staff::DestroyDto.new(id: 1, executor_id: 2)
+        UseCase::Staff::DestroyDto.new(id: 1, executor_id: 2, version: 1)
       )
       expect(result).to be_nil
     end

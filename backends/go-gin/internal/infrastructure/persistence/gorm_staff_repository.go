@@ -3,6 +3,7 @@ package persistence
 import (
 	domstaff "authorization-go/internal/domain/staff"
 	"authorization-go/internal/infrastructure/model"
+	"authorization-go/pkg/apperror"
 	"errors"
 	"time"
 
@@ -54,6 +55,18 @@ func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
 	return staffToDomain(&m), nil
 }
 
+// FindByIDUnscoped はIDでスタッフエンティティを返します（論理削除済みも含む）。存在しない場合は nil を返します。
+func (r *GormStaffRepository) FindByIDUnscoped(id uint) (*domstaff.Staff, error) {
+	var m model.Staff
+	if err := r.db.Unscoped().First(&m, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return staffToDomain(&m), nil
+}
+
 // FindByProvider はプロバイダーとプロバイダーIDでスタッフエンティティを返します。
 func (r *GormStaffRepository) FindByProvider(provider int, providerID string) (*domstaff.Staff, error) {
 	var m model.Staff
@@ -89,34 +102,63 @@ func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 }
 
 // UpdateRole はスタッフのロールを更新して更新件数の有無を返します。
-func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint) (bool, error) {
+// version が DB と一致しない場合は楽観排他エラーを返します。
+func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint, version int) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
-		"role":       role,
-		"updated_at": now,
-		"updated_by": updatedBy,
-		"version":    gorm.Expr("version + 1"),
-	})
-	return result.RowsAffected > 0, result.Error
+	result := r.db.Model(&model.Staff{}).
+		Where("id = ? AND deleted_at IS NULL AND version = ?", id, version).
+		Updates(map[string]interface{}{
+			"role":       role,
+			"updated_at": now,
+			"updated_by": updatedBy,
+			"version":    gorm.Expr("version + 1"),
+		})
+	if result.Error != nil {
+		return false, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return false, apperror.Conflict("optimistic_lock")
+	}
+	return true, nil
 }
 
 // SoftDelete はスタッフを論理削除して更新件数の有無を返します。
-func (r *GormStaffRepository) SoftDelete(id uint, deletedBy uint) (bool, error) {
+// version が DB と一致しない場合は楽観排他エラーを返します。
+func (r *GormStaffRepository) SoftDelete(id uint, deletedBy uint, version int) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
-		"deleted_at": now,
-		"deleted_by": deletedBy,
-	})
-	return result.RowsAffected > 0, result.Error
+	result := r.db.Model(&model.Staff{}).
+		Where("id = ? AND deleted_at IS NULL AND version = ?", id, version).
+		Updates(map[string]interface{}{
+			"deleted_at": now,
+			"deleted_by": deletedBy,
+			"version":    gorm.Expr("version + 1"),
+		})
+	if result.Error != nil {
+		return false, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return false, apperror.Conflict("optimistic_lock")
+	}
+	return true, nil
 }
 
 // Restore はスタッフの論理削除を復元して更新件数の有無を返します。
-func (r *GormStaffRepository) Restore(id uint) (bool, error) {
-	result := r.db.Unscoped().Model(&model.Staff{}).Where("id = ? AND deleted_at IS NOT NULL", id).Updates(map[string]interface{}{
-		"deleted_at": nil,
-		"deleted_by": nil,
-	})
-	return result.RowsAffected > 0, result.Error
+// version が DB と一致しない場合は楽観排他エラーを返します。
+func (r *GormStaffRepository) Restore(id uint, version int) (bool, error) {
+	result := r.db.Unscoped().Model(&model.Staff{}).
+		Where("id = ? AND deleted_at IS NOT NULL AND version = ?", id, version).
+		Updates(map[string]interface{}{
+			"deleted_at": nil,
+			"deleted_by": nil,
+			"version":    gorm.Expr("version + 1"),
+		})
+	if result.Error != nil {
+		return false, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return false, apperror.Conflict("optimistic_lock")
+	}
+	return true, nil
 }
 
 // ---------- マッピングヘルパー ----------

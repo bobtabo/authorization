@@ -67,9 +67,10 @@ interface Repository {
      *
      * @param id スタッフ ID
      * @param deletedBy 削除者スタッフ ID
+     * @param version 楽観排他ロック用バージョン
      * @return 削除成功なら true
      */
-    suspend fun softDelete(id: Long, deletedBy: Long): Boolean
+    suspend fun softDelete(id: Long, deletedBy: Long, version: Int): Boolean
 
     /**
      * 論理削除されたスタッフを復元します。
