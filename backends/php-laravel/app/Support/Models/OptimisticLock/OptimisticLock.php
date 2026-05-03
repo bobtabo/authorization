@@ -28,7 +28,7 @@ trait OptimisticLock
      */
     protected static function bootOptimisticLock()
     {
-        self::observe(OptimisticLockObserver::class);
+        static::observe(OptimisticLockObserver::class);
     }
 
     /**
