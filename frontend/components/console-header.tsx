@@ -168,7 +168,8 @@ export function ConsoleHeader(): React.JSX.Element {
     const next = e.target.value;
     setBackendRuntime(next);
     localStorage.setItem(RUNTIME_STORAGE_KEY, next);
-    window.location.href = "/";
+    localStorage.removeItem(USER_CACHE_KEY);
+    window.location.href = "/login";
   };
 
   const navTabClass = (href: string): string =>

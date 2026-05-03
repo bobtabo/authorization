@@ -31,6 +31,7 @@ interface StaffRow {
   role: StaffRole;
   createdAt: string;
   updatedAt: string;
+  version: number;
 }
 
 type SortKey = keyof Pick<
@@ -187,6 +188,7 @@ export default function StaffPage(): React.JSX.Element {
             active: STATUS_MAP[row.status as number] ?? "有効",
             createdAt: (row.created_at as string | null) ?? "",
             updatedAt: (row.updated_at as string | null) ?? "",
+            version: (row.version as number) ?? 1,
           }))
         );
       })
@@ -194,10 +196,12 @@ export default function StaffPage(): React.JSX.Element {
   }, []);
 
   const setStaffRowActive = (id: number, active: StaffActive) => {
-    const prev = staff.find((a) => a.id === id)?.active;
+    const found = staff.find((a) => a.id === id);
+    const prev = found?.active;
+    const version = found?.version ?? 1;
     setStaff((s) => s.map((a) => (a.id === id ? { ...a, active } : a)));
     const apiCall =
-      active === "無効" ? deleteStaff(id, myStaffId) : restoreStaff(id, myStaffId);
+      active === "無効" ? deleteStaff(id, { version }, myStaffId) : restoreStaff(id, myStaffId);
     apiCall.catch(() => {
       if (prev !== undefined) {
         setStaff((s) => s.map((a) => (a.id === id ? { ...a, active: prev } : a)));
@@ -206,9 +210,11 @@ export default function StaffPage(): React.JSX.Element {
   };
 
   const setStaffRowRole = (id: number, role: StaffRole) => {
-    const prev = staff.find((a) => a.id === id)?.role;
+    const found = staff.find((a) => a.id === id);
+    const prev = found?.role;
+    const version = found?.version ?? 1;
     setStaff((s) => s.map((a) => (a.id === id ? { ...a, role } : a)));
-    updateStaffRole(id, { role: ROLE_VALUE[role] }, myStaffId).catch(() => {
+    updateStaffRole(id, { role: ROLE_VALUE[role], version }, myStaffId).catch(() => {
       // 失敗時はロールバック
       if (prev !== undefined) {
         setStaff((s) => s.map((a) => (a.id === id ? { ...a, role: prev } : a)));

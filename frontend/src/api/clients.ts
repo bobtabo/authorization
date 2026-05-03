@@ -28,6 +28,6 @@ export async function updateClient(id: number | string, body: unknown): Promise<
 }
 
 /** DELETE /clients/{id}/delete */
-export async function deleteClient(id: number | string): Promise<unknown> {
-  return apiDelete(`/clients/${id}/delete`);
+export async function deleteClient(id: number | string, body: { version: number }): Promise<unknown> {
+  return apiDelete(`/clients/${id}/delete`, { data: body });
 }

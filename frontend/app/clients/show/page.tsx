@@ -63,6 +63,7 @@ const STATUS_MAP: Record<number, ClientStatus> = { 1: "準備中", 2: "利用中
 export default function ClientShowPage(): React.JSX.Element {
   const [clientId, setClientId] = useState<number | null>(null);
   const [detail, setDetail] = useState<ClientDetail | null>(null);
+  const [version, setVersion] = useState<number>(1);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [startOpen, setStartOpen] = useState(false);
@@ -90,6 +91,7 @@ export default function ClientShowPage(): React.JSX.Element {
         createdAt: formatTimestamp(d.created_at as string),
         updatedAt: formatTimestamp(d.updated_at as string),
       });
+      setVersion((d.version as number) ?? 1);
     });
   };
 
@@ -117,12 +119,13 @@ export default function ClientShowPage(): React.JSX.Element {
     tel: detail?.tel,
     email: detail?.email,
     status,
+    version,
   });
 
   const handleDelete = () => {
     if (!clientId) return;
     setDeleting(true);
-    deleteClient(clientId).then(() => {
+    deleteClient(clientId, { version }).then(() => {
       window.location.href = "/clients";
     }).catch((err: unknown) => {
       setDeleting(false);
