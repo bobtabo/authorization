@@ -22,11 +22,6 @@ use App\Support\Models\AppModel;
 class OptimisticLockObserver
 {
     /**
-     * 楽観的ロックチェック用の一時プロパティ
-     */
-    public const string OPTIMISTIC_LOCK_COLUMN = 'version_optimistic_lock_column';
-
-    /**
      * 登録前の排他制御を行います。
      *
      * @param AppModel $model モデル: void
@@ -45,10 +40,6 @@ class OptimisticLockObserver
      */
     public function updating(AppModel $model): void
     {
-        if (!$this->isProperty($model)) {
-            return;
-        }
-
         $this->exclusion($model);
         $model->version++;
     }
@@ -61,10 +52,6 @@ class OptimisticLockObserver
      */
     public function deleting(AppModel $model): void
     {
-        if (!$this->isProperty($model)) {
-            return;
-        }
-
         $this->exclusion($model);
         $model->version++;
     }
@@ -86,16 +73,5 @@ class OptimisticLockObserver
             //楽観ロック
             throw AppException::internal('optimistic lock');
         }
-    }
-
-    /**
-     * 楽観的ロック用の一時プロパティがあるかチェックする
-     *
-     * @param AppModel $model
-     * @return bool true:ある
-     */
-    private function isProperty(AppModel $model): bool
-    {
-        return array_key_exists('version', $model->getAttributes());
     }
 }
