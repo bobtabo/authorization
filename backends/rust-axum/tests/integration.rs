@@ -125,7 +125,8 @@ async fn delete_clients_destroy_soft_deletes_client() {
         .method("DELETE")
         .uri(format!("/api/clients/{}", client.id))
         .header(header::COOKIE, format!("staff_id={}", staff_id))
-        .body(axum::body::Body::empty())
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"version":1}"#))
         .unwrap();
 
     let res = app.oneshot(req).await.unwrap();
@@ -193,7 +194,8 @@ async fn delete_staffs_destroy_soft_deletes_staff() {
         .method("DELETE")
         .uri(format!("/api/staffs/{}/delete", target_id))
         .header(header::COOKIE, format!("staff_id={}", executor_id))
-        .body(axum::body::Body::empty())
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"version":1}"#))
         .unwrap();
 
     let res = app.oneshot(req).await.unwrap();

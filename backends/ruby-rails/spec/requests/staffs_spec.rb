@@ -51,7 +51,8 @@ RSpec.describe "Staffs", type: :request do
       executor = create_staff(email: "exec@example.com")
       target   = create_staff(email: "target@example.com")
       delete "/api/staffs/#{target.id}/delete",
-             headers: { "Cookie" => "staff_id=#{executor.id}" }
+             params:  { version: 1 }.to_json,
+             headers: { "Cookie" => "staff_id=#{executor.id}", "Content-Type" => "application/json" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["id"]).to eq(target.id)

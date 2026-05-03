@@ -93,11 +93,10 @@ func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 			`UPDATE staffs SET
 				name=?, email=?, provider=?, provider_id=?, avatar=?, role=?, last_login_at=?,
 				created_at=?, created_by=?, updated_at=?, updated_by=?,
-				deleted_at=?, deleted_by=?, version=version+1
+				version=version+1
 			WHERE id=? AND version=?`,
 			m.Name, m.Email, m.Provider, m.ProviderID, m.Avatar, m.Role, m.LastLoginAt,
 			m.CreatedAt, m.CreatedBy, m.UpdatedAt, m.UpdatedBy,
-			m.DeletedAt, m.DeletedBy,
 			m.ID, m.Version,
 		).Exec()
 		if err != nil {

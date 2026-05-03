@@ -98,13 +98,12 @@ func (r *OrmClientRepository) Save(c *domclient.Client) (*domclient.Client, erro
 				tel=?, email=?, access_token=?, private_key=?, public_key=?, fingerprint=?,
 				status=?, start_at=?, stop_at=?,
 				created_at=?, created_by=?, updated_at=?, updated_by=?,
-				deleted_at=?, deleted_by=?, version=version+1
+				version=version+1
 			WHERE id=? AND version=?`,
 			m.Name, m.Identifier, m.PostCode, m.Pref, m.City, m.Address, m.Building,
 			m.Tel, m.Email, m.AccessToken, m.PrivateKey, m.PublicKey, m.Fingerprint,
 			m.Status, m.StartAt, m.StopAt,
 			m.CreatedAt, m.CreatedBy, m.UpdatedAt, m.UpdatedBy,
-			m.DeletedAt, m.DeletedBy,
 			m.ID, m.Version,
 		).Exec()
 		if err != nil {
