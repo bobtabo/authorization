@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace Sii\Selloop\Core\Observers;
+namespace App\Support\Models\OptimisticLock;
 
 use App\Support\Exceptions\AppException;
 use App\Support\Models\AppModel;
@@ -17,7 +17,7 @@ use App\Support\Models\AppModel;
  * 楽観的ロックObserverクラスです。
  *
  * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
- * @package Sii\Selloop\Core\Observers
+ * @package App\Support\Models\OptimisticLock
  */
 class OptimisticLockObserver
 {

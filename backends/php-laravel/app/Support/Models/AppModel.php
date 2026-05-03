@@ -14,12 +14,12 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Sii\Selloop\Core\Traits\OptimisticLock;
+use App\Support\Models\OptimisticLock\OptimisticLock;
 
 /**
  * 基底Modelクラスです。
  *
- * @author @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Support\Models
  */
 abstract class AppModel extends Model
