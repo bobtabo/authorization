@@ -10,8 +10,9 @@ declare(strict_types=1);
 
 namespace Sii\Selloop\Core\Traits;
 
+use App\Support\Exceptions\AppException;
+use App\Support\Models\AppModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Sii\Selloop\Core\Observers\OptimisticLockObserver;
 
 /**
  * 楽観的ロックTraitです。
@@ -28,7 +29,17 @@ trait OptimisticLock
      */
     protected static function bootOptimisticLock()
     {
-        static::observe(OptimisticLockObserver::class);
+        $check = function (AppModel $model): void {
+            $key = $model->getKeyName();
+            $current = $model->withTrashed()->find($model->$key);
+            if ($model->getOriginal('version') != $current?->version) {
+                throw AppException::internal('optimistic lock');
+            }
+            $model->version++;
+        };
+
+        static::updating($check);
+        static::deleting($check);
     }
 
     /**
