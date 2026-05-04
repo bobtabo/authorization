@@ -11,6 +11,7 @@ import com.authorization.domain.client.Condition
 import com.authorization.domain.client.DetailVo
 import com.authorization.domain.client.Repository
 import com.authorization.domain.client.StoreResultVo
+import com.authorization.support.create
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -83,12 +84,7 @@ class Interactor(private val repo: Repository) {
             updatedBy   = dto.executorId,
         )
         val saved = repo.save(c)
-        return StoreResultVo(
-            id          = saved.id,
-            name        = saved.name,
-            email       = saved.email,
-            accessToken = saved.accessToken,
-        )
+        return create<StoreResultVo>(saved)
     }
 
     /**
@@ -117,23 +113,7 @@ class Interactor(private val repo: Repository) {
         }
         c = c.copy(updatedAt = LocalDateTime.now(), updatedBy = dto.executorId)
         val saved = repo.save(c)
-        return DetailVo(
-            id         = saved.id,
-            name       = saved.name,
-            identifier = saved.identifier,
-            postCode   = saved.postCode,
-            pref       = saved.pref,
-            city       = saved.city,
-            address    = saved.address,
-            building   = saved.building,
-            tel        = saved.tel,
-            email      = saved.email,
-            status     = saved.status,
-            startAt    = saved.startAt,
-            stopAt     = saved.stopAt,
-            createdAt  = saved.createdAt,
-            updatedAt  = saved.updatedAt,
-        )
+        return create<DetailVo>(saved)
     }
 
     /**
