@@ -1,4 +1,4 @@
-# <img src="https://avatars.githubusercontent.com/oa/3570770?s=60&u=7b4331fcdb2a318f3495f40f9c71705f138a7a69&v=4" height="25" style="margin-top:-4px;vertical-align:middle;" alt="認可サーバー"> 認可サーバー
+# <img src="https://raw.githubusercontent.com/bobtabo/authorization/main/frontend/app/icon.svg" height="25" style="margin-top:-4px;vertical-align:middle;" alt="認可サーバー"> 認可サーバー
 
 このリポジトリは、OAuth2/OIDC 準拠の認可サーバー構築プロジェクトです。  
 各コンポーネントの詳細は、それぞれのディレクトリにあるドキュメントを参照してください。
