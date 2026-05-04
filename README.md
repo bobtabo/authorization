@@ -39,8 +39,8 @@
 
 - Docker Engine / Docker Compose がインストール済みであること
 - ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`9000`（Lambda）、`8080`（API Gateway エミュレータ）、`8025`（MailPit）がローカルで空いていること
-- Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（[Google Cloud Console](https://console.cloud.google.com/)）
-- GitHub OAuth App のクライアント ID / シークレットを取得済みであること（[GitHub Developer Settings](https://github.com/settings/developers)）
+- Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（<a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>）
+- GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a>）
 
 ### 1. リポジトリのクローン
 
