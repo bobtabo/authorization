@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"strings"
 
@@ -314,7 +315,10 @@ func fetchGithubUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]st
 		return nil, err
 	}
 
-	id := fmt.Sprintf("%v", raw["id"])
+	id := ""
+	if v, ok := raw["id"].(float64); ok {
+		id = strconv.FormatInt(int64(v), 10)
+	}
 
 	name := ""
 	if v, ok := raw["name"]; ok && v != nil && fmt.Sprintf("%v", v) != "" && fmt.Sprintf("%v", v) != "<nil>" {

@@ -116,7 +116,7 @@ class AuthController extends Controller
             $dto = new SocialDto();
             $dto->assign([
                 'provider' => Provider::Google,
-                'providerId' => $googleUser->getId(),
+                'providerId' => (string)$googleUser->getId(),
                 'nickname' => $googleUser->getNickname(),
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
@@ -192,7 +192,7 @@ class AuthController extends Controller
             $dto = new SocialDto();
             $dto->assign([
                 'provider'        => Provider::Github,
-                'providerId'      => (string)$githubUser->getId(),
+                'providerId'      => (string)(int)$githubUser->getId(),
                 'nickname'        => $githubUser->getNickname(),
                 'name'            => $githubUser->getName() ?? $githubUser->getNickname(),
                 'email'           => $githubUser->getEmail(),
