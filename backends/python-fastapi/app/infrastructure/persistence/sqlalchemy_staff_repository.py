@@ -13,30 +13,11 @@ from app.domain.staff.entity import Staff
 from app.domain.staff.condition import StaffCondition
 from app.domain.staff.repository import StaffRepository
 from app.infrastructure.model.model import StaffModel
+from app.support.assign import assign
 
 
 def _to_entity(m: StaffModel) -> Staff:
-    """StaffModel をドメインエンティティに変換します。
-
-    Args:
-        m: StaffModel インスタンス
-
-    Returns:
-        Staff エンティティ
-    """
-    return Staff(
-        id=m.id,
-        name=m.name,
-        email=m.email,
-        provider=m.provider,
-        provider_id=m.provider_id,
-        avatar=m.avatar,
-        role=m.role,
-        last_login_at=m.last_login_at,
-        created_at=m.created_at,
-        updated_at=m.updated_at,
-        deleted_at=m.deleted_at,
-    )
+    return assign(Staff(), m)
 
 
 class SqlAlchemyStaffRepository(StaffRepository):
