@@ -33,6 +33,167 @@
 
 ---
 
+## :hammer_and_wrench: 開発環境構築手順
+
+### 前提
+
+- Docker Engine / Docker Compose がインストール済みであること
+- ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`9000`（Lambda）、`8080`（API Gateway エミュレータ）、`8025`（MailPit）がローカルで空いていること
+
+### 1. リポジトリのクローン
+
+```bash
+git clone git@github.com:bobtabo/authorization.git
+cd authorization
+```
+
+### 2. 初回セットアップ
+
+```bash
+cd docker
+find ./bin -type f -exec chmod 755 {} +
+bin/docker-environment.sh
+```
+
+### 3. 共通コンテナの起動（Nginx Proxy / MySQL / Redis / Lambda / MailPit）
+
+```bash
+bin/docker-common.sh up
+```
+
+### 4. アプリコンテナの起動
+
+```bash
+bin/docker-backends.sh up
+```
+
+### 5. API Gateway エミュレーターの起動
+
+```bash
+cd function
+make run-apigw-emulator
+```
+
+> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送する。
+
+### 6. フロントエンドの起動
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 7. バックエンドの初期設定
+
+各バックエンドで環境変数の設定が必要です。使用するバックエンドのみ実施してください。
+
+#### 7.1 PHP（Laravel）
+
+```bash
+# コンテナに入る
+bin/docker-php.sh exec
+
+# パッケージインストール
+composer install
+
+# 環境変数の設定
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+
+# マイグレーション
+php artisan migrate --seed
+```
+
+> [!NOTE]
+> マイグレーションは PHP（Laravel）に一本化している。他のバックエンドはテスト用のスキーマ定義を個別に持つ。
+
+#### 7.2 Go（Gin）
+
+```bash
+bin/docker-go-gin.sh exec
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.3 Go（Beego）
+
+```bash
+bin/docker-go-beego.sh exec
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.4 Go（Echo）
+
+```bash
+bin/docker-go-echo.sh exec
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.5 Kotlin（Ktor）
+
+```bash
+bin/docker-kotlin.sh exec
+gradle build
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.6 Python（FastAPI）
+
+```bash
+bin/docker-python.sh exec
+pip install -r requirements.txt
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.7 TypeScript（Hono）
+
+```bash
+bin/docker-ts.sh exec
+npm install
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.8 Ruby（Rails）
+
+```bash
+bin/docker-rb-rails.sh exec
+bundle install
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.9 Ruby（Hanami）
+
+```bash
+bin/docker-rb-hanami.sh exec
+bundle install
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+#### 7.10 Rust（Axum）
+
+```bash
+bin/docker-rust.sh exec
+cargo build
+cp .env.example .env
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+```
+
+### ツール
+
+| ツール | URL |
+|:---|:---|
+| MailPit（メール確認） | http://localhost:8025/ |
+
+---
+
 ## :rocket: クイックスタート
 
 ### 1. API 仕様の確認（Swagger UI）
