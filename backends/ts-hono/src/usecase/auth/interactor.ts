@@ -8,10 +8,8 @@ import type { StaffRepository } from "../../domain/staff/repository.js";
 import type { InvitationAuthRepository } from "../../domain/invitation/authRepository.js";
 import type { StaffVo } from "../../domain/staff/valueObjects.js";
 import type { LoginInput } from "./dto.js";
-
-function toStaffVo(staff: { id: number; name: string; avatar: string | null | undefined; role: number | null }): StaffVo {
-  return { id: staff.id, name: staff.name, avatar: staff.avatar ?? null, role: staff.role ?? 0 };
-}
+import { mapper } from "../../support/mapper.js";
+import { StaffSymbol, StaffVoSymbol } from "../../support/mappers/index.js";
 
 /** 認証のユースケース実装。 */
 export class AuthInteractor {
@@ -27,7 +25,7 @@ export class AuthInteractor {
    */
   async findUser(staffId: number): Promise<StaffVo | undefined> {
     const staff = await this.repo.findById(staffId);
-    return staff ? toStaffVo(staff) : undefined;
+    return staff ? mapper.map(staff, StaffSymbol, StaffVoSymbol) : undefined;
   }
 
   /**
@@ -47,7 +45,7 @@ export class AuthInteractor {
         role: existing.role ?? 0,
         lastLoginAt: new Date(),
       });
-      return toStaffVo(staff);
+      return mapper.map(staff, StaffSymbol, StaffVoSymbol);
     }
 
     const token = input.invitationToken ?? "";
@@ -65,6 +63,6 @@ export class AuthInteractor {
       role: 0,
       lastLoginAt: new Date(),
     });
-    return toStaffVo(staff);
+    return mapper.map(staff, StaffSymbol, StaffVoSymbol);
   }
 }

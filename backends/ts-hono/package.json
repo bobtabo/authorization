@@ -10,6 +10,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@automapper/core": "^8.8.1",
+    "@automapper/pojos": "^8.8.1",
     "@hono/node-server": "^1.13.7",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
