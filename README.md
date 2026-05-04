@@ -39,6 +39,8 @@
 
 - Docker Engine / Docker Compose がインストール済みであること
 - ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`9000`（Lambda）、`8080`（API Gateway エミュレータ）、`8025`（MailPit）がローカルで空いていること
+- Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（[Google Cloud Console](https://console.cloud.google.com/)）
+- GitHub OAuth App のクライアント ID / シークレットを取得済みであること（[GitHub Developer Settings](https://github.com/settings/developers)）
 
 ### 1. リポジトリのクローン
 
@@ -61,7 +63,7 @@ bin/docker-environment.sh
 bin/docker-common.sh up
 ```
 
-### 4. アプリコンテナの起動
+### 4. バックエンドコンテナの起動
 
 ```bash
 bin/docker-backends.sh up
@@ -101,7 +103,7 @@ composer install
 
 # 環境変数の設定
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 
 # マイグレーション
 php artisan migrate --seed
@@ -116,7 +118,7 @@ php artisan migrate --seed
 ```bash
 bin/docker-go-gin.sh exec
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.3 Go（Beego）
@@ -124,7 +126,7 @@ cp .env.example .env
 ```bash
 bin/docker-go-beego.sh exec
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.4 Go（Echo）
@@ -132,7 +134,7 @@ cp .env.example .env
 ```bash
 bin/docker-go-echo.sh exec
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.5 Kotlin（Ktor）
@@ -141,7 +143,7 @@ cp .env.example .env
 bin/docker-kotlin.sh exec
 gradle build
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.6 Python（FastAPI）
@@ -150,7 +152,7 @@ cp .env.example .env
 bin/docker-python.sh exec
 pip install -r requirements.txt
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.7 TypeScript（Hono）
@@ -159,7 +161,7 @@ cp .env.example .env
 bin/docker-ts.sh exec
 npm install
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.8 Ruby（Rails）
@@ -168,7 +170,7 @@ cp .env.example .env
 bin/docker-rb-rails.sh exec
 bundle install
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.9 Ruby（Hanami）
@@ -177,7 +179,7 @@ cp .env.example .env
 bin/docker-rb-hanami.sh exec
 bundle install
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
 #### 7.10 Rust（Axum）
@@ -186,8 +188,19 @@ cp .env.example .env
 bin/docker-rust.sh exec
 cargo build
 cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET を設定する
+# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
+
+### 8. 初回ログイン
+
+初回は招待リンクからアクセスする必要があります。</br>
+招待リンクなしでは、ログイン画面からサインインできません。
+
+http://localhost:3000/invitation/b9195889-36c7-631e-76ab-867fa6ad42dc
+
+> [!NOTE]
+> 
+> このリンクはローカル環境専用です。</br>本番環境では、管理者から発行された招待リンクを使用してください。
 
 ### ツール
 
