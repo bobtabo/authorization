@@ -38,6 +38,8 @@ export const apiClient = axios.create({
   timeout: 10000,
 });
 
+const PUBLIC_PATHS = ["/login", "/invitation", "/register", "/error"];
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
@@ -45,7 +47,7 @@ apiClient.interceptors.response.use(
       typeof window !== "undefined" &&
       axios.isAxiosError(error) &&
       error.response?.status === 401 &&
-      window.location.pathname !== "/login"
+      !PUBLIC_PATHS.some((p) => window.location.pathname.startsWith(p))
     ) {
       window.location.href = "/login";
     }
