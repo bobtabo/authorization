@@ -4,6 +4,7 @@ package persistence
 import (
 	domnotification "authorization-go/internal/domain/notification"
 	"authorization-go/internal/infrastructure/model"
+	"authorization-go/internal/support"
 	"encoding/base64"
 	"fmt"
 	"strconv"
@@ -112,24 +113,8 @@ func (r *GormNotificationRepository) Patch(id int64, attrs map[string]interface{
 // ---------- マッピングヘルパー ----------
 
 func notificationToDomain(m *model.Notification) *domnotification.Notification {
-	n := &domnotification.Notification{
-		ID:          m.ID,
-		StaffID:     m.StaffID,
-		MessageType: m.MessageType,
-		Title:       m.Title,
-		Message:     m.Message,
-		URL:         m.URL,
-		Read:        m.Read,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
-	if m.DeletedAt.Valid {
-		n.DeletedAt = &m.DeletedAt.Time
-	}
+	n := &domnotification.Notification{}
+	support.Assign(n, m)
 	return n
 }
 

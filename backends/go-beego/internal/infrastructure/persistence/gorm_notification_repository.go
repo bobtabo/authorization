@@ -3,6 +3,7 @@ package persistence
 import (
 	domnotification "authorization-go-beego/internal/domain/notification"
 	"authorization-go-beego/internal/infrastructure/model"
+	"authorization-go-beego/internal/support"
 	"encoding/base64"
 	"fmt"
 	"strconv"
@@ -135,22 +136,9 @@ func (r *OrmNotificationRepository) Patch(id int64, attrs map[string]interface{}
 }
 
 func notificationToDomain(m *model.Notification) *domnotification.Notification {
-	return &domnotification.Notification{
-		ID:          m.ID,
-		StaffID:     m.StaffID,
-		MessageType: m.MessageType,
-		Title:       m.Title,
-		Message:     m.Message,
-		URL:         m.URL,
-		Read:        m.Read,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedAt:   m.DeletedAt,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
+	n := &domnotification.Notification{}
+	support.Assign(n, m)
+	return n
 }
 
 func encodeCursor(unixSec, id int64) string {

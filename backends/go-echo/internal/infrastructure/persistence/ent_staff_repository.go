@@ -4,6 +4,7 @@ import (
 	"authorization-go-echo/ent"
 	"authorization-go-echo/ent/staff"
 	domstaff "authorization-go-echo/internal/domain/staff"
+	"authorization-go-echo/internal/support"
 	"context"
 	"time"
 )
@@ -162,21 +163,7 @@ func (r *EntStaffRepository) Restore(s *domstaff.Staff) (bool, error) {
 }
 
 func entStaffToDomain(m *ent.Staff) *domstaff.Staff {
-	return &domstaff.Staff{
-		ID:          m.ID,
-		Name:        m.Name,
-		Email:       m.Email,
-		Provider:    m.Provider,
-		ProviderID:  m.ProviderID,
-		Avatar:      m.Avatar,
-		Role:        m.Role,
-		LastLoginAt: m.LastLoginAt,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedAt:   m.DeletedAt,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
+	s := &domstaff.Staff{}
+	support.Assign(s, m)
+	return s
 }

@@ -3,6 +3,7 @@ package persistence
 import (
 	domstaff "authorization-go-beego/internal/domain/staff"
 	"authorization-go-beego/internal/infrastructure/model"
+	"authorization-go-beego/internal/support"
 	"authorization-go-beego/pkg/apperror"
 	"time"
 
@@ -169,41 +170,13 @@ func (r *OrmStaffRepository) Restore(s *domstaff.Staff) (bool, error) {
 }
 
 func staffToDomain(m *model.Staff) *domstaff.Staff {
-	return &domstaff.Staff{
-		ID:          m.ID,
-		Name:        m.Name,
-		Email:       m.Email,
-		Provider:    m.Provider,
-		ProviderID:  m.ProviderID,
-		Avatar:      m.Avatar,
-		Role:        m.Role,
-		LastLoginAt: m.LastLoginAt,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedAt:   m.DeletedAt,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
+	s := &domstaff.Staff{}
+	support.Assign(s, m)
+	return s
 }
 
 func staffToModel(s *domstaff.Staff) *model.Staff {
-	return &model.Staff{
-		ID:          s.ID,
-		Name:        s.Name,
-		Email:       s.Email,
-		Provider:    s.Provider,
-		ProviderID:  s.ProviderID,
-		Avatar:      s.Avatar,
-		Role:        s.Role,
-		LastLoginAt: s.LastLoginAt,
-		CreatedAt:   s.CreatedAt,
-		CreatedBy:   s.CreatedBy,
-		UpdatedAt:   s.UpdatedAt,
-		UpdatedBy:   s.UpdatedBy,
-		DeletedAt:   s.DeletedAt,
-		DeletedBy:   s.DeletedBy,
-		Version:     s.Version,
-	}
+	m := &model.Staff{}
+	support.Assign(m, s)
+	return m
 }
