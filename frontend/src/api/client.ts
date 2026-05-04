@@ -37,3 +37,18 @@ export const apiClient = axios.create({
   withCredentials: true,
   timeout: 10000,
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: unknown) => {
+    if (
+      typeof window !== "undefined" &&
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      window.location.pathname !== "/login"
+    ) {
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  },
+);
