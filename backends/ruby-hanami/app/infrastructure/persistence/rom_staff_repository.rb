@@ -98,23 +98,7 @@ module Infrastructure
       private
 
       def row_to_entity(r)
-        Domain::Staff::Entity.new(
-          id:            r[:id],
-          name:          r[:name],
-          email:         r[:email],
-          provider:      r[:provider],
-          provider_id:   r[:provider_id],
-          avatar:        r[:avatar],
-          role:          r[:role],
-          last_login_at: r[:last_login_at],
-          created_at:    r[:created_at],
-          created_by:    r[:created_by],
-          updated_at:    r[:updated_at],
-          updated_by:    r[:updated_by],
-          deleted_at:    r[:deleted_at],
-          deleted_by:    r[:deleted_by],
-          version:       r[:version],
-        )
+        Support::Assign.call(Domain::Staff::Entity.new, r)
       end
 
       def row_to_list_item(r)

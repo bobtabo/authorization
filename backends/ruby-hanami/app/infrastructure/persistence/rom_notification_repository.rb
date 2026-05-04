@@ -79,22 +79,7 @@ module Infrastructure
       private
 
       def row_to_entity(r)
-        Domain::Notification::Entity.new(
-          id:           r[:id],
-          staff_id:     r[:staff_id],
-          message_type: r[:message_type],
-          title:        r[:title],
-          message:      r[:message],
-          url:          r[:url],
-          read:         r[:read],
-          created_at:   r[:created_at],
-          created_by:   r[:created_by],
-          updated_at:   r[:updated_at],
-          updated_by:   r[:updated_by],
-          deleted_at:   r[:deleted_at],
-          deleted_by:   r[:deleted_by],
-          version:      r[:version],
-        )
+        Support::Assign.call(Domain::Notification::Entity.new, r)
       end
 
       def encode_cursor(created_at, id)

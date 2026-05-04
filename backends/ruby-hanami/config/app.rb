@@ -14,6 +14,7 @@ Dotenv.load(
 APP_ROOT_LOAD = File.expand_path("..", __dir__)
 [
   "app/config/app_config.rb",
+  "app/support/**/*.rb",
   "app/domain/**/*.rb",
   "app/usecase/**/*.rb",
   "app/infrastructure/**/*.rb",
