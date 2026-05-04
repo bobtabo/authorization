@@ -4,6 +4,7 @@ import (
 	"authorization-go-echo/ent"
 	"authorization-go-echo/ent/appclient"
 	domclient "authorization-go-echo/internal/domain/client"
+	"authorization-go-echo/internal/support"
 	"context"
 	"time"
 )
@@ -159,32 +160,9 @@ func (r *EntClientRepository) SoftDelete(c *domclient.Client) error {
 }
 
 func entAppClientToDomain(m *ent.AppClient) *domclient.Client {
-	return &domclient.Client{
-		ID:          m.ID,
-		Name:        m.Name,
-		Identifier:  m.Identifier,
-		PostCode:    m.PostCode,
-		Pref:        m.Pref,
-		City:        m.City,
-		Address:     m.Address,
-		Building:    m.Building,
-		Tel:         m.Tel,
-		Email:       m.Email,
-		AccessToken: m.AccessToken,
-		PrivateKey:  m.PrivateKey,
-		PublicKey:   m.PublicKey,
-		Fingerprint: m.Fingerprint,
-		Status:      m.Status,
-		StartAt:     m.StartAt,
-		StopAt:      m.StopAt,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedAt:   m.DeletedAt,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
+	c := &domclient.Client{}
+	support.Assign(c, m)
+	return c
 }
 
 func uintPtrToNillable(p *uint) *uint {

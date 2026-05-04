@@ -3,6 +3,7 @@ package persistence
 import (
 	domclient "authorization-go/internal/domain/client"
 	"authorization-go/internal/infrastructure/model"
+	"authorization-go/internal/support"
 	"authorization-go/pkg/apperror"
 	"errors"
 	"time"
@@ -158,65 +159,13 @@ func (r *GormClientRepository) SoftDelete(id uint64, deletedBy uint, version int
 // ---------- マッピングヘルパー ----------
 
 func clientToDomain(m *model.Client) *domclient.Client {
-	c := &domclient.Client{
-		ID:          m.ID,
-		Name:        m.Name,
-		Identifier:  m.Identifier,
-		PostCode:    m.PostCode,
-		Pref:        m.Pref,
-		City:        m.City,
-		Address:     m.Address,
-		Building:    m.Building,
-		Tel:         m.Tel,
-		Email:       m.Email,
-		AccessToken: m.AccessToken,
-		PrivateKey:  m.PrivateKey,
-		PublicKey:   m.PublicKey,
-		Fingerprint: m.Fingerprint,
-		Status:      m.Status,
-		StartAt:     m.StartAt,
-		StopAt:      m.StopAt,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
-	if m.DeletedAt.Valid {
-		c.DeletedAt = &m.DeletedAt.Time
-	}
+	c := &domclient.Client{}
+	support.Assign(c, m)
 	return c
 }
 
 func clientToModel(c *domclient.Client) *model.Client {
-	m := &model.Client{
-		ID:          c.ID,
-		Name:        c.Name,
-		Identifier:  c.Identifier,
-		PostCode:    c.PostCode,
-		Pref:        c.Pref,
-		City:        c.City,
-		Address:     c.Address,
-		Building:    c.Building,
-		Tel:         c.Tel,
-		Email:       c.Email,
-		AccessToken: c.AccessToken,
-		PrivateKey:  c.PrivateKey,
-		PublicKey:   c.PublicKey,
-		Fingerprint: c.Fingerprint,
-		Status:      c.Status,
-		StartAt:     c.StartAt,
-		StopAt:      c.StopAt,
-		CreatedAt:   c.CreatedAt,
-		CreatedBy:   c.CreatedBy,
-		UpdatedAt:   c.UpdatedAt,
-		UpdatedBy:   c.UpdatedBy,
-		DeletedBy:   c.DeletedBy,
-		Version:     c.Version,
-	}
-	if c.DeletedAt != nil {
-		m.DeletedAt = gorm.DeletedAt{Time: *c.DeletedAt, Valid: true}
-	}
+	m := &model.Client{}
+	support.Assign(m, c)
 	return m
 }

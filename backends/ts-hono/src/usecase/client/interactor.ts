@@ -6,9 +6,10 @@
 import { createHash, generateKeyPairSync, randomBytes } from "crypto";
 import { conflict, notFound } from "../../lib/errors.js";
 import type { ClientRepository } from "../../domain/client/repository.js";
-import type { Client } from "../../domain/client/entity.js";
 import type { ClientListItem, ClientDetailVo, ClientStoreResultVo } from "../../domain/client/valueObjects.js";
 import type { ClientStoreInput, ClientUpdateInput } from "./dto.js";
+import { mapper } from "../../support/mapper.js";
+import { ClientSymbol, ClientListItemSymbol, ClientDetailVoSymbol, ClientStoreResultVoSymbol } from "../../support/mappers/index.js";
 
 function writeSSHMPInt(val: bigint): Buffer {
   let hex = val.toString(16);
@@ -44,25 +45,6 @@ function rsaFingerprintFromKeyObject(pubKey: ReturnType<typeof generateKeyPairSy
   return `SHA256:${b64}`;
 }
 
-function toListItem(c: Client): ClientListItem {
-  return {
-    id: c.id, name: c.name, identifier: c.identifier, status: c.status ?? 1,
-    startedAt: c.startedAt, stoppedAt: c.stoppedAt,
-    createdAt: c.createdAt, updatedAt: c.updatedAt,
-  };
-}
-
-function toDetailVo(c: Client): ClientDetailVo {
-  return {
-    id: c.id, name: c.name, identifier: c.identifier,
-    postCode: c.postCode ?? "", pref: c.pref ?? "", city: c.city ?? "",
-    address: c.address ?? "", building: c.building ?? "", tel: c.tel ?? "", email: c.email ?? "",
-    status: c.status ?? 1, fingerprint: c.fingerprint ?? null,
-    startedAt: c.startedAt, stoppedAt: c.stoppedAt,
-    createdAt: c.createdAt, updatedAt: c.updatedAt,
-  };
-}
-
 /** クライアントのユースケース実装。 */
 export class ClientInteractor {
   constructor(private readonly repo: ClientRepository) {}
@@ -84,7 +66,7 @@ export class ClientInteractor {
    */
   async getAllClients(keyword?: string, status?: number): Promise<ClientListItem[]> {
     const clients = await this.repo.findAll(keyword, status);
-    return clients.map(toListItem);
+    return mapper.mapArray(clients, ClientSymbol, ClientListItemSymbol);
   }
 
   /**
@@ -96,7 +78,7 @@ export class ClientInteractor {
   async getClientById(id: number): Promise<ClientDetailVo> {
     const c = await this.repo.findById(id);
     if (!c) throw notFound("client_not_found");
-    return toDetailVo(c);
+    return mapper.map(c, ClientSymbol, ClientDetailVoSymbol);
   }
 
   /**
@@ -137,7 +119,7 @@ export class ClientInteractor {
       deletedBy: null,
       version: 1,
     });
-    return { id: saved.id, name: saved.name, identifier: saved.identifier, email: saved.email ?? "", token: saved.token ?? "" };
+    return mapper.map(saved, ClientSymbol, ClientStoreResultVoSymbol);
   }
 
   /**
@@ -159,7 +141,7 @@ export class ClientInteractor {
     }
     await this.repo.update(id, patch, client.version);
     const updated = await this.repo.findById(id);
-    return toDetailVo(updated!);
+    return mapper.map(updated!, ClientSymbol, ClientDetailVoSymbol);
   }
 
   /**

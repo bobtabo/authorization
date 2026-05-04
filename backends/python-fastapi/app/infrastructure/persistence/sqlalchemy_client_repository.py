@@ -14,40 +14,11 @@ from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
 from app.exceptions import conflict
 from app.infrastructure.model.model import ClientModel
+from app.support.assign import assign
 
 
 def _to_entity(m: ClientModel) -> Client:
-    """ClientModel をドメインエンティティに変換します。
-
-    Args:
-        m: ClientModel インスタンス
-
-    Returns:
-        Client エンティティ
-    """
-    return Client(
-        id=m.id,
-        name=m.name,
-        identifier=m.identifier,
-        post_code=m.post_code,
-        pref=m.pref,
-        city=m.city,
-        address=m.address,
-        building=m.building,
-        tel=m.tel,
-        email=m.email,
-        status=m.status,
-        token=m.token,
-        public_key=m.public_key,
-        private_key=m.private_key,
-        fingerprint=m.fingerprint,
-        started_at=m.started_at,
-        stopped_at=m.stopped_at,
-        created_at=m.created_at,
-        updated_at=m.updated_at,
-        deleted_at=m.deleted_at,
-        version=m.version,
-    )
+    return assign(Client(), m)
 
 
 class SqlAlchemyClientRepository(ClientRepository):

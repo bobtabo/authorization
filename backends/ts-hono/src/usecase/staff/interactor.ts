@@ -5,16 +5,9 @@
  */
 import { badRequest, notFound } from "../../lib/errors.js";
 import type { StaffRepository } from "../../domain/staff/repository.js";
-import type { Staff } from "../../domain/staff/entity.js";
 import type { StaffListItem } from "../../domain/staff/valueObjects.js";
-
-function toListItem(s: Staff): StaffListItem {
-  return {
-    id: s.id, name: s.name, email: s.email, role: s.role ?? 0,
-    status: s.deletedAt !== null ? 0 : 1,
-    createdAt: s.createdAt, updatedAt: s.updatedAt,
-  };
-}
+import { mapper } from "../../support/mapper.js";
+import { StaffSymbol, StaffListItemSymbol } from "../../support/mappers/index.js";
 
 /** スタッフのユースケース実装。 */
 export class StaffInteractor {
@@ -28,7 +21,7 @@ export class StaffInteractor {
    */
   async findByCondition(keyword?: string, roles?: number[]): Promise<StaffListItem[]> {
     const staffs = await this.repo.findAll(keyword, roles);
-    return staffs.map(toListItem);
+    return mapper.mapArray(staffs, StaffSymbol, StaffListItemSymbol);
   }
 
   /**

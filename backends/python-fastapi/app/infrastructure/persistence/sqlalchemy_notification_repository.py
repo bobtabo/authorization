@@ -13,6 +13,7 @@ from app.domain.notification.entity import Notification
 from app.domain.notification.repository import NotificationRepository
 from app.exceptions import conflict
 from app.infrastructure.model.model import NotificationModel
+from app.support.assign import assign
 
 
 def _encode_cursor(ts: int, nid: int) -> str:
@@ -44,28 +45,7 @@ def _decode_cursor(cursor: str) -> tuple[int, int]:
 
 
 def _to_entity(m: NotificationModel) -> Notification:
-    """NotificationModel をドメインエンティティに変換します。
-
-    Args:
-        m: NotificationModel インスタンス
-
-    Returns:
-        Notification エンティティ
-    """
-    return Notification(
-        id=m.id,
-        staff_id=m.staff_id,
-        message_type=m.message_type,
-        title=m.title,
-        message=m.message,
-        url=m.url,
-        read=m.read,
-        created_at=m.created_at,
-        created_by=m.created_by,
-        updated_at=m.updated_at,
-        updated_by=m.updated_by,
-        version=m.version,
-    )
+    return assign(Notification(), m)
 
 
 class SqlAlchemyNotificationRepository(NotificationRepository):

@@ -42,6 +42,7 @@ dependencies {
     implementation("org.eclipse.angus:angus-mail:$angus_mail_version")
     implementation("io.github.cdimascio:dotenv-kotlin:$dotenv_version")
     implementation("com.nimbusds:nimbus-jose-jwt:$nimbus_jwt_version")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

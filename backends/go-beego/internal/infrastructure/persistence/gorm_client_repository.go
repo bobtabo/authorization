@@ -3,6 +3,7 @@ package persistence
 import (
 	domclient "authorization-go-beego/internal/domain/client"
 	"authorization-go-beego/internal/infrastructure/model"
+	"authorization-go-beego/internal/support"
 	"authorization-go-beego/pkg/apperror"
 	"time"
 
@@ -148,59 +149,13 @@ func (r *OrmClientRepository) SoftDelete(c *domclient.Client) error {
 }
 
 func clientToDomain(m *model.Client) *domclient.Client {
-	return &domclient.Client{
-		ID:          m.ID,
-		Name:        m.Name,
-		Identifier:  m.Identifier,
-		PostCode:    m.PostCode,
-		Pref:        m.Pref,
-		City:        m.City,
-		Address:     m.Address,
-		Building:    m.Building,
-		Tel:         m.Tel,
-		Email:       m.Email,
-		AccessToken: m.AccessToken,
-		PrivateKey:  m.PrivateKey,
-		PublicKey:   m.PublicKey,
-		Fingerprint: m.Fingerprint,
-		Status:      m.Status,
-		StartAt:     m.StartAt,
-		StopAt:      m.StopAt,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedAt:   m.DeletedAt,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
+	c := &domclient.Client{}
+	support.Assign(c, m)
+	return c
 }
 
 func clientToModel(c *domclient.Client) *model.Client {
-	return &model.Client{
-		ID:          c.ID,
-		Name:        c.Name,
-		Identifier:  c.Identifier,
-		PostCode:    c.PostCode,
-		Pref:        c.Pref,
-		City:        c.City,
-		Address:     c.Address,
-		Building:    c.Building,
-		Tel:         c.Tel,
-		Email:       c.Email,
-		AccessToken: c.AccessToken,
-		PrivateKey:  c.PrivateKey,
-		PublicKey:   c.PublicKey,
-		Fingerprint: c.Fingerprint,
-		Status:      c.Status,
-		StartAt:     c.StartAt,
-		StopAt:      c.StopAt,
-		CreatedAt:   c.CreatedAt,
-		CreatedBy:   c.CreatedBy,
-		UpdatedAt:   c.UpdatedAt,
-		UpdatedBy:   c.UpdatedBy,
-		DeletedAt:   c.DeletedAt,
-		DeletedBy:   c.DeletedBy,
-		Version:     c.Version,
-	}
+	m := &model.Client{}
+	support.Assign(m, c)
+	return m
 }

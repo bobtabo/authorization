@@ -4,6 +4,7 @@ import (
 	"authorization-go-echo/ent"
 	"authorization-go-echo/ent/notification"
 	domnotification "authorization-go-echo/internal/domain/notification"
+	"authorization-go-echo/internal/support"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -132,22 +133,9 @@ func (r *EntNotificationRepository) Patch(id int64, attrs map[string]interface{}
 }
 
 func entNotificationToDomain(m *ent.Notification) *domnotification.Notification {
-	return &domnotification.Notification{
-		ID:          m.ID,
-		StaffID:     m.StaffID,
-		MessageType: m.MessageType,
-		Title:       m.Title,
-		Message:     m.Message,
-		URL:         m.URL,
-		Read:        m.Read,
-		CreatedAt:   m.CreatedAt,
-		CreatedBy:   m.CreatedBy,
-		UpdatedAt:   m.UpdatedAt,
-		UpdatedBy:   m.UpdatedBy,
-		DeletedAt:   m.DeletedAt,
-		DeletedBy:   m.DeletedBy,
-		Version:     m.Version,
-	}
+	n := &domnotification.Notification{}
+	support.Assign(n, m)
+	return n
 }
 
 func encodeEntCursor(unixSec, id int64) string {

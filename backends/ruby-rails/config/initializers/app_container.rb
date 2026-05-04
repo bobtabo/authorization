@@ -1,7 +1,7 @@
 # Load DDD layers in dependency order (domain → usecase → infrastructure).
 # Files are explicitly required because their naming conventions (e.g. usecase/,
 # value_objects.rb defining Vo/ListItem) don't match Zeitwerk's expectations.
-%w[domain usecase infrastructure].each do |layer|
+%w[support domain usecase infrastructure].each do |layer|
   Dir[Rails.root.join("app/#{layer}/**/*.rb")].sort.each { |f| require f }
 end
 

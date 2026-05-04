@@ -36,7 +36,17 @@
 ## :building_construction: システム構造
 
 ```.
-├── 📂 backends/           # バックエンド構成（go-gin / php-laravel / python-fastapi / ts-hono）
+├── 📂 backends/           # バックエンド構成（PHP / Go / Kotlin / Python / TypeScript / Ruby / Rust）
+│   ├── go-beego/
+│   ├── go-echo/
+│   ├── go-gin/
+│   ├── kotlin-ktor/
+│   ├── php-laravel/
+│   ├── python-fastapi/
+│   ├── ruby-hanami/
+│   ├── ruby-rails/
+│   ├── rust-axum/
+│   └── ts-hono/
 ├── 📂 docker/             # コンテナ定義
 ├── 📂 docs/
 │   ├── api-spec/          # API 仕様書（OpenAPI / Swagger UI）

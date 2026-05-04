@@ -105,32 +105,7 @@ module Infrastructure
       private
 
       def row_to_entity(r)
-        Domain::Client::Entity.new(
-          id:           r.id,
-          name:         r.name,
-          identifier:   r.identifier,
-          post_code:    r.post_code,
-          pref:         r.pref,
-          city:         r.city,
-          address:      r.address,
-          building:     r.building,
-          tel:          r.tel,
-          email:        r.email,
-          access_token: r.access_token,
-          private_key:  r.private_key,
-          public_key:   r.public_key,
-          fingerprint:  r.fingerprint,
-          status:       r.status,
-          start_at:     r.start_at,
-          stop_at:      r.stop_at,
-          created_at:   r.created_at,
-          created_by:   r.created_by,
-          updated_at:   r.updated_at,
-          updated_by:   r.updated_by,
-          deleted_at:   r.deleted_at,
-          deleted_by:   r.deleted_by,
-          version:      r.version,
-        )
+        Support::Assign.call(Domain::Client::Entity.new, r)
       end
 
       def row_to_list_item(r)

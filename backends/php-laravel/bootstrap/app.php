@@ -30,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['staff_id']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontReport(AppException::class);
+
         $exceptions->render(function (AppException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->failure($e->getMessage(), $e->getCode());
