@@ -73,8 +73,9 @@ bin/docker-backends.sh up
 cd function
 make run-apigw-emulator
 ```
-
-> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送する。
+> [!NOTE]
+>
+> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。</br>Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送する。
 
 ### 6. フロントエンドの起動
 
@@ -86,7 +87,7 @@ npm run dev
 
 ### 7. バックエンドの初期設定
 
-各バックエンドで環境変数の設定が必要です。
+各バックエンドで環境変数の設定が必要です。</br>
 使用するバックエンドのみ実施してください。
 
 #### 7.1 PHP（Laravel）
@@ -107,8 +108,8 @@ php artisan migrate --seed
 ```
 
 > [!NOTE]
-> マイグレーションは PHP（Laravel）に一本化している。
-> 他のバックエンドはテスト用のスキーマ定義を個別に持つ。
+> 
+> マイグレーションは PHP（Laravel）に一本化している。</br>他のバックエンドはテスト用のスキーマ定義を個別に持つ。
 
 #### 7.2 Go（Gin）
 
