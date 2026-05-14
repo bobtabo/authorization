@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Authorization Gateway — アクセストークン</title>
+    <title>Authorization Gateway — ご利用開始のご案内</title>
     <!--[if mso]>
     <noscript>
         <xml>
@@ -17,13 +17,13 @@
 </head>
 <body style="margin:0;padding:0;background-color:#f9fafb;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN',Meiryo,sans-serif;">
     <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
-        アクセストークンを発行しました。Authorization Gateway
+        ご利用開始の手続きをお願いします。Authorization Gateway
     </div>
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f9fafb;">
         <tr>
             <td align="center" style="padding:40px 16px;">
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;margin:0 auto;">
-                    <!-- ヘッダー-->
+                    <!-- ヘッダー -->
                     <tr>
                         <td style="background-color:#ffffff;border:1px solid #e5e7eb;border-bottom:none;border-radius:12px 12px 0 0;padding:20px 24px;">
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -51,22 +51,32 @@
                     <tr>
                         <td style="background-color:#ffffff;border:1px solid #e5e7eb;border-top:1px solid #f3f4f6;padding:28px 24px 32px;border-radius:0 0 12px 12px;">
                             <h1 style="margin:0 0 8px;font-size:18px;font-weight:600;color:#111827;line-height:1.4;letter-spacing:-0.02em;">
-                                アクセストークンを発行しました
+                                ご利用開始のご案内
                             </h1>
                             <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#6b7280;">
                                 {{ $name }} 様
                             </p>
                             <p style="margin:0 0 24px;font-size:14px;line-height:1.75;color:#374151;">
-                                ご利用の <strong style="color:#4f46e5;font-weight:600;">Authorization Gateway</strong> 向けにアクセストークンを発行しました。<br>
-                                以下のトークンは第三者に共有せず、安全な場所で保管してください。
+                                <strong style="color:#4f46e5;font-weight:600;">Authorization Gateway</strong> へのご登録が完了しました。<br>
+                                以下のボタンからご利用を開始してください。
                             </p>
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                    <td align="center" style="padding:8px 0 24px;">
+                                        <a href="{{ $activateUrl }}"
+                                           style="display:inline-block;background-color:#4f46e5;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;letter-spacing:0.01em;">
+                                            ご利用を開始する
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
                             <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">
-                                発行されたトークン
+                                ボタンが開かない場合
                             </p>
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;">
                                 <tr>
-                                    <td style="padding:16px 18px;word-break:break-all;">
-                                        <code style="font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:13px;line-height:1.6;color:#111827;">{{ $accessToken }}</code>
+                                    <td style="padding:12px 16px;word-break:break-all;">
+                                        <a href="{{ $activateUrl }}" style="font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;line-height:1.6;color:#4f46e5;text-decoration:none;">{{ $activateUrl }}</a>
                                     </td>
                                 </tr>
                             </table>

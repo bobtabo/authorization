@@ -16,7 +16,9 @@ use App\Domain\Client\Enums\ClientStatus;
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Client\ValueObjects\ClientDetailVo;
 use App\Domain\Client\ValueObjects\ClientListVo;
+use App\Domain\Client\ValueObjects\ClientQrVo;
 use App\Domain\Client\ValueObjects\ClientStoreVo;
+use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Client\Dtos\ClientDto;
@@ -149,15 +151,41 @@ class ClientService extends AbstractService
 
         $saved = $this->repository->persist($entity);
 
+        $frontendUrl = rtrim((string)config('authorization.app.frontend_url'), '/');
+        $activateUrl = $frontendUrl . '/clients/' . $saved->identifier . '/qr';
+
         $configs = config('authorization.app.mail');
         return new ClientStoreVo()->assign([
             'id' => $saved->id,
             'name' => $saved->name,
             'from' => $configs['from'],
             'to' => $saved->email,
-            'subject' => get_mail_subject($configs['subject']['prefix'] . $configs['subject']['access_token']),
-            'template' => $configs['template']['access_token'],
-            'accessToken' => $saved->accessToken,
+            'subject' => get_mail_subject($configs['subject']['prefix'] . $configs['subject']['activate']),
+            'template' => $configs['template']['activate'],
+            'activateUrl' => $activateUrl,
+        ]);
+    }
+
+    /**
+     * QRコード表示用データを返します。
+     *
+     * @param ClientDto $dto クライアントDTO
+     * @return ClientQrVo QRコード用ValueObject
+     */
+    public function getQr(ClientDto $dto): ClientQrVo
+    {
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+        $entity = $this->repository->findByIdentifier($condition);
+        if ($entity === null) {
+            throw AppException::notFound('client_not_found');
+        }
+
+        $frontendUrl = rtrim((string)config('authorization.app.frontend_url'), '/');
+        $deeplinkUrl = $frontendUrl . '/clients/' . $entity->identifier;
+
+        return new ClientQrVo()->assign([
+            'identifier' => $entity->identifier,
+            'deeplinkUrl' => $deeplinkUrl,
         ]);
     }
 

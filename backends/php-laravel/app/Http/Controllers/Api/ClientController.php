@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Responses\Client\IndexResponse;
+use App\Http\Responses\Client\QrResponse;
 use App\Http\Responses\Client\ShowResponse;
 use App\Http\Responses\Client\StoreResponse;
 use App\Support\Http\Requests\AppRequest;
@@ -148,6 +149,27 @@ class ClientController extends Controller
             'createdAtCarbon' => 'createdAtCarbon',
             'updatedAtCarbon' => 'updatedAtCarbon',
         ]);
+
+        return response()->success($response->attributes());
+    }
+
+    /**
+     * スマホアプリ連携用QRコードデータを返します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントService
+     * @param string $identifier クライアント識別子
+     * @return JsonResponse JSON レスポンス
+     */
+    public function qr(AppRequest $request, ClientService $service, string $identifier): JsonResponse
+    {
+        $dto = new ClientDto();
+        $dto->identifier = $identifier;
+
+        $vo = $service->getQr($dto);
+
+        $response = new QrResponse();
+        $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
     }

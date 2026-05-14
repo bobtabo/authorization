@@ -35,10 +35,10 @@ return [
         'from' => env('MAIL_FROM_ADDRESS'),
         'subject' => [
             'prefix' => '【' . env('APP_NAME') . ' / PHP】',
-            'access_token' => 'アクセストークンのお知らせ',
+            'activate' => 'ご利用開始のご案内',
         ],
         'template' => [
-            'access_token' => 'templates.mails.access-token',
+            'activate' => 'templates.mails.activate',
         ],
     ],
 ];
