@@ -467,11 +467,13 @@ paths:
     patch:
       operationId: startClientByApp
       summary: スマホアプリからの利用開始
-      description: スマホアプリの操作で利用開始します。管理UIからの操作（PUT /clients/{id}/update）とは別エンドポイントです。
+      description: |
+        スマホアプリの操作で利用開始します。管理UIからの操作（PUT /clients/{id}/update）とは別エンドポイントです。
+        Inactive/Suspended の場合は Active に遷移します。既に Active の場合もアクセストークンを返します。
+        認証不要（identifier のみで呼び出し可能）。
       tags:
         - clients
-      security:
-        - clientTokenAuth: []
+      security: []
       parameters:
         - name: identifier
           in: path
@@ -490,12 +492,12 @@ paths:
                   message:
                     type: string
                     example: "SUCCESS"
-        '401':
-          description: アクセストークンが不正
+                  access_token:
+                    type: string
+                    description: アクセストークン
+                    example: "a1b2c3d4e5f6..."
         '404':
           description: クライアントが存在しない
-        '409':
-          description: 既に利用開始済み
 
   /clients/{identifier}/stop:
     patch:

@@ -40,8 +40,13 @@ class ClientTokenAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $token = $request->bearerToken();
+        if (empty($token)) {
+            throw AppException::unauthorized('client_not_found');
+        }
+
         $dto = new ClientDto();
-        $dto->accessToken = $request->bearerToken() ?? '';
+        $dto->accessToken = $token;
 
         if (!$this->clientService->authenticateByToken($dto)) {
             throw AppException::unauthorized('client_not_found');

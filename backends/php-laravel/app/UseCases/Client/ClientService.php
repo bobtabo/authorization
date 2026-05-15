@@ -15,8 +15,10 @@ use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Enums\ClientStatus;
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Client\ValueObjects\ClientDetailVo;
+use App\Domain\Client\ValueObjects\ClientInfoVo;
 use App\Domain\Client\ValueObjects\ClientListVo;
 use App\Domain\Client\ValueObjects\ClientQrVo;
+use App\Domain\Client\ValueObjects\ClientStartVo;
 use App\Domain\Client\ValueObjects\ClientStoreVo;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
@@ -180,12 +182,63 @@ class ClientService extends AbstractService
             throw AppException::notFound('client_not_found');
         }
 
-        $frontendUrl = rtrim((string)config('authorization.app.frontend_url'), '/');
-        $deeplinkUrl = $frontendUrl . '/clients/' . $entity->identifier;
+        $deeplinkUrl = 'authgateway://clients/' . $entity->identifier . '/info';
 
         return new ClientQrVo()->assign([
             'identifier' => $entity->identifier,
             'deeplinkUrl' => $deeplinkUrl,
+        ]);
+    }
+
+    /**
+     * スマホアプリからの利用開始処理を行い、アクセストークンを返します。
+     * Inactive / Suspended の場合は Active に遷移します。既に Active の場合もトークンを返します。
+     *
+     * @param ClientDto $dto クライアントDTO
+     * @return ClientStartVo 利用開始ValueObject
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     */
+    public function start(ClientDto $dto): ClientStartVo
+    {
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+        $entity = $this->repository->findByIdentifier($condition);
+        if ($entity === null) {
+            throw AppException::notFound('client_not_found');
+        }
+
+        if ($entity->status !== ClientStatus::Active) {
+            $entity->status = ClientStatus::Active;
+            if ($entity->startAt === null) {
+                $entity->startAt = Carbon::now();
+            }
+            $entity->stopAt = null;
+            $entity->assignUpdated(0);
+            $entity = $this->repository->persist($entity);
+        }
+
+        return new ClientStartVo()->assign(['accessToken' => $entity->accessToken]);
+    }
+
+    /**
+     * スマホアプリ向けにクライアント情報を返します。
+     * アクセストークンで認証済みのクライアントを対象とします。
+     *
+     * @param ClientDto $dto クライアントDTO
+     * @return ClientInfoVo クライアント情報ValueObject
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     */
+    public function getInfo(ClientDto $dto): ClientInfoVo
+    {
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+        $entity = $this->repository->findByIdentifier($condition);
+        if ($entity === null) {
+            throw AppException::notFound('client_not_found');
+        }
+
+        return new ClientInfoVo()->assign([
+            'identifier' => $entity->identifier,
+            'name' => $entity->name,
+            'status' => $entity->status->value,
         ]);
     }
 

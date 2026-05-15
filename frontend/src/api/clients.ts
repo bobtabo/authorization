@@ -41,3 +41,4 @@ export type ClientQr = {
 export async function getClientQr(identifier: string): Promise<ClientQr> {
   return apiGet<ClientQr>(`/clients/${identifier}/qr`);
 }
+

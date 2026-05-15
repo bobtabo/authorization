@@ -7,6 +7,8 @@
 return [
     //フロントエンドURL
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+    //API GatewayエミュレータのベースURL（QRコードのディープリンクに使用）
+    'api_gateway_url' => env('API_GATEWAY_URL', 'http://localhost:8080'),
     //バックエンドランタイム識別子（GitHub コールバック dispatcher の振り分けに使用）
     'runtime' => env('APP_RUNTIME', 'php'),
     //スタッフクッキー有効期間（分）
