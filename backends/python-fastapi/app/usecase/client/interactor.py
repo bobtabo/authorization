@@ -15,9 +15,9 @@ from typing import Optional
 from app.domain.client.entity import Client
 from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
-from app.domain.client.value_objects import ClientListItem, ClientDetailVo, ClientStoreResultVo
+from app.domain.client.value_objects import ClientListItem, ClientDetailVo, ClientStoreResultVo, ClientQrVo, ClientInfoVo, ClientStartVo
 from app.exceptions import not_found
-from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto
+from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto, ClientIdentifierDto
 
 
 def _rsa_fingerprint(private_key) -> str:
@@ -265,3 +265,85 @@ class ClientInteractor:
         client.status = 4
         saved = self.repository.save_client(client)
         self.repository.soft_delete_client(saved)
+
+    def get_qr(self, dto: ClientIdentifierDto) -> ClientQrVo:
+        """QRコードデータを返します。
+
+        Args:
+            dto: identifier を含む Dto
+
+        Returns:
+            ClientQrVo インスタンス
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_identifier(dto.identifier)
+        if client is None:
+            raise not_found("client_not_found")
+        deeplink_url = f"authgateway://clients/{client.identifier}/info"
+        return ClientQrVo(identifier=client.identifier, deeplink_url=deeplink_url)
+
+    def get_info(self, dto: ClientIdentifierDto) -> ClientInfoVo:
+        """スマホアプリ向けクライアント情報を返します。
+
+        Args:
+            dto: identifier を含む Dto
+
+        Returns:
+            ClientInfoVo インスタンス
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_identifier(dto.identifier)
+        if client is None:
+            raise not_found("client_not_found")
+        return ClientInfoVo(identifier=client.identifier, name=client.name, status=client.status)
+
+    def start(self, dto: ClientIdentifierDto) -> ClientStartVo:
+        """利用開始処理を行い、アクセストークンを返します。
+        Active 以外の場合は Active に遷移します。既に Active の場合もトークンを返します。
+
+        Args:
+            dto: identifier を含む Dto
+
+        Returns:
+            ClientStartVo インスタンス
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_identifier(dto.identifier)
+        if client is None:
+            raise not_found("client_not_found")
+
+        if client.status != 2:  # Active 以外
+            now = datetime.now(timezone.utc)
+            client.status = 2  # Active
+            if client.started_at is None:
+                client.started_at = now
+            client.stopped_at = None
+            client = self.repository.save_client(client)
+
+        return ClientStartVo(access_token=client.token or "")
+
+    def stop(self, dto: ClientIdentifierDto) -> None:
+        """利用停止処理を行います。
+        Active の場合は Suspended に遷移します。Active 以外は何もしません。
+
+        Args:
+            dto: identifier を含む Dto
+
+        Raises:
+            AppException: クライアントが存在しない場合
+        """
+        client = self.repository.find_client_by_identifier(dto.identifier)
+        if client is None:
+            raise not_found("client_not_found")
+
+        if client.status == 2:  # Active
+            now = datetime.now(timezone.utc)
+            client.status = 3  # Suspended
+            client.stopped_at = now
+            self.repository.save_client(client)
