@@ -22,8 +22,13 @@ module Authorization
             )
           end
           json_response(response, {})
+        rescue Domain::ConflictError => e
+          json_response(response, { error: e.message }, status: 409)
         rescue RuntimeError => e
           json_response(response, { error: e.message }, status: 404)
+        rescue StandardError => e
+          $stderr.puts "[stop] #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+          json_response(response, { error: "internal_server_error", detail: e.message }, status: 500)
         end
       end
     end
