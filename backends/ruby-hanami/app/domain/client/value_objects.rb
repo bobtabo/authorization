@@ -19,5 +19,14 @@ module Domain
 
     # クライアント登録結果の値オブジェクトです。
     StoreResultVo = Struct.new(:id, :name, :email, :access_token, keyword_init: true)
+
+    # QRコードデータの値オブジェクトです。
+    QrVo = Struct.new(:identifier, :deeplink_url, keyword_init: true)
+
+    # クライアント情報の値オブジェクトです。
+    InfoVo = Struct.new(:identifier, :name, :status, keyword_init: true)
+
+    # 利用開始結果の値オブジェクトです。
+    StartVo = Struct.new(:access_token, keyword_init: true)
   end
 end

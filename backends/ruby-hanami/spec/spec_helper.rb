@@ -45,11 +45,15 @@ TEST_APP = Hanami::Router.new do
   get  "/api/auth/login",                         to: Authorization::Actions::Auth::Login.new
   get  "/api/auth/logout",                        to: Authorization::Actions::Auth::Logout.new
   get  "/api/auth/invitation/:token",             to: Authorization::Actions::Auth::Invitation.new
-  get  "/api/clients",                            to: Authorization::Actions::Clients::Index.new
-  post "/api/clients/store",                      to: Authorization::Actions::Clients::Store.new
-  get  "/api/clients/:id",                        to: Authorization::Actions::Clients::Show.new
-  put  "/api/clients/:id/update",                 to: Authorization::Actions::Clients::Update.new
-  delete "/api/clients/:id/delete",               to: Authorization::Actions::Clients::Destroy.new
+  get    "/api/clients",                            to: Authorization::Actions::Clients::Index.new
+  post   "/api/clients/store",                      to: Authorization::Actions::Clients::Store.new
+  get    "/api/clients/:id",                        to: Authorization::Actions::Clients::Show.new
+  put    "/api/clients/:id/update",                 to: Authorization::Actions::Clients::Update.new
+  delete "/api/clients/:id/delete",                 to: Authorization::Actions::Clients::Destroy.new
+  get    "/api/clients/:identifier/qr",             to: Authorization::Actions::Clients::Qr.new
+  get    "/api/clients/:identifier/info",           to: Authorization::Actions::Clients::Info.new
+  patch  "/api/clients/:identifier/start",          to: Authorization::Actions::Clients::Start.new
+  patch  "/api/clients/:identifier/stop",           to: Authorization::Actions::Clients::Stop.new
   get    "/api/staffs",                           to: Authorization::Actions::Staffs::Index.new
   patch  "/api/staffs/:id/updateRole",            to: Authorization::Actions::Staffs::UpdateRole.new
   patch  "/api/staffs/:id/restore",               to: Authorization::Actions::Staffs::Restore.new

@@ -151,7 +151,7 @@ abstract class AbstractEloquentRepository
         } else {
             $cache = CacheKey::getCacheKeyByModel($model);
             $result = RedisModelCache::get($cache);
-            if (empty($result)) {
+            if (empty($result) || $result instanceof \__PHP_Incomplete_Class) {
                 $result = $this->addOption($model->newQuery(), $option)->get();
                 RedisModelCache::put($cache, $result);
             }
@@ -270,7 +270,8 @@ abstract class AbstractEloquentRepository
         $cache = CacheKey::getCacheKeyByModel($model, array_values($map));
         $modelValue = RedisModelCache::get($cache);
 
-        if (empty($modelValue)) {
+        // キャッシュヒットでも __PHP_Incomplete_Class になる場合は DB 検索します
+        if (empty($modelValue) || $modelValue instanceof \__PHP_Incomplete_Class) {
             if (empty($query)) {
                 $query = $model->newQuery();
             }

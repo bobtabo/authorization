@@ -179,6 +179,60 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 	writeJSON(ctx, http.StatusOK, mapClientDetail(detailVo))
 }
 
+func (h *ClientHandler) GetQr(ctx *beecontext.Context) {
+	identifier := ctx.Input.Param(":identifier")
+	vo, err := h.newClientUC(h.ormer).GetQr(uclient.FindByIdentifierDto{Identifier: identifier})
+	if err != nil {
+		writeError(ctx, err)
+		return
+	}
+	writeJSON(ctx, http.StatusOK, map[string]interface{}{
+		"identifier":   vo.Identifier,
+		"deeplink_url": vo.DeeplinkURL,
+	})
+}
+
+func (h *ClientHandler) GetInfo(ctx *beecontext.Context) {
+	identifier := ctx.Input.Param(":identifier")
+	vo, err := h.newClientUC(h.ormer).GetInfo(uclient.FindByIdentifierDto{Identifier: identifier})
+	if err != nil {
+		writeError(ctx, err)
+		return
+	}
+	writeJSON(ctx, http.StatusOK, map[string]interface{}{
+		"identifier": vo.Identifier,
+		"name":       vo.Name,
+		"status":     vo.Status,
+	})
+}
+
+func (h *ClientHandler) Start(ctx *beecontext.Context) {
+	identifier := ctx.Input.Param(":identifier")
+	var vo *domclient.StartVo
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
+		var e error
+		vo, e = h.newClientUC(tx).Start(uclient.FindByIdentifierDto{Identifier: identifier})
+		return e
+	}); txErr != nil {
+		writeError(ctx, txErr)
+		return
+	}
+	writeJSON(ctx, http.StatusOK, map[string]interface{}{
+		"access_token": vo.AccessToken,
+	})
+}
+
+func (h *ClientHandler) Stop(ctx *beecontext.Context) {
+	identifier := ctx.Input.Param(":identifier")
+	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
+		return h.newClientUC(tx).Stop(uclient.FindByIdentifierDto{Identifier: identifier})
+	}); txErr != nil {
+		writeError(ctx, txErr)
+		return
+	}
+	writeJSON(ctx, http.StatusOK, map[string]interface{}{})
+}
+
 func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 	id, err := strconv.ParseUint(ctx.Input.Param(":id"), 10, 64)
 	if err != nil {

@@ -182,6 +182,126 @@ func TestClient_Destroy(t *testing.T) {
 	})
 }
 
+func TestClient_GetQr(t *testing.T) {
+	truncateTables(t)
+
+	t.Run("QRコードデータが取得できる", func(t *testing.T) {
+		c := createClient(t, map[string]interface{}{"identifier": "qr-test-001"})
+		w := do(http.MethodGet, fmt.Sprintf("/api/clients/%s/qr", c.Identifier), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		if body["identifier"] != c.Identifier {
+			t.Errorf("want identifier=%s, got %v", c.Identifier, body["identifier"])
+		}
+		wantURL := "authgateway://clients/" + c.Identifier + "/info"
+		if body["deeplink_url"] != wantURL {
+			t.Errorf("want deeplink_url=%s, got %v", wantURL, body["deeplink_url"])
+		}
+	})
+
+	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
+		w := do(http.MethodGet, "/api/clients/no-such-identifier/qr", nil)
+		if w.Code != http.StatusNotFound {
+			t.Errorf("want 404, got %d", w.Code)
+		}
+	})
+}
+
+func TestClient_GetInfo(t *testing.T) {
+	truncateTables(t)
+
+	t.Run("クライアント情報が取得できる", func(t *testing.T) {
+		c := createClient(t, map[string]interface{}{"identifier": "info-test-001", "name": "情報テスト株式会社"})
+		w := do(http.MethodGet, fmt.Sprintf("/api/clients/%s/info", c.Identifier), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		if body["identifier"] != c.Identifier {
+			t.Errorf("want identifier=%s, got %v", c.Identifier, body["identifier"])
+		}
+		if body["name"] != c.Name {
+			t.Errorf("want name=%s, got %v", c.Name, body["name"])
+		}
+		if body["status"] == nil {
+			t.Error("status not found in response")
+		}
+	})
+
+	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
+		w := do(http.MethodGet, "/api/clients/no-such-identifier/info", nil)
+		if w.Code != http.StatusNotFound {
+			t.Errorf("want 404, got %d", w.Code)
+		}
+	})
+}
+
+func TestClient_Start(t *testing.T) {
+	truncateTables(t)
+
+	t.Run("Inactive状態からActiveに遷移してアクセストークンが返る", func(t *testing.T) {
+		c := createClient(t, map[string]interface{}{"identifier": "start-test-001", "status": 1})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/start", c.Identifier), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		if body["access_token"] == nil || body["access_token"] == "" {
+			t.Error("access_token not found or empty in response")
+		}
+	})
+
+	t.Run("Active状態でもアクセストークンが返る", func(t *testing.T) {
+		truncateTables(t)
+		c := createClient(t, map[string]interface{}{"identifier": "start-test-002", "status": 2})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/start", c.Identifier), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		if body["access_token"] == nil || body["access_token"] == "" {
+			t.Error("access_token not found or empty in response")
+		}
+	})
+
+	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
+		w := do(http.MethodPatch, "/api/clients/no-such-identifier/start", nil)
+		if w.Code != http.StatusNotFound {
+			t.Errorf("want 404, got %d", w.Code)
+		}
+	})
+}
+
+func TestClient_Stop(t *testing.T) {
+	truncateTables(t)
+
+	t.Run("Active状態からSuspendedに遷移する", func(t *testing.T) {
+		c := createClient(t, map[string]interface{}{"identifier": "stop-test-001", "status": 2})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/stop", c.Identifier), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("Active以外の状態でも200が返る", func(t *testing.T) {
+		truncateTables(t)
+		c := createClient(t, map[string]interface{}{"identifier": "stop-test-002", "status": 1})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/stop", c.Identifier), nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
+		w := do(http.MethodPatch, "/api/clients/no-such-identifier/stop", nil)
+		if w.Code != http.StatusNotFound {
+			t.Errorf("want 404, got %d", w.Code)
+		}
+	})
+}
+
 func TestClient_SoftDelete(t *testing.T) {
 	truncateTables(t)
 

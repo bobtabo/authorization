@@ -138,6 +138,56 @@ func (h *ClientHandler) Update(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapClientDetail(detailVo))
 }
 
+func (h *ClientHandler) GetQr(c echo.Context) error {
+	identifier := c.Param("identifier")
+	vo, err := h.newClientUC(h.db).GetQr(uclient.FindByIdentifierDto{Identifier: identifier})
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"identifier":   vo.Identifier,
+		"deeplink_url": vo.DeeplinkURL,
+	})
+}
+
+func (h *ClientHandler) GetInfo(c echo.Context) error {
+	identifier := c.Param("identifier")
+	vo, err := h.newClientUC(h.db).GetInfo(uclient.FindByIdentifierDto{Identifier: identifier})
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"identifier": vo.Identifier,
+		"name":       vo.Name,
+		"status":     vo.Status,
+	})
+}
+
+func (h *ClientHandler) Start(c echo.Context) error {
+	identifier := c.Param("identifier")
+	var vo *domclient.StartVo
+	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
+		var e error
+		vo, e = h.newClientUC(tx.Client()).Start(uclient.FindByIdentifierDto{Identifier: identifier})
+		return e
+	}); txErr != nil {
+		return txErr
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"access_token": vo.AccessToken,
+	})
+}
+
+func (h *ClientHandler) Stop(c echo.Context) error {
+	identifier := c.Param("identifier")
+	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
+		return h.newClientUC(tx.Client()).Stop(uclient.FindByIdentifierDto{Identifier: identifier})
+	}); txErr != nil {
+		return txErr
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{})
+}
+
 func (h *ClientHandler) Destroy(c echo.Context) error {
 	id, err := parseUint64Param(c, "id")
 	if err != nil {

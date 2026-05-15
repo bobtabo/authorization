@@ -134,4 +134,48 @@ class Api::ClientsController < Api::BaseController
     end
     render json: {}
   end
+
+  # QRコードデータを返します。
+  def qr
+    vo = container[:client_uc].get_qr(
+      UseCase::Client::FindByIdentifierDto.new(identifier: params[:identifier])
+    )
+    return render json: { error: "client_not_found" }, status: :not_found if vo.nil?
+
+    render json: { identifier: vo.identifier, deeplink_url: vo.deeplink_url }
+  end
+
+  # クライアント情報（スマホアプリ向け）を返します。
+  def info
+    vo = container[:client_uc].get_info(
+      UseCase::Client::FindByIdentifierDto.new(identifier: params[:identifier])
+    )
+    return render json: { error: "client_not_found" }, status: :not_found if vo.nil?
+
+    render json: { identifier: vo.identifier, name: vo.name, status: vo.status }
+  end
+
+  # 利用開始処理を行い、アクセストークンを返します。
+  def start
+    vo = ActiveRecord::Base.transaction do
+      container[:client_uc].start(
+        UseCase::Client::FindByIdentifierDto.new(identifier: params[:identifier])
+      )
+    end
+    return render json: { error: "client_not_found" }, status: :not_found if vo.nil?
+
+    render json: { access_token: vo.access_token }
+  end
+
+  # 利用停止処理を行います。
+  def stop
+    result = ActiveRecord::Base.transaction do
+      container[:client_uc].stop(
+        UseCase::Client::FindByIdentifierDto.new(identifier: params[:identifier])
+      )
+    end
+    return render json: { error: "client_not_found" }, status: :not_found if result.nil?
+
+    render json: {}
+  end
 end

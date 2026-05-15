@@ -410,6 +410,129 @@ paths:
         '500':
           description: サーバーエラー
 
+  /clients/{identifier}/qr:
+    get:
+      operationId: getClientQr
+      summary: スマホアプリ連携用QRコードデータを取得します
+      description: クライアント登録通知メールのリンクを踏んだ際にフロントエンドから呼び出されます。QRコードに埋め込むディープリンクURLを返します。
+      tags:
+        - clients
+      security: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+          description: クライアント識別子
+      responses:
+        '200':
+          description: 正常応答
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientQr'
+        '404':
+          description: クライアントが存在しない
+
+  /clients/{identifier}/info:
+    get:
+      operationId: getClientInfo
+      summary: スマホアプリ向けクライアント情報取得
+      description: QRコードのディープリンク経由でスマホアプリが呼び出します。アクセストークンを含むクライアント情報を返します。
+      tags:
+        - clients
+      security:
+        - clientTokenAuth: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+          description: クライアント識別子
+      responses:
+        '200':
+          description: 正常応答
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientMobileInfo'
+        '401':
+          description: アクセストークンが不正
+        '404':
+          description: クライアントが存在しない
+
+  /clients/{identifier}/start:
+    patch:
+      operationId: startClientByApp
+      summary: スマホアプリからの利用開始
+      description: |
+        スマホアプリの操作で利用開始します。管理UIからの操作（PUT /clients/{id}/update）とは別エンドポイントです。
+        Inactive/Suspended の場合は Active に遷移します。既に Active の場合もアクセストークンを返します。
+        認証不要（identifier のみで呼び出し可能）。
+      tags:
+        - clients
+      security: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+          description: クライアント識別子
+      responses:
+        '200':
+          description: 利用開始成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "SUCCESS"
+                  access_token:
+                    type: string
+                    description: アクセストークン
+                    example: "a1b2c3d4e5f6..."
+        '404':
+          description: クライアントが存在しない
+
+  /clients/{identifier}/stop:
+    patch:
+      operationId: stopClientByApp
+      summary: スマホアプリからの利用停止
+      description: スマホアプリの操作で利用停止します。管理UIからの操作（PUT /clients/{id}/update）とは別エンドポイントです。
+      tags:
+        - clients
+      security:
+        - clientTokenAuth: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+          description: クライアント識別子
+      responses:
+        '200':
+          description: 利用停止成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "SUCCESS"
+        '401':
+          description: アクセストークンが不正
+        '404':
+          description: クライアントが存在しない
+        '409':
+          description: 既に利用停止済み
+
   /clients/{id}/update:
     put:
       operationId: updateClient
@@ -934,6 +1057,46 @@ components:
           description: アバター画像URL（未設定時は null）
           example: "https://lh3.googleusercontent.com/a/example"
 
+    ClientQr:
+      type: object
+      description: スマホアプリ連携用QRコードデータ
+      required:
+        - identifier
+        - deeplink_url
+      properties:
+        identifier:
+          type: string
+          description: クライアント識別子
+          example: "6823f4a1c9d2e"
+        deeplink_url:
+          type: string
+          description: QRコードに埋め込むディープリンクURL
+          example: "https://app.authorization.com/clients/6823f4a1c9d2e"
+
+    ClientMobileInfo:
+      type: object
+      description: スマホアプリ向けクライアント情報
+      required:
+        - identifier
+        - name
+        - access_token
+        - status
+      properties:
+        identifier:
+          type: string
+          example: "6823f4a1c9d2e"
+        name:
+          type: string
+          example: "株式会社モックデータ商事"
+        access_token:
+          type: string
+          description: アクセストークン
+          example: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+        status:
+          type: integer
+          description: 状態コード（1=利用中、2=停止中）
+          example: 1
+
     ClientCreate:
       type: object
       description: クライアント登録情報を表すオブジェクトです。
@@ -1258,6 +1421,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    clientTokenAuth:
+      type: http
+      scheme: bearer
+      description: クライアントのアクセストークン認証（JWT ではなく登録時に発行される固定トークン）
 
 tags:
   - name: auth

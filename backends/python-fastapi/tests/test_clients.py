@@ -103,3 +103,84 @@ class TestSoftDelete:
         res = client.get(f"/api/clients/{c.id}")
         assert res.status_code == 200
         assert res.json()["id"] == c.id
+
+
+class TestQr:
+    def test_QRコードデータが取得できる(self, client, db_session):
+        c = make_client_record(db_session, identifier="abc123")
+        res = client.get(f"/api/clients/{c.identifier}/qr")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["identifier"] == "abc123"
+        assert data["deeplink_url"] == "authgateway://clients/abc123/info"
+
+    def test_存在しないidentifierで404が返る(self, client):
+        res = client.get("/api/clients/nonexistent/qr")
+        assert res.status_code == 404
+
+
+class TestInfo:
+    def test_クライアント情報が取得できる(self, client, db_session):
+        c = make_client_record(db_session, identifier="info-001", name="テスト店舗", status=2)
+        res = client.get(f"/api/clients/{c.identifier}/info")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["identifier"] == "info-001"
+        assert data["name"] == "テスト店舗"
+        assert data["status"] == 2
+
+    def test_存在しないidentifierで404が返る(self, client):
+        res = client.get("/api/clients/nonexistent/info")
+        assert res.status_code == 404
+
+
+class TestStart:
+    def test_Inactive状態からActiveに遷移しトークンが返る(self, client, db_session):
+        c = make_client_record(db_session, identifier="start-001", status=1)
+        res = client.patch(f"/api/clients/{c.identifier}/start")
+        assert res.status_code == 200
+        data = res.json()
+        assert "access_token" in data
+        assert data["access_token"] == c.token
+
+    def test_すでにActiveでもトークンが返る(self, client, db_session):
+        c = make_client_record(db_session, identifier="start-002", status=2)
+        res = client.patch(f"/api/clients/{c.identifier}/start")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["access_token"] == c.token
+
+    def test_Suspended状態からActiveに遷移しトークンが返る(self, client, db_session):
+        c = make_client_record(db_session, identifier="start-003", status=3)
+        res = client.patch(f"/api/clients/{c.identifier}/start")
+        assert res.status_code == 200
+        data = res.json()
+        assert "access_token" in data
+
+    def test_存在しないidentifierで404が返る(self, client):
+        res = client.patch("/api/clients/nonexistent/start")
+        assert res.status_code == 404
+
+
+class TestStop:
+    def test_Active状態からSuspendedに遷移する(self, client, db_session):
+        c = make_client_record(db_session, identifier="stop-001", status=2)
+        res = client.patch(f"/api/clients/{c.identifier}/stop")
+        assert res.status_code == 200
+        assert res.json() == {}
+
+    def test_Inactive状態では何もせず200を返す(self, client, db_session):
+        c = make_client_record(db_session, identifier="stop-002", status=1)
+        res = client.patch(f"/api/clients/{c.identifier}/stop")
+        assert res.status_code == 200
+        assert res.json() == {}
+
+    def test_Suspended状態では何もせず200を返す(self, client, db_session):
+        c = make_client_record(db_session, identifier="stop-003", status=3)
+        res = client.patch(f"/api/clients/{c.identifier}/stop")
+        assert res.status_code == 200
+        assert res.json() == {}
+
+    def test_存在しないidentifierで404が返る(self, client):
+        res = client.patch("/api/clients/nonexistent/stop")
+        assert res.status_code == 404

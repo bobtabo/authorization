@@ -23,5 +23,17 @@ module UseCase
 
     # クライアント一覧取得時に渡す DTO です。
     ListConditionDto = Struct.new(:keyword, :start_from, :start_to, :statuses, keyword_init: true)
+
+    # QRコードデータ取得時に渡す DTO です。
+    QrDto = Struct.new(:identifier, keyword_init: true)
+
+    # クライアント情報取得時に渡す DTO です。
+    InfoDto = Struct.new(:identifier, keyword_init: true)
+
+    # 利用開始時に渡す DTO です。
+    StartDto = Struct.new(:identifier, keyword_init: true)
+
+    # 利用停止時に渡す DTO です。
+    StopDto = Struct.new(:identifier, keyword_init: true)
   end
 end

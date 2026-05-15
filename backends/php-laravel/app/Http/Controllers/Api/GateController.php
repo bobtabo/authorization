@@ -59,10 +59,9 @@ class GateController extends Controller
      *
      * @param AppRequest $request HTTP リクエスト
      * @param GateService $service 認可Service
-     * @param string $identifier クライアント識別名
      * @return JsonResponse JSON レスポンス
      */
-    public function verify(AppRequest $request, GateService $service, string $identifier): JsonResponse
+    public function verify(AppRequest $request, GateService $service): JsonResponse
     {
         $token = $request->query('token');
         if (!is_string($token) || $token === '') {
@@ -70,7 +69,7 @@ class GateController extends Controller
         }
 
         $dto = new GateVerifyDto();
-        $dto->identifier = $identifier;
+        $dto->identifier = $request->input('identifier');
         $dto->token = $token;
 
         $vo = $service->verify($dto);

@@ -70,10 +70,11 @@ class AppRequest extends FormRequest
     #[\Override]
     public function input($key = null, $default = null)
     {
+        $extended = array_merge(parent::input(), $this->getExtendValue());
         if ($key !== null) {
-            return parent::input($key, $default);
+            return $extended[$key] ?? $default;
         }
-        return array_merge(parent::input(), $this->getExtendValue());
+        return $extended;
     }
 
     /**
@@ -107,6 +108,10 @@ class AppRequest extends FormRequest
 
         if (!Arr::has($result, 'id') && !empty($this->route('id'))) {
             $result['id'] = $this->route('id');
+        }
+
+        if (!Arr::has($result, 'identifier') && !empty($this->route('identifier'))) {
+            $result['identifier'] = $this->route('identifier');
         }
 
         $value = $this->header('X-Executor-Id');

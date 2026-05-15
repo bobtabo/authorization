@@ -122,6 +122,10 @@ func buildRouter() *echo.Echo {
 	api.PUT("/clients/:id/update", clientH.Update)
 	api.GET("/clients/:id", clientH.Show)
 	api.DELETE("/clients/:id/delete", clientH.Destroy)
+	api.GET("/clients/:identifier/qr", clientH.GetQr)
+	api.GET("/clients/:identifier/info", clientH.GetInfo)
+	api.PATCH("/clients/:identifier/start", clientH.Start)
+	api.PATCH("/clients/:identifier/stop", clientH.Stop)
 
 	api.GET("/staffs", staffH.Index)
 	api.PATCH("/staffs/:id/updateRole", staffH.UpdateRole)

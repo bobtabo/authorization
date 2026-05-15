@@ -106,4 +106,40 @@ app.delete("/clients/:id/delete", async (c) => {
   return c.json({ id });
 });
 
+// --- スマホアプリ連携エンドポイント ---
+
+app.get("/clients/:identifier/qr", async (c) => {
+  const identifier = c.req.param("identifier");
+  const uc = new ClientInteractor(new DrizzleClientRepository(db));
+  const vo = await uc.getQr(identifier);
+  return c.json({ identifier: vo.identifier, deeplink_url: vo.deeplinkUrl });
+});
+
+app.get("/clients/:identifier/info", async (c) => {
+  const identifier = c.req.param("identifier");
+  const uc = new ClientInteractor(new DrizzleClientRepository(db));
+  const vo = await uc.getInfo(identifier);
+  return c.json({ identifier: vo.identifier, name: vo.name, status: vo.status });
+});
+
+app.patch("/clients/:identifier/start", async (c) => {
+  const identifier = c.req.param("identifier");
+  let accessToken!: string;
+  await db.transaction(async (tx) => {
+    const uc = new ClientInteractor(new DrizzleClientRepository(asTx(tx)));
+    const vo = await uc.startClient(identifier);
+    accessToken = vo.accessToken;
+  });
+  return c.json({ access_token: accessToken });
+});
+
+app.patch("/clients/:identifier/stop", async (c) => {
+  const identifier = c.req.param("identifier");
+  await db.transaction(async (tx) => {
+    const uc = new ClientInteractor(new DrizzleClientRepository(asTx(tx)));
+    await uc.stopClient(identifier);
+  });
+  return c.json({});
+});
+
 export default app;

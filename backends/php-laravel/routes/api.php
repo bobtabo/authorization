@@ -36,6 +36,10 @@ Route::prefix('clients')->controller(ClientController::class)->group(function ()
     Route::put('{id}/update', 'update')->whereNumber('id');
     Route::get('{id}', 'show')->whereNumber('id');
     Route::delete('{id}/delete', 'destroy')->whereNumber('id');
+    Route::get('{identifier}/qr', 'qr')->where('identifier', '[a-zA-Z0-9._-]+');
+    Route::patch('{identifier}/start', 'start')->where('identifier', '[a-zA-Z0-9._-]+');
+    Route::patch('{identifier}/stop', 'stop')->where('identifier', '[a-zA-Z0-9._-]+');
+    Route::get('{identifier}/info', 'info')->where('identifier', '[a-zA-Z0-9._-]+');
 });
 
 // --- staffs ---

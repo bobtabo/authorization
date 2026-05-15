@@ -56,3 +56,33 @@ data class StoreResultVo(
     val email:       String,
     val accessToken: String,
 )
+
+/**
+ * スマホ連携 QR コードの値オブジェクトです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class QrVo(
+    val identifier:  String,
+    val deeplinkUrl: String,
+)
+
+/**
+ * スマホ連携クライアント情報の値オブジェクトです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class InfoVo(
+    val identifier: String,
+    val name:       String,
+    val status:     Int,
+)
+
+/**
+ * スマホ連携利用開始の値オブジェクトです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class StartVo(
+    val accessToken: String,
+)

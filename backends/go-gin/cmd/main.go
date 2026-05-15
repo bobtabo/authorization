@@ -115,6 +115,12 @@ func main() {
 		api.GET("/clients/:id", clientH.Show)
 		api.DELETE("/clients/:id/delete", clientH.Destroy)
 
+		// --- clients (スマホアプリ連携) ---
+		api.GET("/clients/:id/qr", clientH.Qr)
+		api.GET("/clients/:id/info", clientH.Info)
+		api.PATCH("/clients/:id/start", clientH.Start)
+		api.PATCH("/clients/:id/stop", clientH.Stop)
+
 		// --- staffs ---
 		api.GET("/staffs", staffH.Index)
 		api.PATCH("/staffs/:id/updateRole", staffH.UpdateRole)

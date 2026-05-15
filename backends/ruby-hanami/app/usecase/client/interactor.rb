@@ -117,6 +117,76 @@ module UseCase
         @repo.find_by_identifier(identifier)
       end
 
+      # identifier でクライアントを検索し QR コードデータを返します。
+      # @param dto [UseCase::Client::QrDto]
+      # @return [Domain::Client::QrVo]
+      def get_qr(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        raise "client_not_found" unless entity
+
+        Domain::Client::QrVo.new(
+          identifier:   entity.identifier,
+          deeplink_url: "authgateway://clients/#{entity.identifier}/info",
+        )
+      end
+
+      # identifier でクライアントを検索しスマホアプリ向け情報を返します。
+      # @param dto [UseCase::Client::InfoDto]
+      # @return [Domain::Client::InfoVo]
+      def get_info(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        raise "client_not_found" unless entity
+
+        Domain::Client::InfoVo.new(
+          identifier: entity.identifier,
+          name:       entity.name,
+          status:     entity.status,
+        )
+      end
+
+      # 利用開始処理を行い、アクセストークンを返します。
+      # Active 以外の場合は Active に遷移し start_at が未設定なら now をセット、stop_at をクリアします。
+      # @param dto [UseCase::Client::StartDto]
+      # @return [Domain::Client::StartVo]
+      def start(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        raise "client_not_found" unless entity
+
+        if entity.status != Domain::Client::Status::ACTIVE
+          now = Time.now
+          updated          = entity.dup
+          updated.status   = Domain::Client::Status::ACTIVE
+          updated.start_at = now if entity.start_at.nil?
+          updated.stop_at  = nil
+          updated.updated_at = now
+          updated.updated_by = 0
+          entity = @repo.save(updated)
+        end
+
+        Domain::Client::StartVo.new(access_token: entity.access_token)
+      end
+
+      # 利用停止処理を行います。
+      # Active の場合のみ Suspended に遷移し stop_at に now をセットします。
+      # @param dto [UseCase::Client::StopDto]
+      # @return [void]
+      def stop(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        raise "client_not_found" unless entity
+
+        if entity.status == Domain::Client::Status::ACTIVE
+          now = Time.now
+          updated          = entity.dup
+          updated.status   = Domain::Client::Status::SUSPENDED
+          updated.stop_at  = now
+          updated.updated_at = now
+          updated.updated_by = 0
+          @repo.save(updated)
+        end
+
+        nil
+      end
+
       private
 
       def entity_to_detail_vo(e)

@@ -10,7 +10,7 @@ from starlette.status import HTTP_201_CREATED
 from pydantic import BaseModel
 from app.routers.deps import get_client_interactor, get_notification_interactor, get_staff_id_from_cookie
 from app.usecase.client.interactor import ClientInteractor
-from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto
+from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto, ClientIdentifierDto
 from app.usecase.notification.interactor import NotificationInteractor
 from app.infrastructure.mail.mailer import send_access_token
 
@@ -129,3 +129,31 @@ def update(client_id: int, body: UpdateBody, interactor: ClientInteractor = Depe
 def destroy(client_id: int, interactor: ClientInteractor = Depends(get_client_interactor)):
     interactor.destroy(client_id)
     return {"id": client_id}
+
+
+@router.get("/clients/{identifier}/qr")
+def qr(identifier: str, interactor: ClientInteractor = Depends(get_client_interactor)):
+    dto = ClientIdentifierDto(identifier=identifier)
+    vo = interactor.get_qr(dto)
+    return {"identifier": vo.identifier, "deeplink_url": vo.deeplink_url}
+
+
+@router.get("/clients/{identifier}/info")
+def info(identifier: str, interactor: ClientInteractor = Depends(get_client_interactor)):
+    dto = ClientIdentifierDto(identifier=identifier)
+    vo = interactor.get_info(dto)
+    return {"identifier": vo.identifier, "name": vo.name, "status": vo.status}
+
+
+@router.patch("/clients/{identifier}/start")
+def start(identifier: str, interactor: ClientInteractor = Depends(get_client_interactor)):
+    dto = ClientIdentifierDto(identifier=identifier)
+    vo = interactor.start(dto)
+    return {"access_token": vo.access_token}
+
+
+@router.patch("/clients/{identifier}/stop")
+def stop(identifier: str, interactor: ClientInteractor = Depends(get_client_interactor)):
+    dto = ClientIdentifierDto(identifier=identifier)
+    interactor.stop(dto)
+    return {}

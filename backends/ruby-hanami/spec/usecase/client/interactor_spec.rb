@@ -103,4 +103,97 @@ RSpec.describe UseCase::Client::Interactor do
       expect(result.id).to eq 1
     end
   end
+
+  describe "#get_qr" do
+    it "returns QrVo with deeplink_url" do
+      entity = make_entity.call
+      allow(stub_repo).to receive(:find_by_identifier).with("id-1").and_return(entity)
+      vo = described_class.new(stub_repo).get_qr(UseCase::Client::QrDto.new(identifier: "id-1"))
+      expect(vo).to be_a(Domain::Client::QrVo)
+      expect(vo.identifier).to eq "id-1"
+      expect(vo.deeplink_url).to eq "authgateway://clients/id-1/info"
+    end
+
+    it "raises when identifier not found" do
+      allow(stub_repo).to receive(:find_by_identifier).and_return(nil)
+      expect {
+        described_class.new(stub_repo).get_qr(UseCase::Client::QrDto.new(identifier: "missing"))
+      }.to raise_error(RuntimeError, "client_not_found")
+    end
+  end
+
+  describe "#get_info" do
+    it "returns InfoVo" do
+      entity = make_entity.call
+      allow(stub_repo).to receive(:find_by_identifier).with("id-1").and_return(entity)
+      vo = described_class.new(stub_repo).get_info(UseCase::Client::InfoDto.new(identifier: "id-1"))
+      expect(vo).to be_a(Domain::Client::InfoVo)
+      expect(vo.identifier).to eq "id-1"
+      expect(vo.name).to eq "クライアント1"
+      expect(vo.status).to eq Domain::Client::Status::INACTIVE
+    end
+
+    it "raises when identifier not found" do
+      allow(stub_repo).to receive(:find_by_identifier).and_return(nil)
+      expect {
+        described_class.new(stub_repo).get_info(UseCase::Client::InfoDto.new(identifier: "missing"))
+      }.to raise_error(RuntimeError, "client_not_found")
+    end
+  end
+
+  describe "#start" do
+    it "transitions Inactive to Active and returns StartVo" do
+      entity = make_entity.call
+      active_entity = entity.dup
+      active_entity.status = Domain::Client::Status::ACTIVE
+      allow(stub_repo).to receive(:find_by_identifier).and_return(entity)
+      allow(stub_repo).to receive(:save).and_return(active_entity)
+      vo = described_class.new(stub_repo).start(UseCase::Client::StartDto.new(identifier: "id-1"))
+      expect(vo).to be_a(Domain::Client::StartVo)
+      expect(vo.access_token).to eq active_entity.access_token
+    end
+
+    it "returns StartVo without saving when already Active" do
+      entity = make_entity.call(1)
+      entity.status = Domain::Client::Status::ACTIVE
+      allow(stub_repo).to receive(:find_by_identifier).and_return(entity)
+      expect(stub_repo).not_to receive(:save)
+      vo = described_class.new(stub_repo).start(UseCase::Client::StartDto.new(identifier: "id-1"))
+      expect(vo).to be_a(Domain::Client::StartVo)
+    end
+
+    it "raises when identifier not found" do
+      allow(stub_repo).to receive(:find_by_identifier).and_return(nil)
+      expect {
+        described_class.new(stub_repo).start(UseCase::Client::StartDto.new(identifier: "missing"))
+      }.to raise_error(RuntimeError, "client_not_found")
+    end
+  end
+
+  describe "#stop" do
+    it "transitions Active to Suspended" do
+      entity = make_entity.call
+      entity.status = Domain::Client::Status::ACTIVE
+      suspended_entity = entity.dup
+      suspended_entity.status = Domain::Client::Status::SUSPENDED
+      allow(stub_repo).to receive(:find_by_identifier).and_return(entity)
+      allow(stub_repo).to receive(:save).and_return(suspended_entity)
+      result = described_class.new(stub_repo).stop(UseCase::Client::StopDto.new(identifier: "id-1"))
+      expect(result).to be_nil
+    end
+
+    it "does nothing when not Active" do
+      entity = make_entity.call
+      allow(stub_repo).to receive(:find_by_identifier).and_return(entity)
+      expect(stub_repo).not_to receive(:save)
+      described_class.new(stub_repo).stop(UseCase::Client::StopDto.new(identifier: "id-1"))
+    end
+
+    it "raises when identifier not found" do
+      allow(stub_repo).to receive(:find_by_identifier).and_return(nil)
+      expect {
+        described_class.new(stub_repo).stop(UseCase::Client::StopDto.new(identifier: "missing"))
+      }.to raise_error(RuntimeError, "client_not_found")
+    end
+  end
 end
