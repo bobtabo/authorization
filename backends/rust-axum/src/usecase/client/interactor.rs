@@ -8,11 +8,11 @@ use chrono::{DateTime, Utc};
 use crate::domain::client::{
     condition::Condition,
     entity::Client,
-    enums::STATUS_INACTIVE,
+    enums::{STATUS_ACTIVE, STATUS_INACTIVE, STATUS_SUSPENDED},
     repository::Repository,
-    value_objects::{DetailVo, ListItem, StoreResultVo},
+    value_objects::{DetailVo, ListItem, MobileInfoVo, StoreResultVo},
 };
-use super::dto::{ListConditionDto, StoreDto, UpdateDto};
+use super::dto::{ListConditionDto, StartResultVo, StoreDto, UpdateDto};
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -160,6 +160,57 @@ impl Interactor {
     /// 識別子でクライアントを返します。存在しない場合は None を返します。
     pub async fn find_by_identifier(&self, identifier: &str) -> Result<Option<Client>, UseCaseError> {
         Ok(self.repo.find_by_identifier(identifier).await?)
+    }
+
+    /// 識別子でクライアントのモバイル情報 VO を返します。存在しない場合はエラーを返します。
+    pub async fn find_mobile_info_by_identifier(&self, identifier: &str) -> Result<MobileInfoVo, UseCaseError> {
+        let c = self.repo.find_by_identifier(identifier).await?
+            .ok_or_else(|| simple_err("client_not_found"))?;
+        Ok(MobileInfoVo {
+            identifier: c.identifier,
+            name:       c.name,
+            status:     c.status,
+        })
+    }
+
+    /// 利用開始処理。Active 以外なら Active に変更し start_at・stop_at を更新します。
+    /// トランザクションは呼び出し側で管理してください。
+    /// 成功時は access_token を含む VO を返します。
+    pub async fn start(&self, identifier: &str) -> Result<StartResultVo, UseCaseError> {
+        let mut c = self.repo.find_by_identifier(identifier).await?
+            .ok_or_else(|| simple_err("client_not_found"))?;
+
+        if c.status != STATUS_ACTIVE {
+            let now = chrono::Utc::now();
+            c.status = STATUS_ACTIVE;
+            if c.start_at.is_none() {
+                c.start_at = Some(now);
+            }
+            c.stop_at    = None;
+            c.updated_at = now;
+            let saved = self.repo.save(c).await?;
+            return Ok(StartResultVo { access_token: saved.access_token });
+        }
+
+        Ok(StartResultVo { access_token: c.access_token })
+    }
+
+    /// 利用停止処理。Active なら Suspended に変更し stop_at をセットします。
+    /// Active 以外は何もしません。
+    /// トランザクションは呼び出し側で管理してください。
+    pub async fn stop(&self, identifier: &str) -> Result<(), UseCaseError> {
+        let mut c = self.repo.find_by_identifier(identifier).await?
+            .ok_or_else(|| simple_err("client_not_found"))?;
+
+        if c.status == STATUS_ACTIVE {
+            let now = chrono::Utc::now();
+            c.status     = STATUS_SUSPENDED;
+            c.stop_at    = Some(now);
+            c.updated_at = now;
+            self.repo.save(c).await?;
+        }
+
+        Ok(())
     }
 }
 
