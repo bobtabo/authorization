@@ -68,8 +68,13 @@ class GateController extends Controller
             throw AppException::badRequest('token_required');
         }
 
+        $identifier = $request->input('identifier');
+        if (!is_string($identifier) || $identifier === '') {
+            throw AppException::badRequest('identifier_required');
+        }
+
         $dto = new GateVerifyDto();
-        $dto->identifier = $request->input('identifier');
+        $dto->identifier = $identifier;
         $dto->token = $token;
 
         $vo = $service->verify($dto);

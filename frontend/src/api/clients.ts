@@ -39,6 +39,6 @@ export type ClientQr = {
 
 /** GET /clients/{identifier}/qr — スマホアプリ連携用QRコードデータ取得 */
 export async function getClientQr(identifier: string): Promise<ClientQr> {
-  return apiGet<ClientQr>(`/clients/${identifier}/qr`);
+  return apiGet<ClientQr>(`/clients/${encodeURIComponent(identifier)}/qr`);
 }
 

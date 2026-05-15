@@ -196,7 +196,7 @@ class ClientService extends AbstractService
      *
      * @param ClientDto $dto クライアントDTO
      * @return ClientStartVo 利用開始ValueObject
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     * @throws \Throwable
      */
     public function start(ClientDto $dto): ClientStartVo
     {
@@ -225,7 +225,7 @@ class ClientService extends AbstractService
      *
      * @param ClientDto $dto クライアントDTO
      * @return void
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     * @throws \Throwable
      */
     public function stop(ClientDto $dto): void
     {
@@ -249,7 +249,7 @@ class ClientService extends AbstractService
      *
      * @param ClientDto $dto クライアントDTO
      * @return ClientInfoVo クライアント情報ValueObject
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     * @throws \Throwable
      */
     public function getInfo(ClientDto $dto): ClientInfoVo
     {

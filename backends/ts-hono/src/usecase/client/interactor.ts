@@ -4,7 +4,7 @@
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 import { createHash, generateKeyPairSync, randomBytes } from "crypto";
-import { conflict, notFound } from "../../lib/errors.js";
+import { conflict, internal, notFound } from "../../lib/errors.js";
 import type { ClientRepository } from "../../domain/client/repository.js";
 import type { ClientListItem, ClientDetailVo, ClientStoreResultVo, ClientQrVo, ClientInfoVo, ClientStartVo } from "../../domain/client/valueObjects.js";
 import type { ClientStoreInput, ClientUpdateInput } from "./dto.js";
@@ -197,7 +197,8 @@ export class ClientInteractor {
     }
 
     const updated = await this.repo.findByIdentifier(identifier);
-    return { accessToken: updated!.token ?? "" };
+    if (!updated?.token) throw internal("token_missing");
+    return { accessToken: updated.token };
   }
 
   /**

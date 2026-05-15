@@ -34,7 +34,13 @@ pub async fn info(
             "name":       vo.name,
             "status":     vo.status,
         }))),
-        Err(_) => (StatusCode::NOT_FOUND, Json(json!({"error": "not_found"}))),
+        Err(e) => {
+            if e.to_string() == "client_not_found" {
+                (StatusCode::NOT_FOUND, Json(json!({"error": "client_not_found"})))
+            } else {
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})))
+            }
+        }
     }
 }
 

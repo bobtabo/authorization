@@ -9,6 +9,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.serialization.json.*
 
 class ClientIntegrationTest {
@@ -52,7 +53,7 @@ class ClientIntegrationTest {
     fun `GET api clients nonexistent id returns error`() = testApplication {
         application { module(TestHelper.cfg) }
         val response = client.get("/api/clients/99999")
-        assert(response.status != HttpStatusCode.OK)
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 
     @Test
@@ -120,7 +121,7 @@ class ClientIntegrationTest {
     fun `GET api clients nonexistent identifier qr returns error`() = testApplication {
         application { module(TestHelper.cfg) }
         val response = client.get("/api/clients/nonexistent-identifier/qr")
-        assert(response.status != HttpStatusCode.OK)
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 
     @Test
@@ -139,7 +140,7 @@ class ClientIntegrationTest {
     fun `GET api clients nonexistent identifier info returns error`() = testApplication {
         application { module(TestHelper.cfg) }
         val response = client.get("/api/clients/nonexistent-identifier/info")
-        assert(response.status != HttpStatusCode.OK)
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 
     @Test
@@ -156,7 +157,7 @@ class ClientIntegrationTest {
     fun `PATCH api clients nonexistent identifier start returns error`() = testApplication {
         application { module(TestHelper.cfg) }
         val response = client.patch("/api/clients/nonexistent-identifier/start")
-        assert(response.status != HttpStatusCode.OK)
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 
     @Test
@@ -173,6 +174,6 @@ class ClientIntegrationTest {
     fun `PATCH api clients nonexistent identifier stop returns error`() = testApplication {
         application { module(TestHelper.cfg) }
         val response = client.patch("/api/clients/nonexistent-identifier/stop")
-        assert(response.status != HttpStatusCode.OK)
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 }

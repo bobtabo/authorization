@@ -16,7 +16,7 @@ from app.domain.client.entity import Client
 from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
 from app.domain.client.value_objects import ClientListItem, ClientDetailVo, ClientStoreResultVo, ClientQrVo, ClientInfoVo, ClientStartVo
-from app.exceptions import not_found
+from app.exceptions import internal, not_found
 from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto, ClientIdentifierDto
 
 
@@ -326,7 +326,9 @@ class ClientInteractor:
             client.stopped_at = None
             client = self.repository.save_client(client)
 
-        return ClientStartVo(access_token=client.token or "")
+        if not client.token:
+            raise internal("client_token_missing")
+        return ClientStartVo(access_token=client.token)
 
     def stop(self, dto: ClientIdentifierDto) -> None:
         """利用停止処理を行います。
