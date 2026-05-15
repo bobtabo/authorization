@@ -4,9 +4,9 @@
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 import { createHash, generateKeyPairSync, randomBytes } from "crypto";
-import { conflict, notFound } from "../../lib/errors.js";
+import { conflict, internal, notFound } from "../../lib/errors.js";
 import type { ClientRepository } from "../../domain/client/repository.js";
-import type { ClientListItem, ClientDetailVo, ClientStoreResultVo } from "../../domain/client/valueObjects.js";
+import type { ClientListItem, ClientDetailVo, ClientStoreResultVo, ClientQrVo, ClientInfoVo, ClientStartVo } from "../../domain/client/valueObjects.js";
 import type { ClientStoreInput, ClientUpdateInput } from "./dto.js";
 import { mapper } from "../../support/mapper.js";
 import { ClientSymbol, ClientListItemSymbol, ClientDetailVoSymbol, ClientStoreResultVoSymbol } from "../../support/mappers/index.js";
@@ -142,6 +142,82 @@ export class ClientInteractor {
     await this.repo.update(id, patch, client.version);
     const updated = await this.repo.findById(id);
     return mapper.map(updated!, ClientSymbol, ClientDetailVoSymbol);
+  }
+
+  /**
+   * identifier で QRコードデータを返します。
+   * @param identifier - クライアント識別子
+   * @returns ClientQrVo
+   * @throws AppError クライアントが存在しない場合
+   */
+  async getQr(identifier: string): Promise<ClientQrVo> {
+    const client = await this.repo.findByIdentifier(identifier);
+    if (!client) throw notFound("client_not_found");
+    return {
+      identifier: client.identifier,
+      deeplinkUrl: `authgateway://clients/${client.identifier}/info`,
+    };
+  }
+
+  /**
+   * identifier でスマホアプリ向けクライアント情報を返します。
+   * @param identifier - クライアント識別子
+   * @returns ClientInfoVo
+   * @throws AppError クライアントが存在しない場合
+   */
+  async getInfo(identifier: string): Promise<ClientInfoVo> {
+    const client = await this.repo.findByIdentifier(identifier);
+    if (!client) throw notFound("client_not_found");
+    return {
+      identifier: client.identifier,
+      name: client.name,
+      status: client.status ?? 0,
+    };
+  }
+
+  /**
+   * 利用開始処理を行い、アクセストークンを返します。
+   * Active 以外なら Active(2) に遷移し、start_at が未設定なら now をセット、stop_at をクリアします。
+   * 既に Active でもアクセストークンを返します。
+   * @param identifier - クライアント識別子
+   * @returns ClientStartVo
+   * @throws AppError クライアントが存在しない場合
+   */
+  async startClient(identifier: string): Promise<ClientStartVo> {
+    const client = await this.repo.findByIdentifier(identifier);
+    if (!client) throw notFound("client_not_found");
+
+    if (client.status !== 2) {
+      const now = new Date();
+      await this.repo.update(client.id, {
+        status: 2,
+        startedAt: client.startedAt ?? now,
+        stoppedAt: null,
+      }, client.version);
+    }
+
+    const updated = await this.repo.findByIdentifier(identifier);
+    if (!updated?.token) throw internal("token_missing");
+    return { accessToken: updated.token };
+  }
+
+  /**
+   * 利用停止処理を行います。
+   * Active(2) なら Suspended(3) に遷移し、stop_at に now をセットします。
+   * Active 以外は何もしません。
+   * @param identifier - クライアント識別子
+   * @throws AppError クライアントが存在しない場合
+   */
+  async stopClient(identifier: string): Promise<void> {
+    const client = await this.repo.findByIdentifier(identifier);
+    if (!client) throw notFound("client_not_found");
+
+    if (client.status === 2) {
+      await this.repo.update(client.id, {
+        status: 3,
+        stoppedAt: new Date(),
+      }, client.version);
+    }
   }
 
   /**

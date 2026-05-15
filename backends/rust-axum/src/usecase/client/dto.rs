@@ -39,3 +39,8 @@ pub struct ListConditionDto {
     pub start_to:   Option<String>,
     pub statuses:   Vec<i32>,
 }
+
+/// スマホ連携: 利用開始結果 VO。
+pub struct StartResultVo {
+    pub access_token: String,
+}

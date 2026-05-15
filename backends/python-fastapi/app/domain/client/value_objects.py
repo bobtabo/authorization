@@ -53,3 +53,27 @@ class ClientStoreResultVo:
     identifier: str
     email: str
     token: str
+
+
+@dataclass(frozen=True)
+class ClientQrVo:
+    """QRコードデータバリューオブジェクト。"""
+
+    identifier: str
+    deeplink_url: str
+
+
+@dataclass(frozen=True)
+class ClientInfoVo:
+    """スマホアプリ向けクライアント情報バリューオブジェクト。"""
+
+    identifier: str
+    name: str
+    status: int
+
+
+@dataclass(frozen=True)
+class ClientStartVo:
+    """利用開始結果バリューオブジェクト。"""
+
+    access_token: str

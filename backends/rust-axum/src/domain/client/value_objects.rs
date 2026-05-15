@@ -43,3 +43,10 @@ pub struct StoreResultVo {
     pub email:      String,
     pub token:      String,
 }
+
+/// スマホ連携: クライアント情報 VO。
+pub struct MobileInfoVo {
+    pub identifier: String,
+    pub name:       String,
+    pub status:     i32,
+}

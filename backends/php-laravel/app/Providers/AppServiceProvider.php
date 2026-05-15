@@ -81,7 +81,9 @@ class AppServiceProvider extends ServiceProvider
                     ],
                     (array)$data
                 ),
-                $status
+                $status,
+                [],
+                JSON_UNESCAPED_UNICODE
             );
         });
 
@@ -92,7 +94,7 @@ class AppServiceProvider extends ServiceProvider
         ) {
             return response()->json([
                 'message' => $message,
-            ], $status);
+            ], $status, ['Content-Type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
         });
 
         // バリデーションの詳細付きエラー
@@ -102,7 +104,7 @@ class AppServiceProvider extends ServiceProvider
         ) {
             return response()->json([
                 'errors' => $errors,
-            ], $status);
+            ], $status, ['Content-Type' => 'application/json; charset=utf-8'], JSON_UNESCAPED_UNICODE);
         });
     }
 }

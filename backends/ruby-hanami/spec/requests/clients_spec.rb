@@ -82,4 +82,96 @@ RSpec.describe "Clients" do
       expect(last_response.status).to eq(200)
     end
   end
+
+  describe "GET /api/clients/:identifier/qr" do
+    it "QRコードデータを返す" do
+      client = create_client(identifier: "qr-test-001")
+      get "/api/clients/qr-test-001/qr"
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body["identifier"]).to eq("qr-test-001")
+      expect(body["deeplink_url"]).to eq("authgateway://clients/qr-test-001/info")
+    end
+
+    it "存在しない identifier で404を返す" do
+      get "/api/clients/not-exist/qr"
+      expect(last_response.status).to eq(404)
+    end
+  end
+
+  describe "GET /api/clients/:identifier/info" do
+    it "クライアント情報を返す" do
+      client = create_client(identifier: "info-test-001", status: 2)
+      get "/api/clients/info-test-001/info"
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body["identifier"]).to eq("info-test-001")
+      expect(body["name"]).to eq(client[:name])
+      expect(body["status"]).to eq(2)
+    end
+
+    it "存在しない identifier で404を返す" do
+      get "/api/clients/not-exist/info"
+      expect(last_response.status).to eq(404)
+    end
+  end
+
+  describe "PATCH /api/clients/:identifier/start" do
+    it "Inactive クライアントを Active に遷移しアクセストークンを返す" do
+      client = create_client(identifier: "start-test-001", status: 1)
+      patch "/api/clients/start-test-001/start", {}.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body["access_token"]).to eq(client[:access_token])
+      updated = db[:clients].where(identifier: "start-test-001").first
+      expect(updated[:status]).to eq(2)
+      expect(updated[:start_at]).not_to be_nil
+      expect(updated[:stop_at]).to be_nil
+    end
+
+    it "既に Active のクライアントでもアクセストークンを返す" do
+      client = create_client(identifier: "start-test-002", status: 2)
+      patch "/api/clients/start-test-002/start", {}.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body["access_token"]).to eq(client[:access_token])
+    end
+
+    it "存在しない identifier で404を返す" do
+      patch "/api/clients/not-exist/start", {}.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(404)
+    end
+  end
+
+  describe "PATCH /api/clients/:identifier/stop" do
+    it "Active クライアントを Suspended に遷移する" do
+      create_client(identifier: "stop-test-001", status: 2)
+      patch "/api/clients/stop-test-001/stop", {}.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body).to eq({})
+      updated = db[:clients].where(identifier: "stop-test-001").first
+      expect(updated[:status]).to eq(3)
+      expect(updated[:stop_at]).not_to be_nil
+    end
+
+    it "Active 以外のクライアントは何もせず200を返す" do
+      create_client(identifier: "stop-test-002", status: 1)
+      patch "/api/clients/stop-test-002/stop", {}.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(200)
+      updated = db[:clients].where(identifier: "stop-test-002").first
+      expect(updated[:status]).to eq(1)
+    end
+
+    it "存在しない identifier で404を返す" do
+      patch "/api/clients/not-exist/stop", {}.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(404)
+    end
+  end
 end

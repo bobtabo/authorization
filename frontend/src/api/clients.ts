@@ -31,3 +31,14 @@ export async function updateClient(id: number | string, body: unknown): Promise<
 export async function deleteClient(id: number | string, body: { version: number }): Promise<unknown> {
   return apiDelete(`/clients/${id}/delete`, { data: body });
 }
+
+export type ClientQr = {
+  identifier: string;
+  deeplink_url: string;
+};
+
+/** GET /clients/{identifier}/qr — スマホアプリ連携用QRコードデータ取得 */
+export async function getClientQr(identifier: string): Promise<ClientQr> {
+  return apiGet<ClientQr>(`/clients/${encodeURIComponent(identifier)}/qr`);
+}
+

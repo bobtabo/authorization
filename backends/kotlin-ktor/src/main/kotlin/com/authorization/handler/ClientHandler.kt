@@ -6,8 +6,13 @@
 package com.authorization.handler
 
 import com.authorization.infrastructure.mail.Mailer
+import com.authorization.support.AppException
+import com.authorization.usecase.client.InfoDto
 import com.authorization.usecase.client.Interactor as ClientUC
 import com.authorization.usecase.client.ListConditionDto
+import com.authorization.usecase.client.QrDto
+import com.authorization.usecase.client.StartDto
+import com.authorization.usecase.client.StopDto
 import com.authorization.usecase.client.StoreDto
 import com.authorization.usecase.client.UpdateDto
 import com.authorization.usecase.notification.FanOutDto
@@ -168,6 +173,75 @@ class ClientHandler(
             put("created_at", c.createdAt.fmt())
             put("updated_at", c.updatedAt.fmt())
         })
+    }
+
+    /**
+     * スマホ連携用 QR コードデータを返します。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun qr(call: ApplicationCall) {
+        val identifier = call.parameters["identifier"] ?: ""
+        try {
+            val vo = clientUC.getQr(QrDto(identifier = identifier))
+            call.respond(buildJsonObject {
+                put("identifier",   vo.identifier)
+                put("deeplink_url", vo.deeplinkUrl)
+            })
+        } catch (e: AppException) {
+            call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
+        }
+    }
+
+    /**
+     * スマホアプリ向けにクライアント情報を返します。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun info(call: ApplicationCall) {
+        val identifier = call.parameters["identifier"] ?: ""
+        try {
+            val vo = clientUC.getInfo(InfoDto(identifier = identifier))
+            call.respond(buildJsonObject {
+                put("identifier", vo.identifier)
+                put("name",       vo.name)
+                put("status",     vo.status)
+            })
+        } catch (e: AppException) {
+            call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
+        }
+    }
+
+    /**
+     * スマホアプリからの利用開始を処理し、アクセストークンを返します。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun start(call: ApplicationCall) {
+        val identifier = call.parameters["identifier"] ?: ""
+        try {
+            val vo = clientUC.start(StartDto(identifier = identifier))
+            call.respond(buildJsonObject {
+                put("access_token", vo.accessToken)
+            })
+        } catch (e: AppException) {
+            call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
+        }
+    }
+
+    /**
+     * スマホアプリからの利用停止を処理します。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun stop(call: ApplicationCall) {
+        val identifier = call.parameters["identifier"] ?: ""
+        try {
+            clientUC.stop(StopDto(identifier = identifier))
+            call.respond(HttpStatusCode.OK, buildJsonObject {})
+        } catch (e: AppException) {
+            call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
+        }
     }
 
     /**

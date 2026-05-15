@@ -9,4 +9,5 @@ Rails.application.configure do
   config.log_tags = [:request_id]
   config.logger = ActiveSupport::TaggedLogging.logger($stdout)
   config.hosts << "apis.authorization-rb-rails.dev"
+  config.hosts << "ample-precise-knee.ngrok-free.dev"
 end

@@ -74,3 +74,9 @@ type ListConditionDto struct {
 	// Statuses はステータスの絞り込みリスト。
 	Statuses []int
 }
+
+// FindByIdentifierDto はidentifierによるクライアント取得の入力データです。
+type FindByIdentifierDto struct {
+	// Identifier はクライアント識別子。
+	Identifier string
+}

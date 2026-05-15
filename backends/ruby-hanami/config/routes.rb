@@ -13,11 +13,15 @@ module Authorization
     get '/api/auth/invitation/:token', to: 'auth.invitation'
 
     # --- clients ---
-    get    '/api/clients',            to: 'clients.index'
-    post   '/api/clients/store',      to: 'clients.store'
-    put    '/api/clients/:id/update', to: 'clients.update'
-    get    '/api/clients/:id',        to: 'clients.show'
-    delete '/api/clients/:id/delete', to: 'clients.destroy'
+    get    '/api/clients',                           to: 'clients.index'
+    post   '/api/clients/store',                     to: 'clients.store'
+    put    '/api/clients/:id/update',                to: 'clients.update'
+    get    '/api/clients/:id',                       to: 'clients.show'
+    delete '/api/clients/:id/delete',                to: 'clients.destroy'
+    get    '/api/clients/:identifier/qr',            to: 'clients.qr'
+    get    '/api/clients/:identifier/info',          to: 'clients.info'
+    patch  '/api/clients/:identifier/start',         to: 'clients.start'
+    patch  '/api/clients/:identifier/stop',          to: 'clients.stop'
 
     # --- staffs ---
     get    '/api/staffs',                   to: 'staffs.index'

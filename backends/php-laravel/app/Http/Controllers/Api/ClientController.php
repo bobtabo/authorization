@@ -14,7 +14,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Responses\Client\IndexResponse;
+use App\Http\Responses\Client\InfoResponse;
+use App\Http\Responses\Client\QrResponse;
 use App\Http\Responses\Client\ShowResponse;
+use App\Http\Responses\Client\StartResponse;
 use App\Http\Responses\Client\StoreResponse;
 use App\Support\Http\Requests\AppRequest;
 use App\Support\Mails\DefaultMail;
@@ -153,18 +156,96 @@ class ClientController extends Controller
     }
 
     /**
+     * スマホアプリ連携用QRコードデータを返します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントService
+     * @return JsonResponse JSON レスポンス
+     */
+    public function qr(AppRequest $request, ClientService $service): JsonResponse
+    {
+        $dto = new ClientDto();
+        $dto->assign($request->input());
+
+        $vo = $service->getQr($dto);
+
+        $response = new QrResponse();
+        $response->assign($vo->attributes());
+
+        return response()->success($response->attributes());
+    }
+
+    /**
+     * スマホアプリからの利用開始を処理し、アクセストークンを返します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントService
+     * @return JsonResponse JSON レスポンス
+     */
+    public function start(AppRequest $request, ClientService $service): JsonResponse
+    {
+        $dto = new ClientDto();
+        $dto->assign($request->input());
+
+        $vo = DB::transaction(function () use ($service, $dto) {
+            return $service->start($dto);
+        });
+
+        $response = new StartResponse();
+        $response->assign($vo->attributes());
+
+        return response()->success($response->attributes());
+    }
+
+    /**
+     * スマホアプリからの利用停止を処理します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントService
+     * @return JsonResponse JSON レスポンス
+     */
+    public function stop(AppRequest $request, ClientService $service): JsonResponse
+    {
+        $dto = new ClientDto();
+        $dto->assign($request->input());
+
+        DB::transaction(function () use ($service, $dto) {
+            $service->stop($dto);
+        });
+
+        return response()->success();
+    }
+
+    /**
+     * スマホアプリ向けにクライアント情報を返します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントService
+     * @return JsonResponse JSON レスポンス
+     */
+    public function info(AppRequest $request, ClientService $service): JsonResponse
+    {
+        $dto = new ClientDto();
+        $dto->assign($request->input());
+        $vo = $service->getInfo($dto);
+
+        $response = new InfoResponse();
+        $response->assign($vo->attributes());
+
+        return response()->success($response->attributes());
+    }
+
+    /**
      * クライアントを論理削除します。
      *
      * @param AppRequest $request HTTP リクエスト
      * @param ClientService $service クライアントService
-     * @param int $id クライアントID
      * @return JsonResponse JSON レスポンス
      */
-    public function destroy(AppRequest $request, ClientService $service, int $id): JsonResponse
+    public function destroy(AppRequest $request, ClientService $service): JsonResponse
     {
         $dto = new ClientDto();
         $dto->assign($request->input());
-        $dto->id = $id;
         $dto->executorId = $this->staffIdFromCookie($request);
 
         DB::transaction(function () use ($service, $dto) {

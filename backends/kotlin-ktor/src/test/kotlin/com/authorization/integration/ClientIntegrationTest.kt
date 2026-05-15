@@ -9,6 +9,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.serialization.json.*
 
 class ClientIntegrationTest {
@@ -52,7 +53,7 @@ class ClientIntegrationTest {
     fun `GET api clients nonexistent id returns error`() = testApplication {
         application { module(TestHelper.cfg) }
         val response = client.get("/api/clients/99999")
-        assert(response.status != HttpStatusCode.OK)
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 
     @Test
@@ -101,5 +102,78 @@ class ClientIntegrationTest {
             header(HttpHeaders.Cookie, "staff_id=${staff.id}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    // --- スマホ連携 API ---
+
+    @Test
+    fun `GET api clients identifier qr returns qr data`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val c = TestHelper.createClient()
+        val response = client.get("/api/clients/${c.identifier}/qr")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertEquals(c.identifier, body["identifier"]!!.jsonPrimitive.content)
+        assertEquals("authgateway://clients/${c.identifier}/info", body["deeplink_url"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun `GET api clients nonexistent identifier qr returns error`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val response = client.get("/api/clients/nonexistent-identifier/qr")
+        assertTrue(response.status != HttpStatusCode.OK)
+    }
+
+    @Test
+    fun `GET api clients identifier info returns client info`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val c = TestHelper.createClient()
+        val response = client.get("/api/clients/${c.identifier}/info")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertEquals(c.identifier, body["identifier"]!!.jsonPrimitive.content)
+        assertNotNull(body["name"])
+        assertNotNull(body["status"])
+    }
+
+    @Test
+    fun `GET api clients nonexistent identifier info returns error`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val response = client.get("/api/clients/nonexistent-identifier/info")
+        assertTrue(response.status != HttpStatusCode.OK)
+    }
+
+    @Test
+    fun `PATCH api clients identifier start returns access token`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val c = TestHelper.createClient()
+        val response = client.patch("/api/clients/${c.identifier}/start")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertNotNull(body["access_token"])
+    }
+
+    @Test
+    fun `PATCH api clients nonexistent identifier start returns error`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val response = client.patch("/api/clients/nonexistent-identifier/start")
+        assertTrue(response.status != HttpStatusCode.OK)
+    }
+
+    @Test
+    fun `PATCH api clients identifier stop returns empty body`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val c = TestHelper.createClient()
+        val response = client.patch("/api/clients/${c.identifier}/stop")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertEquals(0, body.size)
+    }
+
+    @Test
+    fun `PATCH api clients nonexistent identifier stop returns error`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val response = client.patch("/api/clients/nonexistent-identifier/stop")
+        assertTrue(response.status != HttpStatusCode.OK)
     }
 }

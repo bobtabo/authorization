@@ -83,6 +83,12 @@ fun Application.module(cfg: Config) {
             get("/clients/{id}")         { clientH.show(call) }
             delete("/clients/{id}/delete") { clientH.destroy(call) }
 
+            // --- clients（スマホ連携）---
+            get("/clients/{identifier}/qr")    { clientH.qr(call) }
+            get("/clients/{identifier}/info")  { clientH.info(call) }
+            patch("/clients/{identifier}/start") { clientH.start(call) }
+            patch("/clients/{identifier}/stop")  { clientH.stop(call) }
+
             // --- staffs ---
             get("/staffs")                    { staffH.index(call) }
             patch("/staffs/{id}/updateRole")  { staffH.updateRole(call) }

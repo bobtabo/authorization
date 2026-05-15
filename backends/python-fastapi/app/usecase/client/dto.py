@@ -36,3 +36,10 @@ class ClientUpdateDto:
     tel: Optional[str] = None
     email: Optional[str] = None
     status: Optional[int] = None
+
+
+@dataclass
+class ClientIdentifierDto:
+    """identifier でクライアントを操作する Dto。"""
+
+    identifier: str

@@ -30,6 +30,7 @@ use Carbon\Carbon;
  * @method string|null getTel()
  * @method string|null getEmail()
  * @method string|null getAccessToken()
+ * @method string|null getActivateUrl()
  * @method int|null getStatus()
  * @method Carbon|null getStartAt()
  * @method Carbon|null getStopAt()
@@ -49,6 +50,7 @@ class ClientStoreVo extends MailSend
     protected ?string $tel = null;
     protected ?string $email = null;
     protected ?string $accessToken = null;
+    protected ?string $activateUrl = null;
     protected ?int $status = null;
     protected ?Carbon $startAt = null;
     protected ?Carbon $stopAt = null;

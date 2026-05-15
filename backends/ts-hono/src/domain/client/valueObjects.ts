@@ -70,3 +70,21 @@ export interface ClientUpdateVo {
   email?: string;
   status?: number;
 }
+
+/** QRコード返却用 VO。 */
+export interface ClientQrVo {
+  identifier: string;
+  deeplinkUrl: string;
+}
+
+/** スマホアプリ向けクライアント情報 VO。 */
+export interface ClientInfoVo {
+  identifier: string;
+  name: string;
+  status: number;
+}
+
+/** 利用開始結果 VO。 */
+export interface ClientStartVo {
+  accessToken: string;
+}
