@@ -100,6 +100,84 @@ describe("Clients", () => {
     });
   });
 
+  describe("GET /api/clients/:identifier/qr", () => {
+    test("QRコードデータが取得できる", async () => {
+      const c = await makeClientRecord({ identifier: "qr-test-001" });
+      const res = await app.request(`/api/clients/${c.identifier}/qr`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as Record<string, unknown>;
+      expect(body.identifier).toBe(c.identifier);
+      expect(body.deeplink_url).toBe(`authgateway://clients/${c.identifier}/info`);
+    });
+
+    test("存在しない identifier で404が返る", async () => {
+      const res = await app.request("/api/clients/not-exist-ident/qr");
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("GET /api/clients/:identifier/info", () => {
+    test("クライアント情報が取得できる", async () => {
+      const c = await makeClientRecord({ identifier: "info-test-001", name: "情報テスト株式会社", status: 2 });
+      const res = await app.request(`/api/clients/${c.identifier}/info`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as Record<string, unknown>;
+      expect(body.identifier).toBe(c.identifier);
+      expect(body.name).toBe(c.name);
+      expect(body.status).toBe(2);
+    });
+
+    test("存在しない identifier で404が返る", async () => {
+      const res = await app.request("/api/clients/not-exist-ident/info");
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("PATCH /api/clients/:identifier/start", () => {
+    test("Active 以外のクライアントを Active に変更しアクセストークンを返す", async () => {
+      const c = await makeClientRecord({ identifier: "start-test-001", status: 1 });
+      const res = await app.request(`/api/clients/${c.identifier}/start`, { method: "PATCH" });
+      expect(res.status).toBe(200);
+      const body = await res.json() as Record<string, unknown>;
+      expect(typeof body.access_token).toBe("string");
+      expect((body.access_token as string).length).toBeGreaterThan(0);
+    });
+
+    test("既に Active のクライアントもアクセストークンを返す", async () => {
+      const c = await makeClientRecord({ identifier: "start-test-002", status: 2 });
+      const res = await app.request(`/api/clients/${c.identifier}/start`, { method: "PATCH" });
+      expect(res.status).toBe(200);
+      const body = await res.json() as Record<string, unknown>;
+      expect(typeof body.access_token).toBe("string");
+    });
+
+    test("存在しない identifier で404が返る", async () => {
+      const res = await app.request("/api/clients/not-exist-ident/start", { method: "PATCH" });
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("PATCH /api/clients/:identifier/stop", () => {
+    test("Active のクライアントを Suspended に変更する", async () => {
+      const c = await makeClientRecord({ identifier: "stop-test-001", status: 2 });
+      const res = await app.request(`/api/clients/${c.identifier}/stop`, { method: "PATCH" });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({});
+    });
+
+    test("Active 以外は何もせず200を返す", async () => {
+      const c = await makeClientRecord({ identifier: "stop-test-002", status: 1 });
+      const res = await app.request(`/api/clients/${c.identifier}/stop`, { method: "PATCH" });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({});
+    });
+
+    test("存在しない identifier で404が返る", async () => {
+      const res = await app.request("/api/clients/not-exist-ident/stop", { method: "PATCH" });
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("論理削除済みレコードの可視性", () => {
     test("論理削除済みのクライアントが一覧に含まれる", async () => {
       const c = await makeClientRecord({ identifier: "soft-del-001" });

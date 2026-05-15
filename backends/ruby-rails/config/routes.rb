@@ -13,11 +13,17 @@ Rails.application.routes.draw do
     get  'auth/invitation/:token', to: 'auth#invitation'
 
     # --- clients（store を :id より先に定義して衝突回避）---
-    get    'clients',             to: 'clients#index'
-    post   'clients/store',       to: 'clients#store'
-    put    'clients/:id/update',  to: 'clients#update',  constraints: { id: /\d+/ }
-    get    'clients/:id',         to: 'clients#show',    constraints: { id: /\d+/ }
-    delete 'clients/:id/delete',  to: 'clients#destroy', constraints: { id: /\d+/ }
+    get    'clients',                          to: 'clients#index'
+    post   'clients/store',                    to: 'clients#store'
+    put    'clients/:id/update',               to: 'clients#update',  constraints: { id: /\d+/ }
+    get    'clients/:id',                      to: 'clients#show',    constraints: { id: /\d+/ }
+    delete 'clients/:id/delete',               to: 'clients#destroy', constraints: { id: /\d+/ }
+
+    # --- スマホアプリ連携 ---
+    get   'clients/:identifier/qr',    to: 'clients#qr'
+    get   'clients/:identifier/info',  to: 'clients#info'
+    patch 'clients/:identifier/start', to: 'clients#start'
+    patch 'clients/:identifier/stop',  to: 'clients#stop'
 
     # --- staffs ---
     get    'staffs',                    to: 'staffs#index'

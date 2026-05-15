@@ -116,6 +116,76 @@ module UseCase
         @repo.find_by_identifier(identifier)
       end
 
+      # QRコードデータを返します。identifier でクライアントを検索し、見つからなければ nil を返します。
+      # @param dto [UseCase::Client::FindByIdentifierDto]
+      # @return [Domain::Client::QrVo, nil]
+      def get_qr(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        return nil unless entity
+
+        Domain::Client::QrVo.new(
+          identifier:   entity.identifier,
+          deeplink_url: "authgateway://clients/#{entity.identifier}/info",
+        )
+      end
+
+      # クライアント情報（スマホアプリ向け）を返します。identifier でクライアントを検索し、見つからなければ nil を返します。
+      # @param dto [UseCase::Client::FindByIdentifierDto]
+      # @return [Domain::Client::InfoVo, nil]
+      def get_info(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        return nil unless entity
+
+        Domain::Client::InfoVo.new(
+          identifier: entity.identifier,
+          name:       entity.name,
+          status:     entity.status,
+        )
+      end
+
+      # 利用開始処理を行い、アクセストークンを返します。
+      # Active 以外であれば Active に遷移し、start_at 未設定なら now をセット、stop_at をクリアします。
+      # 既に Active でもトークンを返します。identifier でクライアントを検索し、見つからなければ nil を返します。
+      # @param dto [UseCase::Client::FindByIdentifierDto]
+      # @return [Domain::Client::StartVo, nil]
+      def start(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        return nil unless entity
+
+        if entity.status != Domain::Client::Status::ACTIVE
+          now = Time.current
+          entity.status   = Domain::Client::Status::ACTIVE
+          entity.start_at = now if entity.start_at.nil?
+          entity.stop_at  = nil
+          entity.updated_at = now
+          entity.updated_by = 0
+          @repo.save(entity)
+        end
+
+        Domain::Client::StartVo.new(access_token: entity.access_token)
+      end
+
+      # 利用停止処理を行います。
+      # Active であれば Suspended に遷移し、stop_at に now をセットします。
+      # Active 以外は何もしません。identifier でクライアントを検索し、見つからなければ nil を返します。
+      # @param dto [UseCase::Client::FindByIdentifierDto]
+      # @return [Boolean, nil] nil の場合はクライアント未存在
+      def stop(dto)
+        entity = @repo.find_by_identifier(dto.identifier)
+        return nil unless entity
+
+        if entity.status == Domain::Client::Status::ACTIVE
+          now = Time.current
+          entity.status     = Domain::Client::Status::SUSPENDED
+          entity.stop_at    = now
+          entity.updated_at = now
+          entity.updated_by = 0
+          @repo.save(entity)
+        end
+
+        true
+      end
+
       private
 
       def entity_to_detail_vo(e)
