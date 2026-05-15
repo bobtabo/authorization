@@ -9,8 +9,12 @@ import com.authorization.domain.client.Client
 import com.authorization.domain.client.ClientStatus
 import com.authorization.domain.client.Condition
 import com.authorization.domain.client.DetailVo
+import com.authorization.domain.client.InfoVo
+import com.authorization.domain.client.QrVo
 import com.authorization.domain.client.Repository
+import com.authorization.domain.client.StartVo
 import com.authorization.domain.client.StoreResultVo
+import com.authorization.support.AppException
 import com.authorization.support.create
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
@@ -145,6 +149,81 @@ class Interactor(private val repo: Repository) {
      * @return クライアント、または null
      */
     suspend fun findByIdentifier(identifier: String): Client? = repo.findByIdentifier(identifier)
+
+    /**
+     * スマホ連携 QR コードデータを返します。
+     *
+     * @param dto QR コード取得 DTO
+     * @return QR コード VO
+     */
+    suspend fun getQr(dto: QrDto): QrVo {
+        val c = repo.findByIdentifier(dto.identifier)
+            ?: throw AppException.notFound("client_not_found")
+        return QrVo(
+            identifier  = c.identifier,
+            deeplinkUrl = "authgateway://clients/${c.identifier}/info",
+        )
+    }
+
+    /**
+     * スマホアプリ向けにクライアント情報を返します。
+     *
+     * @param dto クライアント情報取得 DTO
+     * @return クライアント情報 VO
+     */
+    suspend fun getInfo(dto: InfoDto): InfoVo {
+        val c = repo.findByIdentifier(dto.identifier)
+            ?: throw AppException.notFound("client_not_found")
+        return InfoVo(
+            identifier = c.identifier,
+            name       = c.name,
+            status     = c.status,
+        )
+    }
+
+    /**
+     * スマホアプリからの利用開始処理を行い、アクセストークンを返します。
+     * Active 以外の場合は Active に遷移します。既に Active の場合もトークンを返します。
+     *
+     * @param dto 利用開始 DTO
+     * @return 利用開始 VO
+     */
+    suspend fun start(dto: StartDto): StartVo {
+        var c = repo.findByIdentifier(dto.identifier)
+            ?: throw AppException.notFound("client_not_found")
+        if (c.status != ClientStatus.ACTIVE) {
+            val now = LocalDateTime.now()
+            c = c.copy(
+                status    = ClientStatus.ACTIVE,
+                startAt   = c.startAt ?: now,
+                stopAt    = null,
+                updatedAt = now,
+                updatedBy = 0L,
+            )
+            c = repo.save(c)
+        }
+        return StartVo(accessToken = c.accessToken)
+    }
+
+    /**
+     * スマホアプリからの利用停止処理を行います。
+     * Active の場合は Suspended に遷移します。Active 以外は何もしません。
+     *
+     * @param dto 利用停止 DTO
+     */
+    suspend fun stop(dto: StopDto) {
+        val c = repo.findByIdentifier(dto.identifier)
+            ?: throw AppException.notFound("client_not_found")
+        if (c.status == ClientStatus.ACTIVE) {
+            val now = LocalDateTime.now()
+            repo.save(c.copy(
+                status    = ClientStatus.SUSPENDED,
+                stopAt    = now,
+                updatedAt = now,
+                updatedBy = 0L,
+            ))
+        }
+    }
 }
 
 private fun parseDateTime(s: String): LocalDateTime? {

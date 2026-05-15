@@ -4,10 +4,12 @@ import com.authorization.domain.client.Client
 import com.authorization.domain.client.ClientStatus
 import com.authorization.domain.client.Condition
 import com.authorization.domain.client.Repository
+import com.authorization.support.AppException
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -113,5 +115,99 @@ class InteractorTest {
     fun `findByIdentifier returns client when found`() = runBlocking {
         val uc = Interactor(mockRepo(byIdentifier = makeClient(7L)))
         assertTrue(uc.findByIdentifier("abc123") != null)
+    }
+
+    @Test
+    fun `getQr returns QrVo with correct deeplink_url`() = runBlocking {
+        val uc = Interactor(mockRepo(byIdentifier = makeClient(1L)))
+        val vo = uc.getQr(QrDto("abc123"))
+        assertEquals("abc123", vo.identifier)
+        assertEquals("authgateway://clients/abc123/info", vo.deeplinkUrl)
+    }
+
+    @Test
+    fun `getQr throws AppException when client not found`() = runBlocking {
+        val uc = Interactor(mockRepo(byIdentifier = null))
+        assertFailsWith<AppException> { uc.getQr(QrDto("notexist")) }
+        Unit
+    }
+
+    @Test
+    fun `getInfo returns InfoVo with identifier name and status`() = runBlocking {
+        val uc = Interactor(mockRepo(byIdentifier = makeClient(1L)))
+        val vo = uc.getInfo(InfoDto("abc123"))
+        assertEquals("abc123", vo.identifier)
+        assertEquals("Test Client", vo.name)
+        assertEquals(ClientStatus.ACTIVE, vo.status)
+    }
+
+    @Test
+    fun `getInfo throws AppException when client not found`() = runBlocking {
+        val uc = Interactor(mockRepo(byIdentifier = null))
+        assertFailsWith<AppException> { uc.getInfo(InfoDto("notexist")) }
+        Unit
+    }
+
+    @Test
+    fun `start returns access token and activates inactive client`() = runBlocking {
+        val inactive = makeClient(1L).copy(status = ClientStatus.INACTIVE, startAt = null)
+        var saved: Client? = null
+        val repo = object : Repository by mockRepo(byIdentifier = inactive) {
+            override suspend fun save(c: Client): Client { saved = c; return c }
+        }
+        val vo = Interactor(repo).start(StartDto("abc123"))
+        assertEquals("token123", vo.accessToken)
+        assertEquals(ClientStatus.ACTIVE, saved?.status)
+        assertTrue(saved?.startAt != null)
+        assertNull(saved?.stopAt)
+    }
+
+    @Test
+    fun `start returns access token without update when already active`() = runBlocking {
+        val active = makeClient(1L).copy(status = ClientStatus.ACTIVE)
+        var saveCalled = false
+        val repo = object : Repository by mockRepo(byIdentifier = active) {
+            override suspend fun save(c: Client): Client { saveCalled = true; return c }
+        }
+        val vo = Interactor(repo).start(StartDto("abc123"))
+        assertEquals("token123", vo.accessToken)
+        assertEquals(false, saveCalled)
+    }
+
+    @Test
+    fun `start throws AppException when client not found`() = runBlocking {
+        val uc = Interactor(mockRepo(byIdentifier = null))
+        assertFailsWith<AppException> { uc.start(StartDto("notexist")) }
+        Unit
+    }
+
+    @Test
+    fun `stop suspends active client`() = runBlocking {
+        val active = makeClient(1L).copy(status = ClientStatus.ACTIVE)
+        var saved: Client? = null
+        val repo = object : Repository by mockRepo(byIdentifier = active) {
+            override suspend fun save(c: Client): Client { saved = c; return c }
+        }
+        Interactor(repo).stop(StopDto("abc123"))
+        assertEquals(ClientStatus.SUSPENDED, saved?.status)
+        assertTrue(saved?.stopAt != null)
+    }
+
+    @Test
+    fun `stop does nothing when client is not active`() = runBlocking {
+        val suspended = makeClient(1L).copy(status = ClientStatus.SUSPENDED)
+        var saveCalled = false
+        val repo = object : Repository by mockRepo(byIdentifier = suspended) {
+            override suspend fun save(c: Client): Client { saveCalled = true; return c }
+        }
+        Interactor(repo).stop(StopDto("abc123"))
+        assertEquals(false, saveCalled)
+    }
+
+    @Test
+    fun `stop throws AppException when client not found`() = runBlocking {
+        val uc = Interactor(mockRepo(byIdentifier = null))
+        assertFailsWith<AppException> { uc.stop(StopDto("notexist")) }
+        Unit
     }
 }

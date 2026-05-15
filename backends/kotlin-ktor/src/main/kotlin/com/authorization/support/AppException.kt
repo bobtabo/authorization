@@ -22,5 +22,14 @@ class AppException(val statusCode: Int, message: String) : Exception(message) {
          */
         fun conflict(message: String = "optimistic_lock"): AppException =
             AppException(409, message)
+
+        /**
+         * リソース未検出例外を生成します（HTTP 404）。
+         *
+         * @param message エラーメッセージ
+         * @return AppException
+         */
+        fun notFound(message: String = "not_found"): AppException =
+            AppException(404, message)
     }
 }

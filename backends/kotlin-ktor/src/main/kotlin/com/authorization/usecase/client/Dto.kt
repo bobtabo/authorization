@@ -52,3 +52,31 @@ data class ListConditionDto(
     val startTo:   String?    = null,
     val statuses:  List<Int>  = emptyList(),
 )
+
+/**
+ * スマホ連携 QR コード取得 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class QrDto(val identifier: String)
+
+/**
+ * スマホ連携クライアント情報取得 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class InfoDto(val identifier: String)
+
+/**
+ * スマホ連携利用開始 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class StartDto(val identifier: String)
+
+/**
+ * スマホ連携利用停止 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class StopDto(val identifier: String)
