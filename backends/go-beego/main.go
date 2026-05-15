@@ -102,6 +102,11 @@ func main() {
 	web.Get("/api/clients/:id", clientH.Show)
 	web.Delete("/api/clients/:id/delete", clientH.Destroy)
 
+	web.Get("/clients/:identifier/qr", clientH.GetQr)
+	web.Get("/clients/:identifier/info", clientH.GetInfo)
+	web.Patch("/clients/:identifier/start", clientH.Start)
+	web.Patch("/clients/:identifier/stop", clientH.Stop)
+
 	web.Get("/api/staffs", staffH.Index)
 	web.Patch("/api/staffs/:id/updateRole", staffH.UpdateRole)
 	web.Patch("/api/staffs/:id/restore", staffH.Restore)
