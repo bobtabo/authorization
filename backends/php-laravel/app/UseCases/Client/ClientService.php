@@ -220,6 +220,30 @@ class ClientService extends AbstractService
     }
 
     /**
+     * スマホアプリからの利用停止処理を行います。
+     * Active の場合は Suspended に遷移します。既に Suspended / Inactive / Closed の場合は何もしません。
+     *
+     * @param ClientDto $dto クライアントDTO
+     * @return void
+     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     */
+    public function stop(ClientDto $dto): void
+    {
+        $condition = SimpleMapper::map($dto, ClientCondition::class);
+        $entity = $this->repository->findByIdentifier($condition);
+        if ($entity === null) {
+            throw AppException::notFound('client_not_found');
+        }
+
+        if ($entity->status === ClientStatus::Active) {
+            $entity->status = ClientStatus::Suspended;
+            $entity->stopAt = Carbon::now();
+            $entity->assignUpdated(0);
+            $this->repository->persist($entity);
+        }
+    }
+
+    /**
      * スマホアプリ向けにクライアント情報を返します。
      * アクセストークンで認証済みのクライアントを対象とします。
      *

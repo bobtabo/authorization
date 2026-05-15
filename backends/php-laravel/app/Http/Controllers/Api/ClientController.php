@@ -198,6 +198,25 @@ class ClientController extends Controller
     }
 
     /**
+     * スマホアプリからの利用停止を処理します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param ClientService $service クライアントService
+     * @return JsonResponse JSON レスポンス
+     */
+    public function stop(AppRequest $request, ClientService $service): JsonResponse
+    {
+        $dto = new ClientDto();
+        $dto->assign($request->input());
+
+        DB::transaction(function () use ($service, $dto) {
+            $service->stop($dto);
+        });
+
+        return response()->success();
+    }
+
+    /**
      * スマホアプリ向けにクライアント情報を返します。
      *
      * @param AppRequest $request HTTP リクエスト
