@@ -193,6 +193,68 @@ func (h *ClientHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, mapClientDetail(detailVo))
 }
 
+// Qr はidentifierでQRコードデータを返します。
+// GET /api/clients/:id/qr
+func (h *ClientHandler) Qr(c *gin.Context) {
+	identifier := c.Param("id")
+	vo, err := h.newClientUC(h.db).GetQr(identifier)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"identifier":   vo.Identifier,
+		"deeplink_url": vo.DeeplinkURL,
+	})
+}
+
+// Info はidentifierでスマホアプリ向けクライアント情報を返します。
+// GET /api/clients/:id/info
+func (h *ClientHandler) Info(c *gin.Context) {
+	identifier := c.Param("id")
+	vo, err := h.newClientUC(h.db).GetInfo(identifier)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"identifier": vo.Identifier,
+		"name":       vo.Name,
+		"status":     vo.Status,
+	})
+}
+
+// Start は利用開始処理を行い、アクセストークンを返します。
+// PATCH /api/clients/:id/start
+func (h *ClientHandler) Start(c *gin.Context) {
+	identifier := c.Param("id")
+	var startVo *domclient.StartVo
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		var e error
+		startVo, e = h.newClientUC(tx).Start(identifier)
+		return e
+	}); txErr != nil {
+		_ = c.Error(txErr)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": startVo.AccessToken,
+	})
+}
+
+// Stop は利用停止処理を行います。
+// PATCH /api/clients/:id/stop
+func (h *ClientHandler) Stop(c *gin.Context) {
+	identifier := c.Param("id")
+	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		return h.newClientUC(tx).Stop(identifier)
+	}); txErr != nil {
+		_ = c.Error(txErr)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 // Destroy はクライアントを論理削除します。
 // DELETE /api/clients/:id/delete
 func (h *ClientHandler) Destroy(c *gin.Context) {

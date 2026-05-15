@@ -90,6 +90,107 @@ func (uc *Interactor) FindByIdentifier(identifier string) (*domclient.Client, er
 	return uc.repo.FindByIdentifier(identifier)
 }
 
+// GetQr はidentifierでクライアントを検索し、QRコードデータを返します。
+// 見つからない場合は NotFound エラーを返します。
+//
+// identifier: クライアント識別子
+// 戻り値: QRコード用 Vo、またはエラー
+func (uc *Interactor) GetQr(identifier string) (*domclient.QrVo, error) {
+	c, err := uc.repo.FindByIdentifier(identifier)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, apperror.NotFound("client_not_found")
+	}
+	return &domclient.QrVo{
+		Identifier:  c.Identifier,
+		DeeplinkURL: "authgateway://clients/" + c.Identifier + "/info",
+	}, nil
+}
+
+// GetInfo はidentifierでクライアントを検索し、スマホアプリ向け情報を返します。
+// 見つからない場合は NotFound エラーを返します。
+//
+// identifier: クライアント識別子
+// 戻り値: クライアント情報 Vo、またはエラー
+func (uc *Interactor) GetInfo(identifier string) (*domclient.InfoVo, error) {
+	c, err := uc.repo.FindByIdentifier(identifier)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, apperror.NotFound("client_not_found")
+	}
+	return &domclient.InfoVo{
+		Identifier: c.Identifier,
+		Name:       c.Name,
+		Status:     c.Status,
+	}, nil
+}
+
+// Start はidentifierでクライアントを検索し、利用開始処理を行いアクセストークンを返します。
+// Active 以外の場合は Active に遷移します。既に Active の場合もトークンを返します。
+//
+// identifier: クライアント識別子
+// 戻り値: 利用開始 Vo、またはエラー
+func (uc *Interactor) Start(identifier string) (*domclient.StartVo, error) {
+	c, err := uc.repo.FindByIdentifier(identifier)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, apperror.NotFound("client_not_found")
+	}
+
+	if c.Status != domclient.StatusActive {
+		c.Status = domclient.StatusActive
+		now := time.Now()
+		if c.StartAt == nil {
+			c.StartAt = &now
+		}
+		c.StopAt = nil
+		zero := uint(0)
+		c.UpdatedAt = now
+		c.UpdatedBy = &zero
+		c, err = uc.repo.Save(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &domclient.StartVo{AccessToken: c.AccessToken}, nil
+}
+
+// Stop はidentifierでクライアントを検索し、利用停止処理を行います。
+// Active の場合は Suspended に遷移します。Active 以外は何もしません。
+//
+// identifier: クライアント識別子
+// 戻り値: エラー
+func (uc *Interactor) Stop(identifier string) error {
+	c, err := uc.repo.FindByIdentifier(identifier)
+	if err != nil {
+		return err
+	}
+	if c == nil {
+		return apperror.NotFound("client_not_found")
+	}
+
+	if c.Status == domclient.StatusActive {
+		now := time.Now()
+		c.Status = domclient.StatusSuspended
+		c.StopAt = &now
+		zero := uint(0)
+		c.UpdatedAt = now
+		c.UpdatedBy = &zero
+		if _, err = uc.repo.Save(c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Store はクライアントを新規登録し、登録結果の値オブジェクトを返します。
 // RSA鍵ペア・アクセストークンを自動生成します。
 //

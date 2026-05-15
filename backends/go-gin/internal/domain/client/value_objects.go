@@ -40,3 +40,21 @@ type StoreVo struct {
 	Email       string
 	AccessToken string
 }
+
+// QrVo はQRコードデータのレスポンス用値オブジェクトです。
+type QrVo struct {
+	Identifier  string
+	DeeplinkURL string
+}
+
+// InfoVo はスマホアプリ向けクライアント情報のレスポンス用値オブジェクトです。
+type InfoVo struct {
+	Identifier string
+	Name       string
+	Status     int
+}
+
+// StartVo は利用開始レスポンス用値オブジェクトです。
+type StartVo struct {
+	AccessToken string
+}
