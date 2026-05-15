@@ -181,6 +181,83 @@ func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
 	return clientToDetailVo(saved), nil
 }
 
+// GetQr はidentifierでクライアントを取得し、QRコード用データを返します。
+func (uc *Interactor) GetQr(dto FindByIdentifierDto) (*domclient.QrVo, error) {
+	c, err := uc.repo.FindByIdentifier(&domclient.Client{Identifier: dto.Identifier})
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, apperror.NotFound("client_not_found")
+	}
+	return &domclient.QrVo{
+		Identifier:  c.Identifier,
+		DeeplinkURL: "authgateway://clients/" + c.Identifier + "/info",
+	}, nil
+}
+
+// GetInfo はidentifierでクライアント情報を返します。
+func (uc *Interactor) GetInfo(dto FindByIdentifierDto) (*domclient.InfoVo, error) {
+	c, err := uc.repo.FindByIdentifier(&domclient.Client{Identifier: dto.Identifier})
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, apperror.NotFound("client_not_found")
+	}
+	return &domclient.InfoVo{
+		Identifier: c.Identifier,
+		Name:       c.Name,
+		Status:     c.Status,
+	}, nil
+}
+
+// Start はidentifierでクライアントを取得し、利用開始処理を行ってアクセストークンを返します。
+func (uc *Interactor) Start(dto FindByIdentifierDto) (*domclient.StartVo, error) {
+	c, err := uc.repo.FindByIdentifier(&domclient.Client{Identifier: dto.Identifier})
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		return nil, apperror.NotFound("client_not_found")
+	}
+	if c.Status != domclient.StatusActive {
+		now := time.Now()
+		c.Status = domclient.StatusActive
+		if c.StartAt == nil {
+			c.StartAt = &now
+		}
+		c.StopAt = nil
+		c.UpdatedAt = now
+		c, err = uc.repo.Save(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &domclient.StartVo{AccessToken: c.AccessToken}, nil
+}
+
+// Stop はidentifierでクライアントを取得し、利用停止処理を行います。
+func (uc *Interactor) Stop(dto FindByIdentifierDto) error {
+	c, err := uc.repo.FindByIdentifier(&domclient.Client{Identifier: dto.Identifier})
+	if err != nil {
+		return err
+	}
+	if c == nil {
+		return apperror.NotFound("client_not_found")
+	}
+	if c.Status == domclient.StatusActive {
+		now := time.Now()
+		c.Status = domclient.StatusSuspended
+		c.StopAt = &now
+		c.UpdatedAt = now
+		if _, err = uc.repo.Save(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Destroy はクライアントを論理削除します。
 func (uc *Interactor) Destroy(dto DestroyDto) error {
 	c, err := uc.repo.FindByIDIncludeDeleted(&domclient.Client{ID: dto.ID})

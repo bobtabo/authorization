@@ -36,3 +36,18 @@ type StoreVo struct {
 	Email       string
 	AccessToken string
 }
+
+type QrVo struct {
+	Identifier  string
+	DeeplinkURL string
+}
+
+type InfoVo struct {
+	Identifier string
+	Name       string
+	Status     int
+}
+
+type StartVo struct {
+	AccessToken string
+}
