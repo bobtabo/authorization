@@ -220,7 +220,7 @@ class ClientHandler(
     suspend fun start(call: ApplicationCall) {
         val identifier = call.parameters["identifier"] ?: ""
         try {
-            val vo = newSuspendedTransaction { clientUC.start(StartDto(identifier = identifier)) }
+            val vo = clientUC.start(StartDto(identifier = identifier))
             call.respond(buildJsonObject {
                 put("access_token", vo.accessToken)
             })
@@ -237,7 +237,7 @@ class ClientHandler(
     suspend fun stop(call: ApplicationCall) {
         val identifier = call.parameters["identifier"] ?: ""
         try {
-            newSuspendedTransaction { clientUC.stop(StopDto(identifier = identifier)) }
+            clientUC.stop(StopDto(identifier = identifier))
             call.respond(HttpStatusCode.OK, buildJsonObject {})
         } catch (e: AppException) {
             call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
