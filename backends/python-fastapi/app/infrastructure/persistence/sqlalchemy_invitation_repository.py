@@ -68,7 +68,7 @@ class SqlAlchemyInvitationRepository(InvitationRepository):
         return _build_vo(m.token, m.role, self.frontend_url)
 
     def issue(self, role: int) -> InvitationVo:
-        """新しい招待トークンを生成して保存し、バリューオブジェクトを返します。
+        """既存の招待レコードのトークンを更新し、バリューオブジェクトを返します。
 
         Args:
             role: ロール（1=管理者, 2=メンバー）
@@ -76,9 +76,18 @@ class SqlAlchemyInvitationRepository(InvitationRepository):
         Returns:
             InvitationVo インスタンス
         """
+        m = (
+            self.db.query(InvitationModel)
+            .filter(InvitationModel.role == role)
+            .order_by(InvitationModel.id.desc())
+            .first()
+        )
         token = secrets.token_hex(16)
-        m = InvitationModel(token=token, role=role)
-        self.db.add(m)
+        if m is None:
+            m = InvitationModel(token=token, role=role)
+            self.db.add(m)
+        else:
+            m.token = token
         self.db.flush()
         return _build_vo(token, role, self.frontend_url)
 
