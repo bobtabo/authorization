@@ -838,6 +838,16 @@ paths:
       tags:
         - admin
       security: []
+      parameters:
+        - name: role
+          in: query
+          required: false
+          description: 招待するスタッフの権限（1=管理者, 2=メンバー）。省略時は 2（メンバー）。
+          schema:
+            type: integer
+            enum: [1, 2]
+            default: 2
+          example: 2
       responses:
         '200':
           description: 成功時にレスポンスを返します。
@@ -850,6 +860,8 @@ paths:
                     type: string
                     description: 招待用トークン（ハッシュ）を含むURL
                     example: "/auth/invitation/7f3a9c2e1b8d4f6a0e5c7b2d9f1a4e8c0d3b6a9f2e5c8d1b4a7f0e3c6d9b2a5f8"
+        '400':
+          description: role パラメーターが不正
         '401':
           description: 未認証
         '500':

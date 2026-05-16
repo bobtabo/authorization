@@ -19,20 +19,21 @@ namespace App\Domain\Invitation\Repositories;
 interface InvitationAuthRepository
 {
     /**
-     * 招待トークンを一時保存します。
+     * 招待トークンとロールを一時保存します。
      *
      * @param string $token 招待トークン
+     * @param int $role 権限（1=管理者, 2=メンバー）
      * @param int $ttl 有効期限（秒）
      */
-    public function store(string $token, int $ttl): void;
+    public function store(string $token, int $role, int $ttl): void;
 
     /**
-     * 招待トークンを取得します。
+     * 招待トークンに紐づくロールを取得します。
      *
      * @param string $token 招待トークン
-     * @return string|null トークン文字列、未保存の場合 null
+     * @return int|null ロール、未保存の場合 null
      */
-    public function find(string $token): ?string;
+    public function find(string $token): ?int;
 
     /**
      * 招待トークンを削除します。

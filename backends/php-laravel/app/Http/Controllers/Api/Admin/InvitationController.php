@@ -36,7 +36,9 @@ class InvitationController extends Controller
      */
     public function index(AppRequest $request, InvitationService $service): JsonResponse
     {
-        $vo = $service->current(new InvitationDto());
+        $dto = new InvitationDto();
+        $dto->role = $this->resolveRole($request);
+        $vo = $service->current($dto);
 
         $response = new InvitationIndexResponse();
         $response->assign($vo->attributes());
@@ -53,8 +55,14 @@ class InvitationController extends Controller
      */
     public function issue(AppRequest $request, InvitationService $service): JsonResponse
     {
+        $executorId = $this->staffIdFromCookie($request);
+        if ($executorId === null) {
+            throw \App\Support\Exceptions\AppException::unauthorized('unauthenticated');
+        }
+
         $dto = new InvitationDto();
-        $dto->executorId = $this->staffIdFromCookie($request);
+        $dto->role = $this->resolveRole($request);
+        $dto->executorId = $executorId;
         $vo = DB::transaction(function () use ($service, $dto) {
             return $service->issue($dto);
         });
@@ -63,5 +71,20 @@ class InvitationController extends Controller
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
+    }
+
+    /**
+     * クエリパラメーターから role を取得します（1 or 2、それ以外は 400）。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @return int 権限（1=管理者, 2=メンバー）
+     */
+    private function resolveRole(AppRequest $request): int
+    {
+        $role = (int)$request->query('role', 2);
+        if (!in_array($role, [1, 2], true)) {
+            throw \App\Support\Exceptions\AppException::badRequest('invalid_role');
+        }
+        return $role;
     }
 }

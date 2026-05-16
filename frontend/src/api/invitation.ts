@@ -6,12 +6,12 @@ export type InvitationUrlResponse = {
   token: string;
 };
 
-/** GET /admin/invitation */
-export async function getInvitation(): Promise<InvitationUrlResponse> {
-  return apiGet<InvitationUrlResponse>("/admin/invitation");
+/** GET /admin/invitation?role={role} */
+export async function getInvitation(role: 1 | 2 = 2): Promise<InvitationUrlResponse> {
+  return apiGet<InvitationUrlResponse>(`/admin/invitation?role=${role}`);
 }
 
-/** GET /admin/invitation/issue */
-export async function issueInvitation(): Promise<InvitationUrlResponse> {
-  return apiGet<InvitationUrlResponse>("/admin/invitation/issue");
+/** GET /admin/invitation/issue?role={role} */
+export async function issueInvitation(role: 1 | 2 = 2): Promise<InvitationUrlResponse> {
+  return apiGet<InvitationUrlResponse>(`/admin/invitation/issue?role=${role}`);
 }

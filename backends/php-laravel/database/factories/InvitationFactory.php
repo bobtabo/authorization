@@ -34,6 +34,7 @@ class InvitationFactory extends Factory
     {
         return [
             'token' => bin2hex(random_bytes(16)),
+            'role' => 2,
             'created_at' => now(),
             'created_by' => 1,
             'updated_at' => now(),

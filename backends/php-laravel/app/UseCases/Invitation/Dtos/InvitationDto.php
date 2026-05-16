@@ -21,4 +21,6 @@ use App\Support\Dtos\AbstractDto;
 class InvitationDto extends AbstractDto
 {
     public ?string $token = null;
+
+    public ?int $role = null;
 }

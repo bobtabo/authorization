@@ -79,14 +79,15 @@ class AuthService extends AbstractService
         if (empty($entity)) {
             // 新規ユーザー: 招待トークンを検証
             $token = $dto->invitationToken;
-            if (empty($token) || $this->invitationAuthRepository->find($token) === null) {
+            $roleValue = empty($token) ? null : $this->invitationAuthRepository->find($token);
+            if ($roleValue === null) {
                 throw AppException::forbidden('invitation_required');
             }
             $this->invitationAuthRepository->remove($token);
 
             $newEntity = new Staff();
             $newEntity->assign($dto->attributes());
-            $newEntity->role = StaffRole::Member;
+            $newEntity->role = StaffRole::from($roleValue);
             $newEntity->lastLoginAt = Carbon::now();
             $newEntity->assignCreated(0);
             $saved = $this->staffRepository->persist($newEntity);

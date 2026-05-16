@@ -32,8 +32,8 @@ class InvitationControllerTest extends TestCase
      */
     public function testIndex(): void
     {
-        Invitation::factory()->create(['token' => 'test-current-token']);
-        $response = $this->get('/api/admin/invitation');
+        Invitation::factory()->create(['token' => 'test-current-token', 'role' => 2]);
+        $response = $this->get('/api/admin/invitation?role=2');
         $data = $this->getResponseData('Invitation/index.json');
         $response
             ->assertStatus(200)
@@ -47,11 +47,11 @@ class InvitationControllerTest extends TestCase
      */
     public function testIssue(): void
     {
-        Invitation::factory()->create();
+        Invitation::factory()->create(['role' => 2]);
         $staff = Staff::factory()->create();
 
         $response = $this->withStaffCookie($staff->id)
-            ->get('/api/admin/invitation/issue');
+            ->get('/api/admin/invitation/issue?role=2');
         $response
             ->assertStatus(200)
             ->assertJsonStructure(['url', 'token']);
