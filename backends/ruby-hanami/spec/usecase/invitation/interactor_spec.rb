@@ -47,6 +47,7 @@ RSpec.describe UseCase::Invitation::Interactor do
 
   describe "#issue" do
     it "returns newly issued invitation" do
+      expect(stub_repo).to receive(:issue).with(2).and_return(make_entity.call("new-token"))
       vo = described_class.new(stub_repo, stub_auth_repo, frontend_url).issue(2)
       expect(vo.token).to eq "new-token"
     end

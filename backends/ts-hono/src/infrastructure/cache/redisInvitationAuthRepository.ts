@@ -20,8 +20,9 @@ export class RedisInvitationAuthRepository implements InvitationAuthRepository {
   async find(token: string): Promise<number | null> {
     const val = await redis.get(cacheKey(token));
     if (val === null) return null;
-    const n = parseInt(val, 10);
-    return isNaN(n) ? null : n;
+    const n = Number(val);
+    if (!Number.isInteger(n)) return null;
+    return n === 1 || n === 2 ? n : null;
   }
 
   async remove(token: string): Promise<void> {

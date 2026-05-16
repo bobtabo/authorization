@@ -16,9 +16,9 @@ const invitationAuthRepo = new RedisInvitationAuthRepository();
 const app = new Hono();
 
 function parseRole(raw: string | undefined): number {
-  const role = raw !== undefined ? parseInt(raw, 10) : 2;
-  if (role !== 1 && role !== 2) throw badRequest("invalid_role");
-  return role;
+  if (raw === undefined) return 2;
+  if (raw !== "1" && raw !== "2") throw badRequest("invalid_role");
+  return Number(raw);
 }
 
 app.get("/invitation", async (c) => {

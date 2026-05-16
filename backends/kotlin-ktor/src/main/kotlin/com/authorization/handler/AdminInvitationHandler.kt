@@ -65,8 +65,9 @@ class AdminInvitationHandler(private val invitationUC: InvitationUC) {
      * 1 または 2 以外の場合は 400 を返し null を返します。
      */
     private suspend fun resolveRole(call: ApplicationCall): Int? {
-        val rawRole = call.request.queryParameters["role"]?.toIntOrNull() ?: 2
-        if (rawRole != 1 && rawRole != 2) {
+        val raw = call.request.queryParameters["role"] ?: return 2
+        val rawRole = raw.toIntOrNull()
+        if (rawRole == null || (rawRole != 1 && rawRole != 2)) {
             call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_role") })
             return null
         }

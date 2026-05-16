@@ -30,8 +30,17 @@ module Authorization
           private
 
           def resolve_role(request, response)
-            role = request.params[:role].to_s
-            role = role.empty? ? 2 : role.to_i
+            role_str = request.params[:role].to_s
+            if role_str.empty?
+              role = 2
+            else
+              begin
+                role = Integer(role_str)
+              rescue ArgumentError
+                json_response(response, { error: "invalid_role" }, status: 400)
+                return nil
+              end
+            end
             unless [1, 2].include?(role)
               json_response(response, { error: "invalid_role" }, status: 400)
               return nil

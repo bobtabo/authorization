@@ -50,7 +50,7 @@ export class AuthInteractor {
 
     const token = input.invitationToken ?? "";
     const roleValue = token ? await this.invitationAuthRepo.find(token) : null;
-    if (!token || roleValue === null) {
+    if (!token || roleValue === null || (roleValue !== 1 && roleValue !== 2)) {
       throw forbidden("invitation_required");
     }
     await this.invitationAuthRepo.remove(token);

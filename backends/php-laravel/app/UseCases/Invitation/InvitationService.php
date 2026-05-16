@@ -72,6 +72,9 @@ class InvitationService extends AbstractService
     public function issue(InvitationDto $dto): InvitationVo
     {
         $entity = $this->invitationRepository->getCurrentByRole($dto->role ?? 2);
+        if ($entity === null) {
+            throw AppException::notFound('invitation_not_found');
+        }
         $entity->token = bin2hex(random_bytes(16));
         $entity->assignUpdated($dto->executorId);
         $saved = $this->invitationRepository->persist($entity);

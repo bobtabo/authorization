@@ -24,7 +24,12 @@ module Infrastructure
       def issue(role)
         token = SecureRandom.hex(16)
         now   = Time.current
-        r = @model.create!(token: token, role: role, created_at: now, created_by: 0, updated_at: now, updated_by: 0)
+        r = @model.where(deleted_at: nil, role: role).order(created_at: :desc).first
+        if r.nil?
+          r = @model.create!(token: token, role: role, created_at: now, created_by: 0, updated_at: now, updated_by: 0)
+        else
+          r.update!(token: token, updated_at: now)
+        end
         build_entity(r)
       end
 

@@ -60,6 +60,9 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 		if rolePtr == nil {
 			return nil, apperror.Forbidden("invitation_required")
 		}
+		if *rolePtr != domstaff.RoleAdmin && *rolePtr != domstaff.RoleMember {
+			return nil, apperror.Forbidden("invitation_required")
+		}
 		if err := uc.invitationAuthRepo.Remove(dto.InvitationToken); err != nil {
 			return nil, err
 		}

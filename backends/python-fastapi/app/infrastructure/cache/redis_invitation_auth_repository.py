@@ -28,7 +28,13 @@ class RedisInvitationAuthRepository(InvitationAuthRepository):
         if val is None:
             return None
         raw = val.decode() if isinstance(val, bytes) else val
-        return int(raw)
+        try:
+            role = int(raw)
+        except (ValueError, TypeError):
+            return None
+        if role not in (1, 2):
+            return None
+        return role
 
     def remove(self, token: str) -> None:
         self.rdb.delete(self._key(token))

@@ -62,6 +62,7 @@ RSpec.describe UseCase::Invitation::Interactor do
       entity = make_entity.call("abc", 1)
       allow(stub_repo).to receive(:find_by_token).with("abc").and_return(entity)
       allow(stub_repo).to receive(:entity_to_vo).and_return(make_vo.call("abc"))
+      expect(stub_auth_repo).to receive(:store).with("abc", 1, 600)
       result = described_class.new(stub_repo, stub_auth_repo).find_by_token(UseCase::Invitation::FindByTokenDto.new(token: "abc"))
       expect(result.token).to eq "abc"
     end

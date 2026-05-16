@@ -81,7 +81,14 @@ class InvitationController extends Controller
      */
     private function resolveRole(AppRequest $request): int
     {
-        $role = (int)$request->query('role', 2);
+        $raw = $request->query('role');
+        if ($raw === null) {
+            return 2;
+        }
+        if (!ctype_digit((string)$raw)) {
+            throw \App\Support\Exceptions\AppException::badRequest('invalid_role');
+        }
+        $role = (int)$raw;
         if (!in_array($role, [1, 2], true)) {
             throw \App\Support\Exceptions\AppException::badRequest('invalid_role');
         }

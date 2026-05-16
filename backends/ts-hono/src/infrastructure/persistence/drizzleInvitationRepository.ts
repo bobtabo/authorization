@@ -3,7 +3,7 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { invitations } from "../model/schema.js";
 import type { InvitationRepository } from "../../domain/invitation/repository.js";
 import type { Invitation } from "../../domain/invitation/entity.js";
@@ -13,13 +13,13 @@ export class DrizzleInvitationRepository implements InvitationRepository {
   constructor(private readonly db: DB) {}
 
   async getCurrent(): Promise<Invitation | undefined> {
-    const all = await this.db.select().from(invitations).orderBy(invitations.id);
-    return all[all.length - 1];
+    const rows = await this.db.select().from(invitations).orderBy(desc(invitations.id)).limit(1);
+    return rows[0];
   }
 
   async getCurrentByRole(role: number): Promise<Invitation | undefined> {
-    const all = await this.db.select().from(invitations).where(eq(invitations.role, role)).orderBy(invitations.id);
-    return all[all.length - 1];
+    const rows = await this.db.select().from(invitations).where(eq(invitations.role, role)).orderBy(desc(invitations.id)).limit(1);
+    return rows[0];
   }
 
   async issue(token: string, role: number): Promise<Invitation> {
