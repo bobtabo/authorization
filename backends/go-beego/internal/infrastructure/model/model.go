@@ -54,6 +54,7 @@ func (s *Staff) TableName() string { return "staffs" }
 type Invitation struct {
 	ID        uint       `orm:"pk;auto;column(id)"`
 	Token     string     `orm:"column(token)"`
+	Role      int        `orm:"column(role)"`
 	CreatedAt time.Time  `orm:"column(created_at)"`
 	CreatedBy *uint      `orm:"column(created_by);null"`
 	UpdatedAt time.Time  `orm:"column(updated_at)"`

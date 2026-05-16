@@ -20,11 +20,12 @@ func NewInteractor(repo dominvitation.Repository, authRepo dominvitation.AuthRep
 	return &Interactor{repo: repo, authRepo: authRepo}
 }
 
-// Current は最新の招待情報の値オブジェクトを返します。
+// Current は指定ロールの最新の招待情報の値オブジェクトを返します。
 //
+// dto: ロール指定 Dto
 // 戻り値: 招待 Vo、またはエラー
-func (uc *Interactor) Current() (*dominvitation.Vo, error) {
-	result, err := uc.repo.GetCurrent()
+func (uc *Interactor) Current(dto CurrentDto) (*dominvitation.Vo, error) {
+	result, err := uc.repo.GetCurrentByRole(dto.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -36,12 +37,13 @@ func (uc *Interactor) Current() (*dominvitation.Vo, error) {
 
 // Issue は新しい招待トークンを発行し、招待情報の値オブジェクトを返します。
 //
+// dto: ロール指定 Dto
 // 戻り値: 招待 Vo、またはエラー
-func (uc *Interactor) Issue() (*dominvitation.Vo, error) {
-	return uc.repo.Issue()
+func (uc *Interactor) Issue(dto IssueDto) (*dominvitation.Vo, error) {
+	return uc.repo.Issue(dto.Role)
 }
 
-// FindByToken はトークンで招待情報を返し、招待認証トークンをキャッシュします。
+// FindByToken はトークンで招待情報を返し、招待認証ロールをキャッシュします。
 //
 // dto: トークン検索 Dto
 // 戻り値: 招待 Vo、またはエラー
@@ -56,7 +58,7 @@ func (uc *Interactor) FindByToken(dto FindByTokenDto) (*dominvitation.Vo, error)
 	if result == nil {
 		return nil, apperror.BadRequest("invitation_invalid")
 	}
-	if err := uc.authRepo.Store(result.Token, 600); err != nil {
+	if err := uc.authRepo.Store(result.Token, result.Role, 600); err != nil {
 		return nil, err
 	}
 	return result, nil

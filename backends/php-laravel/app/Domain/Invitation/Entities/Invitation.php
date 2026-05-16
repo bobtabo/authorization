@@ -23,4 +23,6 @@ class Invitation extends AbstractEntity
     public ?int $id = null;
 
     public ?string $token = null;
+
+    public ?int $role = null;
 }

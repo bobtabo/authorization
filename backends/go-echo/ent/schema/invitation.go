@@ -23,6 +23,7 @@ func (Invitation) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint("id").Positive().Immutable(),
 		field.String("token"),
+		field.Int("role").Default(2),
 		field.Time("created_at").Default(time.Now),
 		field.Uint("created_by").Optional().Nillable(),
 		field.Time("updated_at").Default(time.Now),

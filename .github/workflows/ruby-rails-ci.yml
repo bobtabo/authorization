@@ -65,6 +65,14 @@ jobs:
       - name: Load schema
         run: mysql -h 127.0.0.1 -u root -p'docker#DOCKER1234' authorization_test < backends/go-gin/tests/schema.sql
 
+      # schema_migrations テーブルを作成してマイグレーション適用済みを記録
+      - name: Seed schema_migrations
+        run: |
+          mysql -h 127.0.0.1 -u root -p'docker#DOCKER1234' authorization_test -e "
+            CREATE TABLE IF NOT EXISTS \`schema_migrations\` (\`version\` varchar(255) NOT NULL, PRIMARY KEY (\`version\`));
+            INSERT IGNORE INTO \`schema_migrations\` (\`version\`) VALUES ('20260516000000');
+          "
+
       # .env ファイルをコピー
       - name: Generate .env
         run: cp .env.testing .env

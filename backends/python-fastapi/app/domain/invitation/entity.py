@@ -13,5 +13,6 @@ class Invitation:
     """招待のドメインエンティティ（SQLAlchemy タグなし）。"""
     id: int = 0
     token: str = ""
+    role: int = 2
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

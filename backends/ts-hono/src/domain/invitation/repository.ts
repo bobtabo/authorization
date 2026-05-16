@@ -8,6 +8,7 @@ import type { Invitation } from "./entity.js";
 /** 招待のリポジトリインターフェース。 */
 export interface InvitationRepository {
   getCurrent(): Promise<Invitation | undefined>;
-  issue(token: string): Promise<Invitation>;
+  getCurrentByRole(role: number): Promise<Invitation | undefined>;
+  issue(token: string, role: number): Promise<Invitation>;
   findByToken(token: string): Promise<Invitation | undefined>;
 }

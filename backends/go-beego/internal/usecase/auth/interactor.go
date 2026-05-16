@@ -43,15 +43,20 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 		if dto.InvitationToken == "" {
 			return nil, apperror.Forbidden("invitation_required")
 		}
-		found, err := uc.invitationAuthRepo.Find(dto.InvitationToken)
+		foundRole, err := uc.invitationAuthRepo.Find(dto.InvitationToken)
 		if err != nil {
 			return nil, err
 		}
-		if found == "" {
+		if foundRole == nil {
 			return nil, apperror.Forbidden("invitation_required")
 		}
 		if err := uc.invitationAuthRepo.Remove(dto.InvitationToken); err != nil {
 			return nil, err
+		}
+
+		role := *foundRole
+		if role != domstaff.RoleAdmin && role != domstaff.RoleMember {
+			role = domstaff.RoleMember
 		}
 
 		zero := uint(0)
@@ -61,7 +66,7 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 			Provider:    dto.Provider,
 			ProviderID:  dto.ProviderID,
 			Avatar:      dto.Avatar,
-			Role:        domstaff.RoleMember,
+			Role:        role,
 			LastLoginAt: &now,
 			CreatedAt:   now,
 			CreatedBy:   &zero,

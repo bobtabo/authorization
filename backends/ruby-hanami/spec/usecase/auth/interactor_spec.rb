@@ -23,7 +23,7 @@ RSpec.describe UseCase::Auth::Interactor do
   end
 
   let(:stub_auth_repo) do
-    double("InvitationAuthRepo", find: "tok", remove: nil)
+    double("InvitationAuthRepo", find: Domain::Staff::Role::MEMBER, remove: nil)
   end
 
   describe "#find_user" do
@@ -40,7 +40,7 @@ RSpec.describe UseCase::Auth::Interactor do
   end
 
   describe "#login" do
-    it "returns Vo for new staff (upsert)" do
+    it "returns Vo for new staff with role from invitation cache" do
       allow(stub_repo).to receive(:find_by_provider).and_return(nil)
       allow(stub_repo).to receive(:save).and_return(staff_entity)
       dto = UseCase::Auth::LoginDto.new(
@@ -49,6 +49,18 @@ RSpec.describe UseCase::Auth::Interactor do
       )
       vo = described_class.new(stub_repo, stub_auth_repo).login(dto)
       expect(vo.id).to eq 1
+    end
+
+    it "raises ForbiddenError when invitation cache returns nil" do
+      allow(stub_repo).to receive(:find_by_provider).and_return(nil)
+      allow(stub_auth_repo).to receive(:find).and_return(nil)
+      dto = UseCase::Auth::LoginDto.new(
+        provider: 1, provider_id: "g123",
+        name: "テスト", email: "t@example.com", avatar: "http://img", invitation_token: "bad"
+      )
+      expect {
+        described_class.new(stub_repo, stub_auth_repo).login(dto)
+      }.to raise_error(Domain::ForbiddenError)
     end
 
     it "returns Vo for existing staff (update)" do

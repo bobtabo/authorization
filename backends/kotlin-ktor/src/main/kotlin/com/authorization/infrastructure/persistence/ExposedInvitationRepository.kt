@@ -26,35 +26,38 @@ import java.time.LocalDateTime
 class ExposedInvitationRepository(private val db: Database, private val cfg: Config) : Repository {
 
     /**
-     * 現在有効な招待情報を取得します。
+     * 指定ロールの現在有効な招待情報を取得します。
      *
+     * @param role ロール（1=管理者、2=メンバー）
      * @return 招待 VO、または null
      */
-    override suspend fun getCurrent(): Vo? = newSuspendedTransaction(db = db) {
+    override suspend fun getCurrentByRole(role: Int): Vo? = newSuspendedTransaction(db = db) {
         Invitations.selectAll()
-            .where { Invitations.deletedAt.isNull() }
+            .where { (Invitations.role eq role) and Invitations.deletedAt.isNull() }
             .orderBy(Invitations.createdAt to SortOrder.DESC)
             .limit(1)
             .firstOrNull()
-            ?.let { buildVo(it[Invitations.token]) }
+            ?.let { buildVo(it[Invitations.token], it[Invitations.role]) }
     }
 
     /**
-     * 招待トークンを新規発行します。
+     * 指定ロールで招待トークンを新規発行します。
      *
+     * @param role ロール（1=管理者、2=メンバー）
      * @return 発行された招待 VO
      */
-    override suspend fun issue(): Vo = newSuspendedTransaction(db = db) {
+    override suspend fun issue(role: Int): Vo = newSuspendedTransaction(db = db) {
         val now   = LocalDateTime.now()
         val token = generateHex(16)
         Invitations.insert {
             it[Invitations.token]     = token
+            it[Invitations.role]      = role
             it[Invitations.createdAt] = now
             it[Invitations.createdBy] = 0
             it[Invitations.updatedAt] = now
             it[Invitations.updatedBy] = 0
         }
-        buildVo(token)
+        buildVo(token, role)
     }
 
     /**
@@ -67,7 +70,7 @@ class ExposedInvitationRepository(private val db: Database, private val cfg: Con
         Invitations.selectAll()
             .where { (Invitations.token eq token) and Invitations.deletedAt.isNull() }
             .firstOrNull()
-            ?.let { buildVo(it[Invitations.token]) }
+            ?.let { buildVo(it[Invitations.token], it[Invitations.role]) }
     }
 
     private fun generateHex(byteCount: Int): String {
@@ -76,10 +79,10 @@ class ExposedInvitationRepository(private val db: Database, private val cfg: Con
         return buf.joinToString("") { "%02x".format(it) }
     }
 
-    private fun buildVo(token: String): Vo {
+    private fun buildVo(token: String, role: Int): Vo {
         val url        = "${cfg.app.frontendUrl}/invitation/$token"
         val displayUrl = buildDisplayUrl(url)
-        return Vo(token = token, url = url, displayUrl = displayUrl)
+        return Vo(token = token, role = role, url = url, displayUrl = displayUrl)
     }
 
     private fun buildDisplayUrl(url: String): String {

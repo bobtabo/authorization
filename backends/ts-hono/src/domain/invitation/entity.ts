@@ -8,6 +8,7 @@
 export interface Invitation {
   id: number;
   token: string;
+  role: number;
   createdAt: Date | null;
   updatedAt: Date | null;
 }

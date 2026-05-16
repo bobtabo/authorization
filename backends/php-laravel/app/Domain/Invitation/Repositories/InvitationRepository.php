@@ -22,11 +22,12 @@ use App\Domain\Invitation\Entities\Invitation;
 interface InvitationRepository
 {
     /**
-     * 現在の招待情報を取得します。
+     * 指定ロールの招待情報を取得します。
      *
+     * @param int $role 権限（1=管理者, 2=メンバー）
      * @return Invitation|null 未設定時は null
      */
-    public function getCurrent(): ?Invitation;
+    public function getCurrentByRole(int $role): ?Invitation;
 
     /**
      * 招待を更新します。

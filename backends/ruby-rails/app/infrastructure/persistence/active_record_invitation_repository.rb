@@ -16,24 +16,41 @@ module Infrastructure
         @frontend_url = cfg.app.frontend_url
       end
 
-      def get_current
-        r = @model.where(deleted_at: nil).order(created_at: :desc).first
-        r ? build_vo(r.token) : nil
+      def get_current_by_role(role)
+        r = @model.where(deleted_at: nil, role: role).order(created_at: :desc).first
+        r ? build_entity(r) : nil
       end
 
-      def issue
+      def issue(role)
         token = SecureRandom.hex(16)
         now   = Time.current
-        @model.create!(token: token, created_at: now, created_by: 0, updated_at: now, updated_by: 0)
-        build_vo(token)
+        r = @model.where(deleted_at: nil, role: role).order(created_at: :desc).first
+        if r.nil?
+          r = @model.create!(token: token, role: role, created_at: now, created_by: 0, updated_at: now, updated_by: 0)
+        else
+          r.update!(token: token, updated_at: now)
+        end
+        build_entity(r)
       end
 
       def find_by_token(token)
         r = @model.find_by(token: token, deleted_at: nil)
-        r ? build_vo(r.token) : nil
+        r ? build_entity(r) : nil
+      end
+
+      def entity_to_vo(entity)
+        build_vo(entity.token)
       end
 
       private
+
+      def build_entity(record)
+        Domain::Invitation::Entity.new(
+          id:    record.id,
+          token: record.token,
+          role:  record.role,
+        )
+      end
 
       def build_vo(token)
         url         = "#{@frontend_url}/invitation/#{token}"

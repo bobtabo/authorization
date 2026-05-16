@@ -38,6 +38,7 @@ export interface TestClient {
 export interface TestInvitation {
   id: number;
   token: string;
+  role: number;
 }
 
 export interface TestNotification {
@@ -86,13 +87,13 @@ export async function makeClientRecord(overrides: Partial<{ identifier: string; 
   return { id: result.insertId, name: data.name, identifier: data.identifier, token, privateKey: privatePem, publicKey: publicPem };
 }
 
-export async function makeInvitation(tokenStr?: string): Promise<TestInvitation> {
+export async function makeInvitation(tokenStr?: string, role = 2): Promise<TestInvitation> {
   const tok = tokenStr ?? randomBytes(16).toString("hex");
   const [result] = await pool.execute(
-    "INSERT INTO invitations (token) VALUES (?)",
-    [tok],
+    "INSERT INTO invitations (token, role) VALUES (?, ?)",
+    [tok, role],
   ) as mysql.ResultSetHeader[];
-  return { id: result.insertId, token: tok };
+  return { id: result.insertId, token: tok, role };
 }
 
 export async function makeNotification(staffId: number, title = "テスト通知", url?: string | null): Promise<TestNotification> {

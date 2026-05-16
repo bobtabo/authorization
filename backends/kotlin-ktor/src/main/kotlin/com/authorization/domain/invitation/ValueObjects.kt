@@ -12,6 +12,7 @@ package com.authorization.domain.invitation
  */
 data class Vo(
     val token:      String,
+    val role:       Int,
     val url:        String,
     val displayUrl: String,
 )

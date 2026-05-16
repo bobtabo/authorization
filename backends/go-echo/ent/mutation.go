@@ -1981,6 +1981,8 @@ type InvitationMutation struct {
 	typ           string
 	id            *uint
 	token         *string
+	role          *int
+	addrole       *int
 	created_at    *time.Time
 	created_by    *uint
 	addcreated_by *int
@@ -2136,6 +2138,62 @@ func (m *InvitationMutation) OldToken(ctx context.Context) (v string, err error)
 // ResetToken resets all changes to the "token" field.
 func (m *InvitationMutation) ResetToken() {
 	m.token = nil
+}
+
+// SetRole sets the "role" field.
+func (m *InvitationMutation) SetRole(i int) {
+	m.role = &i
+	m.addrole = nil
+}
+
+// Role returns the value of the "role" field in the mutation.
+func (m *InvitationMutation) Role() (r int, exists bool) {
+	v := m.role
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRole returns the old "role" field's value of the Invitation entity.
+// If the Invitation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvitationMutation) OldRole(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRole is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRole requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRole: %w", err)
+	}
+	return oldValue.Role, nil
+}
+
+// AddRole adds i to the "role" field.
+func (m *InvitationMutation) AddRole(i int) {
+	if m.addrole != nil {
+		*m.addrole += i
+	} else {
+		m.addrole = &i
+	}
+}
+
+// AddedRole returns the value that was added to the "role" field in this mutation.
+func (m *InvitationMutation) AddedRole() (r int, exists bool) {
+	v := m.addrole
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRole resets all changes to the "role" field.
+func (m *InvitationMutation) ResetRole() {
+	m.role = nil
+	m.addrole = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -2559,9 +2617,12 @@ func (m *InvitationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InvitationMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.token != nil {
 		fields = append(fields, invitation.FieldToken)
+	}
+	if m.role != nil {
+		fields = append(fields, invitation.FieldRole)
 	}
 	if m.created_at != nil {
 		fields = append(fields, invitation.FieldCreatedAt)
@@ -2594,6 +2655,8 @@ func (m *InvitationMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case invitation.FieldToken:
 		return m.Token()
+	case invitation.FieldRole:
+		return m.Role()
 	case invitation.FieldCreatedAt:
 		return m.CreatedAt()
 	case invitation.FieldCreatedBy:
@@ -2619,6 +2682,8 @@ func (m *InvitationMutation) OldField(ctx context.Context, name string) (ent.Val
 	switch name {
 	case invitation.FieldToken:
 		return m.OldToken(ctx)
+	case invitation.FieldRole:
+		return m.OldRole(ctx)
 	case invitation.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case invitation.FieldCreatedBy:
@@ -2648,6 +2713,13 @@ func (m *InvitationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetToken(v)
+		return nil
+	case invitation.FieldRole:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRole(v)
 		return nil
 	case invitation.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -2706,6 +2778,9 @@ func (m *InvitationMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *InvitationMutation) AddedFields() []string {
 	var fields []string
+	if m.addrole != nil {
+		fields = append(fields, invitation.FieldRole)
+	}
 	if m.addcreated_by != nil {
 		fields = append(fields, invitation.FieldCreatedBy)
 	}
@@ -2726,6 +2801,8 @@ func (m *InvitationMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *InvitationMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case invitation.FieldRole:
+		return m.AddedRole()
 	case invitation.FieldCreatedBy:
 		return m.AddedCreatedBy()
 	case invitation.FieldUpdatedBy:
@@ -2743,6 +2820,13 @@ func (m *InvitationMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *InvitationMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case invitation.FieldRole:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRole(v)
+		return nil
 	case invitation.FieldCreatedBy:
 		v, ok := value.(int)
 		if !ok {
@@ -2827,6 +2911,9 @@ func (m *InvitationMutation) ResetField(name string) error {
 	switch name {
 	case invitation.FieldToken:
 		m.ResetToken()
+		return nil
+	case invitation.FieldRole:
+		m.ResetRole()
 		return nil
 	case invitation.FieldCreatedAt:
 		m.ResetCreatedAt()

@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Infrastructure\Models\Invitation;
 use App\Infrastructure\Models\Staff;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Support\Facades\Cache;
 use Laravel\Socialite\Facades\Socialite;
 use Mockery;
 use Tests\TestCase;
@@ -112,7 +112,7 @@ class AuthControllerTest extends TestCase
     public function testGoogleCallbackNewUserWithInvitation(): void
     {
         $token = 'valid-invitation-token';
-        Cache::put('invitation_auth.invitation_auth:' . $token, $token, 600);
+        $this->app->make(InvitationAuthRepository::class)->store($token, 2, 600);
 
         $abstractUser = Mockery::mock('Laravel\Socialite\Two\User');
         $abstractUser->shouldReceive('getId')->andReturn('new-user-999');
@@ -130,7 +130,7 @@ class AuthControllerTest extends TestCase
 
         $frontendUrl = config('authorization.app.frontend_url');
         $response->assertRedirect($frontendUrl . '/clients');
-        $this->assertNull(Cache::get('invitation_auth.invitation_auth:' . $token));
+        $this->assertNull($this->app->make(InvitationAuthRepository::class)->find($token));
     }
 
     /**

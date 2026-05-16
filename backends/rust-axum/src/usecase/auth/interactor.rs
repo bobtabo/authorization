@@ -6,7 +6,6 @@
 use std::sync::Arc;
 use crate::domain::staff::{
     entity::Staff,
-    enums::ROLE_MEMBER,
     repository::Repository,
     value_objects::Vo,
 };
@@ -46,9 +45,15 @@ impl Interactor {
             self.staff_repo.save(s).await?
         } else {
             let token = dto.invitation_token.as_deref().unwrap_or("");
-            if token.is_empty() || self.invitation_auth_repo.find(token).await?.is_none() {
-                return Err("invitation_required".to_string().into());
-            }
+            let cached_role = if token.is_empty() {
+                None
+            } else {
+                self.invitation_auth_repo.find(token).await?
+            };
+            let role = match cached_role {
+                Some(r) => r as i32,
+                None    => return Err("invitation_required".to_string().into()),
+            };
             self.invitation_auth_repo.remove(token).await?;
             let new_staff = Staff {
                 id:            0,
@@ -57,7 +62,7 @@ impl Interactor {
                 provider:      dto.provider,
                 provider_id:   dto.provider_id,
                 avatar:        dto.avatar,
-                role:          ROLE_MEMBER,
+                role,
                 last_login_at: Some(now),
                 created_at:    now,
                 created_by:    Some(0),
@@ -112,17 +117,17 @@ mod tests {
     }
 
     struct MockInvitationAuthRepo {
-        stored: Mutex<Option<String>>,
+        stored: Mutex<Option<u8>>,
     }
     impl MockInvitationAuthRepo {
-        fn with_token(token: &str) -> Self { Self { stored: Mutex::new(Some(token.to_string())) } }
+        fn with_role(role: u8) -> Self { Self { stored: Mutex::new(Some(role)) } }
         fn empty() -> Self { Self { stored: Mutex::new(None) } }
     }
     #[async_trait]
     impl InvAuthRepo for MockInvitationAuthRepo {
-        async fn store(&self, _: &str, _: u64) -> Result<(), DomainError> { Ok(()) }
-        async fn find(&self, _: &str) -> Result<Option<String>, DomainError> {
-            Ok(self.stored.lock().unwrap().clone())
+        async fn store(&self, _: &str, _: u8, _: u64) -> Result<(), DomainError> { Ok(()) }
+        async fn find(&self, _: &str) -> Result<Option<u8>, DomainError> {
+            Ok(*self.stored.lock().unwrap())
         }
         async fn remove(&self, _: &str) -> Result<(), DomainError> { Ok(()) }
     }
@@ -193,7 +198,7 @@ mod tests {
     async fn test_login_creates_new_staff_with_invitation() {
         let mock = Arc::new(MockStaffRepo::new());
         *mock.find_by_provider.lock().unwrap() = Some(None);
-        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::with_token("tok")));
+        let uc = make_uc(mock, Arc::new(MockInvitationAuthRepo::with_role(2)));
         let dto = LoginDto {
             provider:         1,
             provider_id:      "new_id".to_string(),

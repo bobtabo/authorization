@@ -3,7 +3,9 @@ package handler
 import (
 	dominvitation "authorization-go/internal/domain/invitation"
 	uinvitation "authorization-go/internal/usecase/invitation"
+	"authorization-go/pkg/apperror"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -24,9 +26,13 @@ func NewAdminInvitationHandler(db *gorm.DB, newInviteUC func(*gorm.DB) *uinvitat
 }
 
 // Index は現在の招待情報を返します。
-// GET /api/admin/invitation
+// GET /api/admin/invitation?role=2
 func (h *AdminInvitationHandler) Index(c *gin.Context) {
-	result, err := h.newInviteUC(h.db).Current()
+	role, ok := parseRoleParam(c)
+	if !ok {
+		return
+	}
+	result, err := h.newInviteUC(h.db).Current(uinvitation.CurrentDto{Role: role})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -35,18 +41,36 @@ func (h *AdminInvitationHandler) Index(c *gin.Context) {
 }
 
 // Issue は新しい招待を発行して返します。
-// GET /api/admin/invitation/issue
+// GET /api/admin/invitation/issue?role=2
 func (h *AdminInvitationHandler) Issue(c *gin.Context) {
+	role, ok := parseRoleParam(c)
+	if !ok {
+		return
+	}
 	var result *dominvitation.Vo
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		var e error
-		result, e = h.newInviteUC(tx).Issue()
+		result, e = h.newInviteUC(tx).Issue(uinvitation.IssueDto{Role: role})
 		return e
 	}); txErr != nil {
 		_ = c.Error(txErr)
 		return
 	}
 	c.JSON(http.StatusOK, mapInvitationVo(result))
+}
+
+// ---------- プライベートヘルパー ----------
+
+// parseRoleParam は role クエリパラメータを検証して返します。
+// 省略時はデフォルト 2、1 か 2 以外は 400 を返します。
+func parseRoleParam(c *gin.Context) (int, bool) {
+	roleStr := c.DefaultQuery("role", "2")
+	role, err := strconv.Atoi(roleStr)
+	if err != nil || (role != 1 && role != 2) {
+		_ = c.Error(apperror.BadRequest("invalid_role"))
+		return 0, false
+	}
+	return role, true
 }
 
 // ---------- 変換ヘルパー ----------

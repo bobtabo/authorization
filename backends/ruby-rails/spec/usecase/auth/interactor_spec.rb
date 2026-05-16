@@ -25,7 +25,7 @@ RSpec.describe UseCase::Auth::Interactor do
   end
 
   let(:stub_auth_repo) do
-    double("InvitationAuthRepo", find: "tok", remove: nil)
+    double("InvitationAuthRepo", find: Domain::Staff::Role::MEMBER, remove: nil)
   end
 
   describe "#find_user" do

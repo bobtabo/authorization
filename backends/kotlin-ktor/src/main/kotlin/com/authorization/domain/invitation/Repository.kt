@@ -13,18 +13,20 @@ package com.authorization.domain.invitation
 interface Repository {
 
     /**
-     * 現在有効な招待情報を取得します。
+     * 指定ロールの現在有効な招待情報を取得します。
      *
+     * @param role ロール（1=管理者、2=メンバー）
      * @return 招待 VO、または null
      */
-    suspend fun getCurrent(): Vo?
+    suspend fun getCurrentByRole(role: Int): Vo?
 
     /**
-     * 招待トークンを新規発行します。
+     * 指定ロールで招待トークンを新規発行します。
      *
+     * @param role ロール（1=管理者、2=メンバー）
      * @return 発行された招待 VO
      */
-    suspend fun issue(): Vo
+    suspend fun issue(role: Int): Vo
 
     /**
      * 招待トークンに一致する招待情報を取得します。

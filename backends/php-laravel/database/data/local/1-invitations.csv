@@ -1,2 +1,3 @@
-id,token,created_by,updated_by
-1,b9195889-36c7-631e-76ab-867fa6ad42dc,0,0
+id,token,role,created_by,updated_by
+1,8f13761980983d1d9e3950d11b42016f,1,0,0
+2,57ccff5512b483cfbfe0d1a365b34069,2,0,0

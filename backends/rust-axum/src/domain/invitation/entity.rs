@@ -9,6 +9,7 @@ use chrono::{DateTime, Utc};
 pub struct Invitation {
     pub id:         u32,
     pub token:      String,
+    pub role:       u8,
     pub created_at: DateTime<Utc>,
     pub created_by: Option<u32>,
     pub updated_at: DateTime<Utc>,

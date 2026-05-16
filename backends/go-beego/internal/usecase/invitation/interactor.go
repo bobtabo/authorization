@@ -14,8 +14,8 @@ func NewInteractor(repo dominvitation.Repository, authRepo dominvitation.AuthRep
 	return &Interactor{repo: repo, authRepo: authRepo}
 }
 
-func (uc *Interactor) Current() (*dominvitation.Vo, error) {
-	result, err := uc.repo.GetCurrent()
+func (uc *Interactor) Current(role int) (*dominvitation.Vo, error) {
+	result, err := uc.repo.GetCurrentByRole(role)
 	if err != nil {
 		return nil, err
 	}
@@ -25,8 +25,8 @@ func (uc *Interactor) Current() (*dominvitation.Vo, error) {
 	return result, nil
 }
 
-func (uc *Interactor) Issue() (*dominvitation.Vo, error) {
-	return uc.repo.Issue()
+func (uc *Interactor) Issue(role int) (*dominvitation.Vo, error) {
+	return uc.repo.Issue(role)
 }
 
 func (uc *Interactor) FindByToken(dto FindByTokenDto) (*dominvitation.Vo, error) {
@@ -40,7 +40,7 @@ func (uc *Interactor) FindByToken(dto FindByTokenDto) (*dominvitation.Vo, error)
 	if result == nil {
 		return nil, apperror.BadRequest("invitation_invalid")
 	}
-	if err := uc.authRepo.Store(result.Token, 600); err != nil {
+	if err := uc.authRepo.Store(result.Token, result.Role, 600); err != nil {
 		return nil, err
 	}
 	return result, nil

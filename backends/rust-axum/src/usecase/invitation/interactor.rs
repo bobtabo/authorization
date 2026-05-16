@@ -9,7 +9,7 @@ use crate::domain::invitation::{
     repository::Repository,
     auth_repository::AuthRepository,
 };
-use super::dto::FindByTokenDto;
+use super::dto::{FindByTokenDto, RoleDto};
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -25,22 +25,22 @@ impl Interactor {
         Self { repo, auth_repo }
     }
 
-    /// 現在有効な招待トークンの VO を返します。存在しない場合はエラーを返します。
-    pub async fn current(&self) -> Result<Vo, UseCaseError> {
-        self.repo.get_current().await?
+    /// ロールに紐づく現在有効な招待トークンの VO を返します。存在しない場合はエラーを返します。
+    pub async fn current(&self, dto: RoleDto) -> Result<Vo, UseCaseError> {
+        self.repo.get_current_by_role(dto.role).await?
             .ok_or_else(|| -> UseCaseError { "invitation_not_found".to_string().into() })
     }
 
-    /// 新しい招待トークンを発行して VO を返します。
-    pub async fn issue(&self) -> Result<Vo, UseCaseError> {
-        Ok(self.repo.issue().await?)
+    /// ロールを指定して新しい招待トークンを発行して VO を返します。
+    pub async fn issue(&self, dto: RoleDto) -> Result<Vo, UseCaseError> {
+        Ok(self.repo.issue(dto.role).await?)
     }
 
     /// トークン文字列で招待 VO を返します。無効な場合はエラーを返します。
     pub async fn find_by_token(&self, dto: FindByTokenDto) -> Result<Vo, UseCaseError> {
         let vo = self.repo.find_by_token(&dto.token).await?
             .ok_or_else(|| -> UseCaseError { "invitation_not_found".to_string().into() })?;
-        self.auth_repo.store(&vo.token, 600).await?;
+        self.auth_repo.store(&vo.token, vo.role, 600).await?;
         Ok(vo)
     }
 }
@@ -75,14 +75,15 @@ mod tests {
 
     #[async_trait]
     impl AuthRepository for MockAuthRepo {
-        async fn store(&self, _: &str, _: u64) -> Result<(), DomainError> { Ok(()) }
-        async fn find(&self, _: &str) -> Result<Option<String>, DomainError> { Ok(None) }
+        async fn store(&self, _: &str, _: u8, _: u64) -> Result<(), DomainError> { Ok(()) }
+        async fn find(&self, _: &str) -> Result<Option<u8>, DomainError> { Ok(None) }
         async fn remove(&self, _: &str) -> Result<(), DomainError> { Ok(()) }
     }
 
     fn make_vo() -> Vo {
         Vo {
             token:       "abc123".to_string(),
+            role:        2,
             url:         "http://localhost:3000/register?token=abc123".to_string(),
             display_url: "http://localhost...token=abc123".to_string(),
         }
@@ -90,10 +91,10 @@ mod tests {
 
     #[async_trait]
     impl Repository for MockRepo {
-        async fn get_current(&self) -> Result<Option<Vo>, DomainError> {
+        async fn get_current_by_role(&self, _: u8) -> Result<Option<Vo>, DomainError> {
             Ok(self.current.lock().unwrap().take().unwrap_or(None))
         }
-        async fn issue(&self) -> Result<Vo, DomainError> {
+        async fn issue(&self, _: u8) -> Result<Vo, DomainError> {
             Ok(self.issue.lock().unwrap().take().unwrap_or_else(make_vo))
         }
         async fn find_by_token(&self, _: &str) -> Result<Option<Vo>, DomainError> {
@@ -110,7 +111,7 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.current.lock().unwrap() = Some(Some(make_vo()));
         let uc = make_uc(mock);
-        let vo = uc.current().await.unwrap();
+        let vo = uc.current(RoleDto { role: 2 }).await.unwrap();
         assert_eq!(vo.token, "abc123");
     }
 
@@ -119,7 +120,7 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.current.lock().unwrap() = Some(None);
         let uc = make_uc(mock);
-        assert!(uc.current().await.is_err());
+        assert!(uc.current(RoleDto { role: 2 }).await.is_err());
     }
 
     #[tokio::test]
@@ -127,7 +128,7 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.issue.lock().unwrap() = Some(make_vo());
         let uc = make_uc(mock);
-        let vo = uc.issue().await.unwrap();
+        let vo = uc.issue(RoleDto { role: 2 }).await.unwrap();
         assert!(!vo.token.is_empty());
         assert!(vo.url.contains(&vo.token));
     }

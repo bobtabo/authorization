@@ -15,6 +15,15 @@ object StaffRole {
     const val ADMIN:  Int = 1
     /** 一般メンバー */
     const val MEMBER: Int = 2
+
+    /**
+     * 整数値からロール定数を返します。
+     * 未知の値の場合は MEMBER を返します。
+     *
+     * @param value ロール整数値
+     * @return ADMIN または MEMBER
+     */
+    fun from(value: Int): Int = if (value == ADMIN) ADMIN else MEMBER
 }
 
 /**

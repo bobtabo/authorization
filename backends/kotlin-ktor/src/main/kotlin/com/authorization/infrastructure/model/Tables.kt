@@ -57,6 +57,7 @@ object Staffs : LongIdTable("staffs") {
 /** 招待テーブル定義です。 */
 object Invitations : IntIdTable("invitations") {
     val token     = varchar("token", 255).uniqueIndex()
+    val role      = integer("role").default(2)
     val createdAt = datetime("created_at")
     val createdBy = integer("created_by").nullable()
     val updatedAt = datetime("updated_at")

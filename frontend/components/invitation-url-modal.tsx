@@ -3,53 +3,35 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCopy, X, Loader2 } from "lucide-react";
 import { getInvitation, issueInvitation } from "@/src/api";
 
-/** API 未実装・500・CORS 等のときに見せる、それっぽいモックURL */
-function buildMockInvitationUrl(): string {
-  const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
-  const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/invitation/${token}`;
-}
-
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
 export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element {
+  const [role, setRole] = useState<1 | 2>(2);
   const [url, setUrl] = useState<string>("");
   const [displayUrl, setDisplayUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [reissuing, setReissuing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
-  const [isMock, setIsMock] = useState<boolean>(false);
-
-  const setUrls = (fullUrl: string, dispUrl: string) => {
-    setUrl(fullUrl);
-    setDisplayUrl(dispUrl);
-  };
 
   const loadUrl = useCallback(async () => {
     setError(null);
+    setUrl("");
+    setDisplayUrl("");
     setLoading(true);
     try {
-      const data = await getInvitation();
-      const mockUrl = buildMockInvitationUrl();
-      setUrls(
-        typeof data.url === "string" ? data.url : mockUrl,
-        typeof data.display_url === "string" ? data.display_url : mockUrl,
-      );
-      setIsMock(false);
+      const data = await getInvitation(role);
+      setUrl(data.url);
+      setDisplayUrl(data.display_url);
     } catch {
-      const mockUrl = buildMockInvitationUrl();
-      setUrls(mockUrl, mockUrl);
-      setIsMock(true);
+      setError("招待URLの取得に失敗しました");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     if (!open) return;
@@ -80,17 +62,11 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
     setError(null);
     setReissuing(true);
     try {
-      const data = await issueInvitation();
-      const mockUrl = buildMockInvitationUrl();
-      setUrls(
-        typeof data.url === "string" ? data.url : mockUrl,
-        typeof data.display_url === "string" ? data.display_url : mockUrl,
-      );
-      setIsMock(false);
+      const data = await issueInvitation(role);
+      setUrl(data.url);
+      setDisplayUrl(data.display_url);
     } catch {
-      const mockUrl = buildMockInvitationUrl();
-      setUrls(mockUrl, mockUrl);
-      setIsMock(true);
+      setError("招待URLの再発行に失敗しました");
     } finally {
       setReissuing(false);
     }
@@ -132,16 +108,41 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
             </div>
 
             <div className="space-y-4 px-5 py-5">
-              {isMock && (
-                <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
-                  APIが未接続・エラー時のため、モックの招待URLを表示しています（見た目の確認用です）。
-                </div>
-              )}
               {error && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
                   {error}
                 </div>
               )}
+
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-gray-700">権限</p>
+                <div className="flex gap-3">
+                  {([
+                    { value: 2, label: "メンバー", active: "border-sky-200 bg-sky-100 text-sky-800" },
+                    { value: 1, label: "管理者",   active: "border-violet-200 bg-violet-100 text-violet-800" },
+                  ] as const).map(({ value, label, active }) => (
+                    <label
+                      key={value}
+                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+                        role === value
+                          ? active
+                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="invitation-role"
+                        value={value}
+                        checked={role === value}
+                        onChange={() => setRole(value)}
+                        disabled={loading || reissuing}
+                        className="sr-only"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <label htmlFor="invitation-url-field" className="block text-sm font-medium text-gray-700">

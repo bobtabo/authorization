@@ -46,6 +46,7 @@ var (
 	InvitationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint, Increment: true},
 		{Name: "token", Type: field.TypeString},
+		{Name: "role", Type: field.TypeInt, Default: 2},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "created_by", Type: field.TypeUint, Nullable: true},
 		{Name: "updated_at", Type: field.TypeTime},

@@ -208,10 +208,10 @@ async fn delete_staffs_destroy_soft_deletes_staff() {
 async fn get_admin_invitation_returns_existing_invitation() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
-    let token = common::create_invitation(&pool).await;
+    let token = common::create_invitation(&pool, 2).await;
 
     let req = Request::builder()
-        .uri("/api/admin/invitation")
+        .uri("/api/admin/invitation?role=2")
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -225,12 +225,62 @@ async fn get_admin_invitation_returns_existing_invitation() {
 }
 
 #[tokio::test]
-async fn get_admin_invitation_issue_creates_new_invitation() {
+async fn get_admin_invitation_returns_existing_admin_invitation() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let token = common::create_invitation(&pool, 1).await;
+
+    let req = Request::builder()
+        .uri("/api/admin/invitation?role=1")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(json["found"], true);
+    assert_eq!(json["token"], token);
+}
+
+#[tokio::test]
+async fn get_admin_invitation_returns_400_for_invalid_role() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
 
     let req = Request::builder()
-        .uri("/api/admin/invitation/issue")
+        .uri("/api/admin/invitation?role=3")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn get_admin_invitation_issue_requires_auth() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+
+    let req = Request::builder()
+        .uri("/api/admin/invitation/issue?role=2")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn get_admin_invitation_issue_creates_new_invitation() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .uri("/api/admin/invitation/issue?role=2")
+        .header(axum::http::header::COOKIE, format!("staff_id={}", staff_id))
         .body(axum::body::Body::empty())
         .unwrap();
 

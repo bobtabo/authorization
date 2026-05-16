@@ -24,22 +24,24 @@ export class InvitationInteractor {
 
   /**
    * 最新の招待情報の VO を返します。
+   * @param role - ロール (1=admin, 2=member)
    * @returns InvitationResult
    * @throws AppError 招待が存在しない場合
    */
-  async current(): Promise<InvitationResult> {
-    const inv = await this.repo.getCurrent();
+  async current(role: number): Promise<InvitationResult> {
+    const inv = await this.repo.getCurrentByRole(role);
     if (!inv) throw notFound("invitation_not_found");
     return buildResult(inv.token);
   }
 
   /**
    * 新しい招待トークンを発行し、VO を返します。
+   * @param role - ロール (1=admin, 2=member)
    * @returns InvitationResult
    */
-  async issue(): Promise<InvitationResult> {
+  async issue(role: number): Promise<InvitationResult> {
     const token = randomBytes(16).toString("hex");
-    const inv = await this.repo.issue(token);
+    const inv = await this.repo.issue(token, role);
     return buildResult(inv.token);
   }
 
@@ -52,7 +54,7 @@ export class InvitationInteractor {
   async findByToken(token: string): Promise<InvitationResult> {
     const inv = await this.repo.findByToken(token);
     if (!inv) throw notFound("invitation_not_found");
-    await this.authRepo.store(inv.token, 600);
+    await this.authRepo.store(inv.token, inv.role, 600);
     return buildResult(inv.token);
   }
 }

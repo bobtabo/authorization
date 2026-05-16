@@ -39,14 +39,14 @@ class InteractorTest {
         override suspend fun restore(id: Long)                                       = true
     }
 
-    private fun mockInvAuthRepo(storedToken: String? = null): InvAuthRepository = object : InvAuthRepository {
-        override suspend fun store(token: String, ttl: Long) {}
-        override suspend fun find(token: String) = storedToken
+    private fun mockInvAuthRepo(storedRole: Int? = null): InvAuthRepository = object : InvAuthRepository {
+        override suspend fun store(token: String, role: Int, ttl: Long) {}
+        override suspend fun find(token: String) = storedRole
         override suspend fun remove(token: String) {}
     }
 
-    private fun makeUc(staffRepo: Repository, storedToken: String? = null) =
-        Interactor(staffRepo, mockInvAuthRepo(storedToken))
+    private fun makeUc(staffRepo: Repository, storedRole: Int? = null) =
+        Interactor(staffRepo, mockInvAuthRepo(storedRole))
 
     @Test
     fun `findUser returns staff when found`() = runBlocking {
@@ -65,12 +65,21 @@ class InteractorTest {
     }
 
     @Test
-    fun `login creates new staff with valid invitation token`() = runBlocking {
-        val uc     = makeUc(mockRepo(findByProvider = null), storedToken = "tok")
+    fun `login creates new staff with valid invitation token and member role`() = runBlocking {
+        val uc     = makeUc(mockRepo(findByProvider = null), storedRole = StaffRole.MEMBER)
         val dto    = LoginDto(provider = 1, providerId = "new-id", name = "New User", email = "new@example.com", avatar = null, invitationToken = "tok")
         val result = uc.login(dto)
         assertEquals("New User", result.name)
         assertEquals(StaffRole.MEMBER, result.role)
+    }
+
+    @Test
+    fun `login creates new staff with valid invitation token and admin role`() = runBlocking {
+        val uc     = makeUc(mockRepo(findByProvider = null), storedRole = StaffRole.ADMIN)
+        val dto    = LoginDto(provider = 1, providerId = "new-id", name = "New User", email = "new@example.com", avatar = null, invitationToken = "tok")
+        val result = uc.login(dto)
+        assertEquals("New User", result.name)
+        assertEquals(StaffRole.ADMIN, result.role)
     }
 
     @Test

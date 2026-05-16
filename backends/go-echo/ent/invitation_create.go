@@ -26,6 +26,20 @@ func (_c *InvitationCreate) SetToken(v string) *InvitationCreate {
 	return _c
 }
 
+// SetRole sets the "role" field.
+func (_c *InvitationCreate) SetRole(v int) *InvitationCreate {
+	_c.mutation.SetRole(v)
+	return _c
+}
+
+// SetNillableRole sets the "role" field if the given value is not nil.
+func (_c *InvitationCreate) SetNillableRole(v *int) *InvitationCreate {
+	if v != nil {
+		_c.SetRole(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *InvitationCreate) SetCreatedAt(v time.Time) *InvitationCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -165,6 +179,10 @@ func (_c *InvitationCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *InvitationCreate) defaults() {
+	if _, ok := _c.mutation.Role(); !ok {
+		v := invitation.DefaultRole
+		_c.mutation.SetRole(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := invitation.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -183,6 +201,9 @@ func (_c *InvitationCreate) defaults() {
 func (_c *InvitationCreate) check() error {
 	if _, ok := _c.mutation.Token(); !ok {
 		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "Invitation.token"`)}
+	}
+	if _, ok := _c.mutation.Role(); !ok {
+		return &ValidationError{Name: "role", err: errors.New(`ent: missing required field "Invitation.role"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Invitation.created_at"`)}
@@ -233,6 +254,10 @@ func (_c *InvitationCreate) createSpec() (*Invitation, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Token(); ok {
 		_spec.SetField(invitation.FieldToken, field.TypeString, value)
 		_node.Token = value
+	}
+	if value, ok := _c.mutation.Role(); ok {
+		_spec.SetField(invitation.FieldRole, field.TypeInt, value)
+		_node.Role = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(invitation.FieldCreatedAt, field.TypeTime, value)

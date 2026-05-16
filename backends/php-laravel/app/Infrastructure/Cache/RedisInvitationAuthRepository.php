@@ -27,19 +27,19 @@ class RedisInvitationAuthRepository extends AbstractCacheRepository implements I
      * {@inheritdoc}
      */
     #[\Override]
-    public function store(string $token, int $ttl): void
+    public function store(string $token, int $role, int $ttl): void
     {
-        $this->put(self::TAG, self::TAG . ':' . $token, $token, $ttl);
+        $this->put(self::TAG, self::TAG . ':' . $token, (string)$role, $ttl);
     }
 
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function find(string $token): ?string
+    public function find(string $token): ?int
     {
         $value = $this->get(self::TAG, self::TAG . ':' . $token);
-        return is_string($value) ? $value : null;
+        return is_numeric($value) ? (int)$value : null;
     }
 
     /**

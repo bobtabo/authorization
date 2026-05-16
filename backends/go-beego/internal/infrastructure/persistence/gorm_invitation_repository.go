@@ -21,10 +21,11 @@ func NewOrmInvitationRepository(o QueryOrmer, frontendURL string) *OrmInvitation
 	return &OrmInvitationRepository{o: o, frontendURL: frontendURL}
 }
 
-func (r *OrmInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
+func (r *OrmInvitationRepository) GetCurrentByRole(role int) (*dominvitation.Vo, error) {
 	var m model.Invitation
 	err := r.o.QueryTable(new(model.Invitation)).
 		Filter("deleted_at__isnull", true).
+		Filter("role", role).
 		OrderBy("-id").
 		One(&m)
 	if err == orm.ErrNoRows {
@@ -33,10 +34,10 @@ func (r *OrmInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.buildVo(m.Token), nil
+	return r.buildVo(m.Token, m.Role), nil
 }
 
-func (r *OrmInvitationRepository) Issue() (*dominvitation.Vo, error) {
+func (r *OrmInvitationRepository) Issue(role int) (*dominvitation.Vo, error) {
 	token, err := generateInvitationToken()
 	if err != nil {
 		return nil, err
@@ -45,6 +46,7 @@ func (r *OrmInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	zero := uint(0)
 	m := model.Invitation{
 		Token:     token,
+		Role:      role,
 		CreatedAt: now,
 		CreatedBy: &zero,
 		UpdatedAt: now,
@@ -53,7 +55,7 @@ func (r *OrmInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	if _, err = r.o.Insert(&m); err != nil {
 		return nil, err
 	}
-	return r.buildVo(token), nil
+	return r.buildVo(token, role), nil
 }
 
 func (r *OrmInvitationRepository) FindByToken(token string) (*dominvitation.Vo, error) {
@@ -68,12 +70,12 @@ func (r *OrmInvitationRepository) FindByToken(token string) (*dominvitation.Vo, 
 	if err != nil {
 		return nil, err
 	}
-	return r.buildVo(m.Token), nil
+	return r.buildVo(m.Token, m.Role), nil
 }
 
-func (r *OrmInvitationRepository) buildVo(token string) *dominvitation.Vo {
+func (r *OrmInvitationRepository) buildVo(token string, role int) *dominvitation.Vo {
 	url := fmt.Sprintf("%s/invitation/%s", r.frontendURL, token)
-	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: buildDisplayURL(url)}
+	return &dominvitation.Vo{Token: token, Role: role, URL: url, DisplayURL: buildDisplayURL(url)}
 }
 
 func buildDisplayURL(url string) string {

@@ -27,8 +27,11 @@ class InvitationInteractor:
         self.invitation_repository = repo
         self.invitation_auth_repository = auth_repo
 
-    def current(self) -> InvitationVo:
-        """最新の招待情報の Vo を返します。
+    def current(self, role: int) -> InvitationVo:
+        """ロールで絞り込んだ最新の招待情報の Vo を返します。
+
+        Args:
+            role: ロール（1=管理者, 2=メンバー）
 
         Returns:
             InvitationVo インスタンス
@@ -36,21 +39,24 @@ class InvitationInteractor:
         Raises:
             AppException: 招待が存在しない場合
         """
-        result = self.invitation_repository.get_current()
+        result = self.invitation_repository.get_current_by_role(role)
         if result is None:
             raise not_found("invitation_not_found")
         return result
 
-    def issue(self) -> InvitationVo:
+    def issue(self, role: int) -> InvitationVo:
         """新しい招待トークンを発行し、招待情報の Vo を返します。
+
+        Args:
+            role: ロール（1=管理者, 2=メンバー）
 
         Returns:
             InvitationVo インスタンス
         """
-        return self.invitation_repository.issue()
+        return self.invitation_repository.issue(role)
 
     def find_by_token(self, token: str) -> InvitationVo:
-        """トークンで招待情報の Vo を返し、認証トークンをキャッシュします。
+        """トークンで招待情報の Vo を返し、認証トークンとロールをキャッシュします。
 
         Args:
             token: 招待トークン
@@ -64,5 +70,5 @@ class InvitationInteractor:
         result = self.invitation_repository.find_by_token(token)
         if result is None:
             raise not_found("invitation_not_found")
-        self.invitation_auth_repository.store(result.token, 600)
+        self.invitation_auth_repository.store(result.token, result.role, 600)
         return result

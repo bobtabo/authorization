@@ -14,9 +14,7 @@ use App\Domain\Invitation\Condition\InvitationCondition;
 use App\Domain\Invitation\Entities\Invitation as Entity;
 use App\Domain\Invitation\Repositories\InvitationRepository;
 use App\Infrastructure\Models\Invitation as Model;
-use App\Support\Enums\SortType;
 use App\Support\Repositories\AbstractEloquentRepository;
-use App\Support\Repositories\Conditions\Option;
 
 /**
  * 招待Repositoryクラスです。
@@ -30,10 +28,9 @@ class EloquentInvitationRepository extends AbstractEloquentRepository implements
      * {@inheritdoc}
      */
     #[\Override]
-    public function getCurrent(): ?Entity
+    public function getCurrentByRole(int $role): ?Entity
     {
-        $option = new Option(null, null, 'id', SortType::DESC);
-        $list = $this->all($option);
+        $list = $this->findByMap(['role' => $role]);
 
         if ($list->isEmpty()) {
             return null;

@@ -48,8 +48,7 @@ class InvitationService extends AbstractService
      */
     public function current(InvitationDto $dto): InvitationVo
     {
-        unset($dto);
-        $entity = $this->invitationRepository->getCurrent();
+        $entity = $this->invitationRepository->getCurrentByRole($dto->role ?? 2);
         if ($entity === null) {
             throw AppException::notFound('invitation_not_found');
         }
@@ -72,7 +71,10 @@ class InvitationService extends AbstractService
      */
     public function issue(InvitationDto $dto): InvitationVo
     {
-        $entity = $this->invitationRepository->getCurrent();
+        $entity = $this->invitationRepository->getCurrentByRole($dto->role ?? 2);
+        if ($entity === null) {
+            throw AppException::notFound('invitation_not_found');
+        }
         $entity->token = bin2hex(random_bytes(16));
         $entity->assignUpdated($dto->executorId);
         $saved = $this->invitationRepository->persist($entity);
@@ -105,8 +107,8 @@ class InvitationService extends AbstractService
             throw AppException::badRequest('invitation_invalid');
         }
 
-        // 招待トークンを一時保存（10分間）
-        $this->invitationAuthRepository->store($entity->token, 600);
+        // 招待トークンとロールを一時保存（10分間）
+        $this->invitationAuthRepository->store($entity->token, $entity->role ?? 2, 600);
 
         $url = $this->buildUrl($entity->token);
         return new InvitationVo()->assign([

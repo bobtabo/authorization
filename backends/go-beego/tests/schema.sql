@@ -63,6 +63,7 @@ CREATE TABLE `clients` (
 CREATE TABLE `invitations` (
     `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
     `token`         VARCHAR(255)    NOT NULL,
+    `role`          INT UNSIGNED    NOT NULL DEFAULT 2,
     `created_at`    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `created_by`    INT UNSIGNED,
     `updated_at`    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

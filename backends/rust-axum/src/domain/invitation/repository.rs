@@ -11,10 +11,10 @@ pub type DomainError = Box<dyn std::error::Error + Send + Sync>;
 /// 招待のリポジトリインターフェース。
 #[async_trait]
 pub trait Repository: Send + Sync {
-    /// 有効な招待トークンの VO を返します。存在しない場合は None を返します。
-    async fn get_current(&self) -> Result<Option<Vo>, DomainError>;
-    /// 新しい招待トークンを発行して VO を返します。
-    async fn issue(&self) -> Result<Vo, DomainError>;
+    /// ロールに紐づく有効な招待トークンの VO を返します。存在しない場合は None を返します。
+    async fn get_current_by_role(&self, role: u8) -> Result<Option<Vo>, DomainError>;
+    /// ロールを指定して新しい招待トークンを発行して VO を返します。
+    async fn issue(&self, role: u8) -> Result<Vo, DomainError>;
     /// トークン文字列で招待 VO を返します。存在しない場合は None を返します。
     async fn find_by_token(&self, token: &str) -> Result<Option<Vo>, DomainError>;
 }

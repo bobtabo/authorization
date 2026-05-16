@@ -13,8 +13,11 @@ class InvitationRepository(ABC):
     """招待の永続化インターフェース。"""
 
     @abstractmethod
-    def get_current(self) -> Optional[InvitationVo]:
-        """最新の招待情報の Vo を返します。
+    def get_current_by_role(self, role: int) -> Optional[InvitationVo]:
+        """ロールで絞り込んだ最新の招待情報の Vo を返します。
+
+        Args:
+            role: ロール（1=管理者, 2=メンバー）
 
         Returns:
             InvitationVo、または None
@@ -22,8 +25,11 @@ class InvitationRepository(ABC):
         ...
 
     @abstractmethod
-    def issue(self) -> InvitationVo:
+    def issue(self, role: int) -> InvitationVo:
         """新しい招待トークンを生成して保存し、Vo を返します。
+
+        Args:
+            role: ロール（1=管理者, 2=メンバー）
 
         Returns:
             InvitationVo インスタンス

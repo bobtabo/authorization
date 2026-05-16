@@ -19,6 +19,8 @@ type Invitation struct {
 	ID uint `json:"id,omitempty"`
 	// Token holds the value of the "token" field.
 	Token string `json:"token,omitempty"`
+	// Role holds the value of the "role" field.
+	Role int `json:"role,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// CreatedBy holds the value of the "created_by" field.
@@ -41,7 +43,7 @@ func (*Invitation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case invitation.FieldID, invitation.FieldCreatedBy, invitation.FieldUpdatedBy, invitation.FieldDeletedBy, invitation.FieldVersion:
+		case invitation.FieldID, invitation.FieldRole, invitation.FieldCreatedBy, invitation.FieldUpdatedBy, invitation.FieldDeletedBy, invitation.FieldVersion:
 			values[i] = new(sql.NullInt64)
 		case invitation.FieldToken:
 			values[i] = new(sql.NullString)
@@ -73,6 +75,12 @@ func (_m *Invitation) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field token", values[i])
 			} else if value.Valid {
 				_m.Token = value.String
+			}
+		case invitation.FieldRole:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field role", values[i])
+			} else if value.Valid {
+				_m.Role = int(value.Int64)
 			}
 		case invitation.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -158,6 +166,9 @@ func (_m *Invitation) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("token=")
 	builder.WriteString(_m.Token)
+	builder.WriteString(", ")
+	builder.WriteString("role=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Role))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

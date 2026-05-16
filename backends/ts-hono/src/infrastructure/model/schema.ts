@@ -55,6 +55,7 @@ export const staffs = mysqlTable("staffs", {
 export const invitations = mysqlTable("invitations", {
   id: bigint("id", { mode: "number", unsigned: true }).primaryKey().autoincrement(),
   token: varchar("token", { length: 255 }).notNull(),
+  role: int("role", { unsigned: true }).notNull().default(2),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
   createdBy: int("created_by", { unsigned: true }),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP`),

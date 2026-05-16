@@ -13,12 +13,16 @@ function cacheKey(token: string): string {
 
 /** Redis を用いた招待認証キャッシュリポジトリ。 */
 export class RedisInvitationAuthRepository implements InvitationAuthRepository {
-  async store(token: string, ttl: number): Promise<void> {
-    await redis.setex(cacheKey(token), ttl, token);
+  async store(token: string, role: number, ttl: number): Promise<void> {
+    await redis.setex(cacheKey(token), ttl, String(role));
   }
 
-  async find(token: string): Promise<string | null> {
-    return redis.get(cacheKey(token));
+  async find(token: string): Promise<number | null> {
+    const val = await redis.get(cacheKey(token));
+    if (val === null) return null;
+    const n = Number(val);
+    if (!Number.isInteger(n)) return null;
+    return n === 1 || n === 2 ? n : null;
   }
 
   async remove(token: string): Promise<void> {
