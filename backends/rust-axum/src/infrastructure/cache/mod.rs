@@ -64,18 +64,18 @@ impl RedisInvitationAuthRepository {
 
 #[async_trait]
 impl AuthRepository for RedisInvitationAuthRepository {
-    async fn store(&self, token: &str, ttl: u64) -> Result<(), DomainError> {
+    async fn store(&self, token: &str, role: u8, ttl: u64) -> Result<(), DomainError> {
         let key = self.cache_key(token);
         let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let _: () = conn.set_ex(&key, token, ttl).await?;
+        let _: () = conn.set_ex(&key, role.to_string(), ttl).await?;
         Ok(())
     }
 
-    async fn find(&self, token: &str) -> Result<Option<String>, DomainError> {
+    async fn find(&self, token: &str) -> Result<Option<u8>, DomainError> {
         let key = self.cache_key(token);
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let val: Option<String> = conn.get(&key).await?;
-        Ok(val)
+        Ok(val.and_then(|s| s.parse::<u8>().ok()))
     }
 
     async fn remove(&self, token: &str) -> Result<(), DomainError> {

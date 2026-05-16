@@ -4,7 +4,9 @@ import (
 	"authorization-go-echo/ent"
 	dominvitation "authorization-go-echo/internal/domain/invitation"
 	uinvitation "authorization-go-echo/internal/usecase/invitation"
+	"authorization-go-echo/pkg/apperror"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -19,7 +21,11 @@ func NewAdminInvitationHandler(db *ent.Client, newInviteUC func(*ent.Client) *ui
 }
 
 func (h *AdminInvitationHandler) Index(c echo.Context) error {
-	result, err := h.newInviteUC(h.db).Current()
+	role, err := parseInvitationRole(c)
+	if err != nil {
+		return err
+	}
+	result, err := h.newInviteUC(h.db).Current(uinvitation.CurrentDto{Role: role})
 	if err != nil {
 		return err
 	}
@@ -27,10 +33,14 @@ func (h *AdminInvitationHandler) Index(c echo.Context) error {
 }
 
 func (h *AdminInvitationHandler) Issue(c echo.Context) error {
+	role, err := parseInvitationRole(c)
+	if err != nil {
+		return err
+	}
 	var result *dominvitation.Vo
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		var e error
-		result, e = h.newInviteUC(tx.Client()).Issue()
+		result, e = h.newInviteUC(tx.Client()).Issue(uinvitation.IssueDto{Role: role})
 		return e
 	}); txErr != nil {
 		return txErr
@@ -38,8 +48,20 @@ func (h *AdminInvitationHandler) Issue(c echo.Context) error {
 	return c.JSON(http.StatusOK, mapInvitationVo(result))
 }
 
+func parseInvitationRole(c echo.Context) (int, error) {
+	roleParam := c.QueryParam("role")
+	if roleParam == "" {
+		return 2, nil
+	}
+	role, err := strconv.Atoi(roleParam)
+	if err != nil || (role != 1 && role != 2) {
+		return 0, apperror.BadRequest("invalid_role")
+	}
+	return role, nil
+}
+
 func mapInvitationVo(v *dominvitation.Vo) map[string]interface{} {
 	return map[string]interface{}{
-		"found": true, "url": v.URL, "display_url": v.DisplayURL, "token": v.Token,
+		"found": true, "url": v.URL, "display_url": v.DisplayURL, "token": v.Token, "role": v.Role,
 	}
 }

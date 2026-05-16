@@ -49,7 +49,8 @@ export class AuthInteractor {
     }
 
     const token = input.invitationToken ?? "";
-    if (!token || !(await this.invitationAuthRepo.find(token))) {
+    const roleValue = token ? await this.invitationAuthRepo.find(token) : null;
+    if (!token || roleValue === null) {
       throw forbidden("invitation_required");
     }
     await this.invitationAuthRepo.remove(token);
@@ -60,7 +61,7 @@ export class AuthInteractor {
       name: input.name,
       email: input.email,
       avatar: input.avatar ?? null,
-      role: 0,
+      role: roleValue,
       lastLoginAt: new Date(),
     });
     return mapper.map(staff, StaffSymbol, StaffVoSymbol);

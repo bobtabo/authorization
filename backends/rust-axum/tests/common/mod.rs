@@ -84,6 +84,7 @@ async fn ensure_schema(pool: &MySqlPool) {
         "CREATE TABLE `invitations` (
             `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
             `token`         VARCHAR(255)    NOT NULL,
+            `role`          TINYINT UNSIGNED NOT NULL DEFAULT 2,
             `created_at`    DATETIME        NOT NULL,
             `created_by`    INT UNSIGNED,
             `updated_at`    DATETIME        NOT NULL,
@@ -206,11 +207,12 @@ pub async fn create_client(pool: &MySqlPool) -> ClientData {
     }
 }
 
-pub async fn create_invitation(pool: &MySqlPool) -> String {
+pub async fn create_invitation(pool: &MySqlPool, role: u8) -> String {
     let token = hex::encode(rand::random::<[u8; 16]>());
     let now = chrono::Local::now().naive_local();
-    sqlx::query("INSERT INTO invitations (token, created_at, updated_at) VALUES (?, ?, ?)")
+    sqlx::query("INSERT INTO invitations (token, role, created_at, updated_at) VALUES (?, ?, ?, ?)")
         .bind(&token)
+        .bind(role)
         .bind(now)
         .bind(now)
         .execute(pool)

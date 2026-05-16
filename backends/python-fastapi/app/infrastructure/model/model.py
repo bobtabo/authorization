@@ -71,6 +71,7 @@ class InvitationModel(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     token: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    role: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 

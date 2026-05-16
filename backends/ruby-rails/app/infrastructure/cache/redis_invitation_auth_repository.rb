@@ -17,13 +17,14 @@ module Infrastructure
         @prefix = cfg.app.cache_prefix
       end
 
-      def store(token, ttl)
-        @redis.set(cache_key(token), token, ex: ttl)
+      def store(token, role, ttl)
+        @redis.set(cache_key(token), role.to_s, ex: ttl)
         nil
       end
 
       def find(token)
-        @redis.get(cache_key(token))
+        value = @redis.get(cache_key(token))
+        value&.match?(/\A\d+\z/) ? value.to_i : nil
       end
 
       def remove(token)

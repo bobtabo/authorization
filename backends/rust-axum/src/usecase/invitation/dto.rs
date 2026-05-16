@@ -7,3 +7,8 @@
 pub struct FindByTokenDto {
     pub token: String,
 }
+
+/// 招待 current/issue 入力 DTO。
+pub struct RoleDto {
+    pub role: u8,
+}

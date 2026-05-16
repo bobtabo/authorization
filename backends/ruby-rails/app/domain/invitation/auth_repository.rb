@@ -10,10 +10,11 @@ module Domain
     # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
     module AuthRepository
       # @param token [String] 招待トークン
+      # @param role [Integer] ロール（1=管理者, 2=メンバー）
       # @param ttl [Integer] キャッシュ有効期間（秒）
-      def store(token, ttl) = raise NotImplementedError
+      def store(token, role, ttl) = raise NotImplementedError
       # @param token [String] 招待トークン
-      # @return [String, nil] トークン文字列、または nil
+      # @return [Integer, nil] ロール値、または nil
       def find(token) = raise NotImplementedError
       # @param token [String] 招待トークン
       def remove(token) = raise NotImplementedError

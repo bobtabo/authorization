@@ -27,20 +27,20 @@ func NewGormInvitationRepository(db *gorm.DB, frontendURL string) *GormInvitatio
 	return &GormInvitationRepository{db: db, frontendURL: frontendURL}
 }
 
-// GetCurrent は最新の招待情報の値オブジェクトを返します。
-func (r *GormInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
+// GetCurrentByRole はロールで絞り込んだ最新の招待情報の値オブジェクトを返します。
+func (r *GormInvitationRepository) GetCurrentByRole(role int) (*dominvitation.Vo, error) {
 	var m model.Invitation
-	if err := r.db.Order("id DESC").First(&m).Error; err != nil {
+	if err := r.db.Where("role = ?", role).Order("id DESC").First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return r.buildVo(m.Token), nil
+	return r.buildVo(m.Token, m.Role), nil
 }
 
 // Issue は新しい招待トークンを生成して保存し、値オブジェクトを返します。
-func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
+func (r *GormInvitationRepository) Issue(role int) (*dominvitation.Vo, error) {
 	token, err := generateInvitationToken()
 	if err != nil {
 		return nil, err
@@ -49,6 +49,7 @@ func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	zero := uint(0)
 	m := model.Invitation{
 		Token:     token,
+		Role:      role,
 		CreatedAt: now,
 		CreatedBy: &zero,
 		UpdatedAt: now,
@@ -57,7 +58,7 @@ func (r *GormInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	if err = r.db.Create(&m).Error; err != nil {
 		return nil, err
 	}
-	return r.buildVo(token), nil
+	return r.buildVo(token, role), nil
 }
 
 // FindByToken はトークンで招待情報の値オブジェクトを返します。
@@ -69,12 +70,12 @@ func (r *GormInvitationRepository) FindByToken(token string) (*dominvitation.Vo,
 		}
 		return nil, err
 	}
-	return r.buildVo(m.Token), nil
+	return r.buildVo(m.Token, m.Role), nil
 }
 
-func (r *GormInvitationRepository) buildVo(token string) *dominvitation.Vo {
+func (r *GormInvitationRepository) buildVo(token string, role int) *dominvitation.Vo {
 	url := fmt.Sprintf("%s/invitation/%s", r.frontendURL, token)
-	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: buildDisplayURL(url)}
+	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: buildDisplayURL(url), Role: role}
 }
 
 // buildDisplayURL は PHP の buildDisplayUrl と同じロジックで表示用 URL を生成します。

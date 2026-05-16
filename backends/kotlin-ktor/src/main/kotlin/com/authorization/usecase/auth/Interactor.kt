@@ -49,17 +49,18 @@ class Interactor(
             )
         } else {
             val token = dto.invitationToken
-            if (token.isNullOrEmpty() || invitationAuthRepo.find(token) == null) {
+            val roleValue = if (!token.isNullOrEmpty()) invitationAuthRepo.find(token) else null
+            if (roleValue == null) {
                 throw AppException(403, "invitation_required")
             }
-            invitationAuthRepo.remove(token)
+            invitationAuthRepo.remove(token!!)
             Staff(
                 name        = dto.name,
                 email       = dto.email,
                 provider    = dto.provider,
                 providerId  = dto.providerId,
                 avatar      = dto.avatar,
-                role        = StaffRole.MEMBER,
+                role        = StaffRole.from(roleValue),
                 lastLoginAt = now,
                 createdAt   = now,
                 updatedAt   = now,

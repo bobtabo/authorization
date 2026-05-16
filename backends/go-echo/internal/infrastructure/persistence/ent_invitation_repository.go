@@ -21,8 +21,9 @@ func NewEntInvitationRepository(db *ent.Client, frontendURL string) *EntInvitati
 	return &EntInvitationRepository{db: db, frontendURL: frontendURL}
 }
 
-func (r *EntInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
+func (r *EntInvitationRepository) GetCurrentByRole(role int) (*dominvitation.Vo, error) {
 	m, err := r.db.Invitation.Query().
+		Where(invitation.RoleEQ(role), invitation.DeletedAtIsNil()).
 		Order(ent.Desc(invitation.FieldID)).
 		First(context.Background())
 	if err != nil {
@@ -31,10 +32,10 @@ func (r *EntInvitationRepository) GetCurrent() (*dominvitation.Vo, error) {
 		}
 		return nil, err
 	}
-	return r.buildVo(m.Token), nil
+	return r.buildVo(m.Token, m.Role), nil
 }
 
-func (r *EntInvitationRepository) Issue() (*dominvitation.Vo, error) {
+func (r *EntInvitationRepository) IssueByRole(role int) (*dominvitation.Vo, error) {
 	token, err := generateEntInvitationToken()
 	if err != nil {
 		return nil, err
@@ -43,6 +44,7 @@ func (r *EntInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	zero := uint(0)
 	_, err = r.db.Invitation.Create().
 		SetToken(token).
+		SetRole(role).
 		SetCreatedAt(now).
 		SetCreatedBy(zero).
 		SetUpdatedAt(now).
@@ -51,7 +53,7 @@ func (r *EntInvitationRepository) Issue() (*dominvitation.Vo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.buildVo(token), nil
+	return r.buildVo(token, role), nil
 }
 
 func (r *EntInvitationRepository) FindByToken(token string) (*dominvitation.Vo, error) {
@@ -64,12 +66,12 @@ func (r *EntInvitationRepository) FindByToken(token string) (*dominvitation.Vo, 
 		}
 		return nil, err
 	}
-	return r.buildVo(m.Token), nil
+	return r.buildVo(m.Token, m.Role), nil
 }
 
-func (r *EntInvitationRepository) buildVo(token string) *dominvitation.Vo {
+func (r *EntInvitationRepository) buildVo(token string, role int) *dominvitation.Vo {
 	url := fmt.Sprintf("%s/invitation/%s", r.frontendURL, token)
-	return &dominvitation.Vo{Token: token, URL: url, DisplayURL: buildEntDisplayURL(url)}
+	return &dominvitation.Vo{Token: token, Role: role, URL: url, DisplayURL: buildEntDisplayURL(url)}
 }
 
 func buildEntDisplayURL(url string) string {

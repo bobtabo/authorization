@@ -17,8 +17,13 @@ export class DrizzleInvitationRepository implements InvitationRepository {
     return all[all.length - 1];
   }
 
-  async issue(token: string): Promise<Invitation> {
-    await this.db.insert(invitations).values({ token, createdBy: 0, updatedBy: 0 });
+  async getCurrentByRole(role: number): Promise<Invitation | undefined> {
+    const all = await this.db.select().from(invitations).where(eq(invitations.role, role)).orderBy(invitations.id);
+    return all[all.length - 1];
+  }
+
+  async issue(token: string, role: number): Promise<Invitation> {
+    await this.db.insert(invitations).values({ token, role, createdBy: 0, updatedBy: 0 });
     const rows = await this.db.select().from(invitations).where(eq(invitations.token, token)).limit(1);
     return rows[0]!;
   }

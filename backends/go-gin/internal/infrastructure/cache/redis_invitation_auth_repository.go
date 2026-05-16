@@ -3,6 +3,7 @@ package cache
 import (
 	"authorization-go/internal/config"
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -19,20 +20,27 @@ func NewRedisInvitationAuthRepository(rdb *redis.Client, cfg *config.Config) *Re
 	return &RedisInvitationAuthRepository{rdb: rdb, cfg: cfg}
 }
 
-// Store はトークンを指定秒数 Redis にキャッシュします。
-func (r *RedisInvitationAuthRepository) Store(token string, ttl int) error {
+// Store はトークンとロールを指定秒数 Redis にキャッシュします。
+func (r *RedisInvitationAuthRepository) Store(token string, role int, ttl int) error {
 	ctx := context.Background()
-	return r.rdb.Set(ctx, r.key(token), token, time.Duration(ttl)*time.Second).Err()
+	return r.rdb.Set(ctx, r.key(token), strconv.Itoa(role), time.Duration(ttl)*time.Second).Err()
 }
 
-// Find はキャッシュからトークンを取得します。存在しない場合は空文字を返します。
-func (r *RedisInvitationAuthRepository) Find(token string) (string, error) {
+// Find はキャッシュからロールを取得します。存在しない場合は nil を返します。
+func (r *RedisInvitationAuthRepository) Find(token string) (*int, error) {
 	ctx := context.Background()
 	val, err := r.rdb.Get(ctx, r.key(token)).Result()
 	if err == redis.Nil {
-		return "", nil
+		return nil, nil
 	}
-	return val, err
+	if err != nil {
+		return nil, err
+	}
+	role, err := strconv.Atoi(val)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
 }
 
 // Remove はキャッシュからトークンを削除します。

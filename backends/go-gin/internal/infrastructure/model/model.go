@@ -61,6 +61,7 @@ func (Staff) TableName() string { return "staffs" }
 type Invitation struct {
 	ID        uint           `gorm:"primaryKey;autoIncrement;column:id"`
 	Token     string         `gorm:"not null;uniqueIndex;column:token"`
+	Role      int            `gorm:"not null;default:2;column:role"`
 	CreatedAt time.Time      `gorm:"column:created_at"`
 	CreatedBy *uint          `gorm:"column:created_by"`
 	UpdatedAt time.Time      `gorm:"column:updated_at"`

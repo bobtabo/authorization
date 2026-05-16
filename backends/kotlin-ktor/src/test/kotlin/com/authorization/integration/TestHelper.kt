@@ -97,11 +97,15 @@ object TestHelper {
         return ClientRow(id, identifier, token)
     }
 
-    fun createInvitation(token: String = UUID.randomUUID().toString().replace("-", "").take(32)): InvitationRow {
+    fun createInvitation(
+        token: String = UUID.randomUUID().toString().replace("-", "").take(32),
+        role: Int = 2,
+    ): InvitationRow {
         val now = LocalDateTime.now()
         val id = transaction(db) {
             Invitations.insertAndGetId {
                 it[Invitations.token]     = token
+                it[Invitations.role]      = role
                 it[Invitations.createdAt] = now
                 it[Invitations.updatedAt] = now
             }.value

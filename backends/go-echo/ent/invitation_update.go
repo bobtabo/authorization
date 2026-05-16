@@ -42,6 +42,27 @@ func (_u *InvitationUpdate) SetNillableToken(v *string) *InvitationUpdate {
 	return _u
 }
 
+// SetRole sets the "role" field.
+func (_u *InvitationUpdate) SetRole(v int) *InvitationUpdate {
+	_u.mutation.ResetRole()
+	_u.mutation.SetRole(v)
+	return _u
+}
+
+// SetNillableRole sets the "role" field if the given value is not nil.
+func (_u *InvitationUpdate) SetNillableRole(v *int) *InvitationUpdate {
+	if v != nil {
+		_u.SetRole(*v)
+	}
+	return _u
+}
+
+// AddRole adds v to the "role" field.
+func (_u *InvitationUpdate) AddRole(v int) *InvitationUpdate {
+	_u.mutation.AddRole(v)
+	return _u
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_u *InvitationUpdate) SetCreatedAt(v time.Time) *InvitationUpdate {
 	_u.mutation.SetCreatedAt(v)
@@ -236,6 +257,12 @@ func (_u *InvitationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.Token(); ok {
 		_spec.SetField(invitation.FieldToken, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Role(); ok {
+		_spec.SetField(invitation.FieldRole, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRole(); ok {
+		_spec.AddField(invitation.FieldRole, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(invitation.FieldCreatedAt, field.TypeTime, value)
 	}
@@ -312,6 +339,27 @@ func (_u *InvitationUpdateOne) SetNillableToken(v *string) *InvitationUpdateOne 
 	if v != nil {
 		_u.SetToken(*v)
 	}
+	return _u
+}
+
+// SetRole sets the "role" field.
+func (_u *InvitationUpdateOne) SetRole(v int) *InvitationUpdateOne {
+	_u.mutation.ResetRole()
+	_u.mutation.SetRole(v)
+	return _u
+}
+
+// SetNillableRole sets the "role" field if the given value is not nil.
+func (_u *InvitationUpdateOne) SetNillableRole(v *int) *InvitationUpdateOne {
+	if v != nil {
+		_u.SetRole(*v)
+	}
+	return _u
+}
+
+// AddRole adds v to the "role" field.
+func (_u *InvitationUpdateOne) AddRole(v int) *InvitationUpdateOne {
+	_u.mutation.AddRole(v)
 	return _u
 }
 
@@ -538,6 +586,12 @@ func (_u *InvitationUpdateOne) sqlSave(ctx context.Context) (_node *Invitation, 
 	}
 	if value, ok := _u.mutation.Token(); ok {
 		_spec.SetField(invitation.FieldToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Role(); ok {
+		_spec.SetField(invitation.FieldRole, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRole(); ok {
+		_spec.AddField(invitation.FieldRole, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.CreatedAt(); ok {
 		_spec.SetField(invitation.FieldCreatedAt, field.TypeTime, value)

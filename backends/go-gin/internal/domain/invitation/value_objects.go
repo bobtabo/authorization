@@ -5,4 +5,5 @@ type Vo struct {
 	Token      string
 	URL        string
 	DisplayURL string
+	Role       int
 }

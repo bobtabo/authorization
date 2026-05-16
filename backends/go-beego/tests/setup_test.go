@@ -294,11 +294,16 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 	return c
 }
 
-func createInvitation(t *testing.T, token string) *model.Invitation {
+func createInvitation(t *testing.T, token string, role ...int) *model.Invitation {
 	t.Helper()
+	r := 2
+	if len(role) > 0 {
+		r = role[0]
+	}
 	now := time.Now()
 	inv := &model.Invitation{
 		Token:     token,
+		Role:      r,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

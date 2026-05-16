@@ -17,8 +17,23 @@ module Authorization
           # @param response [Hanami::Action::Response] レスポンス
           # @return [void]
           def handle(request, response)
-            v = container[:invitation_uc].current
+            role = resolve_role(request, response)
+            return unless role
+
+            v = container[:invitation_uc].current(role)
             json_response(response, { found: true, url: v.url, display_url: v.display_url, token: v.token })
+          end
+
+          private
+
+          def resolve_role(request, response)
+            role = request.params[:role].to_s
+            role = role.empty? ? 2 : role.to_i
+            unless [1, 2].include?(role)
+              json_response(response, { error: "invalid_role" }, status: 400)
+              return nil
+            end
+            role
           end
         end
       end

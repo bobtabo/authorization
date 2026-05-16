@@ -13,11 +13,12 @@ from app.domain.invitation.repository import InvitationRepository
 from app.infrastructure.model.model import InvitationModel
 
 
-def _build_vo(token: str, frontend_url: str) -> InvitationVo:
-    """トークンと URL から InvitationVo を構築します。
+def _build_vo(token: str, role: int, frontend_url: str) -> InvitationVo:
+    """トークン、ロール、URL から InvitationVo を構築します。
 
     Args:
         token: 招待トークン
+        role: ロール（1=管理者, 2=メンバー）
         frontend_url: フロントエンドのベース URL
 
     Returns:
@@ -25,7 +26,7 @@ def _build_vo(token: str, frontend_url: str) -> InvitationVo:
     """
     url = f"{frontend_url}/invitation/{token}"
     display_url = url.replace("https://", "").replace("http://", "")
-    return InvitationVo(token=token, url=url, display_url=display_url)
+    return InvitationVo(token=token, url=url, display_url=display_url, role=role)
 
 
 
@@ -47,28 +48,39 @@ class SqlAlchemyInvitationRepository(InvitationRepository):
         self.db = db
         self.frontend_url = frontend_url
 
-    def get_current(self) -> Optional[InvitationVo]:
-        """最新の招待情報のバリューオブジェクトを返します。
+    def get_current_by_role(self, role: int) -> Optional[InvitationVo]:
+        """ロールで絞り込んだ最新の招待情報のバリューオブジェクトを返します。
+
+        Args:
+            role: ロール（1=管理者, 2=メンバー）
 
         Returns:
             InvitationVo、または None
         """
-        m = self.db.query(InvitationModel).order_by(InvitationModel.id.desc()).first()
+        m = (
+            self.db.query(InvitationModel)
+            .filter(InvitationModel.role == role)
+            .order_by(InvitationModel.id.desc())
+            .first()
+        )
         if m is None:
             return None
-        return _build_vo(m.token, self.frontend_url)
+        return _build_vo(m.token, m.role, self.frontend_url)
 
-    def issue(self) -> InvitationVo:
+    def issue(self, role: int) -> InvitationVo:
         """新しい招待トークンを生成して保存し、バリューオブジェクトを返します。
+
+        Args:
+            role: ロール（1=管理者, 2=メンバー）
 
         Returns:
             InvitationVo インスタンス
         """
         token = secrets.token_hex(16)
-        m = InvitationModel(token=token)
+        m = InvitationModel(token=token, role=role)
         self.db.add(m)
         self.db.flush()
-        return _build_vo(token, self.frontend_url)
+        return _build_vo(token, role, self.frontend_url)
 
     def find_by_token(self, token: str) -> Optional[InvitationVo]:
         """トークンで招待情報のバリューオブジェクトを返します。
@@ -82,4 +94,4 @@ class SqlAlchemyInvitationRepository(InvitationRepository):
         m = self.db.query(InvitationModel).filter(InvitationModel.token == token).first()
         if m is None:
             return None
-        return _build_vo(m.token, self.frontend_url)
+        return _build_vo(m.token, m.role, self.frontend_url)

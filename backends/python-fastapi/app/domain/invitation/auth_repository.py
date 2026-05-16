@@ -11,12 +11,12 @@ class InvitationAuthRepository(ABC):
     """招待認証トークンのキャッシュリポジトリインターフェース。"""
 
     @abstractmethod
-    def store(self, token: str, ttl: int) -> None:
-        """トークンを指定秒数キャッシュします。"""
+    def store(self, token: str, role: int, ttl: int) -> None:
+        """トークンとロールを指定秒数キャッシュします。"""
 
     @abstractmethod
-    def find(self, token: str) -> Optional[str]:
-        """トークンを取得します。存在しない場合は None を返します。"""
+    def find(self, token: str) -> Optional[int]:
+        """トークンに対応するロールを取得します。存在しない場合は None を返します。"""
 
     @abstractmethod
     def remove(self, token: str) -> None:

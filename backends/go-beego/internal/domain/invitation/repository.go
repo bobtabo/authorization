@@ -1,7 +1,7 @@
 package invitation
 
 type Repository interface {
-	GetCurrent() (*Vo, error)
-	Issue() (*Vo, error)
+	GetCurrentByRole(role int) (*Vo, error)
+	Issue(role int) (*Vo, error)
 	FindByToken(token string) (*Vo, error)
 }

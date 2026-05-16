@@ -39,16 +39,20 @@ func init() {
 	appclient.IDValidator = appclientDescID.Validators[0].(func(uint64) error)
 	invitationFields := schema.Invitation{}.Fields()
 	_ = invitationFields
+	// invitationDescRole is the schema descriptor for role field.
+	invitationDescRole := invitationFields[2].Descriptor()
+	// invitation.DefaultRole holds the default value on creation for the role field.
+	invitation.DefaultRole = invitationDescRole.Default.(int)
 	// invitationDescCreatedAt is the schema descriptor for created_at field.
-	invitationDescCreatedAt := invitationFields[2].Descriptor()
+	invitationDescCreatedAt := invitationFields[3].Descriptor()
 	// invitation.DefaultCreatedAt holds the default value on creation for the created_at field.
 	invitation.DefaultCreatedAt = invitationDescCreatedAt.Default.(func() time.Time)
 	// invitationDescUpdatedAt is the schema descriptor for updated_at field.
-	invitationDescUpdatedAt := invitationFields[4].Descriptor()
+	invitationDescUpdatedAt := invitationFields[5].Descriptor()
 	// invitation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	invitation.DefaultUpdatedAt = invitationDescUpdatedAt.Default.(func() time.Time)
 	// invitationDescVersion is the schema descriptor for version field.
-	invitationDescVersion := invitationFields[8].Descriptor()
+	invitationDescVersion := invitationFields[9].Descriptor()
 	// invitation.DefaultVersion holds the default value on creation for the version field.
 	invitation.DefaultVersion = invitationDescVersion.Default.(int)
 	// invitationDescID is the schema descriptor for id field.

@@ -70,7 +70,8 @@ class AuthInteractor:
         staff = self.staff_repo.find_staff_by_provider(dto.provider, dto.provider_id)
         if staff is None:
             token = dto.invitation_token
-            if not token or self.invitation_auth_repo.find(token) is None:
+            role_value = self.invitation_auth_repo.find(token) if token else None
+            if role_value is None:
                 raise forbidden("invitation_required")
             self.invitation_auth_repo.remove(token)
             now = datetime.now(timezone.utc)
@@ -80,7 +81,7 @@ class AuthInteractor:
                 name=dto.name,
                 email=dto.email,
                 avatar=dto.avatar,
-                role=0,
+                role=role_value,
                 last_login_at=now,
             )
         else:

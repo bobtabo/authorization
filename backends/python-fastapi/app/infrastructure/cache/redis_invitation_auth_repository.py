@@ -20,12 +20,15 @@ class RedisInvitationAuthRepository(InvitationAuthRepository):
         prefix = self.settings.cache_prefix
         return f"{prefix}:invitation_auth:invitation_auth:{token}"
 
-    def store(self, token: str, ttl: int) -> None:
-        self.rdb.setex(self._key(token), ttl, token)
+    def store(self, token: str, role: int, ttl: int) -> None:
+        self.rdb.setex(self._key(token), ttl, str(role))
 
-    def find(self, token: str) -> Optional[str]:
+    def find(self, token: str) -> Optional[int]:
         val = self.rdb.get(self._key(token))
-        return val.decode() if isinstance(val, bytes) else val
+        if val is None:
+            return None
+        raw = val.decode() if isinstance(val, bytes) else val
+        return int(raw)
 
     def remove(self, token: str) -> None:
         self.rdb.delete(self._key(token))

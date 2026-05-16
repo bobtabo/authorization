@@ -34,7 +34,8 @@ module UseCase
           saved = @staff_repo.save(updated)
         else
           token = dto.invitation_token
-          if token.blank? || @invitation_auth_repo.find(token).nil?
+          role_value = token.blank? ? nil : @invitation_auth_repo.find(token)
+          if role_value.nil?
             raise Domain::ForbiddenError.new("invitation_required")
           end
           @invitation_auth_repo.remove(token)
@@ -45,7 +46,7 @@ module UseCase
             provider:      dto.provider,
             provider_id:   dto.provider_id,
             avatar:        dto.avatar,
-            role:          Domain::Staff::Role::MEMBER,
+            role:          role_value,
             last_login_at: now,
             created_at:    now,
             created_by:    nil,

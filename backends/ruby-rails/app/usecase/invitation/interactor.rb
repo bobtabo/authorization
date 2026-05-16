@@ -16,19 +16,21 @@ module UseCase
         @invitation_auth_repo = invitation_auth_repo
       end
 
-      def current
-        @invitation_repo.get_current
+      def current(role)
+        entity = @invitation_repo.get_current_by_role(role)
+        entity ? @invitation_repo.entity_to_vo(entity) : nil
       end
 
-      def issue
-        @invitation_repo.issue
+      def issue(role)
+        entity = @invitation_repo.issue(role)
+        @invitation_repo.entity_to_vo(entity)
       end
 
       def find_by_token(dto)
-        vo = @invitation_repo.find_by_token(dto.token)
-        raise "invitation_not_found" unless vo
-        @invitation_auth_repo.store(vo.token, 600)
-        vo
+        entity = @invitation_repo.find_by_token(dto.token)
+        raise "invitation_not_found" unless entity
+        @invitation_auth_repo.store(entity.token, entity.role, 600)
+        @invitation_repo.entity_to_vo(entity)
       end
     end
   end

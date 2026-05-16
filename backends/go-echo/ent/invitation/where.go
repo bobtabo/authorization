@@ -59,6 +59,51 @@ func Token(v string) predicate.Invitation {
 	return predicate.Invitation(sql.FieldEQ(FieldToken, v))
 }
 
+// Role applies equality check predicate on the "role" field. It's identical to RoleEQ.
+func Role(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldEQ(FieldRole, v))
+}
+
+// RoleEQ applies the EQ predicate on the "role" field.
+func RoleEQ(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldEQ(FieldRole, v))
+}
+
+// RoleNEQ applies the NEQ predicate on the "role" field.
+func RoleNEQ(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldNEQ(FieldRole, v))
+}
+
+// RoleIn applies the In predicate on the "role" field.
+func RoleIn(vs ...int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldIn(FieldRole, vs...))
+}
+
+// RoleNotIn applies the NotIn predicate on the "role" field.
+func RoleNotIn(vs ...int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldNotIn(FieldRole, vs...))
+}
+
+// RoleGT applies the GT predicate on the "role" field.
+func RoleGT(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldGT(FieldRole, v))
+}
+
+// RoleGTE applies the GTE predicate on the "role" field.
+func RoleGTE(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldGTE(FieldRole, v))
+}
+
+// RoleLT applies the LT predicate on the "role" field.
+func RoleLT(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldLT(FieldRole, v))
+}
+
+// RoleLTE applies the LTE predicate on the "role" field.
+func RoleLTE(v int) predicate.Invitation {
+	return predicate.Invitation(sql.FieldLTE(FieldRole, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Invitation {
 	return predicate.Invitation(sql.FieldEQ(FieldCreatedAt, v))

@@ -12,3 +12,4 @@ class InvitationVo:
     token: str
     url: str
     display_url: str
+    role: int = 2

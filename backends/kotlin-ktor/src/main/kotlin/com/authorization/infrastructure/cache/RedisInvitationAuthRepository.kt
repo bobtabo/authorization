@@ -19,12 +19,12 @@ class RedisInvitationAuthRepository(
     private val cfg: Config,
 ) : AuthRepository {
 
-    override suspend fun store(token: String, ttl: Long) {
-        pool.resource.use { it.setex(cacheKey(token), ttl, token) }
+    override suspend fun store(token: String, role: Int, ttl: Long) {
+        pool.resource.use { it.setex(cacheKey(token), ttl, role.toString()) }
     }
 
-    override suspend fun find(token: String): String? =
-        pool.resource.use { it.get(cacheKey(token)) }
+    override suspend fun find(token: String): Int? =
+        pool.resource.use { it.get(cacheKey(token))?.toIntOrNull() }
 
     override suspend fun remove(token: String) {
         pool.resource.use { it.del(cacheKey(token)) }

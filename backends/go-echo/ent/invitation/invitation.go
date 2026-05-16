@@ -15,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldToken holds the string denoting the token field in the database.
 	FieldToken = "token"
+	// FieldRole holds the string denoting the role field in the database.
+	FieldRole = "role"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldCreatedBy holds the string denoting the created_by field in the database.
@@ -37,6 +39,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldToken,
+	FieldRole,
 	FieldCreatedAt,
 	FieldCreatedBy,
 	FieldUpdatedAt,
@@ -57,6 +60,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultRole holds the default value on creation for the "role" field.
+	DefaultRole int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -78,6 +83,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByToken orders the results by the token field.
 func ByToken(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldToken, opts...).ToFunc()
+}
+
+// ByRole orders the results by the role field.
+func ByRole(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRole, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

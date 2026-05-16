@@ -92,10 +92,11 @@ RSpec.configure do |config|
       }.merge(overrides))
     end
 
-    def create_invitation(token = SecureRandom.hex(16))
+    def create_invitation(token = SecureRandom.hex(16), role = 2)
       now = Time.current
       Infrastructure::Model::Invitation.create!(
         token:      token,
+        role:       role,
         created_at: now,
         updated_at: now,
       )
