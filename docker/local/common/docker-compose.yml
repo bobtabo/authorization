@@ -19,7 +19,18 @@ services:
       - mysql
       - redis
     networks:
-      - authorization
+      authorization:
+        aliases:
+          - apis.authorization-php.dev
+          - apis.authorization-go-gin.dev
+          - apis.authorization-go-beego.dev
+          - apis.authorization-go-echo.dev
+          - apis.authorization-kotlin.dev
+          - apis.authorization-python.dev
+          - apis.authorization-rb-hanami.dev
+          - apis.authorization-rb-rails.dev
+          - apis.authorization-rust.dev
+          - apis.authorization-ts.dev
 
   letsencrypt-nginx-proxy-companion:
     image: jrcs/letsencrypt-nginx-proxy-companion
@@ -88,17 +99,6 @@ services:
       - INSECURE_SKIP_TLS_VERIFY=true
     networks:
       - authorization
-    extra_hosts:
-      - "apis.authorization-php.dev:172.19.0.6"
-      - "apis.authorization-go-gin.dev:172.19.0.6"
-      - "apis.authorization-go-beego.dev:172.19.0.6"
-      - "apis.authorization-go-echo.dev:172.19.0.6"
-      - "apis.authorization-kotlin.dev:172.19.0.6"
-      - "apis.authorization-python.dev:172.19.0.6"
-      - "apis.authorization-rb-hanami.dev:172.19.0.6"
-      - "apis.authorization-rb-rails.dev:172.19.0.6"
-      - "apis.authorization-rust.dev:172.19.0.6"
-      - "apis.authorization-ts.dev:172.19.0.6"
     logging:
       options:
         max-size: "5m"
