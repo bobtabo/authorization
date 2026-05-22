@@ -14,7 +14,7 @@ module Infrastructure
       end
 
       def find_by_condition(cond)
-        q = @model.where(deleted_at: nil)
+        q = @model.all
         if cond.keyword.present?
           q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%")
         end
