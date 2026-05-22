@@ -13,7 +13,7 @@ namespace App\UseCases\JwtIssueHistory\Dtos;
 use App\Support\Dtos\AbstractDto;
 
 /**
- * JWT発行履歴DTOクラスです。
+ * JWT履歴DTOクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\JwtIssueHistory\Dtos

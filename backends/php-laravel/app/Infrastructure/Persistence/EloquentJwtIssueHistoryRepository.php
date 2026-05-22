@@ -18,7 +18,7 @@ use App\Support\Repositories\AbstractEloquentRepository;
 use Illuminate\Support\Collection;
 
 /**
- * JWT発行履歴Repositoryクラスです。
+ * JWT履歴Repositoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence

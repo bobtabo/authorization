@@ -19,7 +19,7 @@ use Carbon\Carbon;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Client
  */
-class JwtIssueHistoryResponse extends AbstractResponse
+class JwtHistoryResponse extends AbstractResponse
 {
     /**
      * @var list<array<string, mixed>>

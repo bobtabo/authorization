@@ -14,7 +14,7 @@ use App\Support\ValueObjects\AbstractValueObject;
 use Illuminate\Support\Collection;
 
 /**
- * JWT発行履歴一覧ValueObjectクラスです。
+ * JWT履歴一覧ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\JwtIssueHistory\ValueObjects

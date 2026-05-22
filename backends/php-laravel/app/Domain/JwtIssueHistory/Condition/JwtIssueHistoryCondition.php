@@ -13,7 +13,7 @@ namespace App\Domain\JwtIssueHistory\Condition;
 use App\Support\Repositories\Conditions\AbstractCondition;
 
 /**
- * JWT発行履歴Conditionクラスです。
+ * JWT履歴Conditionクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\JwtIssueHistory\Condition

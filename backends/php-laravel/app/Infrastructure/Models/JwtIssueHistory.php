@@ -14,7 +14,7 @@ use App\Support\Models\AppTransactionModel;
 use Database\Factories\JwtIssueHistoryFactory;
 
 /**
- * JWT発行履歴Modelクラスです。
+ * JWT履歴Modelクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Models

@@ -239,10 +239,10 @@ class ClientController extends Controller
     }
 
     /**
-     * クライアントに紐づくJWT発行履歴一覧を返します。
+     * クライアントに紐づくJWT履歴一覧を返します。
      *
      * @param AppRequest $request HTTP リクエスト
-     * @param JwtIssueHistoryService $service JWT発行履歴Service
+     * @param JwtIssueHistoryService $service JWT履歴Service
      * @return JsonResponse JSON レスポンス
      */
     public function jwtHistories(AppRequest $request, JwtIssueHistoryService $service): JsonResponse

@@ -17,7 +17,7 @@ use App\Support\Services\AbstractService;
 use App\UseCases\JwtIssueHistory\Dtos\JwtIssueHistoryDto;
 
 /**
- * JWT発行履歴Serviceクラスです。
+ * JWT履歴Serviceクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\JwtIssueHistory
@@ -27,7 +27,7 @@ class JwtIssueHistoryService extends AbstractService
     /**
      * コンストラクタ。
      *
-     * @param JwtIssueHistoryRepository $repository JWT発行履歴Repository
+     * @param JwtIssueHistoryRepository $repository JWT履歴Repository
      */
     public function __construct(
         private readonly JwtIssueHistoryRepository $repository,
@@ -35,10 +35,10 @@ class JwtIssueHistoryService extends AbstractService
     }
 
     /**
-     * クライアントに紐づくJWT発行履歴一覧を返します。
+     * クライアントに紐づくJWT履歴一覧を返します。
      *
-     * @param JwtIssueHistoryDto $dto JWT発行履歴DTO
-     * @return JwtIssueHistoryListVo JWT発行履歴一覧ValueObject
+     * @param JwtIssueHistoryDto $dto JWT履歴DTO
+     * @return JwtIssueHistoryListVo JWT履歴一覧ValueObject
      */
     public function getHistories(JwtIssueHistoryDto $dto): JwtIssueHistoryListVo
     {

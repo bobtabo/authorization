@@ -13,7 +13,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * JWT発行履歴Migrationクラスです。
+ * JWT履歴Migrationクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
@@ -23,7 +23,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('jwt_issue_histories', function (Blueprint $table) {
+        Schema::create('jwt_histories', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('client_id')->unsigned()->comment('クライアントID');
             $table->string('member_id', 255)->comment('会員ID');
@@ -45,6 +45,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('jwt_issue_histories');
+        Schema::dropIfExists('jwt_histories');
     }
 };

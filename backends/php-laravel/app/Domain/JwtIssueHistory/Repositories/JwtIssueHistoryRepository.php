@@ -15,7 +15,7 @@ use App\Domain\JwtIssueHistory\Entities\JwtIssueHistory;
 use Illuminate\Support\Collection;
 
 /**
- * JWT発行履歴Repositoryのインターフェースです。
+ * JWT履歴Repositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain\JwtIssueHistory\Repositories
@@ -23,7 +23,7 @@ use Illuminate\Support\Collection;
 interface JwtIssueHistoryRepository
 {
     /**
-     * クライアントIDに紐づくJWT発行履歴を返します。
+     * クライアントIDに紐づくJWT履歴を返します。
      *
      * @param JwtIssueHistoryCondition $condition 検索条件
      * @return Collection エンティティコレクション
@@ -31,7 +31,7 @@ interface JwtIssueHistoryRepository
     public function findByClientId(JwtIssueHistoryCondition $condition): Collection;
 
     /**
-     * JWT発行履歴を保存します。
+     * JWT履歴を保存します。
      *
      * @param JwtIssueHistory $entity エンティティ
      * @return JwtIssueHistory 保存後のエンティティ

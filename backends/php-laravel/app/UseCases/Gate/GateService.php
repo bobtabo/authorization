@@ -41,7 +41,7 @@ class GateService extends AbstractService
      *
      * @param ClientRepository $clientRepository クライアントリポジトリ
      * @param GateRepository $gateRepository 認可リポジトリ
-     * @param JwtIssueHistoryRepository $historyRepository JWT発行履歴リポジトリ
+     * @param JwtIssueHistoryRepository $historyRepository JWT履歴リポジトリ
      */
     public function __construct(
         private readonly ClientRepository $clientRepository,

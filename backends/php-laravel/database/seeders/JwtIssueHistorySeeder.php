@@ -13,7 +13,7 @@ namespace Database\Seeders;
 use App\Support\Database\Seeder;
 
 /**
- * JWT発行履歴Seederクラスです。
+ * JWT履歴Seederクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Seeders;

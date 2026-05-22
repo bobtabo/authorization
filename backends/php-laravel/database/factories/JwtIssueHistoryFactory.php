@@ -13,7 +13,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * JWT発行履歴Factoryクラスです。
+ * JWT履歴Factoryクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Factories
