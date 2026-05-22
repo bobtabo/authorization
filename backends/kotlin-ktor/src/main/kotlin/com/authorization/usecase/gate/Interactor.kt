@@ -37,7 +37,7 @@ class Interactor(
     private val clientRepo: ClientRepository,
     private val cache: CacheRepository,
     private val cfg: Config,
-    private val historyRepo: JwtHistoryRepository,
+    private val historyRepo: JwtHistoryRepository? = null,
 ) {
 
     /**
@@ -62,7 +62,7 @@ class Interactor(
             ttl           = cfg.jwt.ttl,
         )
         runCatching { cache.putJwt(c.identifier, dto.memberId, token, cfg.jwt.cacheTtl) }
-        runCatching { historyRepo.save(c.id, dto.memberId, LocalDateTime.now(), token) }
+        historyRepo?.let { runCatching { it.save(c.id, dto.memberId, LocalDateTime.now(), token) } }
         return IssueVo(token = token)
     }
 
