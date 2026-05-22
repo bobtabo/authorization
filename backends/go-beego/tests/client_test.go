@@ -163,7 +163,7 @@ func TestClient_GetQr(t *testing.T) {
 
 	t.Run("QRコードデータが取得できる", func(t *testing.T) {
 		c := createClient(t, map[string]interface{}{"identifier": "qr-test-001"})
-		w := do(http.MethodGet, fmt.Sprintf("/clients/%s/qr", c.Identifier), nil)
+		w := do(http.MethodGet, fmt.Sprintf("/api/clients/%s/qr", c.Identifier), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -178,7 +178,7 @@ func TestClient_GetQr(t *testing.T) {
 	})
 
 	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
-		w := do(http.MethodGet, "/clients/not-exist/qr", nil)
+		w := do(http.MethodGet, "/api/clients/not-exist/qr", nil)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}
@@ -190,7 +190,7 @@ func TestClient_GetInfo(t *testing.T) {
 
 	t.Run("クライアント情報が取得できる", func(t *testing.T) {
 		c := createClient(t, map[string]interface{}{"identifier": "info-test-001"})
-		w := do(http.MethodGet, fmt.Sprintf("/clients/%s/info", c.Identifier), nil)
+		w := do(http.MethodGet, fmt.Sprintf("/api/clients/%s/info", c.Identifier), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -204,7 +204,7 @@ func TestClient_GetInfo(t *testing.T) {
 	})
 
 	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
-		w := do(http.MethodGet, "/clients/not-exist/info", nil)
+		w := do(http.MethodGet, "/api/clients/not-exist/info", nil)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}
@@ -216,7 +216,7 @@ func TestClient_Start(t *testing.T) {
 
 	t.Run("利用開始でアクセストークンが返る", func(t *testing.T) {
 		c := createClient(t, map[string]interface{}{"identifier": "start-test-001"})
-		w := do(http.MethodPatch, fmt.Sprintf("/clients/%s/start", c.Identifier), nil)
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/start", c.Identifier), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -228,7 +228,7 @@ func TestClient_Start(t *testing.T) {
 
 	t.Run("既にActiveでもアクセストークンが返る", func(t *testing.T) {
 		c := createClient(t, map[string]interface{}{"identifier": "start-test-002", "status": 2})
-		w := do(http.MethodPatch, fmt.Sprintf("/clients/%s/start", c.Identifier), nil)
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/start", c.Identifier), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -239,7 +239,7 @@ func TestClient_Start(t *testing.T) {
 	})
 
 	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
-		w := do(http.MethodPatch, "/clients/not-exist/start", nil)
+		w := do(http.MethodPatch, "/api/clients/not-exist/start", nil)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}
@@ -251,7 +251,7 @@ func TestClient_Stop(t *testing.T) {
 
 	t.Run("ActiveクライアントをSuspendedにできる", func(t *testing.T) {
 		c := createClient(t, map[string]interface{}{"identifier": "stop-test-001", "status": 2})
-		w := do(http.MethodPatch, fmt.Sprintf("/clients/%s/stop", c.Identifier), nil)
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/stop", c.Identifier), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -259,14 +259,14 @@ func TestClient_Stop(t *testing.T) {
 
 	t.Run("Active以外は何もせず200が返る", func(t *testing.T) {
 		c := createClient(t, map[string]interface{}{"identifier": "stop-test-002", "status": 1})
-		w := do(http.MethodPatch, fmt.Sprintf("/clients/%s/stop", c.Identifier), nil)
+		w := do(http.MethodPatch, fmt.Sprintf("/api/clients/%s/stop", c.Identifier), nil)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
 	})
 
 	t.Run("存在しないidentifierで404が返る", func(t *testing.T) {
-		w := do(http.MethodPatch, "/clients/not-exist/stop", nil)
+		w := do(http.MethodPatch, "/api/clients/not-exist/stop", nil)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}

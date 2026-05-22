@@ -18,18 +18,20 @@ import (
 
 // Interactor はゲートウェイ認証ユースケースの実装です。
 type Interactor struct {
-	clientRepo domclient.Repository
-	cache      domgate.CacheRepository
-	cfg        *config.Config
+	clientRepo  domclient.Repository
+	historyRepo domclient.JwtHistoryRepository
+	cache       domgate.CacheRepository
+	cfg         *config.Config
 }
 
 // NewInteractor は Interactor を生成します。
 func NewInteractor(
 	clientRepo domclient.Repository,
+	historyRepo domclient.JwtHistoryRepository,
 	cache domgate.CacheRepository,
 	cfg *config.Config,
 ) *Interactor {
-	return &Interactor{clientRepo: clientRepo, cache: cache, cfg: cfg}
+	return &Interactor{clientRepo: clientRepo, historyRepo: historyRepo, cache: cache, cfg: cfg}
 }
 
 // IssueToken はアクセストークンを検証してJWTを発行します。
@@ -51,6 +53,9 @@ func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 	}
 
 	_ = uc.cache.PutJwt(identifier, dto.MemberID, token, uc.cfg.JWT.CacheTTL)
+	if uc.historyRepo != nil {
+		_ = uc.historyRepo.Save(c.ID, dto.MemberID, time.Now(), token)
+	}
 	return &domgate.IssueVo{Token: token}, nil
 }
 

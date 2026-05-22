@@ -67,6 +67,21 @@ object Invitations : IntIdTable("invitations") {
     val version   = integer("version").default(0)
 }
 
+/** JWT履歴テーブル定義です。 */
+object JwtHistories : LongIdTable("jwt_histories") {
+    val clientId  = long("client_id")
+    val memberId  = varchar("member_id", 255)
+    val issueAt   = datetime("issue_at")
+    val jwt       = text("jwt")
+    val createdAt = datetime("created_at")
+    val createdBy = integer("created_by").default(0)
+    val updatedAt = datetime("updated_at")
+    val updatedBy = integer("updated_by").default(0)
+    val deletedAt = datetime("deleted_at").nullable()
+    val deletedBy = integer("deleted_by").nullable()
+    val version   = integer("version").default(1)
+}
+
 /** 通知テーブル定義です。 */
 object Notifications : LongIdTable("notifications") {
     val staffId     = long("staff_id")

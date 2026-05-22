@@ -8,7 +8,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED
 from pydantic import BaseModel
-from app.routers.deps import get_client_interactor, get_notification_interactor, get_staff_id_from_cookie
+from app.routers.deps import get_client_interactor, get_jwt_history_repo, get_notification_interactor, get_staff_id_from_cookie
+from app.infrastructure.persistence.sqlalchemy_jwt_history_repository import SqlAlchemyJwtHistoryRepository
 from app.usecase.client.interactor import ClientInteractor
 from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto, ClientIdentifierDto
 from app.usecase.notification.interactor import NotificationInteractor
@@ -64,6 +65,20 @@ def index(
 @router.get("/clients/{client_id}")
 def show(client_id: int, interactor: ClientInteractor = Depends(get_client_interactor)):
     return _map_detail(interactor.find_by_id(client_id))
+
+
+@router.get("/clients/{client_id}/jwt-histories")
+def jwt_histories(client_id: int, repo: SqlAlchemyJwtHistoryRepository = Depends(get_jwt_history_repo)):
+    histories = repo.find_by_client_id(client_id)
+    return [
+        {
+            "id": h.id,
+            "member_id": h.member_id,
+            "issue_at": h.issue_at.strftime("%Y-%m-%d %H:%M:%S") if h.issue_at else None,
+            "jwt": h.jwt,
+        }
+        for h in histories
+    ]
 
 
 class StoreBody(BaseModel):

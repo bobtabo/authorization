@@ -44,6 +44,25 @@ class ClientModel(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
+class JwtHistoryModel(Base):
+    """jwt_histories テーブルの ORM モデル。"""
+
+    __tablename__ = "jwt_histories"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    client_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    member_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    issue_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    jwt: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+    updated_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
 class StaffModel(Base):
     """staffs テーブルの ORM モデル。"""
 

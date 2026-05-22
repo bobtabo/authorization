@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { badRequest, unauthorized } from "../lib/errors.js";
 import { db } from "../db/client.js";
 import { DrizzleClientRepository } from "../infrastructure/persistence/drizzleClientRepository.js";
+import { DrizzleJwtHistoryRepository } from "../infrastructure/persistence/drizzleJwtHistoryRepository.js";
 import { RedisGateRepository } from "../infrastructure/cache/redisGateRepository.js";
 import { GateInteractor } from "../usecase/gate/interactor.js";
 
@@ -20,7 +21,7 @@ app.get("/gate/issue", async (c) => {
   const member = c.req.query("member");
   if (!member) throw badRequest("member_required");
 
-  const uc = new GateInteractor(new DrizzleClientRepository(db), new RedisGateRepository());
+  const uc = new GateInteractor(new DrizzleClientRepository(db), new RedisGateRepository(), new DrizzleJwtHistoryRepository(db));
   const vo = await uc.issueToken(token, member);
   return c.json({ token: vo.token });
 });

@@ -32,3 +32,14 @@ pub struct Client {
     pub deleted_by:   Option<u32>,
     pub version:      i32,
 }
+
+/// JWT 履歴のドメインエンティティ。
+pub struct JwtHistory {
+    pub id:         u64,
+    pub client_id:  u64,
+    pub member_id:  String,
+    pub issue_at:   DateTime<Utc>,
+    pub jwt:        String,
+    pub created_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
+}

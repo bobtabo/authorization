@@ -14,18 +14,21 @@ use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Domain\Invitation\Repositories\InvitationRepository;
+use App\Domain\Client\Repositories\JwtHistoryRepository;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Cache\RedisGateRepository;
 use App\Infrastructure\Cache\RedisInvitationAuthRepository;
 use App\Infrastructure\Persistence\EloquentClientRepository;
 use App\Infrastructure\Persistence\EloquentInvitationRepository;
+use App\Infrastructure\Persistence\EloquentJwtHistoryRepository;
 use App\Infrastructure\Persistence\EloquentNotificationRepository;
 use App\Infrastructure\Persistence\EloquentStaffRepository;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Gate\GateService;
 use App\UseCases\Invitation\InvitationService;
+use App\UseCases\JwtHistory\JwtHistoryService;
 use App\UseCases\Notification\NotificationService;
 use App\UseCases\Staff\StaffService;
 use Illuminate\Http\JsonResponse;
@@ -52,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(StaffRepository::class, EloquentStaffRepository::class);
         $this->app->bind(InvitationRepository::class, EloquentInvitationRepository::class);
         $this->app->bind(NotificationRepository::class, EloquentNotificationRepository::class);
+        $this->app->bind(JwtHistoryRepository::class, EloquentJwtHistoryRepository::class);
         $this->app->bind(GateRepository::class, RedisGateRepository::class);
         $this->app->bind(InvitationAuthRepository::class, RedisInvitationAuthRepository::class);
 
@@ -60,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ClientService::class);
         $this->app->singleton(GateService::class);
         $this->app->singleton(InvitationService::class);
+        $this->app->singleton(JwtHistoryService::class);
         $this->app->singleton(NotificationService::class);
         $this->app->singleton(StaffService::class);
     }

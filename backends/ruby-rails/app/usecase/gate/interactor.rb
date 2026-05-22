@@ -16,10 +16,12 @@ module UseCase
       # @param client_repo [Domain::Client::Repository] クライアントリポジトリ
       # @param cache [Domain::Gate::CacheRepository] ゲートキャッシュリポジトリ
       # @param cfg [AppConfig] アプリケーション設定
-      def initialize(client_repo, cache, cfg)
-        @client_repo = client_repo
-        @cache       = cache
-        @cfg         = cfg
+      # @param history_repo JWT履歴リポジトリ（省略可）
+      def initialize(client_repo, cache, cfg, history_repo = nil)
+        @client_repo  = client_repo
+        @cache        = cache
+        @cfg          = cfg
+        @history_repo = history_repo
       end
 
       def issue_token(dto)
@@ -41,6 +43,13 @@ module UseCase
           @cache.put_jwt(client.identifier, dto.member_id, token, @cfg.jwt.cache_ttl)
         rescue StandardError
           nil
+        end
+        if @history_repo && client.id
+          begin
+            @history_repo.save(client_id: client.id, member_id: dto.member_id, issue_at: Time.now, jwt: token)
+          rescue StandardError
+            nil
+          end
         end
         Domain::Gate::IssueVo.new(token: token)
       end

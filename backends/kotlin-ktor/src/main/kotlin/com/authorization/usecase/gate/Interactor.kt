@@ -6,6 +6,7 @@
 package com.authorization.usecase.gate
 
 import com.authorization.config.Config
+import com.authorization.domain.client.JwtHistoryRepository
 import com.authorization.domain.client.Repository as ClientRepository
 import com.authorization.domain.gate.CacheRepository
 import com.authorization.domain.gate.IssueVo
@@ -22,6 +23,7 @@ import java.security.interfaces.RSAPublicKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
+import java.time.LocalDateTime
 import java.util.Base64
 import java.util.Date
 import java.util.UUID
@@ -35,6 +37,7 @@ class Interactor(
     private val clientRepo: ClientRepository,
     private val cache: CacheRepository,
     private val cfg: Config,
+    private val historyRepo: JwtHistoryRepository? = null,
 ) {
 
     /**
@@ -59,6 +62,7 @@ class Interactor(
             ttl           = cfg.jwt.ttl,
         )
         runCatching { cache.putJwt(c.identifier, dto.memberId, token, cfg.jwt.cacheTtl) }
+        historyRepo?.let { runCatching { it.save(c.id, dto.memberId, LocalDateTime.now(), token) } }
         return IssueVo(token = token)
     }
 

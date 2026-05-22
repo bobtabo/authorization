@@ -42,6 +42,7 @@ fun Application.module(cfg: Config) {
     val staffRepo        = ExposedStaffRepository(db)
     val invitationRepo   = ExposedInvitationRepository(db, cfg)
     val notificationRepo = ExposedNotificationRepository(db)
+    val jwtHistoryRepo   = ExposedJwtHistoryRepository(db)
     val gateCache             = RedisGateRepository(redisPool, cfg)
     val invitationAuthCache   = RedisInvitationAuthRepository(redisPool, cfg)
 
@@ -49,12 +50,12 @@ fun Application.module(cfg: Config) {
     val clientUC       = ClientInteractor(clientRepo)
     val staffUC        = StaffInteractor(staffRepo)
     val invitationUC   = InvitationInteractor(invitationRepo, invitationAuthCache)
-    val gateUC         = GateInteractor(clientRepo, gateCache, cfg)
+    val gateUC         = GateInteractor(clientRepo, gateCache, cfg, jwtHistoryRepo)
     val notificationUC = NotificationInteractor(notificationRepo, staffRepo)
     val mailer         = Mailer(cfg.mail)
 
     val authH         = AuthHandler(authUC, invitationUC, cfg)
-    val clientH       = ClientHandler(clientUC, notificationUC, mailer)
+    val clientH       = ClientHandler(clientUC, notificationUC, mailer, jwtHistoryRepo)
     val staffH        = StaffHandler(staffUC)
     val adminInvH     = AdminInvitationHandler(invitationUC)
     val gateH         = GateHandler(gateUC)
@@ -82,6 +83,7 @@ fun Application.module(cfg: Config) {
             put("/clients/{id}/update")  { clientH.update(call) }
             get("/clients/{id}")         { clientH.show(call) }
             delete("/clients/{id}/delete") { clientH.destroy(call) }
+            get("/clients/{id}/jwt-histories") { clientH.jwtHistories(call) }
 
             // --- clients（スマホ連携）---
             get("/clients/{identifier}/qr")    { clientH.qr(call) }

@@ -9,12 +9,14 @@ import { unauthorized, notFound, internal } from "../../lib/errors.js";
 import type { ClientRepository } from "../../domain/client/repository.js";
 import type { GateIssueVo, GateVerifyVo } from "../../domain/gate/valueObjects.js";
 import type { RedisGateRepository } from "../../infrastructure/cache/redisGateRepository.js";
+import type { DrizzleJwtHistoryRepository } from "../../infrastructure/persistence/drizzleJwtHistoryRepository.js";
 
 /** Gate のユースケース実装。 */
 export class GateInteractor {
   constructor(
     private readonly clientRepo: ClientRepository,
     private readonly cacheRepo: RedisGateRepository,
+    private readonly historyRepo?: DrizzleJwtHistoryRepository,
   ) {}
 
   /**
@@ -34,6 +36,9 @@ export class GateInteractor {
 
     const token = await this.issueJwt(client.privateKey, client.identifier, member);
     await this.cacheRepo.putJwt(client.identifier, member, token);
+    if (this.historyRepo && client.id) {
+      await this.historyRepo.save(client.id, member, new Date(), token).catch(() => {});
+    }
     return { token };
   }
 

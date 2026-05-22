@@ -25,7 +25,7 @@ import (
 func main() {
 	cfg := config.Load()
 
-	database, _, err := db.New(cfg)
+	database, rawDB, err := db.New(cfg)
 	if err != nil {
 		log.Fatalf("db connect: %v", err)
 	}
@@ -55,12 +55,13 @@ func main() {
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewEntClientRepository(database), gateCacheRepo, cfg)
+	jwtHistoryRepo := persistence.NewSQLJwtHistoryRepository(rawDB)
+	gateUC := ugate.NewInteractor(persistence.NewEntClientRepository(database), jwtHistoryRepo, gateCacheRepo, cfg)
 
 	mailer := mail.NewMailer(cfg.Mail)
 
 	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer)
+	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo)
 	staffH := handler.NewStaffHandler(database, newStaffUC)
 	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)
@@ -101,6 +102,7 @@ func main() {
 	api.POST("/clients/store", clientH.Store)
 	api.PUT("/clients/:id/update", clientH.Update)
 	api.GET("/clients/:id", clientH.Show)
+	api.GET("/clients/:id/jwt-histories", clientH.JwtHistories)
 	api.DELETE("/clients/:id/delete", clientH.Destroy)
 	api.GET("/clients/:identifier/qr", clientH.GetQr)
 	api.GET("/clients/:identifier/info", clientH.GetInfo)

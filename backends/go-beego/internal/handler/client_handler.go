@@ -23,6 +23,7 @@ type ClientHandler struct {
 	newClientUC func(persistence.QueryOrmer) *uclient.Interactor
 	newNotifUC  func(persistence.QueryOrmer) *unotification.Interactor
 	mailer      *mail.Mailer
+	historyRepo domclient.JwtHistoryRepository
 }
 
 func NewClientHandler(
@@ -30,12 +31,14 @@ func NewClientHandler(
 	newClientUC func(persistence.QueryOrmer) *uclient.Interactor,
 	newNotifUC func(persistence.QueryOrmer) *unotification.Interactor,
 	mailer *mail.Mailer,
+	historyRepo domclient.JwtHistoryRepository,
 ) *ClientHandler {
 	return &ClientHandler{
 		ormer:       ormer,
 		newClientUC: newClientUC,
 		newNotifUC:  newNotifUC,
 		mailer:      mailer,
+		historyRepo: historyRepo,
 	}
 }
 
@@ -247,6 +250,30 @@ func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 		return
 	}
 	writeJSON(ctx, http.StatusOK, map[string]interface{}{})
+}
+
+func (h *ClientHandler) JwtHistories(ctx *beecontext.Context) {
+	idStr := ctx.Input.Param(":id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		writeError(ctx, apperror.BadRequest("invalid_id"))
+		return
+	}
+	histories, err := h.historyRepo.FindByClientID(id)
+	if err != nil {
+		writeError(ctx, err)
+		return
+	}
+	out := make([]map[string]interface{}, 0, len(histories))
+	for _, hist := range histories {
+		out = append(out, map[string]interface{}{
+			"id":        hist.ID,
+			"member_id": hist.MemberID,
+			"issue_at":  hist.IssueAt.Format("2006-01-02 15:04:05"),
+			"jwt":       hist.Jwt,
+		})
+	}
+	writeJSON(ctx, http.StatusOK, out)
 }
 
 func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::{
     config::Config,
     domain::{
-        client::repository::Repository as ClientRepository,
+        client::repository::{Repository as ClientRepository, JwtHistoryRepository},
         gate::value_objects::{CacheRepository, IssueVo, VerifyVo},
     },
 };
@@ -17,19 +17,21 @@ pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
 /// Gate JWT 発行・検証のユースケース実装。
 pub struct Interactor {
-    client_repo: Arc<dyn ClientRepository>,
-    cache:       Arc<dyn CacheRepository>,
-    cfg:         Arc<Config>,
+    client_repo:  Arc<dyn ClientRepository>,
+    cache:        Arc<dyn CacheRepository>,
+    cfg:          Arc<Config>,
+    history_repo: Arc<dyn JwtHistoryRepository>,
 }
 
 impl Interactor {
     /// リポジトリ・キャッシュ・設定を受け取りインタラクターを生成します。
     pub fn new(
-        client_repo: Arc<dyn ClientRepository>,
-        cache: Arc<dyn CacheRepository>,
-        cfg: Arc<Config>,
+        client_repo:  Arc<dyn ClientRepository>,
+        cache:        Arc<dyn CacheRepository>,
+        cfg:          Arc<Config>,
+        history_repo: Arc<dyn JwtHistoryRepository>,
     ) -> Self {
-        Self { client_repo, cache, cfg }
+        Self { client_repo, cache, cfg, history_repo }
     }
 
     /// アクセストークンを検証し JWT を発行して VO を返します。
@@ -53,6 +55,7 @@ impl Interactor {
         )?;
 
         let _ = self.cache.put_jwt(&c.identifier, &dto.member_id, &token, self.cfg.jwt.cache_ttl).await;
+        let _ = self.history_repo.save(c.id, &dto.member_id, chrono::Utc::now(), &token).await;
         Ok(IssueVo { token })
     }
 
@@ -123,11 +126,12 @@ mod tests {
     use super::*;
     use async_trait::async_trait;
     use std::sync::Mutex;
+    use chrono::{DateTime, Utc};
     use crate::domain::{
         client::{
             condition::Condition,
-            entity::Client,
-            repository::{DomainError, Repository as ClientRepo},
+            entity::{Client, JwtHistory},
+            repository::{DomainError, Repository as ClientRepo, JwtHistoryRepository},
         },
         gate::value_objects::{CacheRepository, DomainError as CacheDomainError},
     };
@@ -154,6 +158,8 @@ mod tests {
     impl MockCache {
         fn new() -> Self { Self { get_result: Mutex::new(None) } }
     }
+
+    struct MockJwtHistoryRepo;
 
     fn make_client() -> Client {
         let now = chrono::Utc::now();
@@ -222,12 +228,23 @@ mod tests {
         }
     }
 
+    #[async_trait]
+    impl JwtHistoryRepository for MockJwtHistoryRepo {
+        async fn find_by_client_id(&self, _: u64) -> Result<Vec<JwtHistory>, DomainError> {
+            Ok(vec![])
+        }
+        async fn save(&self, _: u64, _: &str, _: DateTime<Utc>, _: &str) -> Result<(), DomainError> {
+            Ok(())
+        }
+    }
+
     #[tokio::test]
     async fn test_issue_token_returns_error_when_client_not_found() {
         let client_repo = Arc::new(MockClientRepo::new());
         *client_repo.by_access_token.lock().unwrap() = Some(None);
         let cache = Arc::new(MockCache::new());
-        let uc = Interactor::new(client_repo, cache, make_config());
+        let history_repo = Arc::new(MockJwtHistoryRepo);
+        let uc = Interactor::new(client_repo, cache, make_config(), history_repo);
         let dto = IssueDto { access_token: "bad_token".to_string(), member_id: "m1".to_string() };
         assert!(uc.issue_token(dto).await.is_err());
     }
@@ -237,7 +254,8 @@ mod tests {
         let client_repo = Arc::new(MockClientRepo::new());
         *client_repo.by_identifier.lock().unwrap() = Some(None);
         let cache = Arc::new(MockCache::new());
-        let uc = Interactor::new(client_repo, cache, make_config());
+        let history_repo = Arc::new(MockJwtHistoryRepo);
+        let uc = Interactor::new(client_repo, cache, make_config(), history_repo);
         let dto = VerifyDto { identifier: "no_such".to_string(), token: "bad.jwt.token".to_string() };
         assert!(uc.verify(dto).await.is_err());
     }
@@ -248,7 +266,8 @@ mod tests {
         *client_repo.by_access_token.lock().unwrap() = Some(Some(make_client()));
         let cache = Arc::new(MockCache::new());
         *cache.get_result.lock().unwrap() = Some(Some("cached.jwt.token".to_string()));
-        let uc = Interactor::new(client_repo, cache, make_config());
+        let history_repo = Arc::new(MockJwtHistoryRepo);
+        let uc = Interactor::new(client_repo, cache, make_config(), history_repo);
         let dto = IssueDto { access_token: "tok1".to_string(), member_id: "m1".to_string() };
         let result = uc.issue_token(dto).await.unwrap();
         assert_eq!(result.token, "cached.jwt.token");

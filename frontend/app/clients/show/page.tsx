@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, ArrowLeft, X, Trash2, Play, Square } from "lucide-react";
+import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
-import { getClient, updateClient, deleteClient } from "@/src/api/clients";
+import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory } from "@/src/api/clients";
 import { formatTimestamp } from "@/lib/format-datetime";
 import { extractApiError } from "@/lib/api-error";
 
@@ -60,6 +60,51 @@ function DetailRow({
 
 const STATUS_MAP: Record<number, ClientStatus> = { 1: "準備中", 2: "利用中", 3: "停止中", 4: "アーカイブ" };
 
+function JwtCell({ jwt }: { jwt: string }) {
+  const [copied, setCopied] = useState(false);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(jwt).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setTooltip({ x: rect.left, y: rect.top - 6 });
+  };
+
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <span
+        className="font-mono text-xs text-gray-500 cursor-default"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {jwt.slice(0, 40)}…
+      </span>
+      {tooltip && (
+        <div
+          className="fixed z-50 max-w-lg bg-white text-gray-700 text-xs font-mono rounded-lg px-3 py-2 shadow-lg border border-gray-200 break-all leading-relaxed pointer-events-none"
+          style={{ left: tooltip.x, top: tooltip.y, transform: "translateY(-100%)" }}
+        >
+          {jwt}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+        title="JWTをコピー"
+      >
+        {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+      </button>
+    </div>
+  );
+}
+
 export default function ClientShowPage(): React.JSX.Element {
   const [clientId, setClientId] = useState<number | null>(null);
   const [detail, setDetail] = useState<ClientDetail | null>(null);
@@ -71,6 +116,10 @@ export default function ClientShowPage(): React.JSX.Element {
   const [stopOpen, setStopOpen] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [histories, setHistories] = useState<JwtHistory[]>([]);
+  const [activeTab, setActiveTab] = useState<"info" | "history">("info");
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(10);
 
   const loadDetail = (id: number | string) => {
     return getClient(id).then((res) => {
@@ -100,6 +149,7 @@ export default function ClientShowPage(): React.JSX.Element {
     if (!id) return;
     setClientId(Number(id));
     loadDetail(id);
+    getJwtHistories(id).then(setHistories).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -189,100 +239,202 @@ export default function ClientShowPage(): React.JSX.Element {
               <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-          >
-            <div className="px-6 pt-6 pb-2">
-              <div className="flex flex-wrap items-center gap-3 mb-1">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {detail.clientName}
-                </h2>
-                <span
-                  className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(
-                    detail.status
-                  )}`}
-                >
-                  {detail.status}
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mb-2">
-                <span className="font-medium text-gray-400">識別名：</span>
-                <span className="font-mono">{detail.identifier}</span>
-              </p>
-            </div>
-
-            <div className="px-6 pb-6">
-              <dl>
-                <DetailRow label="郵便番号">〒{detail.postalCode}</DetailRow>
-                <DetailRow label="都道府県">{detail.prefecture}</DetailRow>
-                <DetailRow label="市区町村">{detail.city}</DetailRow>
-                <DetailRow label="丁目・番地">{detail.street}</DetailRow>
-                <DetailRow label="ビル名">{detail.building}</DetailRow>
-                <DetailRow label="電話番号">{detail.tel}</DetailRow>
-                <DetailRow label="メールアドレス">
-                  <a
-                    href={`mailto:${detail.email}`}
-                    className="text-indigo-600 hover:text-indigo-700 hover:underline"
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+            >
+              {/* ヘッダー */}
+              <div className="px-6 pt-6 pb-2">
+                <div className="flex flex-wrap items-center gap-3 mb-1">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {detail.clientName}
+                  </h2>
+                  <span
+                    className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${getStatusStyle(
+                      detail.status
+                    )}`}
                   >
-                    {detail.email}
-                  </a>
-                </DetailRow>
-                <DetailRow label="利用開始日時">{detail.startedAt}</DetailRow>
-                <DetailRow label="利用停止日時">{detail.stoppedAt}</DetailRow>
-                <DetailRow label="登録日時">{detail.createdAt}</DetailRow>
-                <DetailRow label="更新日時">{detail.updatedAt}</DetailRow>
-              </dl>
-            </div>
-
-            <div className="px-6 py-5 border-t border-gray-200 bg-gray-50/80">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                {detail.status !== "アーカイブ" && (
-                  <button
-                    type="button"
-                    onClick={() => setDeleteOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 border-red-500/80 bg-white text-red-600 hover:bg-red-50 hover:border-red-600 transition-colors w-full md:w-auto shrink-0"
-                  >
-                    <Trash2 size={16} />
-                    削除
-                  </button>
-                )}
-
-                <div className="hidden md:block flex-1 min-w-[2rem]" aria-hidden />
-
-                <div className="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
-                  <a
-                    href="/clients"
-                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
-                  >
-                    キャンセル
-                  </a>
-                  {detail.status !== "アーカイブ" && (
-                    detail.status === "利用中" ? (
-                      <button
-                        type="button"
-                        onClick={() => setStopOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
-                      >
-                        <Square size={16} />
-                        利用停止
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setStartOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                      >
-                        <Play size={16} />
-                        利用開始
-                      </button>
-                    )
-                  )}
+                    {detail.status}
+                  </span>
                 </div>
+                <p className="text-xs text-gray-400 mb-2">
+                  <span className="font-medium text-gray-400">識別名：</span>
+                  <span className="font-mono">{detail.identifier}</span>
+                </p>
               </div>
-            </div>
-          </motion.div>
+
+              {/* タブバー */}
+              <div className="px-6 flex border-b border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("info")}
+                  className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                    activeTab === "info"
+                      ? "border-indigo-600 text-indigo-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  基本情報
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("history")}
+                  className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
+                    activeTab === "history"
+                      ? "border-indigo-600 text-indigo-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <History size={14} />
+                  JWT履歴
+                </button>
+              </div>
+
+              {/* タブコンテンツ */}
+              {activeTab === "info" ? (
+                <>
+                  <div className="px-6 pb-6">
+                    <dl>
+                      <DetailRow label="郵便番号">〒{detail.postalCode}</DetailRow>
+                      <DetailRow label="都道府県">{detail.prefecture}</DetailRow>
+                      <DetailRow label="市区町村">{detail.city}</DetailRow>
+                      <DetailRow label="丁目・番地">{detail.street}</DetailRow>
+                      <DetailRow label="ビル名">{detail.building}</DetailRow>
+                      <DetailRow label="電話番号">{detail.tel}</DetailRow>
+                      <DetailRow label="メールアドレス">
+                        <a
+                          href={`mailto:${detail.email}`}
+                          className="text-indigo-600 hover:text-indigo-700 hover:underline"
+                        >
+                          {detail.email}
+                        </a>
+                      </DetailRow>
+                      <DetailRow label="利用開始日時">{detail.startedAt}</DetailRow>
+                      <DetailRow label="利用停止日時">{detail.stoppedAt}</DetailRow>
+                      <DetailRow label="登録日時">{detail.createdAt}</DetailRow>
+                      <DetailRow label="更新日時">{detail.updatedAt}</DetailRow>
+                    </dl>
+                  </div>
+
+                  <div className="px-6 py-5 border-t border-gray-200 bg-gray-50/80">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      {detail.status !== "アーカイブ" && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteOpen(true)}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg border-2 border-red-500/80 bg-white text-red-600 hover:bg-red-50 hover:border-red-600 transition-colors w-full md:w-auto shrink-0"
+                        >
+                          <Trash2 size={16} />
+                          削除
+                        </button>
+                      )}
+
+                      <div className="hidden md:block flex-1 min-w-[2rem]" aria-hidden />
+
+                      <div className="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
+                        <a
+                          href="/clients"
+                          className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                        >
+                          キャンセル
+                        </a>
+                        {detail.status !== "アーカイブ" && (
+                          detail.status === "利用中" ? (
+                            <button
+                              type="button"
+                              onClick={() => setStopOpen(true)}
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
+                            >
+                              <Square size={16} />
+                              利用停止
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setStartOpen(true)}
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                            >
+                              <Play size={16} />
+                              利用開始
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (() => {
+                const totalHistoryPages = Math.max(1, Math.ceil(histories.length / historyPageSize));
+                const safHistoryPage = Math.min(historyPage, totalHistoryPages);
+                const historyStart = (safHistoryPage - 1) * historyPageSize;
+                const pagedHistories = histories.slice(historyStart, historyStart + historyPageSize);
+                return (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100 bg-gray-50/60">
+                            <th className="text-left px-6 py-3 font-medium text-gray-500 whitespace-nowrap">発行日時</th>
+                            <th className="text-left px-6 py-3 font-medium text-gray-500 whitespace-nowrap">会員ID</th>
+                            <th className="text-left px-6 py-3 font-medium text-gray-500">JWT</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {histories.length === 0 ? (
+                            <tr>
+                              <td colSpan={3} className="px-6 py-10 text-center text-sm text-gray-400">発行履歴はありません</td>
+                            </tr>
+                          ) : (
+                            pagedHistories.map((h) => (
+                              <tr key={h.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                                <td className="px-6 py-3 whitespace-nowrap text-gray-700">{formatTimestamp(h.issue_at)}</td>
+                                <td className="px-6 py-3 whitespace-nowrap text-gray-700 font-mono">{h.member_id}</td>
+                                <td className="px-6 py-3"><JwtCell jwt={h.jwt} /></td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between bg-gray-50/80">
+                      <div className="text-xs text-gray-500">
+                        全 {histories.length} 件中 {histories.length === 0 ? 0 : historyStart + 1}–{Math.min(historyStart + historyPageSize, histories.length)} 件表示
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <select
+                          value={historyPageSize}
+                          onChange={(e) => { setHistoryPageSize(Number(e.target.value)); setHistoryPage(1); }}
+                          className="border border-gray-300 bg-white rounded-md px-2 py-1 text-xs text-gray-700"
+                        >
+                          <option value={10}>10件</option>
+                          <option value={20}>20件</option>
+                          <option value={50}>50件</option>
+                        </select>
+                        <button disabled={safHistoryPage === 1} onClick={() => setHistoryPage(1)}
+                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
+                          <ChevronsLeft size={14} />
+                        </button>
+                        <button disabled={safHistoryPage === 1} onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
+                          <ChevronLeft size={14} />
+                        </button>
+                        <span className="text-xs px-1 font-medium text-gray-700">{safHistoryPage} / {totalHistoryPages}</span>
+                        <button disabled={safHistoryPage === totalHistoryPages} onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
+                          <ChevronRight size={14} />
+                        </button>
+                        <button disabled={safHistoryPage === totalHistoryPages} onClick={() => setHistoryPage(totalHistoryPages)}
+                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
+                          <ChevronsRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </motion.div>
           )}
         </div>
       </main>

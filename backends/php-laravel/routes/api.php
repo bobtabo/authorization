@@ -35,6 +35,7 @@ Route::prefix('clients')->controller(ClientController::class)->group(function ()
     Route::post('store', 'store');
     Route::put('{id}/update', 'update')->whereNumber('id');
     Route::get('{id}', 'show')->whereNumber('id');
+    Route::get('{id}/jwt-histories', 'jwtHistories')->whereNumber('id');
     Route::delete('{id}/delete', 'destroy')->whereNumber('id');
     Route::get('{identifier}/qr', 'qr')->where('identifier', '[a-zA-Z0-9._-]+');
     Route::patch('{identifier}/start', 'start')->where('identifier', '[a-zA-Z0-9._-]+');

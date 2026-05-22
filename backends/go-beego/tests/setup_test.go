@@ -91,11 +91,11 @@ func buildRouter() http.Handler {
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(testOrmer), gateCacheRepo, testCfg)
+	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(testOrmer), nil, gateCacheRepo, testCfg)
 
 	mailer := mail.NewMailer(testCfg.Mail)
 	authH := handler.NewAuthHandler(testOrmer, newAuthUC, newInviteUC, testCfg)
-	clientH := handler.NewClientHandler(testOrmer, newClientUC, newNotifUC, mailer)
+	clientH := handler.NewClientHandler(testOrmer, newClientUC, newNotifUC, mailer, nil)
 	staffH := handler.NewStaffHandler(testOrmer, newStaffUC)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(testOrmer, newNotifUC, testCfg)
