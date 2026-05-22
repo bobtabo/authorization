@@ -30,6 +30,19 @@ class Api::ClientsController < Api::BaseController
     }
   end
 
+  # JWT 履歴一覧を返します。
+  def jwt_histories
+    histories = container[:jwt_history_repo].find_by_client_id(params[:id].to_i)
+    render json: histories.map { |h|
+      {
+        id:        h.id,
+        member_id: h.member_id,
+        issue_at:  h.issue_at&.strftime("%Y-%m-%d %H:%M:%S"),
+        jwt:       h.jwt,
+      }
+    }
+  end
+
   # クライアント詳細を返します。
   def show
     c = container[:client_uc].find_by_id(params[:id].to_i)

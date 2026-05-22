@@ -1,5 +1,13 @@
 package client
 
+import "time"
+
+// JwtHistoryRepository は JWT 履歴の永続化インターフェースです。
+type JwtHistoryRepository interface {
+	FindByClientID(clientID uint64) ([]*JwtHistory, error)
+	Save(clientID uint64, memberID string, issueAt time.Time, jwt string) error
+}
+
 // Repository はクライアントの永続化インターフェースです。
 type Repository interface {
 	// FindByCondition は検索条件に合致するクライアントエンティティを返します。

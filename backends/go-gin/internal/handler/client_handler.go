@@ -17,10 +17,11 @@ import (
 
 // ClientHandler はクライアント関連のHTTPハンドラーを提供します。
 type ClientHandler struct {
-	db           *gorm.DB
-	newClientUC  func(*gorm.DB) *uclient.Interactor
-	newNotifUC   func(*gorm.DB) *unotification.Interactor
-	mailer       *mail.Mailer
+	db          *gorm.DB
+	newClientUC func(*gorm.DB) *uclient.Interactor
+	newNotifUC  func(*gorm.DB) *unotification.Interactor
+	mailer      *mail.Mailer
+	historyRepo domclient.JwtHistoryRepository
 }
 
 // NewClientHandler は ClientHandler を生成します。
@@ -29,17 +30,20 @@ type ClientHandler struct {
 // newClientUC: クライアントユースケースファクトリ
 // newNotifUC: 通知ユースケースファクトリ
 // mailer: メール送信サービス
+// historyRepo: JWT 履歴リポジトリ
 func NewClientHandler(
 	db *gorm.DB,
 	newClientUC func(*gorm.DB) *uclient.Interactor,
 	newNotifUC func(*gorm.DB) *unotification.Interactor,
 	mailer *mail.Mailer,
+	historyRepo domclient.JwtHistoryRepository,
 ) *ClientHandler {
 	return &ClientHandler{
 		db:          db,
 		newClientUC: newClientUC,
 		newNotifUC:  newNotifUC,
 		mailer:      mailer,
+		historyRepo: historyRepo,
 	}
 }
 
@@ -271,6 +275,32 @@ func (h *ClientHandler) Destroy(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+// JwtHistories はクライアントの JWT 履歴一覧を返します。
+// GET /api/clients/:id/jwt-histories
+func (h *ClientHandler) JwtHistories(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_id"})
+		return
+	}
+	histories, err := h.historyRepo.FindByClientID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
+		return
+	}
+	out := make([]gin.H, 0, len(histories))
+	for _, hist := range histories {
+		out = append(out, gin.H{
+			"id":        hist.ID,
+			"member_id": hist.MemberID,
+			"issue_at":  hist.IssueAt.Format("2006-01-02 15:04:05"),
+			"jwt":       hist.Jwt,
+		})
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 // ---------- 変換ヘルパー ----------

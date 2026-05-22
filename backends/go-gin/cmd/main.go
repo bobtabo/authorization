@@ -58,15 +58,19 @@ func main() {
 		)
 	}
 
+	// --- JWT 履歴リポジトリ ---
+	rawDB, _ := database.DB()
+	jwtHistoryRepo := persistence.NewSQLJwtHistoryRepository(rawDB)
+
 	// --- Gate ユースケース（キャッシュのみ、GORM トランザクション不要）---
-	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), gateCacheRepo, cfg)
+	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), jwtHistoryRepo, gateCacheRepo, cfg)
 
 	// --- Mail ---
 	mailer := mail.NewMailer(cfg.Mail)
 
 	// --- Handlers ---
 	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer)
+	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo)
 	staffH := handler.NewStaffHandler(database, newStaffUC)
 	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)
@@ -113,6 +117,7 @@ func main() {
 		api.POST("/clients/store", clientH.Store)
 		api.PUT("/clients/:id/update", clientH.Update)
 		api.GET("/clients/:id", clientH.Show)
+		api.GET("/clients/:id/jwt-histories", clientH.JwtHistories)
 		api.DELETE("/clients/:id/delete", clientH.Destroy)
 
 		// --- clients (スマホアプリ連携) ---

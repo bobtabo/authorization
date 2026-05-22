@@ -4,6 +4,8 @@ Gate ユースケース Interactor モジュール。
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 import time
+from datetime import datetime
+from typing import Optional
 
 from jose import jwt, JWTError
 
@@ -12,6 +14,7 @@ from app.domain.client.repository import ClientRepository
 from app.domain.gate.value_objects import GateIssueVo, GateVerifyVo
 from app.exceptions import unauthorized, not_found, internal
 from app.infrastructure.cache.redis_gate_repository import RedisGateRepository
+from app.infrastructure.persistence.sqlalchemy_jwt_history_repository import SqlAlchemyJwtHistoryRepository
 from app.usecase.gate.dto import GateIssueDto, GateVerifyDto
 
 
@@ -21,18 +24,19 @@ class GateInteractor:
     Attributes:
         client_repo: クライアントリポジトリ
         cache_repo: JWTキャッシュリポジトリ
+        history_repo: JWT履歴リポジトリ（省略可）
         settings: アプリケーション設定
     """
 
-    def __init__(self, client_repo: ClientRepository, cache_repo: RedisGateRepository):
-        """初期化します。
-
-        Args:
-            client_repo: クライアントリポジトリ
-            cache_repo: JWTキャッシュリポジトリ
-        """
+    def __init__(
+        self,
+        client_repo: ClientRepository,
+        cache_repo: RedisGateRepository,
+        history_repo: Optional[SqlAlchemyJwtHistoryRepository] = None,
+    ):
         self.client_repo = client_repo
         self.cache_repo = cache_repo
+        self.history_repo = history_repo
         self.settings = get_settings()
 
     def issue_token(self, dto: GateIssueDto) -> GateIssueVo:
@@ -61,6 +65,11 @@ class GateInteractor:
 
         token = self._issue_jwt(client.private_key, client.identifier, dto.member)
         self.cache_repo.put_jwt(client.identifier, dto.member, token)
+        if self.history_repo and client.id:
+            try:
+                self.history_repo.save(client.id, dto.member, datetime.now(), token)
+            except Exception:
+                pass
         return GateIssueVo(token=token)
 
     def verify(self, dto: GateVerifyDto) -> GateVerifyVo:

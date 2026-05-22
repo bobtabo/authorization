@@ -5,6 +5,7 @@
  */
 package com.authorization.handler
 
+import com.authorization.domain.client.JwtHistoryRepository
 import com.authorization.infrastructure.mail.Mailer
 import com.authorization.support.AppException
 import com.authorization.usecase.client.InfoDto
@@ -28,7 +29,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+private val fmtSec = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 private fun LocalDateTime.fmt() = format(fmt)
+private fun LocalDateTime.fmtSec() = format(fmtSec)
 private fun LocalDateTime?.fmtOrNull(): JsonElement = if (this == null) JsonNull else JsonPrimitive(format(fmt))
 
 /**
@@ -40,6 +43,7 @@ class ClientHandler(
     private val clientUC: ClientUC,
     private val notificationUC: NotificationUC,
     private val mailer: Mailer,
+    private val jwtHistoryRepo: JwtHistoryRepository,
 ) {
 
     /**
@@ -255,5 +259,27 @@ class ClientHandler(
         val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
         newSuspendedTransaction { clientUC.destroy(id, executorId) }
         call.respond(HttpStatusCode.OK, buildJsonObject {})
+    }
+
+    /**
+     * 指定したクライアント ID の JWT 履歴一覧を返します。
+     *
+     * @param call アプリケーションコール
+     */
+    suspend fun jwtHistories(call: ApplicationCall) {
+        val id = call.parameters["id"]?.toLongOrNull()
+            ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
+        val histories = jwtHistoryRepo.findByClientId(id)
+        val list = buildJsonArray {
+            histories.forEach { h ->
+                add(buildJsonObject {
+                    put("id",       h.id)
+                    put("member_id", h.memberId)
+                    put("issue_at", h.issueAt.fmtSec())
+                    put("jwt",      h.jwt)
+                })
+            }
+        }
+        call.respond(list)
     }
 }

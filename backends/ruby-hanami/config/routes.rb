@@ -15,6 +15,7 @@ module Authorization
     # --- clients ---
     get    '/api/clients',                           to: 'clients.index'
     post   '/api/clients/store',                     to: 'clients.store'
+    get    '/api/clients/:id/jwt-histories',         to: 'clients.jwt_histories'
     put    '/api/clients/:id/update',                to: 'clients.update'
     get    '/api/clients/:id',                       to: 'clients.show'
     delete '/api/clients/:id/delete',                to: 'clients.destroy'

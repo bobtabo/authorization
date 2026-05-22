@@ -38,3 +38,18 @@ data class Client(
     val deletedBy:   Long?             = null,
     val version:     Int               = 0,
 )
+
+/**
+ * JWT履歴エンティティです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class JwtHistory(
+    val id:        Long           = 0,
+    val clientId:  Long,
+    val memberId:  String,
+    val issueAt:   LocalDateTime,
+    val jwt:       String,
+    val createdAt: LocalDateTime  = LocalDateTime.now(),
+    val deletedAt: LocalDateTime? = null,
+)

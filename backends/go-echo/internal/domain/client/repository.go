@@ -1,6 +1,12 @@
 // Package client はクライアントドメインのインターフェースを定義します。
 package client
 
+// JwtHistoryRepository は JWT 履歴の永続化インターフェースです。
+type JwtHistoryRepository interface {
+	FindByClientID(clientID uint64) ([]*JwtHistory, error)
+	Save(h *JwtHistory) error
+}
+
 // Repository はクライアントの永続化インターフェースです。
 type Repository interface {
 	// FindByCondition は条件に合うクライアント一覧を取得します。

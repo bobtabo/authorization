@@ -267,3 +267,25 @@ pub async fn destroy(
 
     (StatusCode::OK, Json(json!({})))
 }
+
+/// 指定したクライアント ID の JWT 履歴一覧を返します。
+pub async fn jwt_histories(
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+) -> (StatusCode, Json<Value>) {
+    match state.jwt_history_repo.find_by_client_id(id).await {
+        Ok(histories) => {
+            let list: Vec<Value> = histories.iter().map(|h| json!({
+                "id":        h.id,
+                "member_id": h.member_id,
+                "issue_at":  h.issue_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                "jwt":       h.jwt,
+            })).collect();
+            (StatusCode::OK, Json(json!(list)))
+        }
+        Err(e) => {
+            tracing::error!("jwt_histories error: {e}");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})))
+        }
+    }
+}

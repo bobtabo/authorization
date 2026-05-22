@@ -11,6 +11,7 @@ from app.exceptions import unauthorized
 from app.infrastructure.db import get_db
 from app.infrastructure.redis_client import get_redis
 from app.infrastructure.persistence.sqlalchemy_client_repository import SqlAlchemyClientRepository
+from app.infrastructure.persistence.sqlalchemy_jwt_history_repository import SqlAlchemyJwtHistoryRepository
 from app.infrastructure.persistence.sqlalchemy_staff_repository import SqlAlchemyStaffRepository
 from app.infrastructure.persistence.sqlalchemy_invitation_repository import SqlAlchemyInvitationRepository
 from app.infrastructure.persistence.sqlalchemy_notification_repository import SqlAlchemyNotificationRepository
@@ -67,12 +68,17 @@ def get_invitation_interactor(
     return InvitationInteractor(repo, invitation_auth_repo)
 
 
+def get_jwt_history_repo(db: Session = Depends(get_db)) -> SqlAlchemyJwtHistoryRepository:
+    return SqlAlchemyJwtHistoryRepository(db)
+
+
 def get_gate_interactor(
     client_repo: ClientRepository = Depends(get_client_repo),
     rdb: redis_lib.Redis = Depends(get_redis_client),
+    history_repo: SqlAlchemyJwtHistoryRepository = Depends(get_jwt_history_repo),
 ) -> GateInteractor:
     cache_repo = RedisGateRepository(rdb)
-    return GateInteractor(client_repo, cache_repo)
+    return GateInteractor(client_repo, cache_repo, history_repo)
 
 
 def get_notification_interactor(
