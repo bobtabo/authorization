@@ -1284,7 +1284,7 @@ components:
 
     JwtIssueHistory:
       type: object
-      description: JWT発行履歴の1件
+      description: JWT発行履歴
       required:
         - id
         - member_id
@@ -1311,7 +1311,7 @@ components:
 
     JwtIssueHistories:
       type: array
-      description: JWT発行履歴のリスト
+      description: JWT発行履歴一覧
       items:
         $ref: '#/components/schemas/JwtIssueHistory'
 
