@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Models;
 
 use App\Support\Models\AppTransactionModel;
-use Database\Factories\JwtIssueHistoryFactory;
+use Database\Factories\JwtHistoryFactory;
 
 /**
  * JWT履歴Modelクラスです。
@@ -19,7 +19,7 @@ use Database\Factories\JwtIssueHistoryFactory;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Models
  */
-class JwtIssueHistory extends AppTransactionModel
+class JwtHistory extends AppTransactionModel
 {
     /**
      * {@inheritdoc}
@@ -49,6 +49,6 @@ class JwtIssueHistory extends AppTransactionModel
      */
     protected static function newFactory()
     {
-        return JwtIssueHistoryFactory::new();
+        return JwtHistoryFactory::new();
     }
 }

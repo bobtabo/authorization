@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\JwtIssueHistory\ValueObjects;
+namespace App\Domain\JwtHistory\ValueObjects;
 
 use App\Support\ValueObjects\AbstractValueObject;
 use Illuminate\Support\Collection;
@@ -17,9 +17,9 @@ use Illuminate\Support\Collection;
  * JWT履歴一覧ValueObjectクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domain\JwtIssueHistory\ValueObjects
+ * @package App\Domain\JwtHistory\ValueObjects
  */
-class JwtIssueHistoryListVo extends AbstractValueObject
+class JwtHistoryListVo extends AbstractValueObject
 {
     private Collection $items;
 

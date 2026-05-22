@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Factories
  */
-class JwtIssueHistoryFactory extends Factory
+class JwtHistoryFactory extends Factory
 {
     /**
      * @var string モデル

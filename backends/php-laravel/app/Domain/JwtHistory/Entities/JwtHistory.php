@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\JwtIssueHistory\Entities;
+namespace App\Domain\JwtHistory\Entities;
 
 use App\Support\Entities\AbstractEntity;
 use Illuminate\Support\Carbon;
@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Domain
  */
-class JwtIssueHistory extends AbstractEntity
+class JwtHistory extends AbstractEntity
 {
     public ?int $id = null;
     public ?int $clientId = null;

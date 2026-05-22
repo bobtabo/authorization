@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence;
 
-use App\Domain\JwtIssueHistory\Condition\JwtIssueHistoryCondition;
-use App\Domain\JwtIssueHistory\Entities\JwtIssueHistory as Entity;
-use App\Domain\JwtIssueHistory\Repositories\JwtIssueHistoryRepository;
-use App\Infrastructure\Models\JwtIssueHistory as Model;
+use App\Domain\JwtHistory\Condition\JwtHistoryCondition;
+use App\Domain\JwtHistory\Entities\JwtHistory as Entity;
+use App\Domain\JwtHistory\Repositories\JwtHistoryRepository;
+use App\Infrastructure\Models\JwtHistory as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
 use Illuminate\Support\Collection;
 
@@ -23,13 +23,13 @@ use Illuminate\Support\Collection;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Infrastructure\Persistence
  */
-class EloquentJwtIssueHistoryRepository extends AbstractEloquentRepository implements JwtIssueHistoryRepository
+class EloquentJwtHistoryRepository extends AbstractEloquentRepository implements JwtHistoryRepository
 {
     /**
      * {@inheritdoc}
      */
     #[\Override]
-    public function findByClientId(JwtIssueHistoryCondition $condition): Collection
+    public function findByClientId(JwtHistoryCondition $condition): Collection
     {
         $query = Model::query()
             ->where('client_id', $condition->clientId)

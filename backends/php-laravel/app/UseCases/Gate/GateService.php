@@ -15,8 +15,8 @@ use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Gate\ValueObjects\GateIssueVo;
 use App\Domain\Gate\ValueObjects\GateVerifyVo;
-use App\Domain\JwtIssueHistory\Entities\JwtIssueHistory;
-use App\Domain\JwtIssueHistory\Repositories\JwtIssueHistoryRepository;
+use App\Domain\JwtHistory\Entities\JwtHistory;
+use App\Domain\JwtHistory\Repositories\JwtHistoryRepository;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
@@ -41,12 +41,12 @@ class GateService extends AbstractService
      *
      * @param ClientRepository $clientRepository クライアントリポジトリ
      * @param GateRepository $gateRepository 認可リポジトリ
-     * @param JwtIssueHistoryRepository $historyRepository JWT履歴リポジトリ
+     * @param JwtHistoryRepository $historyRepository JWT履歴リポジトリ
      */
     public function __construct(
         private readonly ClientRepository $clientRepository,
         private readonly GateRepository $gateRepository,
-        private readonly JwtIssueHistoryRepository $historyRepository,
+        private readonly JwtHistoryRepository $historyRepository,
     ) {
     }
 
@@ -80,7 +80,7 @@ class GateService extends AbstractService
             );
             $this->gateRepository->putJwt($identifier, $dto->memberId, $token, $configs['cache_ttl']);
 
-            $history = new JwtIssueHistory();
+            $history = new JwtHistory();
             $history->clientId = $client->id;
             $history->memberId = $dto->memberId;
             $history->issueAt = Carbon::now();

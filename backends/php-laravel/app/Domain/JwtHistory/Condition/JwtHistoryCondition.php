@@ -8,17 +8,17 @@
 
 declare(strict_types=1);
 
-namespace App\UseCases\JwtIssueHistory\Dtos;
+namespace App\Domain\JwtHistory\Condition;
 
-use App\Support\Dtos\AbstractDto;
+use App\Support\Repositories\Conditions\AbstractCondition;
 
 /**
- * JWT履歴DTOクラスです。
+ * JWT履歴Conditionクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\UseCases\JwtIssueHistory\Dtos
+ * @package App\Domain\JwtHistory\Condition
  */
-class JwtIssueHistoryDto extends AbstractDto
+class JwtHistoryCondition extends AbstractCondition
 {
     public ?int $clientId = null;
 }

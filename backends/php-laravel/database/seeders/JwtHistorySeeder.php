@@ -18,7 +18,7 @@ use App\Support\Database\Seeder;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package Database\Seeders;
  */
-class JwtIssueHistorySeeder extends Seeder
+class JwtHistorySeeder extends Seeder
 {
     /**
      * {@inheritdoc}
