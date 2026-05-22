@@ -15,7 +15,7 @@ use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Responses\Client\IndexResponse;
 use App\Http\Responses\Client\InfoResponse;
-use App\Http\Responses\Client\JwtIssueHistoriesResponse;
+use App\Http\Responses\Client\JwtIssueHistoryResponse;
 use App\Http\Responses\Client\QrResponse;
 use App\Http\Responses\Client\ShowResponse;
 use App\Http\Responses\Client\StartResponse;
@@ -252,7 +252,7 @@ class ClientController extends Controller
 
         $vo = $service->getHistories($dto);
 
-        $response = new JwtIssueHistoriesResponse();
+        $response = new JwtIssueHistoryResponse();
         $response->assign($vo->attributes());
 
         return response()->json($response->attributes());

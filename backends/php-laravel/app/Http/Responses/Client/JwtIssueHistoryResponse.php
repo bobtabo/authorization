@@ -14,12 +14,12 @@ use App\Support\Http\Responses\AbstractResponse;
 use Carbon\Carbon;
 
 /**
- * JWT発行履歴一覧Responseクラスです。
+ * JWT履歴一覧Responseクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\Http\Responses\Client
  */
-class JwtIssueHistoriesResponse extends AbstractResponse
+class JwtIssueHistoryResponse extends AbstractResponse
 {
     /**
      * @var list<array<string, mixed>>

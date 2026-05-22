@@ -42,15 +42,15 @@ export async function getClientQr(identifier: string): Promise<ClientQr> {
   return apiGet<ClientQr>(`/clients/${encodeURIComponent(identifier)}/qr`);
 }
 
-export type JwtIssueHistory = {
+export type JwtHistory = {
   id: number;
   member_id: string;
   issue_at: string;
   jwt: string;
 };
 
-/** GET /clients/{id}/jwt-histories — JWT発行履歴一覧取得 */
-export async function getJwtIssueHistories(clientId: number | string): Promise<JwtIssueHistory[]> {
-  return apiGet<JwtIssueHistory[]>(`/clients/${clientId}/jwt-histories`);
+/** GET /clients/{id}/jwt-histories — JWT履歴一覧取得 */
+export async function getJwtHistories(clientId: number | string): Promise<JwtHistory[]> {
+  return apiGet<JwtHistory[]>(`/clients/${clientId}/jwt-histories`);
 }
 

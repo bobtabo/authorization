@@ -618,8 +618,8 @@ paths:
 
   /clients/{id}/jwt-histories:
     get:
-      operationId: listClientJwtIssueHistories
-      summary: JWT発行履歴一覧
+      operationId: listClientJwtHistories
+      summary: JWT履歴一覧
       tags:
         - clients
       security: []
@@ -637,7 +637,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JwtIssueHistories'
+                $ref: '#/components/schemas/JwtHistories'
         '404':
           description: クライアントが存在しない場合のエラー
 
@@ -1282,9 +1282,9 @@ components:
       items:
         $ref: '#/components/schemas/Client'
 
-    JwtIssueHistory:
+    JwtHistory:
       type: object
-      description: JWT発行履歴
+      description: JWT履歴
       required:
         - id
         - member_id
@@ -1309,11 +1309,11 @@ components:
           description: 発行されたJWT
           example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
 
-    JwtIssueHistories:
+    JwtHistories:
       type: array
-      description: JWT発行履歴一覧
+      description: JWT履歴一覧
       items:
-        $ref: '#/components/schemas/JwtIssueHistory'
+        $ref: '#/components/schemas/JwtHistory'
 
     Staff:
       type: object
