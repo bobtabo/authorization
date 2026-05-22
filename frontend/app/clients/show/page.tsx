@@ -116,15 +116,7 @@ export default function ClientShowPage(): React.JSX.Element {
   const [stopOpen, setStopOpen] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const mockHistories: JwtHistory[] = [
-    {
-      id: 1,
-      member_id: "M081916",
-      issue_at: "2026-05-22 20:17:00",
-      jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IlNIQTI1NjpUdzAyTENvYVJLdnNvMHA5WUttMzdOUmd6TldxaUJDem4vM0tQT3o0MU5vIn0.eyJpc3MiOiJhdXRob3JpemF0aW9uIiwic3ViIjoiTTA4MTkxNiIsImF1ZCI6ImFscGhhLXRlY2giLCJleHAiOjE3NzkzOTE2MTYsImlhdCI6MTc3OTM4OTgxNiwibmJmIjoxNzc5Mzg5ODE2LCJqdGkiOiI3MWZlYmExZi1mNmYxLTQ0MzEtODE0Mi04NzRmZDViMGJkNzAifQ.UVypBFc4r7UeRJlMfHYQLB2w80XD1yd0hNU0rvxUsBAi9-q1bpRKm6mdDHhVuZe0Z3VhMcxJWfecGiAiRGoZSQmjbMnohBFMJR-9h0R_x-yweHy-g_YSuOUSc7PWbbPUHUYtgvkDU9whkhaphepBFMONST_pgSM0owEGRDDhm-MlkxnnWqLDJH4Nx9Qi-dDMRzXEVYiCYCABL-RdeMh_Kw_ZXdLYLLPAVHczU2c0PfZUmEqyr0QWy9WR3rpaVy9vHNDSfY4AG54ZL6B4sE-ZvHisepb2Fg2BRS-HI8RH1AKOVHUHW4kdtLErQfa0ANv6G-NPt9zP09FtBng8rqnRU9L-9b3_q6gQ9NrqmcAuV3P3qfh6UKKhh2gq4_Q-l6oYQlg4jOpiEBaz3X3UWPYEUZ4lCfA6OFfi45jlPVlRZwxTijC8rnFwOF-J3A2QZ2k2Uv4L7zD8uvHTVmzPEIwaZ6DQMX4n5EYje3seW8OIT3O3a2fBMhY205L3D_zJIVJFqWk83URwGz7JEF8Smgj4NxzQ0laKJawVu1py0H4d9j75fKOB5YXRtj3FJ6l4ai_JKFLnFfwo9dCYbXA2syV8-4DYAk5-FeFFigIgGrpEJJDHOGN9bA0PukL-iwXyT6SCyAZz1g4voSpz5v8r9O5kQRkFndaIQqQMNdSmXbAmfcY",
-    },
-  ];
-  const [histories, setHistories] = useState<JwtHistory[]>(mockHistories);
+  const [histories, setHistories] = useState<JwtHistory[]>([]);
   const [activeTab, setActiveTab] = useState<"info" | "history">("info");
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize, setHistoryPageSize] = useState(10);
