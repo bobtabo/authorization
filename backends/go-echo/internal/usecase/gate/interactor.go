@@ -49,12 +49,14 @@ func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 	}
 
 	_ = uc.cache.PutJwt(identifier, dto.MemberID, token, uc.cfg.JWT.CacheTTL)
-	_ = uc.historyRepo.Save(&domclient.JwtHistory{
-		ClientID: c.ID,
-		MemberID: dto.MemberID,
-		IssueAt:  time.Now(),
-		Jwt:      token,
-	})
+	if uc.historyRepo != nil {
+		_ = uc.historyRepo.Save(&domclient.JwtHistory{
+			ClientID: c.ID,
+			MemberID: dto.MemberID,
+			IssueAt:  time.Now(),
+			Jwt:      token,
+		})
+	}
 	return &domgate.IssueVo{Token: token}, nil
 }
 
