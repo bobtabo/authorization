@@ -15,11 +15,14 @@ use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Gate\ValueObjects\GateIssueVo;
 use App\Domain\Gate\ValueObjects\GateVerifyVo;
+use App\Domain\JwtIssueHistory\Entities\JwtIssueHistory;
+use App\Domain\JwtIssueHistory\Repositories\JwtIssueHistoryRepository;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Gate\Dtos\GateIssueDto;
 use App\UseCases\Gate\Dtos\GateVerifyDto;
+use Carbon\Carbon;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Str;
@@ -38,10 +41,12 @@ class GateService extends AbstractService
      *
      * @param ClientRepository $clientRepository クライアントリポジトリ
      * @param GateRepository $gateRepository 認可リポジトリ
+     * @param JwtIssueHistoryRepository $historyRepository JWT発行履歴リポジトリ
      */
     public function __construct(
         private readonly ClientRepository $clientRepository,
         private readonly GateRepository $gateRepository,
+        private readonly JwtIssueHistoryRepository $historyRepository,
     ) {
     }
 
@@ -74,6 +79,14 @@ class GateService extends AbstractService
                 (string)$client->fingerprint,
             );
             $this->gateRepository->putJwt($identifier, $dto->memberId, $token, $configs['cache_ttl']);
+
+            $history = new JwtIssueHistory();
+            $history->clientId = $client->id;
+            $history->memberId = $dto->memberId;
+            $history->issueAt = Carbon::now();
+            $history->jwt = $token;
+            $history->assignCreated(0);
+            $this->historyRepository->persist($history);
         }
 
         return new GateIssueVo()->assign(['token' => $token]);
