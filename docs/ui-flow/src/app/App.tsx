@@ -154,7 +154,7 @@ export default function App() {
               </div>
 
               {/* スタッフページ */}
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center -ml-8">
                 <div className="bg-white border-4 border-cyan-500 rounded-lg p-6 w-80 shadow-lg">
                   <div className="text-center mb-3">
                     <div className="text-lg font-bold text-cyan-900">スタッフページ</div>
