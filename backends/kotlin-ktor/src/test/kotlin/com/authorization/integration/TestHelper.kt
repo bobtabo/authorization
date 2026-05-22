@@ -24,7 +24,7 @@ object TestHelper {
     val db: Database by lazy {
         val (database, _) = initDatabase(cfg)
         transaction(database) {
-            SchemaUtils.create(Staffs, Clients, Invitations, Notifications)
+            SchemaUtils.create(Staffs, Clients, Invitations, Notifications, JwtHistories)
         }
         database
     }
@@ -33,7 +33,7 @@ object TestHelper {
     fun truncateTables() {
         transaction(db) {
             exec("SET FOREIGN_KEY_CHECKS=0")
-            listOf("notifications", "invitations", "clients", "staffs").forEach { t ->
+            listOf("jwt_histories", "notifications", "invitations", "clients", "staffs").forEach { t ->
                 exec("TRUNCATE TABLE $t")
             }
             exec("SET FOREIGN_KEY_CHECKS=1")
