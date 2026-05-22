@@ -14,7 +14,7 @@ use App\Domain\Client\Repositories\ClientRepository;
 use App\Domain\Gate\Repositories\GateRepository;
 use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Domain\Invitation\Repositories\InvitationRepository;
-use App\Domain\JwtHistory\Repositories\JwtHistoryRepository;
+use App\Domain\Client\Repositories\JwtHistoryRepository;
 use App\Domain\Notification\Repositories\NotificationRepository;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Cache\RedisGateRepository;

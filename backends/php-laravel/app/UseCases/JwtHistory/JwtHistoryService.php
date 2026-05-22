@@ -10,9 +10,9 @@ declare(strict_types=1);
 
 namespace App\UseCases\JwtHistory;
 
-use App\Domain\JwtHistory\Condition\JwtHistoryCondition;
-use App\Domain\JwtHistory\Repositories\JwtHistoryRepository;
-use App\Domain\JwtHistory\ValueObjects\JwtHistoryListVo;
+use App\Domain\Client\Condition\JwtHistoryCondition;
+use App\Domain\Client\Repositories\JwtHistoryRepository;
+use App\Domain\Client\ValueObjects\JwtHistoryListVo;
 use App\Support\Services\AbstractService;
 use App\UseCases\JwtHistory\Dtos\JwtHistoryDto;
 

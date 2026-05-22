@@ -8,17 +8,17 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\JwtHistory\Repositories;
+namespace App\Domain\Client\Repositories;
 
-use App\Domain\JwtHistory\Condition\JwtHistoryCondition;
-use App\Domain\JwtHistory\Entities\JwtHistory;
+use App\Domain\Client\Condition\JwtHistoryCondition;
+use App\Domain\Client\Entities\JwtHistory;
 use Illuminate\Support\Collection;
 
 /**
  * JWT履歴Repositoryのインターフェースです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domain\JwtHistory\Repositories
+ * @package App\Domain\Client\Repositories
  */
 interface JwtHistoryRepository
 {

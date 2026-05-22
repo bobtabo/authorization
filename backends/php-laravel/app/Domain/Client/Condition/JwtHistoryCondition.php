@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\JwtHistory\Condition;
+namespace App\Domain\Client\Condition;
 
 use App\Support\Repositories\Conditions\AbstractCondition;
 
@@ -16,7 +16,7 @@ use App\Support\Repositories\Conditions\AbstractCondition;
  * JWT履歴Conditionクラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- * @package App\Domain\JwtHistory\Condition
+ * @package App\Domain\Client\Condition
  */
 class JwtHistoryCondition extends AbstractCondition
 {

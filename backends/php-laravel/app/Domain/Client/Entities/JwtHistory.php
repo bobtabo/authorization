@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\JwtHistory\Entities;
+namespace App\Domain\Client\Entities;
 
 use App\Support\Entities\AbstractEntity;
 use Illuminate\Support\Carbon;

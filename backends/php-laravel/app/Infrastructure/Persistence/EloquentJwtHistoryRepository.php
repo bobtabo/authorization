@@ -10,9 +10,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence;
 
-use App\Domain\JwtHistory\Condition\JwtHistoryCondition;
-use App\Domain\JwtHistory\Entities\JwtHistory as Entity;
-use App\Domain\JwtHistory\Repositories\JwtHistoryRepository;
+use App\Domain\Client\Condition\JwtHistoryCondition;
+use App\Domain\Client\Entities\JwtHistory as Entity;
+use App\Domain\Client\Repositories\JwtHistoryRepository;
 use App\Infrastructure\Models\JwtHistory as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
 use Illuminate\Support\Collection;
