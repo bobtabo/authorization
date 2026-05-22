@@ -30,7 +30,9 @@ use Str;
  */
 abstract class AbstractEntity implements Entity
 {
-    use Assign, Attribute, Initialize;
+    use Assign;
+    use Attribute;
+    use Initialize;
 
     public ?Carbon $createdAt = null;
     public ?int $createdBy = null;
