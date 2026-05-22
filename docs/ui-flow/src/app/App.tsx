@@ -87,7 +87,7 @@ export default function App() {
               {/* クライアント一覧（TOPページ） */}
               <div className="flex flex-col items-center gap-4 relative">
                 {/* ログイン成功の横矢印 */}
-                <div className="absolute -left-32 top-8 flex items-center gap-2">
+                <div className="absolute -left-20 top-8 flex items-center gap-2">
                   <div className="text-xs font-semibold text-indigo-600">ログイン成功</div>
                   <ArrowRight className="text-indigo-500" size={28} strokeWidth={3} />
                 </div>
