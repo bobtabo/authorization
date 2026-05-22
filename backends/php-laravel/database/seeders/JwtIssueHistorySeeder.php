@@ -23,7 +23,7 @@ class JwtIssueHistorySeeder extends Seeder
     /**
      * {@inheritdoc}
      */
-    protected ?string $target = 'jwt_issue_histories';
+    protected ?string $target = 'jwt_histories';
 
     /**
      * {@inheritdoc}

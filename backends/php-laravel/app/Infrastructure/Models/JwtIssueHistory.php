@@ -21,6 +21,10 @@ use Database\Factories\JwtIssueHistoryFactory;
  */
 class JwtIssueHistory extends AppTransactionModel
 {
+    /**
+     * {@inheritdoc}
+     */
+    protected $table = 'jwt_histories';
 
     /**
      * {@inheritdoc}
