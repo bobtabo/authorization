@@ -105,7 +105,15 @@ module UseCase
       end
 
       def destroy(dto)
-        @repo.soft_delete(dto.id, dto.executor_id, dto.version)
+        entity = @repo.find_by_id(dto.id)
+        raise Domain::ConflictError if entity.version != dto.version
+
+        now               = Time.now
+        entity.status     = Domain::Client::Status::CLOSED
+        entity.updated_at = now
+        entity.updated_by = dto.executor_id
+        saved = @repo.save(entity)
+        @repo.soft_delete(dto.id, dto.executor_id, saved.version)
         nil
       end
 

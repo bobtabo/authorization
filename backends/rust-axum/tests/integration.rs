@@ -123,7 +123,7 @@ async fn delete_clients_destroy_soft_deletes_client() {
 
     let req = Request::builder()
         .method("DELETE")
-        .uri(format!("/api/clients/{}", client.id))
+        .uri(format!("/api/clients/{}/delete", client.id))
         .header(header::COOKIE, format!("staff_id={}", staff_id))
         .header(header::CONTENT_TYPE, "application/json")
         .body(axum::body::Body::from(r#"{"version":1}"#))
