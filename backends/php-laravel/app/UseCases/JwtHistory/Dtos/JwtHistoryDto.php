@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+
+declare(strict_types=1);
+
+namespace App\UseCases\JwtHistory\Dtos;
+
+use App\Support\Dtos\AbstractDto;
+
+/**
+ * JWT履歴DTOクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\UseCases\JwtHistory\Dtos
+ */
+class JwtHistoryDto extends AbstractDto
+{
+    public ?int $clientId = null;
+}

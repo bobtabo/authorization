@@ -65,6 +65,21 @@ export const invitations = mysqlTable("invitations", {
   version: int("version", { unsigned: true }).notNull().default(1),
 });
 
+export const jwtHistories = mysqlTable("jwt_histories", {
+  id: bigint("id", { mode: "number", unsigned: true }).primaryKey().autoincrement(),
+  clientId: bigint("client_id", { mode: "number", unsigned: true }).notNull(),
+  memberId: varchar("member_id", { length: 255 }).notNull(),
+  issueAt: datetime("issue_at").notNull(),
+  jwt: text("jwt").notNull(),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  createdBy: int("created_by", { unsigned: true }).notNull().default(0),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedBy: int("updated_by", { unsigned: true }).notNull().default(0),
+  deletedAt: datetime("deleted_at"),
+  deletedBy: int("deleted_by", { unsigned: true }),
+  version: int("version", { unsigned: true }).notNull().default(1),
+});
+
 export const notifications = mysqlTable("notifications", {
   id: bigint("id", { mode: "number", unsigned: true }).primaryKey().autoincrement(),
   staffId: bigint("staff_id", { mode: "number", unsigned: true }).notNull(),

@@ -20,6 +20,7 @@ module AppContainer
     staff_repo        = Infrastructure::Persistence::RomStaffRepository.new(rom)
     invitation_repo   = Infrastructure::Persistence::RomInvitationRepository.new(rom)
     notification_repo = Infrastructure::Persistence::RomNotificationRepository.new(rom)
+    jwt_history_repo      = Infrastructure::Persistence::RomJwtHistoryRepository.new(rom)
     gate_cache            = Infrastructure::Cache::RedisGateRepository.new(cfg)
     invitation_auth_cache = Infrastructure::Cache::RedisInvitationAuthRepository.new(cfg)
     mailer                = Infrastructure::Mail::Mailer.new(cfg)
@@ -31,8 +32,9 @@ module AppContainer
       client_uc:       UseCase::Client::Interactor.new(client_repo),
       staff_uc:        UseCase::Staff::Interactor.new(staff_repo),
       invitation_uc:   UseCase::Invitation::Interactor.new(invitation_repo, invitation_auth_cache, cfg.app.frontend_url),
-      gate_uc:         UseCase::Gate::Interactor.new(client_repo, gate_cache, cfg),
+      gate_uc:         UseCase::Gate::Interactor.new(client_repo, gate_cache, cfg, jwt_history_repo),
       notification_uc: UseCase::Notification::Interactor.new(notification_repo, staff_repo),
+      jwt_history_repo: jwt_history_repo,
       mailer:          mailer,
     }
   end

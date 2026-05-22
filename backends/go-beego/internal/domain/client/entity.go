@@ -2,6 +2,14 @@ package client
 
 import "time"
 
+type JwtHistory struct {
+	ID       uint64
+	ClientID uint64
+	MemberID string
+	IssueAt  time.Time
+	Jwt      string
+}
+
 type Client struct {
 	ID          uint64
 	Name        string

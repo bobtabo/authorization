@@ -36,6 +36,7 @@ pub async fn build_state(cfg: Arc<config::Config>) -> (AppState, sqlx::MySqlPool
         cfg.app.frontend_url.clone(),
     ));
     let notification_repo = Arc::new(infrastructure::persistence::notification::SqlxNotificationRepository::new(pool.clone()));
+    let jwt_history_repo  = Arc::new(infrastructure::persistence::jwt_history::SqlxJwtHistoryRepository::new(pool.clone()));
     let gate_cache            = Arc::new(infrastructure::cache::RedisGateRepository::new(redis_client.clone(), &cfg));
     let invitation_auth_cache = Arc::new(infrastructure::cache::RedisInvitationAuthRepository::new(redis_client, &cfg));
 
@@ -43,7 +44,7 @@ pub async fn build_state(cfg: Arc<config::Config>) -> (AppState, sqlx::MySqlPool
     let client_uc       = Arc::new(usecase::client::Interactor::new(client_repo.clone()));
     let staff_uc        = Arc::new(usecase::staff::Interactor::new(staff_repo.clone()));
     let invitation_uc   = Arc::new(usecase::invitation::Interactor::new(invitation_repo, invitation_auth_cache));
-    let gate_uc         = Arc::new(usecase::gate::Interactor::new(client_repo.clone(), gate_cache, cfg.clone()));
+    let gate_uc         = Arc::new(usecase::gate::Interactor::new(client_repo.clone(), gate_cache, cfg.clone(), jwt_history_repo.clone()));
     let notification_uc = Arc::new(usecase::notification::Interactor::new(notification_repo, staff_repo.clone()));
     let mailer          = Arc::new(infrastructure::mail::Mailer::new(cfg.mail.clone()));
 
@@ -57,6 +58,7 @@ pub async fn build_state(cfg: Arc<config::Config>) -> (AppState, sqlx::MySqlPool
         gate_uc,
         notification_uc,
         mailer,
+        jwt_history_repo,
     };
 
     (app_state, pool)
@@ -72,6 +74,7 @@ fn api_routes() -> Router<AppState> {
         .route("/clients/store",          post(handler::client::store))
         .route("/clients/{id}/update",     put(handler::client::update))
         .route("/clients/{id}",            get(handler::client::show).delete(handler::client::destroy))
+        .route("/clients/{id}/jwt-histories", get(handler::client::jwt_histories))
         .route("/staffs",                 get(handler::staff::index))
         .route("/staffs/{id}/updateRole",  patch(handler::staff::update_role))
         .route("/staffs/{id}/restore",     patch(handler::staff::restore))

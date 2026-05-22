@@ -20,6 +20,7 @@ type ClientHandler struct {
 	newClientUC func(*ent.Client) *uclient.Interactor
 	newNotifUC  func(*ent.Client) *unotification.Interactor
 	mailer      *mail.Mailer
+	historyRepo domclient.JwtHistoryRepository
 }
 
 func NewClientHandler(
@@ -27,8 +28,9 @@ func NewClientHandler(
 	newClientUC func(*ent.Client) *uclient.Interactor,
 	newNotifUC func(*ent.Client) *unotification.Interactor,
 	mailer *mail.Mailer,
+	historyRepo domclient.JwtHistoryRepository,
 ) *ClientHandler {
-	return &ClientHandler{db: db, newClientUC: newClientUC, newNotifUC: newNotifUC, mailer: mailer}
+	return &ClientHandler{db: db, newClientUC: newClientUC, newNotifUC: newNotifUC, mailer: mailer, historyRepo: historyRepo}
 }
 
 func (h *ClientHandler) Index(c echo.Context) error {
@@ -206,6 +208,29 @@ func (h *ClientHandler) Destroy(c echo.Context) error {
 		return txErr
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{})
+}
+
+const timeFormatSec = "2006-01-02 15:04:05"
+
+func (h *ClientHandler) JwtHistories(c echo.Context) error {
+	id, err := parseUint64Param(c, "id")
+	if err != nil {
+		return apperror.BadRequest("invalid_id")
+	}
+	histories, err := h.historyRepo.FindByClientID(id)
+	if err != nil {
+		return err
+	}
+	out := make([]map[string]interface{}, 0, len(histories))
+	for _, hist := range histories {
+		out = append(out, map[string]interface{}{
+			"id":        hist.ID,
+			"member_id": hist.MemberID,
+			"issue_at":  hist.IssueAt.Format(timeFormatSec),
+			"jwt":       hist.Jwt,
+		})
+	}
+	return c.JSON(http.StatusOK, out)
 }
 
 func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {

@@ -16,17 +16,19 @@ import (
 )
 
 type Interactor struct {
-	clientRepo domclient.Repository
-	cache      domgate.CacheRepository
-	cfg        *config.Config
+	clientRepo  domclient.Repository
+	historyRepo domclient.JwtHistoryRepository
+	cache       domgate.CacheRepository
+	cfg         *config.Config
 }
 
 func NewInteractor(
 	clientRepo domclient.Repository,
+	historyRepo domclient.JwtHistoryRepository,
 	cache domgate.CacheRepository,
 	cfg *config.Config,
 ) *Interactor {
-	return &Interactor{clientRepo: clientRepo, cache: cache, cfg: cfg}
+	return &Interactor{clientRepo: clientRepo, historyRepo: historyRepo, cache: cache, cfg: cfg}
 }
 
 func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
@@ -47,6 +49,12 @@ func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 	}
 
 	_ = uc.cache.PutJwt(identifier, dto.MemberID, token, uc.cfg.JWT.CacheTTL)
+	_ = uc.historyRepo.Save(&domclient.JwtHistory{
+		ClientID: c.ID,
+		MemberID: dto.MemberID,
+		IssueAt:  time.Now(),
+		Jwt:      token,
+	})
 	return &domgate.IssueVo{Token: token}, nil
 }
 

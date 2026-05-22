@@ -8,12 +8,19 @@ import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
 import { badRequest } from "../lib/errors.js";
 import { db, asTx } from "../db/client.js";
 import { DrizzleClientRepository } from "../infrastructure/persistence/drizzleClientRepository.js";
+import { DrizzleJwtHistoryRepository } from "../infrastructure/persistence/drizzleJwtHistoryRepository.js";
 import { DrizzleNotificationRepository } from "../infrastructure/persistence/drizzleNotificationRepository.js";
 import { DrizzleStaffRepository } from "../infrastructure/persistence/drizzleStaffRepository.js";
 import { ClientInteractor } from "../usecase/client/interactor.js";
 import { NotificationInteractor } from "../usecase/notification/interactor.js";
 import { sendAccessToken } from "../infrastructure/mail/mailer.js";
 import type { ClientListItem, ClientDetailVo } from "../domain/client/valueObjects.js";
+
+function formatTimeSec(d: Date | null | undefined): string | null {
+  if (!d) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
 
 const app = new Hono();
 
@@ -49,6 +56,18 @@ app.get("/clients/:id", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
   const uc = new ClientInteractor(new DrizzleClientRepository(db));
   return c.json(mapDetail(await uc.getClientById(id)));
+});
+
+app.get("/clients/:id/jwt-histories", async (c) => {
+  const id = parseInt(c.req.param("id"), 10);
+  const repo = new DrizzleJwtHistoryRepository(db);
+  const histories = await repo.findByClientId(id);
+  return c.json(histories.map((h) => ({
+    id: h.id,
+    member_id: h.memberId,
+    issue_at: formatTimeSec(h.issueAt),
+    jwt: h.jwt,
+  })));
 });
 
 app.post("/clients/store", async (c) => {

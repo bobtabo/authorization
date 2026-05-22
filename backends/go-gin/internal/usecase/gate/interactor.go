@@ -18,22 +18,25 @@ import (
 
 // Interactor は Gate のユースケースを実装します。
 type Interactor struct {
-	clientRepo domclient.Repository
-	cache      domgate.CacheRepository
-	cfg        *config.Config
+	clientRepo  domclient.Repository
+	historyRepo domclient.JwtHistoryRepository
+	cache       domgate.CacheRepository
+	cfg         *config.Config
 }
 
 // NewInteractor は Interactor を生成します。
 //
 // clientRepo: クライアントリポジトリ
+// historyRepo: JWT 履歴リポジトリ
 // cache: JWTキャッシュリポジトリ
 // cfg: アプリケーション設定
 func NewInteractor(
 	clientRepo domclient.Repository,
+	historyRepo domclient.JwtHistoryRepository,
 	cache domgate.CacheRepository,
 	cfg *config.Config,
 ) *Interactor {
-	return &Interactor{clientRepo: clientRepo, cache: cache, cfg: cfg}
+	return &Interactor{clientRepo: clientRepo, historyRepo: historyRepo, cache: cache, cfg: cfg}
 }
 
 // IssueToken はクライアント会員向け JWT を発行し、発行結果の値オブジェクトを返します。
@@ -59,6 +62,7 @@ func (uc *Interactor) IssueToken(dto IssueDto) (*domgate.IssueVo, error) {
 	}
 
 	_ = uc.cache.PutJwt(identifier, dto.MemberID, token, uc.cfg.JWT.CacheTTL)
+	_ = uc.historyRepo.Save(c.ID, dto.MemberID, time.Now(), token)
 	return &domgate.IssueVo{Token: token}, nil
 }
 

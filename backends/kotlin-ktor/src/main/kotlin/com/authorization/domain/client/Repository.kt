@@ -5,6 +5,8 @@
  */
 package com.authorization.domain.client
 
+import java.time.LocalDateTime
+
 /**
  * クライアントリポジトリのインターフェースです。
  *
@@ -60,4 +62,30 @@ interface Repository {
      * @param version 楽観排他ロック用バージョン
      */
     suspend fun softDelete(id: Long, deletedBy: Long, version: Int)
+}
+
+/**
+ * JWT履歴リポジトリのインターフェースです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+interface JwtHistoryRepository {
+
+    /**
+     * 指定したクライアント ID の JWT 履歴一覧を issue_at 降順で取得します。
+     *
+     * @param clientId クライアント ID
+     * @return JWT 履歴一覧
+     */
+    suspend fun findByClientId(clientId: Long): List<JwtHistory>
+
+    /**
+     * JWT 履歴を保存します。
+     *
+     * @param clientId クライアント ID
+     * @param memberId メンバー ID
+     * @param issueAt 発行日時
+     * @param jwt JWT 文字列
+     */
+    suspend fun save(clientId: Long, memberId: String, issueAt: LocalDateTime, jwt: String)
 }

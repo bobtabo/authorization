@@ -15,6 +15,7 @@ use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Responses\Client\IndexResponse;
 use App\Http\Responses\Client\InfoResponse;
+use App\Http\Responses\Client\JwtHistoryResponse;
 use App\Http\Responses\Client\QrResponse;
 use App\Http\Responses\Client\ShowResponse;
 use App\Http\Responses\Client\StartResponse;
@@ -23,6 +24,8 @@ use App\Support\Http\Requests\AppRequest;
 use App\Support\Mails\DefaultMail;
 use App\UseCases\Client\ClientService;
 use App\UseCases\Client\Dtos\ClientDto;
+use App\UseCases\JwtHistory\Dtos\JwtHistoryDto;
+use App\UseCases\JwtHistory\JwtHistoryService;
 use App\UseCases\Notification\Dtos\NotificationCreateDto;
 use App\UseCases\Notification\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -233,6 +236,26 @@ class ClientController extends Controller
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
+    }
+
+    /**
+     * クライアントに紐づくJWT履歴一覧を返します。
+     *
+     * @param AppRequest $request HTTP リクエスト
+     * @param JwtHistoryService $service JWT履歴Service
+     * @return JsonResponse JSON レスポンス
+     */
+    public function jwtHistories(AppRequest $request, JwtHistoryService $service): JsonResponse
+    {
+        $dto = new JwtHistoryDto();
+        $dto->clientId = (int)$request->route('id');
+
+        $vo = $service->getHistories($dto);
+
+        $response = new JwtHistoryResponse();
+        $response->assign($vo->attributes());
+
+        return response()->json($response->attributes());
     }
 
     /**

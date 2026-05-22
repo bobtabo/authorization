@@ -17,6 +17,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/beego/beego/v2/client/orm"
 	"github.com/beego/beego/v2/server/web"
 	beecontext "github.com/beego/beego/v2/server/web/context"
 )
@@ -53,12 +54,17 @@ func main() {
 		)
 	}
 
-	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(ormer), gateCacheRepo, cfg)
+	rawDB, err := orm.GetDB("default")
+	if err != nil {
+		log.Fatalf("get db: %v", err)
+	}
+	jwtHistoryRepo := persistence.NewSQLJwtHistoryRepository(rawDB)
+	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(ormer), jwtHistoryRepo, gateCacheRepo, cfg)
 
 	mailer := mail.NewMailer(cfg.Mail)
 
 	authH := handler.NewAuthHandler(ormer, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(ormer, newClientUC, newNotifUC, mailer)
+	clientH := handler.NewClientHandler(ormer, newClientUC, newNotifUC, mailer, jwtHistoryRepo)
 	staffH := handler.NewStaffHandler(ormer, newStaffUC)
 	adminInvitationH := handler.NewAdminInvitationHandler(ormer, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)
@@ -100,6 +106,7 @@ func main() {
 	web.Post("/api/clients/store", clientH.Store)
 	web.Put("/api/clients/:id/update", clientH.Update)
 	web.Get("/api/clients/:id", clientH.Show)
+	web.Get("/api/clients/:id/jwt-histories", clientH.JwtHistories)
 	web.Delete("/api/clients/:id/delete", clientH.Destroy)
 
 	web.Get("/api/clients/:identifier/qr", clientH.GetQr)

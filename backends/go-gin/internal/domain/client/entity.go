@@ -2,6 +2,15 @@ package client
 
 import "time"
 
+// JwtHistory は JWT 履歴のドメインエンティティです。
+type JwtHistory struct {
+	ID       uint64
+	ClientID uint64
+	MemberID string
+	IssueAt  time.Time
+	Jwt      string
+}
+
 // Client はクライアントのドメインエンティティです（GORM タグなし）。
 type Client struct {
 	ID          uint64
