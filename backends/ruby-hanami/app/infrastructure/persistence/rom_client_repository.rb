@@ -12,7 +12,7 @@ module Infrastructure
       end
 
       def find_by_condition(cond)
-        q = @ds.where(deleted_at: nil)
+        q = @ds
 
         if cond.keyword && !cond.keyword.to_s.empty?
           kw = "%#{cond.keyword}%"

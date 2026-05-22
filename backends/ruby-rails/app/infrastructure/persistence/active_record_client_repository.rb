@@ -14,7 +14,7 @@ module Infrastructure
       end
 
       def find_by_condition(cond)
-        q = @model.where(deleted_at: nil)
+        q = @model.all
         if cond.keyword.present?
           q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%")
         end
@@ -80,15 +80,15 @@ module Infrastructure
       end
 
       def soft_delete(id, deleted_by, version)
-        current = @model.find_by(id: id)
-        raise Domain::ConflictError if current.nil? || current.version != version
-        now = Time.current
-        @model.where(id: id).update_all(
+        now      = Time.current
+        affected = @model.where(id: id, version: version).update_all(
           deleted_at: now,
           deleted_by: deleted_by,
           updated_at: now,
           updated_by: deleted_by,
+          version:    Arel.sql("version + 1"),
         )
+        raise Domain::ConflictError if affected == 0
         nil
       end
 
