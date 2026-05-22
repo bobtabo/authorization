@@ -25,7 +25,7 @@ func TestAdminInvitation_Issue(t *testing.T) {
 	truncateTables(t)
 
 	t.Run("招待URLが発行できる", func(t *testing.T) {
-		w := do(http.MethodGet, "/api/admin/invitation/issue", nil)
+		w := do(http.MethodGet, "/api/admin/invitation/issue", nil, withCookie("staff_id", "1"))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -40,7 +40,7 @@ func TestAdminInvitation_Issue(t *testing.T) {
 
 	t.Run("再発行で新しいトークンが返る", func(t *testing.T) {
 		createInvitation(t, "old-token")
-		w := do(http.MethodGet, "/api/admin/invitation/issue", nil)
+		w := do(http.MethodGet, "/api/admin/invitation/issue", nil, withCookie("staff_id", "1"))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
