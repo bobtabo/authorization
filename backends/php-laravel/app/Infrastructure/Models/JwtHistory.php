@@ -39,7 +39,7 @@ class JwtHistory extends AppTransactionModel
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function staff()
+    public function client()
     {
         return $this->belongsTo(Client::class);
     }

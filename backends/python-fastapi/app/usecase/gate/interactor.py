@@ -4,7 +4,7 @@ Gate ユースケース Interactor モジュール。
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from jose import jwt, JWTError
@@ -67,7 +67,7 @@ class GateInteractor:
         self.cache_repo.put_jwt(client.identifier, dto.member, token)
         if self.history_repo and client.id:
             try:
-                self.history_repo.save(client.id, dto.member, datetime.now(), token)
+                self.history_repo.save(client.id, dto.member, datetime.now(timezone.utc), token)
             except Exception:
                 pass
         return GateIssueVo(token=token)

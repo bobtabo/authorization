@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Infrastructure\Models\JwtHistory as Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -32,18 +33,17 @@ class JwtHistoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => '',
-            'client_id' => '',
-            'member_id' => '',
-            'issue_at' => '',
-            'jwt' => '',
-            'created_at' => '',
-            'created_by' => '',
-            'updated_at' => '',
-            'updated_by' => '',
-            'deleted_at' => '',
-            'deleted_by' => '',
-            'version' => '',
+            'client_id' => 1,
+            'member_id' => $this->faker->uuid(),
+            'issue_at' => now(),
+            'jwt' => $this->faker->sha256(),
+            'created_at' => now(),
+            'created_by' => 0,
+            'updated_at' => now(),
+            'updated_by' => 0,
+            'deleted_at' => null,
+            'deleted_by' => null,
+            'version' => 1,
         ];
     }
 }

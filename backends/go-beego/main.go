@@ -54,7 +54,10 @@ func main() {
 		)
 	}
 
-	rawDB, _ := orm.GetDB("default")
+	rawDB, err := orm.GetDB("default")
+	if err != nil {
+		log.Fatalf("get db: %v", err)
+	}
 	jwtHistoryRepo := persistence.NewSQLJwtHistoryRepository(rawDB)
 	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(ormer), jwtHistoryRepo, gateCacheRepo, cfg)
 

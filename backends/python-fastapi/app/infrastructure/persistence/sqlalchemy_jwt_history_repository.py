@@ -3,7 +3,7 @@ JWT 履歴リポジトリ SQLAlchemy 実装モジュール。
 
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ class SqlAlchemyJwtHistoryRepository:
         )
 
     def save(self, client_id: int, member_id: str, issue_at: datetime, jwt: str) -> None:
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         record = JwtHistoryModel(
             client_id=client_id,
             member_id=member_id,
@@ -37,5 +37,9 @@ class SqlAlchemyJwtHistoryRepository:
             updated_by=0,
             version=1,
         )
-        self.db.add(record)
-        self.db.commit()
+        try:
+            self.db.add(record)
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise

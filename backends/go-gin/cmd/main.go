@@ -59,7 +59,10 @@ func main() {
 	}
 
 	// --- JWT 履歴リポジトリ ---
-	rawDB, _ := database.DB()
+	rawDB, err := database.DB()
+	if err != nil {
+		log.Fatalf("get db: %v", err)
+	}
 	jwtHistoryRepo := persistence.NewSQLJwtHistoryRepository(rawDB)
 
 	// --- Gate ユースケース（キャッシュのみ、GORM トランザクション不要）---
