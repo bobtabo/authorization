@@ -101,7 +101,7 @@ func buildRouter() *gin.Engine {
 
 	mailer := mail.NewMailer(testCfg.Mail)
 	authH := handler.NewAuthHandler(testDB, newAuthUC, newInviteUC, testCfg)
-	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer, nil)
+	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer, nil, "")
 	staffH := handler.NewStaffHandler(testDB, newStaffUC)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(testDB, newNotifUC, testCfg)

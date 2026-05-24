@@ -95,7 +95,7 @@ func buildRouter() http.Handler {
 
 	mailer := mail.NewMailer(testCfg.Mail)
 	authH := handler.NewAuthHandler(testOrmer, newAuthUC, newInviteUC, testCfg)
-	clientH := handler.NewClientHandler(testOrmer, newClientUC, newNotifUC, mailer, nil)
+	clientH := handler.NewClientHandler(testOrmer, newClientUC, newNotifUC, mailer, nil, "")
 	staffH := handler.NewStaffHandler(testOrmer, newStaffUC)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(testOrmer, newNotifUC, testCfg)
