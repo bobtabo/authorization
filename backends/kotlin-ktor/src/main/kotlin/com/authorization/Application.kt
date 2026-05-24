@@ -55,7 +55,7 @@ fun Application.module(cfg: Config) {
     val mailer         = Mailer(cfg.mail)
 
     val authH         = AuthHandler(authUC, invitationUC, cfg)
-    val clientH       = ClientHandler(clientUC, notificationUC, mailer, jwtHistoryRepo)
+    val clientH       = ClientHandler(clientUC, notificationUC, mailer, jwtHistoryRepo, cfg.app.frontendUrl)
     val staffH        = StaffHandler(staffUC)
     val adminInvH     = AdminInvitationHandler(invitationUC)
     val gateH         = GateHandler(gateUC)

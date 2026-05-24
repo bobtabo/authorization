@@ -21,6 +21,7 @@ type ClientHandler struct {
 	newNotifUC  func(*ent.Client) *unotification.Interactor
 	mailer      *mail.Mailer
 	historyRepo domclient.JwtHistoryRepository
+	frontendURL string
 }
 
 func NewClientHandler(
@@ -29,8 +30,9 @@ func NewClientHandler(
 	newNotifUC func(*ent.Client) *unotification.Interactor,
 	mailer *mail.Mailer,
 	historyRepo domclient.JwtHistoryRepository,
+	frontendURL string,
 ) *ClientHandler {
-	return &ClientHandler{db: db, newClientUC: newClientUC, newNotifUC: newNotifUC, mailer: mailer, historyRepo: historyRepo}
+	return &ClientHandler{db: db, newClientUC: newClientUC, newNotifUC: newNotifUC, mailer: mailer, historyRepo: historyRepo, frontendURL: frontendURL}
 }
 
 func (h *ClientHandler) Index(c echo.Context) error {
@@ -99,7 +101,8 @@ func (h *ClientHandler) Store(c echo.Context) error {
 		Title: "新しいクライアントが登録されました", Message: storeVo.Name,
 		MessageType: 1, ExecutorID: executorID, URL: notifURL,
 	})
-	go h.mailer.SendAccessToken(storeVo.Email, storeVo.Name, storeVo.AccessToken)
+	activateURL := h.frontendURL + "/clients/" + storeVo.Identifier + "/qr"
+	go h.mailer.SendActivation(storeVo.Email, storeVo.Name, activateURL)
 	return c.JSON(http.StatusCreated, map[string]interface{}{"id": storeVo.ID})
 }
 

@@ -169,9 +169,9 @@ pub async fn store(
     let mailer = state.mailer.clone();
     let email = result.email.clone();
     let name = result.name.clone();
-    let token = result.token.clone();
+    let activate_url = format!("{}/clients/{}/qr", state.cfg.app.frontend_url, result.identifier);
     tokio::spawn(async move {
-        mailer.send_access_token(&email, &name, &token).await;
+        mailer.send_activation(&email, &name, &activate_url).await;
     });
 
     (StatusCode::CREATED, Json(json!({"id": result.id})))

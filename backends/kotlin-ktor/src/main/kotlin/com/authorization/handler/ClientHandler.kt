@@ -44,6 +44,7 @@ class ClientHandler(
     private val notificationUC: NotificationUC,
     private val mailer: Mailer,
     private val jwtHistoryRepo: JwtHistoryRepository,
+    private val frontendUrl: String,
 ) {
 
     /**
@@ -130,8 +131,9 @@ class ClientHandler(
             ))
             c
         }
+        val activateUrl = "$frontendUrl/clients/${client.identifier}/qr"
         call.application.launch {
-            mailer.sendAccessToken(client.email, client.name, client.accessToken)
+            mailer.sendActivation(client.email, client.name, activateUrl)
         }
         call.respond(HttpStatusCode.Created, buildJsonObject { put("id", client.id) })
     }

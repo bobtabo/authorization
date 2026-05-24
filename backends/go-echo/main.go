@@ -61,7 +61,7 @@ func main() {
 	mailer := mail.NewMailer(cfg.Mail)
 
 	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo)
+	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo, cfg.App.FrontendURL)
 	staffH := handler.NewStaffHandler(database, newStaffUC)
 	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)

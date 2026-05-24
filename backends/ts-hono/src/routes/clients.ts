@@ -4,6 +4,7 @@
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 import { Hono } from "hono";
+import { config } from "../config.js";
 import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
 import { badRequest } from "../lib/errors.js";
 import { db, asTx } from "../db/client.js";
@@ -13,7 +14,7 @@ import { DrizzleNotificationRepository } from "../infrastructure/persistence/dri
 import { DrizzleStaffRepository } from "../infrastructure/persistence/drizzleStaffRepository.js";
 import { ClientInteractor } from "../usecase/client/interactor.js";
 import { NotificationInteractor } from "../usecase/notification/interactor.js";
-import { sendAccessToken } from "../infrastructure/mail/mailer.js";
+import { sendActivation } from "../infrastructure/mail/mailer.js";
 import type { ClientListItem, ClientDetailVo } from "../domain/client/valueObjects.js";
 
 function formatTimeSec(d: Date | null | undefined): string | null {
@@ -89,7 +90,8 @@ app.post("/clients/store", async (c) => {
   const notifUrl = `/clients/show?id=${result.id}`;
   const notifUc = new NotificationInteractor(new DrizzleNotificationRepository(db), new DrizzleStaffRepository(db));
   notifUc.fanOut("新しいクライアントが登録されました", result.name, notifUrl, executorId, 1).catch(err => console.error("[fanOut]", err));
-  sendAccessToken(result.email, result.name, result.token).catch(err => console.error("[sendAccessToken]", err));
+  const activateUrl = `${config.app.frontendUrl}/clients/${result.identifier}/qr`;
+  sendActivation(result.email, result.name, activateUrl).catch(err => console.error("[sendActivation]", err));
 
   return c.json({ id: result.id, name: result.name, identifier: result.identifier, email: result.email, token: result.token }, 201);
 });
