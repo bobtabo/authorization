@@ -39,9 +39,10 @@ impl Mailer {
             Err(e) => { error!("mail build error: {e}"); return; }
         };
 
-        let addr = format!("{}:{}", self.cfg.host, self.cfg.port);
+        let port: u16 = self.cfg.port.parse().unwrap_or(1025);
         let transport: AsyncSmtpTransport<Tokio1Executor> = if self.cfg.username.is_empty() {
-            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&addr)
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&self.cfg.host)
+                .port(port)
                 .build()
         } else {
             let creds = Credentials::new(self.cfg.username.clone(), self.cfg.password.clone());
