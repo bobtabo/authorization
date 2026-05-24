@@ -93,7 +93,8 @@ class Api::ClientsController < Api::BaseController
       )
       c
     end
-    Thread.new { container[:mailer].send_access_token(client.email, client.name, client.access_token) }
+    activate_url = "#{container[:cfg].app.frontend_url}/clients/#{client.identifier}/qr"
+    Thread.new { container[:mailer].send_activation(client.email, client.name, activate_url) }
 
     render json: { id: client.id }, status: :created
   end

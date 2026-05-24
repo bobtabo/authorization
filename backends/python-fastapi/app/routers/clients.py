@@ -13,7 +13,8 @@ from app.infrastructure.persistence.sqlalchemy_jwt_history_repository import Sql
 from app.usecase.client.interactor import ClientInteractor
 from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto, ClientIdentifierDto
 from app.usecase.notification.interactor import NotificationInteractor
-from app.infrastructure.mail.mailer import send_access_token
+from app.infrastructure.mail.mailer import send_activation
+from app.config.settings import get_settings
 
 router = APIRouter()
 
@@ -113,9 +114,11 @@ def store(
         message_type=1,
     )
 
+    settings = get_settings()
+    activate_url = f"{settings.frontend_url}/clients/{result.identifier}/qr"
     threading.Thread(
-        target=send_access_token,
-        args=(result.email, result.name, result.token),
+        target=send_activation,
+        args=(result.email, result.name, activate_url),
         daemon=True,
     ).start()
 

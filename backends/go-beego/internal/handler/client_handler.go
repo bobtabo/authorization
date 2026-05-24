@@ -24,6 +24,7 @@ type ClientHandler struct {
 	newNotifUC  func(persistence.QueryOrmer) *unotification.Interactor
 	mailer      *mail.Mailer
 	historyRepo domclient.JwtHistoryRepository
+	frontendURL string
 }
 
 func NewClientHandler(
@@ -32,6 +33,7 @@ func NewClientHandler(
 	newNotifUC func(persistence.QueryOrmer) *unotification.Interactor,
 	mailer *mail.Mailer,
 	historyRepo domclient.JwtHistoryRepository,
+	frontendURL string,
 ) *ClientHandler {
 	return &ClientHandler{
 		ormer:       ormer,
@@ -39,6 +41,7 @@ func NewClientHandler(
 		newNotifUC:  newNotifUC,
 		mailer:      mailer,
 		historyRepo: historyRepo,
+		frontendURL: frontendURL,
 	}
 }
 
@@ -128,7 +131,8 @@ func (h *ClientHandler) Store(ctx *beecontext.Context) {
 		URL:         notifURL,
 	})
 
-	go h.mailer.SendAccessToken(storeVo.Email, storeVo.Name, storeVo.AccessToken)
+	activateURL := h.frontendURL + "/clients/" + storeVo.Identifier + "/qr"
+	go h.mailer.SendActivation(storeVo.Email, storeVo.Name, activateURL)
 
 	writeJSON(ctx, http.StatusCreated, map[string]interface{}{"id": storeVo.ID})
 }

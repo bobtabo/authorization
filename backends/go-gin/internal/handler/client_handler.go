@@ -22,6 +22,7 @@ type ClientHandler struct {
 	newNotifUC  func(*gorm.DB) *unotification.Interactor
 	mailer      *mail.Mailer
 	historyRepo domclient.JwtHistoryRepository
+	frontendURL string
 }
 
 // NewClientHandler は ClientHandler を生成します。
@@ -31,12 +32,14 @@ type ClientHandler struct {
 // newNotifUC: 通知ユースケースファクトリ
 // mailer: メール送信サービス
 // historyRepo: JWT 履歴リポジトリ
+// frontendURL: フロントエンド URL
 func NewClientHandler(
 	db *gorm.DB,
 	newClientUC func(*gorm.DB) *uclient.Interactor,
 	newNotifUC func(*gorm.DB) *unotification.Interactor,
 	mailer *mail.Mailer,
 	historyRepo domclient.JwtHistoryRepository,
+	frontendURL string,
 ) *ClientHandler {
 	return &ClientHandler{
 		db:          db,
@@ -44,6 +47,7 @@ func NewClientHandler(
 		newNotifUC:  newNotifUC,
 		mailer:      mailer,
 		historyRepo: historyRepo,
+		frontendURL: frontendURL,
 	}
 }
 
@@ -140,8 +144,9 @@ func (h *ClientHandler) Store(c *gin.Context) {
 		URL:         notifURL,
 	})
 
-	// アクセストークンメール送信（非同期）
-	go h.mailer.SendAccessToken(storeVo.Email, storeVo.Name, storeVo.AccessToken)
+	// ご利用開始のご案内メール送信（非同期）
+	activateURL := h.frontendURL + "/clients/" + storeVo.Identifier + "/qr"
+	go h.mailer.SendActivation(storeVo.Email, storeVo.Name, activateURL)
 
 	c.JSON(http.StatusCreated, gin.H{"id": storeVo.ID})
 }

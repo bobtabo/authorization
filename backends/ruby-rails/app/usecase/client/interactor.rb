@@ -72,6 +72,7 @@ module UseCase
         Domain::Client::StoreResultVo.new(
           id:           saved.id,
           name:         saved.name,
+          identifier:   saved.identifier,
           email:        saved.email,
           access_token: saved.access_token,
         )

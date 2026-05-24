@@ -37,6 +37,7 @@ type DetailVo struct {
 type StoreVo struct {
 	ID          uint64
 	Name        string
+	Identifier  string
 	Email       string
 	AccessToken string
 }

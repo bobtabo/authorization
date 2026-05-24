@@ -53,6 +53,7 @@ data class DetailVo(
 data class StoreResultVo(
     val id:          Long,
     val name:        String,
+    val identifier:  String,
     val email:       String,
     val accessToken: String,
 )

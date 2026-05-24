@@ -250,6 +250,7 @@ func (uc *Interactor) Store(dto StoreDto) (*domclient.StoreVo, error) {
 	return &domclient.StoreVo{
 		ID:          saved.ID,
 		Name:        saved.Name,
+		Identifier:  saved.Identifier,
 		Email:       saved.Email,
 		AccessToken: saved.AccessToken,
 	}, nil

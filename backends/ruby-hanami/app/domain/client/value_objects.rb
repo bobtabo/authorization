@@ -18,7 +18,7 @@ module Domain
     )
 
     # クライアント登録結果の値オブジェクトです。
-    StoreResultVo = Struct.new(:id, :name, :email, :access_token, keyword_init: true)
+    StoreResultVo = Struct.new(:id, :name, :identifier, :email, :access_token, keyword_init: true)
 
     # QRコードデータの値オブジェクトです。
     QrVo = Struct.new(:identifier, :deeplink_url, keyword_init: true)
