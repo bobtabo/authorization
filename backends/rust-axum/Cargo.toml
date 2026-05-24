@@ -35,3 +35,15 @@ percent-encoding = "2"
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
+
+# デバッグビルドでも RSA 鍵生成が実用的な速度になるよう暗号系クレートだけ最適化する。
+# cargo watch -x run (debug build) は rsa クレートが無最適化だと 4096bit 鍵生成に数十秒かかり
+# フロントエンドの 10 秒タイムアウトを超えてしまうため。
+[profile.dev.package.rsa]
+opt-level = 3
+[profile.dev.package.rand_core]
+opt-level = 3
+[profile.dev.package.rand]
+opt-level = 3
+[profile.dev.package.num-bigint-dig]
+opt-level = 3
