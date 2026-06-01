@@ -17,6 +17,9 @@ require "openssl"
 require "securerandom"
 require "redis"
 
+# 2048-bit RSA 鍵生成は重いため、モジュール読み込み時に 1 回だけ生成して再利用する。
+CACHED_RSA_KEY = OpenSSL::PKey::RSA.generate(2048)
+
 # Authorization::Action は Hanami::Action のエイリアス
 # （app/action.rb はサーバー起動時に Hanami::App がロードするため、テストでは直接定義する）
 module Authorization
@@ -121,7 +124,6 @@ def create_staff(overrides = {})
 end
 
 def create_client(overrides = {})
-  key   = OpenSSL::PKey::RSA.generate(2048)
   token = SecureRandom.hex(32)
   now   = Time.now
   attrs = {
@@ -135,8 +137,8 @@ def create_client(overrides = {})
     tel:          "0312345678",
     email:        "client-#{SecureRandom.hex(4)}@example.com",
     access_token: token,
-    private_key:  key.to_pem,
-    public_key:   key.public_key.to_pem,
+    private_key:  CACHED_RSA_KEY.to_pem,
+    public_key:   CACHED_RSA_KEY.public_key.to_pem,
     fingerprint:  "SHA256:test",
     status:       1,
     created_at:   now,

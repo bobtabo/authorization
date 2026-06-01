@@ -42,6 +42,10 @@ var (
 	testCfg     *config.Config
 	testHandler http.Handler
 	testRDB     *redisclient.Client
+
+	// cachedPrivPEM / cachedPubPEM: 2048-bit RSA 鍵生成は重いため、テスト全体で 1 回だけ生成して再利用する。
+	cachedPrivPEM []byte
+	cachedPubPEM  []byte
 )
 
 func TestMain(m *testing.M) {
@@ -63,6 +67,16 @@ func TestMain(m *testing.M) {
 	}
 
 	testHandler = buildRouter()
+
+	// RSA 鍵を 1 回だけ生成してキャッシュ（テストごとの生成コストを排除）
+	pk, pkErr := rsa.GenerateKey(rand.Reader, 2048)
+	if pkErr != nil {
+		panic(fmt.Sprintf("pre-generate RSA key: %v", pkErr))
+	}
+	privDER := x509.MarshalPKCS1PrivateKey(pk)
+	cachedPrivPEM = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privDER})
+	pubDER, _ := x509.MarshalPKIXPublicKey(&pk.PublicKey)
+	cachedPubPEM = pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubDER})
 
 	os.Exit(m.Run())
 }
@@ -243,14 +257,6 @@ func createStaff(t *testing.T, overrides map[string]interface{}) *model.Staff {
 
 func createClient(t *testing.T, overrides map[string]interface{}) *model.Client {
 	t.Helper()
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("generateKey: %v", err)
-	}
-	privDER := x509.MarshalPKCS1PrivateKey(privateKey)
-	privPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privDER})
-	pubDER, _ := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	pubPEM := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: pubDER})
 
 	tokenBytes := make([]byte, 32)
 	rand.Read(tokenBytes)
@@ -267,8 +273,8 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 		Tel:         "0312345678",
 		Email:       "client@example.com",
 		AccessToken: token,
-		PrivateKey:  string(privPEM),
-		PublicKey:   string(pubPEM),
+		PrivateKey:  string(cachedPrivPEM),
+		PublicKey:   string(cachedPubPEM),
 		Fingerprint: "SHA256:test",
 		Status:      1,
 		CreatedAt:   now,

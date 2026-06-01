@@ -6,6 +6,21 @@ use authorization::{build_router, build_state, config::Config};
 
 static SCHEMA_INIT: OnceCell<()> = OnceCell::const_new();
 
+/// 2048-bit RSA 鍵生成は重いため、テスト全体で 1 回だけ生成して再利用する。
+static CACHED_KEY: OnceCell<(String, String)> = OnceCell::const_new();
+
+async fn cached_rsa_pems() -> &'static (String, String) {
+    CACHED_KEY.get_or_init(|| async {
+        use rsa::{RsaPrivateKey, pkcs1::{EncodeRsaPrivateKey, EncodeRsaPublicKey, LineEnding}};
+        let mut rng = rand::rngs::OsRng;
+        let private_key = RsaPrivateKey::new(&mut rng, 2048).unwrap();
+        let public_key  = private_key.to_public_key();
+        let priv_pem = private_key.to_pkcs1_pem(LineEnding::LF).unwrap().to_string();
+        let pub_pem  = public_key.to_pkcs1_pem(LineEnding::LF).unwrap();
+        (priv_pem, pub_pem)
+    }).await
+}
+
 pub async fn build_test_app() -> (Router, MySqlPool) {
     let cfg = Arc::new(Config::load());
     let (state, pool) = build_state(cfg).await;
@@ -157,14 +172,7 @@ pub struct ClientData {
 }
 
 pub async fn create_client(pool: &MySqlPool) -> ClientData {
-    use rsa::{RsaPrivateKey, pkcs1::{EncodeRsaPrivateKey, EncodeRsaPublicKey, LineEnding}};
-
-    let mut rng = rand::rngs::OsRng;
-    let private_key = RsaPrivateKey::new(&mut rng, 2048).unwrap();
-    let public_key  = private_key.to_public_key();
-
-    let priv_pem: String = private_key.to_pkcs1_pem(LineEnding::LF).unwrap().to_string();
-    let pub_pem:  String = public_key.to_pkcs1_pem(LineEnding::LF).unwrap();
+    let (priv_pem, pub_pem) = cached_rsa_pems().await;
 
     let token      = hex::encode(rand::random::<[u8; 32]>());
     let id_str     = uuid::Uuid::new_v4().simple().to_string();
