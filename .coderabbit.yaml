@@ -4,3 +4,4 @@ reviews:
     ignore_bots: false
     base_branches:
       - "develop"
+      - "main"
