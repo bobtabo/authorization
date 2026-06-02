@@ -17,7 +17,7 @@ module Authorization
         # @return [void]
         def handle(request, response)
           p = request.params
-          validation = ::Client::StoreClientContract.new.call(p.to_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email))
+          validation = ::StoreClientContract.new.call(p.to_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email))
           return json_response(response, { errors: validation.errors.to_h }, status: 422) unless validation.success?
 
           executor_id = staff_id_from_cookie(request)
