@@ -55,13 +55,13 @@ describe("Clients", () => {
       expect(res.status).toBe(201);
     });
 
-    test("name未指定で400が返る", async () => {
+    test("name未指定で422が返る", async () => {
       const res = await app.request("/api/clients/store", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
     });
   });
 
