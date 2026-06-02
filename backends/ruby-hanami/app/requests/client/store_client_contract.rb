@@ -9,7 +9,8 @@ require "uri"
 
 # クライアント登録リクエストのバリデーションを行う Contract です。
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
-class Client::StoreClientContract < Dry::Validation::Contract
+module Client
+class StoreClientContract < Dry::Validation::Contract
   params do
     required(:name).filled(:string)
     required(:post_code).filled(:string)
@@ -32,4 +33,5 @@ class Client::StoreClientContract < Dry::Validation::Contract
     key.failure("は255文字以内で入力してください") if value.length > 255
     key.failure("は正しいメールアドレス形式で入力してください") unless URI::MailTo::EMAIL_REGEXP.match?(value)
   end
+end
 end
