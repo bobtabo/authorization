@@ -85,18 +85,13 @@ func (h *ClientHandler) Show(ctx *beecontext.Context) {
 }
 
 func (h *ClientHandler) Store(ctx *beecontext.Context) {
-	var body struct {
-		Name     string `json:"name"`
-		PostCode string `json:"post_code"`
-		Pref     string `json:"pref"`
-		City     string `json:"city"`
-		Address  string `json:"address"`
-		Building string `json:"building"`
-		Tel      string `json:"tel"`
-		Email    string `json:"email"`
+	var body StoreClientBody
+	if err := json.Unmarshal(ctx.Input.RequestBody, &body); err != nil {
+		writeError(ctx, apperror.UnprocessableEntity("validation_error"))
+		return
 	}
-	if err := json.Unmarshal(ctx.Input.RequestBody, &body); err != nil || body.Name == "" {
-		writeError(ctx, apperror.BadRequest("validation_error"))
+	if err := validateStruct(&body); err != nil {
+		writeError(ctx, err)
 		return
 	}
 
@@ -144,19 +139,13 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 		return
 	}
 
-	var body struct {
-		Name     *string `json:"name"`
-		PostCode *string `json:"post_code"`
-		Pref     *string `json:"pref"`
-		City     *string `json:"city"`
-		Address  *string `json:"address"`
-		Building *string `json:"building"`
-		Tel      *string `json:"tel"`
-		Email    *string `json:"email"`
-		Status   *int    `json:"status"`
-	}
+	var body UpdateClientBody
 	if err = json.Unmarshal(ctx.Input.RequestBody, &body); err != nil {
-		writeError(ctx, apperror.BadRequest("validation_error"))
+		writeError(ctx, apperror.UnprocessableEntity("validation_error"))
+		return
+	}
+	if err = validateStruct(&body); err != nil {
+		writeError(ctx, err)
 		return
 	}
 

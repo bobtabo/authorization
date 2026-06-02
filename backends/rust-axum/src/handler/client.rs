@@ -9,8 +9,14 @@ use axum::{
     Json,
 };
 use axum_extra::extract::CookieJar;
+use garde::Validate;
+use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::Deserialize;
 use serde_json::{json, Value};
+
+static TEL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{10,11}$").unwrap());
+static EMAIL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").unwrap());
 
 use crate::{
     state::AppState,
@@ -30,30 +36,48 @@ pub struct IndexQuery {
 }
 
 /// クライアント登録リクエストボディ。
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct StoreBody {
+    #[garde(length(max = 255))]
     pub name:      String,
-    pub post_code: Option<String>,
-    pub pref:      Option<String>,
-    pub city:      Option<String>,
-    pub address:   Option<String>,
+    #[garde(length(max = 8))]
+    pub post_code: String,
+    #[garde(length(max = 50))]
+    pub pref:      String,
+    #[garde(length(max = 100))]
+    pub city:      String,
+    #[garde(length(max = 255))]
+    pub address:   String,
+    #[garde(length(max = 255))]
     pub building:  Option<String>,
-    pub tel:       Option<String>,
-    pub email:     Option<String>,
+    #[garde(pattern(TEL_REGEX))]
+    pub tel:       String,
+    #[garde(pattern(EMAIL_REGEX), length(max = 255))]
+    pub email:     String,
 }
 
 /// クライアント更新リクエストボディ。
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct UpdateBody {
+    #[garde(inner(length(max = 255)))]
     pub name:      Option<String>,
+    #[garde(inner(length(max = 8)))]
     pub post_code: Option<String>,
+    #[garde(inner(length(max = 50)))]
     pub pref:      Option<String>,
+    #[garde(inner(length(max = 100)))]
     pub city:      Option<String>,
+    #[garde(inner(length(max = 255)))]
     pub address:   Option<String>,
+    #[garde(inner(length(max = 255)))]
     pub building:  Option<String>,
+    #[garde(inner(pattern(TEL_REGEX)))]
     pub tel:       Option<String>,
+    #[garde(inner(pattern(EMAIL_REGEX), length(max = 255)))]
     pub email:     Option<String>,
+    #[garde(skip)]
     pub status:    Option<i32>,
+    #[garde(skip)]
     pub version:   i32,
 }
 
@@ -127,16 +151,19 @@ pub async fn store(
     jar: CookieJar,
     Json(body): Json<StoreBody>,
 ) -> (StatusCode, Json<Value>) {
+    if body.validate().is_err() {
+        return (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({"error": "validation_error"})));
+    }
     let executor_id = staff_id_from_cookie(&jar);
     let dto = StoreDto {
         name:        body.name,
-        post_code:   body.post_code.unwrap_or_default(),
-        pref:        body.pref.unwrap_or_default(),
-        city:        body.city.unwrap_or_default(),
-        address:     body.address.unwrap_or_default(),
+        post_code:   body.post_code,
+        pref:        body.pref,
+        city:        body.city,
+        address:     body.address,
         building:    body.building.unwrap_or_default(),
-        tel:         body.tel.unwrap_or_default(),
-        email:       body.email.unwrap_or_default(),
+        tel:         body.tel,
+        email:       body.email,
         executor_id,
     };
 
@@ -184,6 +211,9 @@ pub async fn update(
     Path(id): Path<u64>,
     Json(body): Json<UpdateBody>,
 ) -> (StatusCode, Json<Value>) {
+    if body.validate().is_err() {
+        return (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({"error": "validation_error"})));
+    }
     let executor_id = staff_id_from_cookie(&jar);
     let dto = UpdateDto {
         id,

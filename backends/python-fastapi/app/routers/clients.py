@@ -7,7 +7,7 @@ import threading
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.routers.deps import get_client_interactor, get_jwt_history_repo, get_notification_interactor, get_staff_id_from_cookie
 from app.infrastructure.persistence.sqlalchemy_jwt_history_repository import SqlAlchemyJwtHistoryRepository
 from app.usecase.client.interactor import ClientInteractor
@@ -83,14 +83,14 @@ def jwt_histories(client_id: int, repo: SqlAlchemyJwtHistoryRepository = Depends
 
 
 class StoreBody(BaseModel):
-    name: str
-    post_code: str = ""
-    pref: str = ""
-    city: str = ""
-    address: str = ""
-    building: str = ""
-    tel: str = ""
-    email: str = ""
+    name: str = Field(max_length=255)
+    post_code: str = Field(max_length=8)
+    pref: str = Field(max_length=50)
+    city: str = Field(max_length=100)
+    address: str = Field(max_length=255)
+    building: str = Field(default="", max_length=255)
+    tel: str = Field(pattern=r"^\d{10,11}$")
+    email: str = Field(max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 @router.post("/clients/store", status_code=HTTP_201_CREATED)
@@ -126,14 +126,14 @@ def store(
 
 
 class UpdateBody(BaseModel):
-    name: Optional[str] = None
-    post_code: Optional[str] = None
-    pref: Optional[str] = None
-    city: Optional[str] = None
-    address: Optional[str] = None
-    building: Optional[str] = None
-    tel: Optional[str] = None
-    email: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=255)
+    post_code: Optional[str] = Field(default=None, max_length=8)
+    pref: Optional[str] = Field(default=None, max_length=50)
+    city: Optional[str] = Field(default=None, max_length=100)
+    address: Optional[str] = Field(default=None, max_length=255)
+    building: Optional[str] = Field(default=None, max_length=255)
+    tel: Optional[str] = Field(default=None, pattern=r"^\d{10,11}$")
+    email: Optional[str] = Field(default=None, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
     status: Optional[int] = None
 
 

@@ -70,18 +70,12 @@ func (h *ClientHandler) Show(c echo.Context) error {
 }
 
 func (h *ClientHandler) Store(c echo.Context) error {
-	var body struct {
-		Name     string `json:"name"`
-		PostCode string `json:"post_code"`
-		Pref     string `json:"pref"`
-		City     string `json:"city"`
-		Address  string `json:"address"`
-		Building string `json:"building"`
-		Tel      string `json:"tel"`
-		Email    string `json:"email"`
+	var body StoreClientBody
+	if err := c.Bind(&body); err != nil {
+		return apperror.UnprocessableEntity("validation_error")
 	}
-	if err := c.Bind(&body); err != nil || body.Name == "" {
-		return apperror.BadRequest("validation_error")
+	if err := validateStruct(&body); err != nil {
+		return err
 	}
 	executorID := staffIDFromCookie(c)
 	var storeVo *domclient.StoreVo
@@ -111,20 +105,12 @@ func (h *ClientHandler) Update(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
-	var body struct {
-		Name     *string `json:"name"`
-		PostCode *string `json:"post_code"`
-		Pref     *string `json:"pref"`
-		City     *string `json:"city"`
-		Address  *string `json:"address"`
-		Building *string `json:"building"`
-		Tel      *string `json:"tel"`
-		Email    *string `json:"email"`
-		Status   *int    `json:"status"`
-		Version  int     `json:"version"`
-	}
+	var body UpdateClientBody
 	if err = c.Bind(&body); err != nil {
-		return apperror.BadRequest("validation_error")
+		return apperror.UnprocessableEntity("validation_error")
+	}
+	if err = validateStruct(&body); err != nil {
+		return err
 	}
 	executorID := staffIDFromCookie(c)
 	var detailVo *domclient.DetailVo

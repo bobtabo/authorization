@@ -4,9 +4,10 @@
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 import { Hono } from "hono";
+import { z } from "zod";
 import { config } from "../config.js";
 import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
-import { badRequest } from "../lib/errors.js";
+import { badRequest, AppError } from "../lib/errors.js";
 import { db, asTx } from "../db/client.js";
 import { DrizzleClientRepository } from "../infrastructure/persistence/drizzleClientRepository.js";
 import { DrizzleJwtHistoryRepository } from "../infrastructure/persistence/drizzleJwtHistoryRepository.js";
@@ -22,6 +23,29 @@ function formatTimeSec(d: Date | null | undefined): string | null {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
+
+const storeClientSchema = z.object({
+  name:      z.string().min(1).max(255),
+  post_code: z.string().min(1).max(8),
+  pref:      z.string().min(1).max(50),
+  city:      z.string().min(1).max(100),
+  address:   z.string().min(1).max(255),
+  building:  z.string().max(255).optional().default(""),
+  tel:       z.string().regex(/^\d{10,11}$/),
+  email:     z.string().email().max(255),
+});
+
+const updateClientSchema = z.object({
+  name:      z.string().max(255).optional(),
+  post_code: z.string().max(8).optional(),
+  pref:      z.string().max(50).optional(),
+  city:      z.string().max(100).optional(),
+  address:   z.string().max(255).optional(),
+  building:  z.string().max(255).optional(),
+  tel:       z.string().regex(/^\d{10,11}$/).optional(),
+  email:     z.string().email().max(255).optional(),
+  status:    z.number().int().optional(),
+});
 
 const app = new Hono();
 
@@ -72,8 +96,10 @@ app.get("/clients/:id/jwt-histories", async (c) => {
 });
 
 app.post("/clients/store", async (c) => {
-  const body = await c.req.json<Record<string, string>>();
-  if (!body.name) throw badRequest("name_required");
+  const raw = await c.req.json();
+  const parsed = storeClientSchema.safeParse(raw);
+  if (!parsed.success) throw new AppError(422, "validation_error");
+  const body = parsed.data;
   const executorId = getStaffIdFromCookie(c);
 
   let result!: Awaited<ReturnType<ClientInteractor["storeClient"]>>;
@@ -98,21 +124,24 @@ app.post("/clients/store", async (c) => {
 
 app.put("/clients/:id/update", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
-  const body = await c.req.json<Record<string, unknown>>();
+  const raw = await c.req.json();
+  const parsed = updateClientSchema.safeParse(raw);
+  if (!parsed.success) throw new AppError(422, "validation_error");
+  const body = parsed.data;
 
   let result!: ClientDetailVo;
   await db.transaction(async (tx) => {
     const uc = new ClientInteractor(new DrizzleClientRepository(asTx(tx)));
     result = await uc.updateClientData(id, {
-      name: body.name as string | undefined,
-      postCode: body.post_code as string | undefined,
-      pref: body.pref as string | undefined,
-      city: body.city as string | undefined,
-      address: body.address as string | undefined,
-      building: body.building as string | undefined,
-      tel: body.tel as string | undefined,
-      email: body.email as string | undefined,
-      status: body.status as number | undefined,
+      name: body.name,
+      postCode: body.post_code,
+      pref: body.pref,
+      city: body.city,
+      address: body.address,
+      building: body.building,
+      tel: body.tel,
+      email: body.email,
+      status: body.status,
     });
   });
   return c.json(mapDetail(result));
