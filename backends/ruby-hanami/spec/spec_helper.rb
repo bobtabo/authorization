@@ -32,6 +32,7 @@ APP_ROOT = File.expand_path("..", __dir__)
   "app/usecase/**/*.rb",
   "app/infrastructure/**/*.rb",
   "app/middleware/**/*.rb",
+  "app/requests/**/*.rb",
   "app/actions/base.rb",
   "app/actions/**/*.rb",
   "app/config/container.rb",
