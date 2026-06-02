@@ -49,7 +49,7 @@ class ClientFactory extends Factory
             'city' => '千代田区',
             'address' => '千代田1-1-1',
             'building' => null,
-            'tel' => '03-0000-0000',
+            'tel' => '0300000000',
             'email' => $this->faker->unique()->safeEmail(),
             'access_token' => bin2hex(random_bytes(16)),
             'private_key' => $keys['private_key'],

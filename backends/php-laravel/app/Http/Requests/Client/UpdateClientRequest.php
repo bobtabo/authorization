@@ -44,7 +44,7 @@ class UpdateClientRequest extends AppRequest
             'city' => ['sometimes', 'string', 'max:100'],
             'address' => ['sometimes', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
-            'tel' => ['sometimes', 'string', 'max:255'],
+            'tel' => ['sometimes', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['sometimes', 'string', 'email', 'max:255'],
             'status' => ['sometimes', 'integer'],
         ];
