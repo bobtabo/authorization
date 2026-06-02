@@ -28,7 +28,7 @@ module RubyRails
       Rails.autoloaders.main.collapse(app.root.join("app/controllers").to_s)
       # DDD layers and config/ are explicitly required in initializers;
       # ignore them so Zeitwerk doesn't conflict (naming conventions differ)
-      %w[domain usecase infrastructure config middleware].each do |dir|
+      %w[domain usecase infrastructure config middleware requests].each do |dir|
         Rails.autoloaders.main.ignore(app.root.join("app/#{dir}").to_s)
       end
     end

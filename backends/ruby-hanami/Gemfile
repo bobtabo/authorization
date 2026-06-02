@@ -9,6 +9,7 @@ gem "rom-sql"
 gem "mysql2"
 gem "redis"
 gem "dotenv"
+gem "dry-validation"
 gem "mail"
 gem "jwt"
 

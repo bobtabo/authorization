@@ -6,6 +6,7 @@ gem "mysql2"
 gem "redis"
 gem "jwt"
 gem "dotenv-rails"
+gem "dry-validation"
 
 group :development, :test do
   gem "rspec-rails"

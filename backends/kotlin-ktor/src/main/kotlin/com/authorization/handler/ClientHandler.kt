@@ -109,15 +109,29 @@ class ClientHandler(
     suspend fun store(call: ApplicationCall) {
         val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
         val body = call.receive<JsonObject>()
+        val storeBody = StoreClientBody(
+            name     = body["name"]?.jsonPrimitive?.content ?: "",
+            postCode = body["post_code"]?.jsonPrimitive?.contentOrNull ?: "",
+            pref     = body["pref"]?.jsonPrimitive?.contentOrNull ?: "",
+            city     = body["city"]?.jsonPrimitive?.contentOrNull ?: "",
+            address  = body["address"]?.jsonPrimitive?.contentOrNull ?: "",
+            building = body["building"]?.jsonPrimitive?.contentOrNull,
+            tel      = body["tel"]?.jsonPrimitive?.contentOrNull ?: "",
+            email    = body["email"]?.jsonPrimitive?.contentOrNull ?: "",
+        )
+        val validationResult = storeClientValidation(storeBody)
+        if (!validationResult.isValid) {
+            return call.respond(HttpStatusCode.UnprocessableEntity, buildJsonObject { put("error", "validation_error") })
+        }
         val dto = StoreDto(
-            name      = body["name"]?.jsonPrimitive?.content ?: "",
-            postCode  = body["post_code"]?.jsonPrimitive?.contentOrNull ?: "",
-            pref      = body["pref"]?.jsonPrimitive?.contentOrNull ?: "",
-            city      = body["city"]?.jsonPrimitive?.contentOrNull ?: "",
-            address   = body["address"]?.jsonPrimitive?.contentOrNull ?: "",
-            building  = body["building"]?.jsonPrimitive?.contentOrNull ?: "",
-            tel       = body["tel"]?.jsonPrimitive?.contentOrNull ?: "",
-            email     = body["email"]?.jsonPrimitive?.contentOrNull ?: "",
+            name      = storeBody.name,
+            postCode  = storeBody.postCode,
+            pref      = storeBody.pref,
+            city      = storeBody.city,
+            address   = storeBody.address,
+            building  = storeBody.building ?: "",
+            tel       = storeBody.tel,
+            email     = storeBody.email,
             executorId = executorId,
         )
         val client = newSuspendedTransaction {
@@ -148,17 +162,32 @@ class ClientHandler(
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
         val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
         val body = call.receive<JsonObject>()
+        val updateBody = UpdateClientBody(
+            name     = body["name"]?.jsonPrimitive?.contentOrNull,
+            postCode = body["post_code"]?.jsonPrimitive?.contentOrNull,
+            pref     = body["pref"]?.jsonPrimitive?.contentOrNull,
+            city     = body["city"]?.jsonPrimitive?.contentOrNull,
+            address  = body["address"]?.jsonPrimitive?.contentOrNull,
+            building = body["building"]?.jsonPrimitive?.contentOrNull,
+            tel      = body["tel"]?.jsonPrimitive?.contentOrNull,
+            email    = body["email"]?.jsonPrimitive?.contentOrNull,
+            status   = body["status"]?.jsonPrimitive?.intOrNull,
+        )
+        val validationResult = updateClientValidation(updateBody)
+        if (!validationResult.isValid) {
+            return call.respond(HttpStatusCode.UnprocessableEntity, buildJsonObject { put("error", "validation_error") })
+        }
         val dto = UpdateDto(
             id        = id,
-            name      = body["name"]?.jsonPrimitive?.contentOrNull,
-            postCode  = body["post_code"]?.jsonPrimitive?.contentOrNull,
-            pref      = body["pref"]?.jsonPrimitive?.contentOrNull,
-            city      = body["city"]?.jsonPrimitive?.contentOrNull,
-            address   = body["address"]?.jsonPrimitive?.contentOrNull,
-            building  = body["building"]?.jsonPrimitive?.contentOrNull,
-            tel       = body["tel"]?.jsonPrimitive?.contentOrNull,
-            email     = body["email"]?.jsonPrimitive?.contentOrNull,
-            status    = body["status"]?.jsonPrimitive?.intOrNull,
+            name      = updateBody.name,
+            postCode  = updateBody.postCode,
+            pref      = updateBody.pref,
+            city      = updateBody.city,
+            address   = updateBody.address,
+            building  = updateBody.building,
+            tel       = updateBody.tel,
+            email     = updateBody.email,
+            status    = updateBody.status,
             executorId = executorId,
         )
         val c = newSuspendedTransaction { clientUC.update(dto) }

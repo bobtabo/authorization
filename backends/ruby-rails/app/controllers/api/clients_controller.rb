@@ -67,6 +67,9 @@ class Api::ClientsController < Api::BaseController
 
   # クライアントを登録します。
   def store
+    result = Client::StoreClientContract.new.call(params.to_unsafe_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email))
+    return render json: { errors: result.errors.to_h }, status: :unprocessable_entity unless result.success?
+
     executor_id = staff_id_from_cookie
     client = ActiveRecord::Base.transaction do
       c = container[:client_uc].store(
@@ -101,6 +104,9 @@ class Api::ClientsController < Api::BaseController
 
   # クライアントを更新します。
   def update
+    result = Client::UpdateClientContract.new.call(params.to_unsafe_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email, :status))
+    return render json: { errors: result.errors.to_h }, status: :unprocessable_entity unless result.success?
+
     executor_id = staff_id_from_cookie
     client = ActiveRecord::Base.transaction do
       container[:client_uc].update(

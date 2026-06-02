@@ -97,18 +97,13 @@ func (h *ClientHandler) Show(c *gin.Context) {
 // Store はクライアントを新規登録します。
 // POST /api/clients/store
 func (h *ClientHandler) Store(c *gin.Context) {
-	var body struct {
-		Name     string `json:"name"     binding:"required"`
-		PostCode string `json:"post_code"`
-		Pref     string `json:"pref"`
-		City     string `json:"city"`
-		Address  string `json:"address"`
-		Building string `json:"building"`
-		Tel      string `json:"tel"`
-		Email    string `json:"email"`
-	}
+	var body StoreClientBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		_ = c.Error(apperror.BadRequest("validation_error"))
+		_ = c.Error(apperror.UnprocessableEntity("validation_error"))
+		return
+	}
+	if err := validateStruct(&body); err != nil {
+		_ = c.Error(err)
 		return
 	}
 
@@ -160,19 +155,13 @@ func (h *ClientHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var body struct {
-		Name     *string `json:"name"`
-		PostCode *string `json:"post_code"`
-		Pref     *string `json:"pref"`
-		City     *string `json:"city"`
-		Address  *string `json:"address"`
-		Building *string `json:"building"`
-		Tel      *string `json:"tel"`
-		Email    *string `json:"email"`
-		Status   *int    `json:"status"`
-	}
+	var body UpdateClientBody
 	if err = c.ShouldBindJSON(&body); err != nil {
-		_ = c.Error(apperror.BadRequest("validation_error"))
+		_ = c.Error(apperror.UnprocessableEntity("validation_error"))
+		return
+	}
+	if err = validateStruct(&body); err != nil {
+		_ = c.Error(err)
 		return
 	}
 

@@ -19,6 +19,7 @@ APP_ROOT_LOAD = File.expand_path("..", __dir__)
   "app/usecase/**/*.rb",
   "app/infrastructure/**/*.rb",
   "app/middleware/**/*.rb",
+  "app/requests/**/*.rb",
 ].each { |pattern| Dir[File.join(APP_ROOT_LOAD, pattern)].sort.each { |f| require f } }
 
 require_relative "../app/config/container"
