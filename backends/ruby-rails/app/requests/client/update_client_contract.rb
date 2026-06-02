@@ -9,7 +9,8 @@ require "uri"
 
 # クライアント更新リクエストのバリデーションを行う Contract です。
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
-class Client::UpdateClientContract < Dry::Validation::Contract
+module Client
+class UpdateClientContract < Dry::Validation::Contract
   params do
     optional(:name).maybe(:string)
     optional(:post_code).maybe(:string)
@@ -35,4 +36,5 @@ class Client::UpdateClientContract < Dry::Validation::Contract
       key.failure("は正しいメールアドレス形式で入力してください") unless URI::MailTo::EMAIL_REGEXP.match?(value)
     end
   end
+end
 end
