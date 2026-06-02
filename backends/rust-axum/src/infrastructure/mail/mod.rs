@@ -86,7 +86,7 @@ fn build_activation_html(name: &str, activate_url: &str, app_name: &str) -> Stri
         .replace("{{YEAR}}", &year.to_string())
 }
 
-const ACTIVATION_TEMPLATE: &str = r#"<!DOCTYPE html>
+const ACTIVATION_TEMPLATE: &str = r##"<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -130,4 +130,4 @@ const ACTIVATION_TEMPLATE: &str = r#"<!DOCTYPE html>
 </td></tr>
 </table>
 </body>
-</html>"#;
+</html>"##;

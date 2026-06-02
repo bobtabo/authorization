@@ -10,13 +10,13 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 use garde::Validate;
-use once_cell::sync::Lazy;
 use regex::Regex;
+use std::sync::LazyLock;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-static TEL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d{10,11}$").unwrap());
-static EMAIL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").unwrap());
+static TEL_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d{10,11}$").unwrap());
+static EMAIL_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").unwrap());
 
 use crate::{
     state::AppState,
