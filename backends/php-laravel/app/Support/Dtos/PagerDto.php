@@ -31,8 +31,6 @@ class PagerDto extends AbstractDto
     public function __construct()
     {
         parent::__construct();
-
-        $this->limit = config('sii.app.list.limit.default');
     }
 
     /**
