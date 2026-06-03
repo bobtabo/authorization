@@ -43,4 +43,9 @@ return [
             'activate' => 'templates.mails.activate',
         ],
     ],
+    //ページング設定
+    'page' => [
+        //ページ件数
+        'count' => 5,
+    ],
 ];
