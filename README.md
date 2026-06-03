@@ -234,7 +234,7 @@ cp .env.example .env
 初回は招待リンクからアクセスする必要があります。</br>
 招待リンクなしでは、ログイン画面からサインインできません。
 
-http://localhost:3000/invitation/b9195889-36c7-631e-76ab-867fa6ad42dc
+http://localhost:3000/invitation/8f13761980983d1d9e3950d11b42016f
 
 > [!NOTE]
 > 
