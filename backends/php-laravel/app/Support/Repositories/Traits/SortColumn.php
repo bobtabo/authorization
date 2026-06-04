@@ -27,7 +27,7 @@ trait SortColumn
      * {
      *     public function getExamples(ExampleDto $dto): ExampleValueObject
      *     {
-     *         $condition = SimpleMapper::map($dto, AppraisalCondition::class);
+     *         $condition = SimpleMapper::map($dto, ExampleCondition::class);
      *         $condition->option = new Option($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
      *
      *         $list = $this->exampleRepository->getList($condition);
