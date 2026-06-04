@@ -26,14 +26,6 @@ class PagerDto extends AbstractDto
     public SortType $sortType = SortType::NONE;
 
     /**
-     * コンストラクタ
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    /**
      * ページング設定します。
      *
      * @param int $page ページ番号

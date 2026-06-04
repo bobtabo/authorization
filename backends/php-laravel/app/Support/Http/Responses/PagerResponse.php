@@ -16,8 +16,8 @@ use Illuminate\Support\Collection;
 /**
  * ページャーResponseクラスです。
  *
- * @author Satoshi Nagashiba <nagashibas@sii-japan.co.jp>
- * @package Sii\Selloop\Core\Http\Responses
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ * @package App\Support\Http\Responses
  *
  * @method Collection getList()
  * @method string|null getKeyword()

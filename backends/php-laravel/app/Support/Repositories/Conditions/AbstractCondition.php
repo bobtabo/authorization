@@ -21,7 +21,8 @@ use App\Support\Traits\Attribute;
  */
 class AbstractCondition
 {
-    use Assign, Attribute;
+    use Assign;
+    use Attribute;
 
     public ?Option $option = null;
     public ?int $id = null;
