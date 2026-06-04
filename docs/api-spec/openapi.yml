@@ -346,6 +346,44 @@ paths:
               type: integer
           style: form
           explode: true
+        - name: offset
+          in: query
+          required: false
+          description: 取得開始位置（0始まり）
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          description: 取得件数
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: page
+          in: query
+          required: false
+          description: 現在ページ番号（フロントのページャー算出用）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: sort
+          in: query
+          required: false
+          description: ソート対象カラム
+          schema:
+            type: string
+            enum: [name, status, created_at]
+        - name: sort_type
+          in: query
+          required: false
+          description: ソート順
+          schema:
+            type: string
+            enum: [asc, desc]
       responses:
         '200':
           description: 正常応答
@@ -631,6 +669,44 @@ paths:
             type: integer
             format: int64
           description: クライアントID
+        - name: offset
+          in: query
+          required: false
+          description: 取得開始位置（0始まり）
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          description: 取得件数
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: page
+          in: query
+          required: false
+          description: 現在ページ番号（フロントのページャー算出用）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: sort
+          in: query
+          required: false
+          description: ソート対象カラム
+          schema:
+            type: string
+            enum: [issue_at, member_id]
+        - name: sort_type
+          in: query
+          required: false
+          description: ソート順
+          schema:
+            type: string
+            enum: [asc, desc]
       responses:
         '200':
           description: 正常応答
@@ -675,6 +751,44 @@ paths:
               type: integer
           style: form
           explode: true
+        - name: offset
+          in: query
+          required: false
+          description: 取得開始位置（0始まり）
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          description: 取得件数
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: page
+          in: query
+          required: false
+          description: 現在ページ番号（フロントのページャー算出用）
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: sort
+          in: query
+          required: false
+          description: ソート対象カラム
+          schema:
+            type: string
+            enum: [name, role, status, created_at]
+        - name: sort_type
+          in: query
+          required: false
+          description: ソート順
+          schema:
+            type: string
+            enum: [asc, desc]
       responses:
         '200':
           description: 正常応答
@@ -1277,10 +1391,18 @@ components:
           example: 1
 
     Clients:
-      type: array
-      description: クライアントのリストです。
-      items:
-        $ref: '#/components/schemas/Client'
+      type: object
+      description: クライアント一覧（ページング付き）
+      required:
+        - data
+        - pager
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Client'
+        pager:
+          $ref: '#/components/schemas/Pager'
 
     JwtHistory:
       type: object
@@ -1310,10 +1432,18 @@ components:
           example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
 
     JwtHistories:
-      type: array
-      description: JWT履歴一覧
-      items:
-        $ref: '#/components/schemas/JwtHistory'
+      type: object
+      description: JWT履歴一覧（ページング付き）
+      required:
+        - data
+        - pager
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/JwtHistory'
+        pager:
+          $ref: '#/components/schemas/Pager'
 
     Staff:
       type: object
@@ -1363,14 +1493,17 @@ components:
 
     StaffList:
       type: object
-      description: スタッフ一覧レスポンス
+      description: スタッフ一覧（ページング付き）
       required:
-        - items
+        - data
+        - pager
       properties:
-        items:
+        data:
           type: array
           items:
             $ref: '#/components/schemas/Staff'
+        pager:
+          $ref: '#/components/schemas/Pager'
 
     Payload:
       type: object
@@ -1484,6 +1617,82 @@ components:
       example:
         unread: 3
         total: 42
+
+    Pager:
+      type: object
+      description: ページャー情報
+      required:
+        - count
+        - limit
+        - next
+        - previous
+        - page
+        - nextPage
+        - previousPage
+        - pageCount
+        - first
+        - last
+        - firstRecordCount
+        - lastRecordCount
+        - startPage
+        - endPage
+      properties:
+        count:
+          type: integer
+          description: 総件数
+          example: 1000
+        limit:
+          type: integer
+          description: 取得件数
+          example: 20
+        next:
+          type: boolean
+          description: 次頁あり
+          example: true
+        previous:
+          type: boolean
+          description: 前頁あり
+          example: false
+        page:
+          type: integer
+          description: 現在ページ番号
+          example: 1
+        nextPage:
+          type: integer
+          description: 次ページ番号
+          example: 2
+        previousPage:
+          type: integer
+          description: 前ページ番号
+          example: 0
+        pageCount:
+          type: integer
+          description: 総ページ数
+          example: 50
+        first:
+          type: boolean
+          description: 先頭ページへの移動可否（page > 1）
+          example: false
+        last:
+          type: boolean
+          description: 最終ページへの移動可否（pageCount > page）
+          example: true
+        firstRecordCount:
+          type: integer
+          description: 現在ページの先頭レコード番号
+          example: 1
+        lastRecordCount:
+          type: integer
+          description: 現在ページの末尾レコード番号
+          example: 20
+        startPage:
+          type: integer
+          description: ページャー表示開始ページ
+          example: 1
+        endPage:
+          type: integer
+          description: ページャー表示終了ページ
+          example: 10
 
   securitySchemes:
     bearerAuth:
