@@ -12,6 +12,7 @@ namespace App\Domain\Staff\ValueObjects;
 
 use App\Domain\Staff\Entities\Staff;
 use App\Domain\Staff\Mappers\StaffApiMapper;
+use App\Support\Enums\SortType;
 use App\Support\Traits\Getter;
 use App\Support\ValueObjects\AbstractValueObject;
 use Illuminate\Support\Collection;
@@ -26,10 +27,12 @@ class StaffListVo extends AbstractValueObject
 {
     use Getter;
 
-    /**
-     * 一覧行（{@see StaffResourceVo}）のコレクションです。
-     */
     protected Collection $items;
+    private int $count = 0;
+    private int $offset = 0;
+    private int $limit = 0;
+    private string $sort = '';
+    private SortType $sortType = SortType::NONE;
 
     /**
      * スタッフ Entity のリストを一覧行に設定します。
@@ -47,9 +50,35 @@ class StaffListVo extends AbstractValueObject
     }
 
     /**
+     * 総件数を設定します。
+     *
+     * @param int $count 総件数
+     */
+    public function setCount(int $count): void
+    {
+        $this->count = $count;
+    }
+
+    /**
+     * ページング情報を設定します。
+     *
+     * @param int $offset オフセット
+     * @param int $limit 取得件数
+     * @param string $sort ソート対象
+     * @param SortType $sortType ソート順
+     */
+    public function setPaging(int $offset, int $limit, string $sort, SortType $sortType): void
+    {
+        $this->offset = $offset;
+        $this->limit = $limit;
+        $this->sort = $sort;
+        $this->sortType = $sortType;
+    }
+
+    /**
      * {@inheritdoc}
      *
-     * @return array{items: list<array<string, mixed>>}
+     * @return array<string, mixed>
      */
     #[\Override]
     public function attributes(): array
@@ -59,6 +88,11 @@ class StaffListVo extends AbstractValueObject
                 ->map(static fn (StaffResourceVo $row): array => $row->attributes())
                 ->values()
                 ->all(),
+            'count' => $this->count,
+            'offset' => $this->offset,
+            'limit' => $this->limit,
+            'sort' => $this->sort,
+            'sortType' => $this->sortType,
         ];
     }
 }

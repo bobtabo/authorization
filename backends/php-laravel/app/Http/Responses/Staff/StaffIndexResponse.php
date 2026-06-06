@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\Http\Responses\Staff;
 
 use App\Support\Http\Responses\AbstractResponse;
+use App\Support\Http\Responses\Traits\Pager;
 use App\Support\Traits\Getter;
 
 /**
@@ -22,6 +23,24 @@ use App\Support\Traits\Getter;
 class StaffIndexResponse extends AbstractResponse
 {
     use Getter;
+    use Pager;
 
-    private array $items = [];
+    /**
+     * @var list<array<string, mixed>>
+     */
+    public array $items = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function attributes(): array
+    {
+        $pager = $this->createPager(count($this->items));
+
+        return [
+            'data' => $this->items,
+            'pager' => $pager,
+        ];
+    }
 }
