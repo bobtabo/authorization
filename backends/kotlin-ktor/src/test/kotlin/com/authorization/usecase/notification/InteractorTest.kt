@@ -42,6 +42,7 @@ class InteractorTest {
     }
 
     private fun mockStaffRepo(active: List<Staff> = emptyList()): StaffRepository = object : StaffRepository {
+        override suspend fun countByCondition(cond: Condition)                          = 0
         override suspend fun findByCondition(cond: Condition)                           = emptyList<Staff>()
         override suspend fun findById(id: Long)                                         = null
         override suspend fun findByProvider(provider: Int, providerId: String)          = null

@@ -29,7 +29,8 @@ class InteractorTest {
         findByProvider: Staff? = null,
         saveResult: Staff? = null,
     ): Repository = object : Repository {
-        override suspend fun findByCondition(cond: Condition) = emptyList<Staff>()
+        override suspend fun countByCondition(cond: Condition)                       = 0
+        override suspend fun findByCondition(cond: Condition)                        = emptyList<Staff>()
         override suspend fun findById(id: Long)                                     = findById
         override suspend fun findByProvider(provider: Int, providerId: String)      = findByProvider
         override suspend fun findAllActive()                                         = emptyList<Staff>()

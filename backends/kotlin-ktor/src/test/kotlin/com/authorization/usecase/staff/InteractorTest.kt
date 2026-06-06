@@ -22,7 +22,8 @@ class InteractorTest {
     )
 
     private fun mockRepo(staffs: List<Staff> = emptyList()): Repository = object : Repository {
-        override suspend fun findByCondition(cond: Condition) = staffs
+        override suspend fun countByCondition(cond: Condition)                 = staffs.size
+        override suspend fun findByCondition(cond: Condition)                  = staffs
         override suspend fun findById(id: Long)                                = staffs.firstOrNull { it.id == id }
         override suspend fun findByProvider(provider: Int, providerId: String) = null
         override suspend fun findAllActive()                                    = staffs.filter { it.deletedAt == null }
@@ -37,7 +38,7 @@ class InteractorTest {
         val active  = makeStaff(1L)
         val deleted = makeStaff(2L, deletedAt = LocalDateTime.of(2024, 6, 1, 0, 0))
         val uc      = Interactor(mockRepo(listOf(active, deleted)))
-        val result  = uc.findByCondition(Condition())
+        val (result, _) = uc.findByConditionWithCount(Condition())
         assertEquals(2, result.size)
         assertEquals(1, result.first { it.id == 1L }.status)
         assertEquals(0, result.first { it.id == 2L }.status)
