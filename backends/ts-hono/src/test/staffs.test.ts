@@ -11,15 +11,16 @@ describe("Staffs", () => {
       await makeStaff({ email: "s2@example.com", name: "別スタッフ" });
       const res = await app.request("/api/staffs");
       expect(res.status).toBe(200);
-      const body = await res.json() as { items: unknown[] };
-      expect(body.items.length).toBe(2);
+      const body = await res.json() as { data: unknown[]; pager: unknown };
+      expect(body.data.length).toBe(2);
+      expect(body.pager).toBeDefined();
     });
 
     test("スタッフが存在しない場合空リストを返す", async () => {
       const res = await app.request("/api/staffs");
       expect(res.status).toBe(200);
-      const body = await res.json() as { items: unknown[] };
-      expect(body.items).toEqual([]);
+      const body = await res.json() as { data: unknown[] };
+      expect(body.data).toEqual([]);
     });
   });
 

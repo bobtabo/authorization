@@ -30,7 +30,8 @@ class StaffIntegrationTest {
         val response = client.get("/api/staffs")
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-        assertEquals(2, body["items"]!!.jsonArray.size)
+        assertEquals(2, body["data"]!!.jsonArray.size)
+        assert(body["pager"] != null)
     }
 
     @Test
@@ -39,7 +40,7 @@ class StaffIntegrationTest {
         val response = client.get("/api/staffs")
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-        assertEquals(0, body["items"]!!.jsonArray.size)
+        assertEquals(0, body["data"]!!.jsonArray.size)
     }
 
     @Test

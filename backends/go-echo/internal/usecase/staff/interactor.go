@@ -16,6 +16,11 @@ func NewInteractor(repo domstaff.Repository) *Interactor {
 	return &Interactor{repo: repo}
 }
 
+// CountByCondition は条件に合うスタッフの総件数を返します。
+func (uc *Interactor) CountByCondition(cond domstaff.Condition) (int, error) {
+	return uc.repo.CountByCondition(cond)
+}
+
 // FindByCondition は条件に合うスタッフ一覧を取得します。
 func (uc *Interactor) FindByCondition(cond domstaff.Condition) ([]*domstaff.ListItem, error) {
 	staffs, err := uc.repo.FindByCondition(cond)

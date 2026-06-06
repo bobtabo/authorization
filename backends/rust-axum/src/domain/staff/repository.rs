@@ -11,6 +11,8 @@ pub type DomainError = Box<dyn std::error::Error + Send + Sync>;
 /// スタッフのリポジトリインターフェース。
 #[async_trait]
 pub trait Repository: Send + Sync {
+    /// 検索条件に合致するスタッフ件数を返します。
+    async fn count_by_condition(&self, cond: Condition) -> Result<i64, DomainError>;
     /// 検索条件に合致するスタッフ一覧を返します。
     async fn find_by_condition(&self, cond: Condition) -> Result<Vec<Staff>, DomainError>;
     /// ID でスタッフを返します（論理削除済みは除く）。

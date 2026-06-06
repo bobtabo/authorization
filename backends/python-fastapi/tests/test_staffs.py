@@ -9,23 +9,24 @@ class TestIndex:
         make_staff(db_session, email="staff2@example.com", name="別スタッフ", role=2)
         res = client.get("/api/staffs")
         assert res.status_code == 200
-        data = res.json()
-        assert "items" in data
-        assert len(data["items"]) == 2
+        body = res.json()
+        assert "data" in body
+        assert "pager" in body
+        assert len(body["data"]) == 2
 
     def test_キーワードでフィルタできる(self, client, db_session):
         make_staff(db_session, email="admin@example.com", name="管理者スタッフ")
         make_staff(db_session, email="member@example.com", name="メンバースタッフ")
         res = client.get("/api/staffs?keyword=管理者")
         assert res.status_code == 200
-        items = res.json()["items"]
-        assert len(items) == 1
-        assert items[0]["name"] == "管理者スタッフ"
+        data = res.json()["data"]
+        assert len(data) == 1
+        assert data[0]["name"] == "管理者スタッフ"
 
     def test_スタッフが存在しない場合空リストを返す(self, client):
         res = client.get("/api/staffs")
         assert res.status_code == 200
-        assert res.json()["items"] == []
+        assert res.json()["data"] == []
 
 
 class TestUpdateRole:

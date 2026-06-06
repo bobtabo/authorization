@@ -25,10 +25,11 @@ impl Interactor {
         Self { repo }
     }
 
-    /// 検索条件に合致するスタッフ一覧の VO を返します。
-    pub async fn find_by_condition(&self, cond: Condition) -> Result<Vec<ListItem>, UseCaseError> {
+    /// 検索条件に合致するスタッフ一覧と件数を返します。
+    pub async fn find_by_condition_with_count(&self, cond: Condition) -> Result<(Vec<ListItem>, i64), UseCaseError> {
+        let count  = self.repo.count_by_condition(cond.clone()).await?;
         let staffs = self.repo.find_by_condition(cond).await?;
-        Ok(staffs.into_iter().map(to_list_item).collect())
+        Ok((staffs.into_iter().map(to_list_item).collect(), count))
     }
 
     /// スタッフのロールを更新します。楽観排他エラーまたは未存在の場合は Err を返します。
@@ -118,6 +119,9 @@ mod tests {
 
     #[async_trait]
     impl Repository for MockRepo {
+        async fn count_by_condition(&self, _cond: Condition) -> Result<i64, DomainError> {
+            Ok(self.find_by_condition.lock().unwrap().as_ref().map(|v| v.len() as i64).unwrap_or(0))
+        }
         async fn find_by_condition(&self, _cond: Condition) -> Result<Vec<Staff>, DomainError> {
             Ok(self.find_by_condition.lock().unwrap().take().unwrap_or_default())
         }
@@ -146,6 +150,10 @@ mod tests {
         }
     }
 
+    fn default_cond() -> Condition {
+        Condition { keyword: None, roles: vec![], offset: 0, limit: 20, sort: None, sort_type: None }
+    }
+
     #[tokio::test]
     async fn test_find_by_condition_maps_status() {
         let mock = Arc::new(MockRepo::new());
@@ -154,10 +162,10 @@ mod tests {
             make_staff(2, true),
         ]);
         let uc = Interactor::new(mock);
-        let result = uc.find_by_condition(Condition { keyword: None, roles: vec![] }).await.unwrap();
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].status, 1);
-        assert_eq!(result[1].status, 0);
+        let (items, _count) = uc.find_by_condition_with_count(default_cond()).await.unwrap();
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].status, 1);
+        assert_eq!(items[1].status, 0);
     }
 
     #[tokio::test]

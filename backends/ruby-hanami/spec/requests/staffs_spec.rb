@@ -12,15 +12,16 @@ RSpec.describe "Staffs" do
       get "/api/staffs"
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
-      expect(body["items"]).to be_an(Array)
-      expect(body["items"].size).to eq(2)
+      expect(body["data"]).to be_an(Array)
+      expect(body["data"].size).to eq(2)
+      expect(body["pager"]).to be_a(Hash)
     end
 
     it "スタッフが存在しない場合空リストを返す" do
       get "/api/staffs"
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
-      expect(body["items"]).to eq([])
+      expect(body["data"]).to eq([])
     end
   end
 

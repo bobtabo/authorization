@@ -9,6 +9,10 @@ module Domain
     # スタッフリポジトリのインターフェースです。
     module Repository
       # @param cond [Domain::Staff::Condition] 検索条件
+      # @return [Integer] 総件数
+      def count_by_condition(cond)                  = raise NotImplementedError
+
+      # @param cond [Domain::Staff::Condition] 検索条件
       # @return [Array<Domain::Staff::Entity>] スタッフエンティティの配列
       def find_by_condition(cond)                   = raise NotImplementedError
 

@@ -18,13 +18,14 @@ import com.authorization.support.AppException
 class Interactor(private val repo: Repository) {
 
     /**
-     * 検索条件に一致するスタッフ一覧を取得します。
+     * 検索条件に一致するスタッフ一覧と総件数を取得します。
      *
      * @param cond 検索条件
-     * @return スタッフ一覧
+     * @return スタッフ一覧と総件数のペア
      */
-    suspend fun findByCondition(cond: Condition): List<ListItem> =
-        repo.findByCondition(cond).map { s ->
+    suspend fun findByConditionWithCount(cond: Condition): Pair<List<ListItem>, Int> {
+        val count = repo.countByCondition(cond)
+        val items = repo.findByCondition(cond).map { s ->
             ListItem(
                 id        = s.id,
                 name      = s.name,
@@ -35,6 +36,8 @@ class Interactor(private val repo: Repository) {
                 updatedAt = s.updatedAt,
             )
         }
+        return Pair(items, count)
+    }
 
     /**
      * スタッフのロールを更新します。

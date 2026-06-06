@@ -7,6 +7,6 @@
 module Domain
   module Staff
     # スタッフ一覧取得の検索条件です。
-    Condition = Struct.new(:keyword, :roles, keyword_init: true)
+    Condition = Struct.new(:keyword, :roles, :offset, :limit, :sort, :sort_type, keyword_init: true)
   end
 end

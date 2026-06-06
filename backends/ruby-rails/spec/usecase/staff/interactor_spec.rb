@@ -5,21 +5,24 @@ require "rails_helper"
 RSpec.describe UseCase::Staff::Interactor do
   let(:stub_repo) do
     double("StaffRepo",
-      find_by_condition: [],
-      update_role:       true,
-      soft_delete:       true,
-      restore:           true,
+      count_by_condition: 0,
+      find_by_condition:  [],
+      update_role:        true,
+      soft_delete:        true,
+      restore:            true,
     )
   end
 
   describe "#find_by_condition" do
-    it "returns list from repo" do
+    it "returns items and count from repo" do
       items = [
         Domain::Staff::ListItem.new(id: 1, name: "S1", email: "s1@example.com", role: 2, status: :active, created_at: Time.current, updated_at: Time.current),
       ]
+      allow(stub_repo).to receive(:count_by_condition).and_return(1)
       allow(stub_repo).to receive(:find_by_condition).and_return(items)
       result = described_class.new(stub_repo).find_by_condition(Domain::Staff::Condition.new)
-      expect(result.size).to eq 1
+      expect(result[:items].size).to eq 1
+      expect(result[:count]).to eq 1
     end
   end
 
