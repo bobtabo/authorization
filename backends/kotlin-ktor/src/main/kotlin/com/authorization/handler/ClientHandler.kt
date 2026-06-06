@@ -34,6 +34,34 @@ private fun LocalDateTime.fmt() = format(fmt)
 private fun LocalDateTime.fmtSec() = format(fmtSec)
 private fun LocalDateTime?.fmtOrNull(): JsonElement = if (this == null) JsonNull else JsonPrimitive(format(fmt))
 
+private const val DEFAULT_PAGE_COUNT = 5
+
+private fun buildPager(count: Int, limit: Int, offset: Int, recordCount: Int): JsonObject {
+    val effectiveLimit = if (limit <= 0) 20 else limit
+    val pageCount = maxOf(1, kotlin.math.ceil(count.toDouble() / effectiveLimit).toInt())
+    val lastPageOffset = (pageCount * effectiveLimit) - effectiveLimit
+    val effectiveOffset = if (count > 0 && offset > lastPageOffset) lastPageOffset else offset
+    val page = (kotlin.math.ceil(effectiveOffset.toDouble() / effectiveLimit).toInt()) + 1
+    val startPage = maxOf(1, page - (DEFAULT_PAGE_COUNT - 1))
+    val endPage = minOf(pageCount, startPage + (DEFAULT_PAGE_COUNT - 1))
+    return buildJsonObject {
+        put("count", count)
+        put("limit", effectiveLimit)
+        put("next", pageCount > page)
+        put("previous", page > 1)
+        put("page", page)
+        put("nextPage", page + 1)
+        put("previousPage", page - 1)
+        put("pageCount", pageCount)
+        put("first", page > 1)
+        put("last", pageCount > page)
+        put("firstRecordCount", effectiveOffset + 1)
+        put("lastRecordCount", effectiveOffset + recordCount)
+        put("startPage", startPage)
+        put("endPage", endPage)
+    }
+}
+
 /**
  * クライアント API のハンドラーです。
  *
@@ -56,9 +84,24 @@ class ClientHandler(
         val keyword   = call.request.queryParameters["keyword"]
         val startFrom = call.request.queryParameters["start_from"]
         val startTo   = call.request.queryParameters["start_to"]
-        val clients = clientUC.findByCondition(ListConditionDto(keyword = keyword, startFrom = startFrom, startTo = startTo))
-        val list = buildJsonArray {
-            clients.forEach { c ->
+        val limitStr  = call.request.queryParameters["limit"]
+        val pageStr   = call.request.queryParameters["page"]
+        val sort      = call.request.queryParameters["sort"]
+        val sortType  = call.request.queryParameters["sort_type"]
+
+        val limit  = limitStr?.toIntOrNull()?.coerceAtLeast(1) ?: 20
+        val page   = pageStr?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+        val offset = limit * (page - 1)
+
+        val dto = ListConditionDto(
+            keyword = keyword, startFrom = startFrom, startTo = startTo,
+            offset = offset, limit = limit, sort = sort, sortType = sortType,
+        )
+        val (items, count) = clientUC.findByConditionWithCount(dto)
+        val pager = buildPager(count, limit, offset, items.size)
+
+        val data = buildJsonArray {
+            items.forEach { c ->
                 add(buildJsonObject {
                     put("id",         c.id)
                     put("name",       c.name)
@@ -70,7 +113,10 @@ class ClientHandler(
                 })
             }
         }
-        call.respond(list)
+        call.respond(buildJsonObject {
+            put("data", data)
+            put("pager", pager)
+        })
     }
 
     /**
@@ -109,15 +155,29 @@ class ClientHandler(
     suspend fun store(call: ApplicationCall) {
         val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
         val body = call.receive<JsonObject>()
+        val storeBody = StoreClientBody(
+            name     = body["name"]?.jsonPrimitive?.content ?: "",
+            postCode = body["post_code"]?.jsonPrimitive?.contentOrNull ?: "",
+            pref     = body["pref"]?.jsonPrimitive?.contentOrNull ?: "",
+            city     = body["city"]?.jsonPrimitive?.contentOrNull ?: "",
+            address  = body["address"]?.jsonPrimitive?.contentOrNull ?: "",
+            building = body["building"]?.jsonPrimitive?.contentOrNull,
+            tel      = body["tel"]?.jsonPrimitive?.contentOrNull ?: "",
+            email    = body["email"]?.jsonPrimitive?.contentOrNull ?: "",
+        )
+        val validationResult = storeClientValidation(storeBody)
+        if (!validationResult.isValid) {
+            return call.respond(HttpStatusCode.UnprocessableEntity, buildJsonObject { put("error", "validation_error") })
+        }
         val dto = StoreDto(
-            name      = body["name"]?.jsonPrimitive?.content ?: "",
-            postCode  = body["post_code"]?.jsonPrimitive?.contentOrNull ?: "",
-            pref      = body["pref"]?.jsonPrimitive?.contentOrNull ?: "",
-            city      = body["city"]?.jsonPrimitive?.contentOrNull ?: "",
-            address   = body["address"]?.jsonPrimitive?.contentOrNull ?: "",
-            building  = body["building"]?.jsonPrimitive?.contentOrNull ?: "",
-            tel       = body["tel"]?.jsonPrimitive?.contentOrNull ?: "",
-            email     = body["email"]?.jsonPrimitive?.contentOrNull ?: "",
+            name      = storeBody.name,
+            postCode  = storeBody.postCode,
+            pref      = storeBody.pref,
+            city      = storeBody.city,
+            address   = storeBody.address,
+            building  = storeBody.building ?: "",
+            tel       = storeBody.tel,
+            email     = storeBody.email,
             executorId = executorId,
         )
         val client = newSuspendedTransaction {
@@ -148,17 +208,32 @@ class ClientHandler(
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
         val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
         val body = call.receive<JsonObject>()
+        val updateBody = UpdateClientBody(
+            name     = body["name"]?.jsonPrimitive?.contentOrNull,
+            postCode = body["post_code"]?.jsonPrimitive?.contentOrNull,
+            pref     = body["pref"]?.jsonPrimitive?.contentOrNull,
+            city     = body["city"]?.jsonPrimitive?.contentOrNull,
+            address  = body["address"]?.jsonPrimitive?.contentOrNull,
+            building = body["building"]?.jsonPrimitive?.contentOrNull,
+            tel      = body["tel"]?.jsonPrimitive?.contentOrNull,
+            email    = body["email"]?.jsonPrimitive?.contentOrNull,
+            status   = body["status"]?.jsonPrimitive?.intOrNull,
+        )
+        val validationResult = updateClientValidation(updateBody)
+        if (!validationResult.isValid) {
+            return call.respond(HttpStatusCode.UnprocessableEntity, buildJsonObject { put("error", "validation_error") })
+        }
         val dto = UpdateDto(
             id        = id,
-            name      = body["name"]?.jsonPrimitive?.contentOrNull,
-            postCode  = body["post_code"]?.jsonPrimitive?.contentOrNull,
-            pref      = body["pref"]?.jsonPrimitive?.contentOrNull,
-            city      = body["city"]?.jsonPrimitive?.contentOrNull,
-            address   = body["address"]?.jsonPrimitive?.contentOrNull,
-            building  = body["building"]?.jsonPrimitive?.contentOrNull,
-            tel       = body["tel"]?.jsonPrimitive?.contentOrNull,
-            email     = body["email"]?.jsonPrimitive?.contentOrNull,
-            status    = body["status"]?.jsonPrimitive?.intOrNull,
+            name      = updateBody.name,
+            postCode  = updateBody.postCode,
+            pref      = updateBody.pref,
+            city      = updateBody.city,
+            address   = updateBody.address,
+            building  = updateBody.building,
+            tel       = updateBody.tel,
+            email     = updateBody.email,
+            status    = updateBody.status,
             executorId = executorId,
         )
         val c = newSuspendedTransaction { clientUC.update(dto) }

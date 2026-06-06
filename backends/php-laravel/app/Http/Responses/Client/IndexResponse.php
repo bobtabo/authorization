@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace App\Http\Responses\Client;
 
 use App\Support\Http\Responses\AbstractResponse;
+use App\Support\Http\Responses\Traits\Pager;
 use App\Support\Traits\Getter;
 use Carbon\Carbon;
 
@@ -23,6 +24,7 @@ use Carbon\Carbon;
 class IndexResponse extends AbstractResponse
 {
     use Getter;
+    use Pager;
 
     /**
      * @var list<array<string, mixed>>
@@ -31,18 +33,21 @@ class IndexResponse extends AbstractResponse
 
     /**
      * {@inheritdoc}
-     *
-     * 一覧 API は JSON 配列をルートに返すため、行ごとに TIMESTAMP を文字列へ正規化したリストを返します。
-     *
-     * @return list<array<string, mixed>>
      */
     #[\Override]
     public function attributes(): array
     {
-        return array_map(
+        $data = array_map(
             static fn (array $row): array => self::normalizeRowTimestampsForJson($row),
             $this->items,
         );
+
+        $pager = $this->createPager(count($data));
+
+        return [
+            'data' => $data,
+            'pager' => $pager,
+        ];
     }
 
     /**

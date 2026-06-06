@@ -89,14 +89,8 @@ impl SqlxClientRepository {
         .await?;
         Ok(row.map(row_to_entity))
     }
-}
 
-#[async_trait]
-impl Repository for SqlxClientRepository {
-    async fn find_by_condition(&self, cond: Condition) -> Result<Vec<Client>, DomainError> {
-        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
-            "SELECT * FROM clients WHERE 1=1"
-        );
+    fn apply_filters<'a>(qb: &mut QueryBuilder<'a, sqlx::MySql>, cond: &'a Condition) {
         if let Some(ref kw) = cond.keyword {
             if !kw.is_empty() {
                 qb.push(" AND name LIKE ");
@@ -119,9 +113,49 @@ impl Repository for SqlxClientRepository {
             }
             qb.push(")");
         }
-        qb.push(" ORDER BY id ASC");
+    }
+}
+
+#[async_trait]
+impl Repository for SqlxClientRepository {
+    async fn find_by_condition(&self, cond: &Condition) -> Result<Vec<Client>, DomainError> {
+        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
+            "SELECT * FROM clients WHERE 1=1"
+        );
+        Self::apply_filters(&mut qb, cond);
+
+        let sort_col = match cond.sort.as_deref() {
+            Some("name") => "name",
+            Some("status") => "status",
+            Some("created_at") => "created_at",
+            Some("updated_at") => "updated_at",
+            Some("start_at") => "start_at",
+            _ => "id",
+        };
+        let sort_dir = match cond.sort_type.as_deref() {
+            Some("desc") => "DESC",
+            _ => "ASC",
+        };
+        qb.push(format!(" ORDER BY {} {}", sort_col, sort_dir));
+
+        if cond.limit > 0 {
+            qb.push(" LIMIT ");
+            qb.push_bind(cond.limit);
+            qb.push(" OFFSET ");
+            qb.push_bind(cond.offset);
+        }
+
         let rows = qb.build_query_as::<ClientRow>().fetch_all(&self.pool).await?;
         Ok(rows.into_iter().map(row_to_entity).collect())
+    }
+
+    async fn count_by_condition(&self, cond: &Condition) -> Result<i64, DomainError> {
+        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
+            "SELECT COUNT(*) as cnt FROM clients WHERE 1=1"
+        );
+        Self::apply_filters(&mut qb, cond);
+        let row: (i64,) = qb.build_query_as().fetch_one(&self.pool).await?;
+        Ok(row.0)
     }
 
     async fn find_by_id(&self, id: u64) -> Result<Option<Client>, DomainError> {

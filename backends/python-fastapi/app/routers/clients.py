@@ -3,11 +3,12 @@
 
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
+import math
 import threading
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.routers.deps import get_client_interactor, get_jwt_history_repo, get_notification_interactor, get_staff_id_from_cookie
 from app.infrastructure.persistence.sqlalchemy_jwt_history_repository import SqlAlchemyJwtHistoryRepository
 from app.usecase.client.interactor import ClientInteractor
@@ -17,6 +18,37 @@ from app.infrastructure.mail.mailer import send_activation
 from app.config.settings import get_settings
 
 router = APIRouter()
+
+DEFAULT_PAGE_COUNT = 5
+
+
+def _build_pager(count: int, limit: int, offset: int, record_count: int) -> dict:
+    """ページング情報を構築します。"""
+    if limit <= 0:
+        limit = 20
+    page_count = max(1, math.ceil(count / limit))
+    last_page_offset = (page_count * limit) - limit
+    if count > 0 and offset > last_page_offset:
+        offset = last_page_offset
+    page = int(math.floor(math.ceil(offset / limit))) + 1 if limit > 0 else 1
+    start_page = max(1, page - (DEFAULT_PAGE_COUNT - 1))
+    end_page = min(page_count, start_page + (DEFAULT_PAGE_COUNT - 1))
+    return {
+        "count": count,
+        "limit": limit,
+        "next": page_count > page,
+        "previous": page > 1,
+        "page": page,
+        "nextPage": page + 1,
+        "previousPage": page - 1,
+        "pageCount": page_count,
+        "first": page > 1,
+        "last": page_count > page,
+        "firstRecordCount": offset + 1,
+        "lastRecordCount": offset + record_count,
+        "startPage": start_page,
+        "endPage": end_page,
+    }
 
 
 def _map_list_item(c) -> dict:
@@ -57,10 +89,23 @@ def _map_detail(c) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     status: Optional[int] = Query(default=None),
+    limit: int = Query(default=20, ge=1),
+    page: int = Query(default=1, ge=1),
+    sort: Optional[str] = Query(default=None),
+    sort_type: Optional[str] = Query(default=None),
     interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    clients = interactor.find_all(keyword=keyword, status=status)
-    return [_map_list_item(c) for c in clients]
+    actual_offset = limit * (page - 1)
+    clients, count = interactor.find_all(
+        keyword=keyword,
+        status=status,
+        offset=actual_offset,
+        limit=limit,
+        sort=sort,
+        sort_type=sort_type,
+    )
+    pager = _build_pager(count, limit, actual_offset, len(clients))
+    return {"data": [_map_list_item(c) for c in clients], "pager": pager}
 
 
 @router.get("/clients/{client_id}")
@@ -83,14 +128,14 @@ def jwt_histories(client_id: int, repo: SqlAlchemyJwtHistoryRepository = Depends
 
 
 class StoreBody(BaseModel):
-    name: str
-    post_code: str = ""
-    pref: str = ""
-    city: str = ""
-    address: str = ""
-    building: str = ""
-    tel: str = ""
-    email: str = ""
+    name: str = Field(max_length=255)
+    post_code: str = Field(max_length=8)
+    pref: str = Field(max_length=50)
+    city: str = Field(max_length=100)
+    address: str = Field(max_length=255)
+    building: str = Field(default="", max_length=255)
+    tel: str = Field(pattern=r"^\d{10,11}$")
+    email: str = Field(max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 @router.post("/clients/store", status_code=HTTP_201_CREATED)
@@ -126,14 +171,14 @@ def store(
 
 
 class UpdateBody(BaseModel):
-    name: Optional[str] = None
-    post_code: Optional[str] = None
-    pref: Optional[str] = None
-    city: Optional[str] = None
-    address: Optional[str] = None
-    building: Optional[str] = None
-    tel: Optional[str] = None
-    email: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=255)
+    post_code: Optional[str] = Field(default=None, max_length=8)
+    pref: Optional[str] = Field(default=None, max_length=50)
+    city: Optional[str] = Field(default=None, max_length=100)
+    address: Optional[str] = Field(default=None, max_length=255)
+    building: Optional[str] = Field(default=None, max_length=255)
+    tel: Optional[str] = Field(default=None, pattern=r"^\d{10,11}$")
+    email: Optional[str] = Field(default=None, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
     status: Optional[int] = None
 
 

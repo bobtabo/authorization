@@ -9,15 +9,24 @@
 class Api::ClientsController < Api::BaseController
   # クライアント一覧を返します。
   def index
-    clients = container[:client_uc].find_by_condition(
+    limit  = (params[:limit]  || 20).to_i
+    page   = (params[:page]   || 1).to_i
+    offset = limit * (page - 1)
+
+    result = container[:client_uc].find_by_condition(
       UseCase::Client::ListConditionDto.new(
         keyword:    params[:keyword],
         start_from: params[:start_from],
         start_to:   params[:start_to],
         statuses:   [],
+        offset:     offset,
+        limit:      limit,
+        sort:       params[:sort],
+        sort_type:  params[:sort_type],
       )
     )
-    render json: clients.map { |c|
+
+    data = result[:items].map { |c|
       {
         id:         c.id,
         name:       c.name,
@@ -28,6 +37,8 @@ class Api::ClientsController < Api::BaseController
         updated_at: c.updated_at.strftime(TIME_FORMAT),
       }
     }
+    pager = build_pager(result[:count], limit, offset, data.size)
+    render json: { data: data, pager: pager }
   end
 
   # JWT 履歴一覧を返します。
@@ -67,6 +78,9 @@ class Api::ClientsController < Api::BaseController
 
   # クライアントを登録します。
   def store
+    result = Client::StoreClientContract.new.call(params.to_unsafe_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email))
+    return render json: { errors: result.errors.to_h }, status: :unprocessable_entity unless result.success?
+
     executor_id = staff_id_from_cookie
     client = ActiveRecord::Base.transaction do
       c = container[:client_uc].store(
@@ -101,6 +115,9 @@ class Api::ClientsController < Api::BaseController
 
   # クライアントを更新します。
   def update
+    result = Client::UpdateClientContract.new.call(params.to_unsafe_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email, :status))
+    return render json: { errors: result.errors.to_h }, status: :unprocessable_entity unless result.success?
+
     executor_id = staff_id_from_cookie
     client = ActiveRecord::Base.transaction do
       container[:client_uc].update(

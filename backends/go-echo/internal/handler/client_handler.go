@@ -50,11 +50,40 @@ func (h *ClientHandler) Index(c echo.Context) error {
 			cond.StartTo = &t
 		}
 	}
-	clients, err := h.newClientUC(h.db).FindByCondition(cond)
+
+	limit := 20
+	if v := c.QueryParam("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	page := 1
+	if v := c.QueryParam("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond.Offset = offset
+	cond.Limit = limit
+	cond.Sort = c.QueryParam("sort")
+	cond.SortType = c.QueryParam("sort_type")
+
+	uc := h.newClientUC(h.db)
+	count, err := uc.CountByCondition(cond)
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, mapClientList(clients))
+	clients, err := uc.FindByCondition(cond)
+	if err != nil {
+		return err
+	}
+
+	pager := BuildPager(count, limit, offset, len(clients))
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":  mapClientList(clients),
+		"pager": pager,
+	})
 }
 
 func (h *ClientHandler) Show(c echo.Context) error {
@@ -70,18 +99,12 @@ func (h *ClientHandler) Show(c echo.Context) error {
 }
 
 func (h *ClientHandler) Store(c echo.Context) error {
-	var body struct {
-		Name     string `json:"name"`
-		PostCode string `json:"post_code"`
-		Pref     string `json:"pref"`
-		City     string `json:"city"`
-		Address  string `json:"address"`
-		Building string `json:"building"`
-		Tel      string `json:"tel"`
-		Email    string `json:"email"`
+	var body StoreClientBody
+	if err := c.Bind(&body); err != nil {
+		return apperror.UnprocessableEntity("validation_error")
 	}
-	if err := c.Bind(&body); err != nil || body.Name == "" {
-		return apperror.BadRequest("validation_error")
+	if err := validateStruct(&body); err != nil {
+		return err
 	}
 	executorID := staffIDFromCookie(c)
 	var storeVo *domclient.StoreVo
@@ -111,20 +134,12 @@ func (h *ClientHandler) Update(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
-	var body struct {
-		Name     *string `json:"name"`
-		PostCode *string `json:"post_code"`
-		Pref     *string `json:"pref"`
-		City     *string `json:"city"`
-		Address  *string `json:"address"`
-		Building *string `json:"building"`
-		Tel      *string `json:"tel"`
-		Email    *string `json:"email"`
-		Status   *int    `json:"status"`
-		Version  int     `json:"version"`
-	}
+	var body UpdateClientBody
 	if err = c.Bind(&body); err != nil {
-		return apperror.BadRequest("validation_error")
+		return apperror.UnprocessableEntity("validation_error")
+	}
+	if err = validateStruct(&body); err != nil {
+		return err
 	}
 	executorID := staffIDFromCookie(c)
 	var detailVo *domclient.DetailVo

@@ -1,1 +1,19 @@
-[]
+{
+    "data": [],
+    "pager": {
+        "count": 0,
+        "limit": 20,
+        "next": false,
+        "previous": false,
+        "page": 1,
+        "nextPage": 2,
+        "previousPage": 0,
+        "pageCount": 1,
+        "first": false,
+        "last": false,
+        "firstRecordCount": 1,
+        "lastRecordCount": 0,
+        "startPage": 1,
+        "endPage": 1
+    }
+}

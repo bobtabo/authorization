@@ -9,8 +9,14 @@ use axum::{
     Json,
 };
 use axum_extra::extract::CookieJar;
+use garde::Validate;
+use regex::Regex;
+use std::sync::LazyLock;
 use serde::Deserialize;
 use serde_json::{json, Value};
+
+static TEL_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d{10,11}$").unwrap());
+static EMAIL_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").unwrap());
 
 use crate::{
     state::AppState,
@@ -27,33 +33,55 @@ pub struct IndexQuery {
     pub keyword:    Option<String>,
     pub start_from: Option<String>,
     pub start_to:   Option<String>,
+    pub limit:      Option<i64>,
+    pub page:       Option<i64>,
+    pub sort:       Option<String>,
+    pub sort_type:  Option<String>,
 }
 
 /// クライアント登録リクエストボディ。
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct StoreBody {
+    #[garde(length(max = 255))]
     pub name:      String,
-    pub post_code: Option<String>,
-    pub pref:      Option<String>,
-    pub city:      Option<String>,
-    pub address:   Option<String>,
+    #[garde(length(max = 8))]
+    pub post_code: String,
+    #[garde(length(max = 50))]
+    pub pref:      String,
+    #[garde(length(max = 100))]
+    pub city:      String,
+    #[garde(length(max = 255))]
+    pub address:   String,
+    #[garde(length(max = 255))]
     pub building:  Option<String>,
-    pub tel:       Option<String>,
-    pub email:     Option<String>,
+    #[garde(pattern(TEL_REGEX))]
+    pub tel:       String,
+    #[garde(pattern(EMAIL_REGEX), length(max = 255))]
+    pub email:     String,
 }
 
 /// クライアント更新リクエストボディ。
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct UpdateBody {
+    #[garde(inner(length(max = 255)))]
     pub name:      Option<String>,
+    #[garde(inner(length(max = 8)))]
     pub post_code: Option<String>,
+    #[garde(inner(length(max = 50)))]
     pub pref:      Option<String>,
+    #[garde(inner(length(max = 100)))]
     pub city:      Option<String>,
+    #[garde(inner(length(max = 255)))]
     pub address:   Option<String>,
+    #[garde(inner(length(max = 255)))]
     pub building:  Option<String>,
+    #[garde(inner(pattern(TEL_REGEX)))]
     pub tel:       Option<String>,
+    #[garde(inner(pattern(EMAIL_REGEX), length(max = 255)))]
     pub email:     Option<String>,
+    #[garde(skip)]
     pub status:    Option<i32>,
+    #[garde(skip)]
     pub version:   i32,
 }
 
@@ -63,19 +91,55 @@ pub struct DestroyBody {
     pub version: i32,
 }
 
+const DEFAULT_PAGE_COUNT: i64 = 5;
+
+fn build_pager(count: i64, limit: i64, offset: i64, record_count: i64) -> Value {
+    let effective_limit = if limit <= 0 { 20 } else { limit };
+    let page_count = std::cmp::max(1, (count as f64 / effective_limit as f64).ceil() as i64);
+    let last_page_offset = (page_count * effective_limit) - effective_limit;
+    let effective_offset = if count > 0 && offset > last_page_offset { last_page_offset } else { offset };
+    let page = (effective_offset as f64 / effective_limit as f64).ceil() as i64 + 1;
+    let start_page = std::cmp::max(1, page - (DEFAULT_PAGE_COUNT - 1));
+    let end_page = std::cmp::min(page_count, start_page + (DEFAULT_PAGE_COUNT - 1));
+    json!({
+        "count": count,
+        "limit": effective_limit,
+        "next": page_count > page,
+        "previous": page > 1,
+        "page": page,
+        "nextPage": page + 1,
+        "previousPage": page - 1,
+        "pageCount": page_count,
+        "first": page > 1,
+        "last": page_count > page,
+        "firstRecordCount": effective_offset + 1,
+        "lastRecordCount": effective_offset + record_count,
+        "startPage": start_page,
+        "endPage": end_page,
+    })
+}
+
 /// クライアント一覧を返します。
 pub async fn index(
     State(state): State<AppState>,
     Query(q): Query<IndexQuery>,
 ) -> (StatusCode, Json<Value>) {
+    let limit = q.limit.unwrap_or(20).max(1);
+    let page = q.page.unwrap_or(1).max(1);
+    let offset = limit * (page - 1);
+
     let dto = ListConditionDto {
         keyword:    q.keyword,
         start_from: q.start_from,
         start_to:   q.start_to,
         statuses:   vec![],
+        offset,
+        limit,
+        sort:       q.sort,
+        sort_type:  q.sort_type,
     };
-    match state.client_uc.find_by_condition(dto).await {
-        Ok(clients) => {
+    match state.client_uc.find_by_condition_with_count(dto).await {
+        Ok((clients, count)) => {
             let list: Vec<Value> = clients.iter().map(|c| json!({
                 "id":         c.id,
                 "name":       c.name,
@@ -85,7 +149,8 @@ pub async fn index(
                 "created_at": c.created_at.format(TIME_FORMAT).to_string(),
                 "updated_at": c.updated_at.format(TIME_FORMAT).to_string(),
             })).collect();
-            (StatusCode::OK, Json(json!(list)))
+            let pager = build_pager(count, limit, offset, list.len() as i64);
+            (StatusCode::OK, Json(json!({"data": list, "pager": pager})))
         }
         Err(e) => {
             tracing::error!("client index error: {e}");
@@ -127,16 +192,19 @@ pub async fn store(
     jar: CookieJar,
     Json(body): Json<StoreBody>,
 ) -> (StatusCode, Json<Value>) {
+    if body.validate().is_err() {
+        return (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({"error": "validation_error"})));
+    }
     let executor_id = staff_id_from_cookie(&jar);
     let dto = StoreDto {
         name:        body.name,
-        post_code:   body.post_code.unwrap_or_default(),
-        pref:        body.pref.unwrap_or_default(),
-        city:        body.city.unwrap_or_default(),
-        address:     body.address.unwrap_or_default(),
+        post_code:   body.post_code,
+        pref:        body.pref,
+        city:        body.city,
+        address:     body.address,
         building:    body.building.unwrap_or_default(),
-        tel:         body.tel.unwrap_or_default(),
-        email:       body.email.unwrap_or_default(),
+        tel:         body.tel,
+        email:       body.email,
         executor_id,
     };
 
@@ -184,6 +252,9 @@ pub async fn update(
     Path(id): Path<u64>,
     Json(body): Json<UpdateBody>,
 ) -> (StatusCode, Json<Value>) {
+    if body.validate().is_err() {
+        return (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({"error": "validation_error"})));
+    }
     let executor_id = staff_id_from_cookie(&jar);
     let dto = UpdateDto {
         id,

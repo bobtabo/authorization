@@ -16,15 +16,24 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
-          clients = container[:client_uc].find_by_condition(
+          limit  = (request.params[:limit]  || 20).to_i
+          page   = (request.params[:page]   || 1).to_i
+          offset = limit * (page - 1)
+
+          result = container[:client_uc].find_by_condition(
             ::UseCase::Client::ListConditionDto.new(
               keyword:    request.params[:keyword],
               start_from: request.params[:start_from],
               start_to:   request.params[:start_to],
               statuses:   [],
+              offset:     offset,
+              limit:      limit,
+              sort:       request.params[:sort],
+              sort_type:  request.params[:sort_type],
             )
           )
-          json_response(response, clients.map { |c|
+
+          data = result[:items].map { |c|
             {
               id:         c.id,
               name:       c.name,
@@ -34,7 +43,9 @@ module Authorization
               created_at: c.created_at.strftime(TIME_FORMAT),
               updated_at: c.updated_at.strftime(TIME_FORMAT),
             }
-          })
+          }
+          pager = build_pager(result[:count], limit, offset, data.size)
+          json_response(response, { data: data, pager: pager })
         end
       end
     end

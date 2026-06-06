@@ -22,6 +22,7 @@ use App\Domain\Client\ValueObjects\ClientStartVo;
 use App\Domain\Client\ValueObjects\ClientStoreVo;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
+use App\Support\Repositories\Conditions\Option;
 use App\Support\Services\AbstractService;
 use App\UseCases\Client\Dtos\ClientDto;
 use Carbon\Carbon;
@@ -75,10 +76,15 @@ class ClientService extends AbstractService
             'statuses' => 'statuses',
         ]);
 
+        $condition->option = new Option($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
+
+        $count = $this->repository->countByCondition($condition);
         $list = $this->repository->findByCondition($condition);
 
         $result = new ClientListVo();
         $result->assignClients($list);
+        $result->setCount($count);
+        $result->setPaging($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
 
         return $result;
     }

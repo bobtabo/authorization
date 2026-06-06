@@ -62,12 +62,41 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 		}
 	}
 
-	clients, err := h.newClientUC(h.ormer).FindByCondition(cond)
+	limit := 20
+	if v := ctx.Input.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	page := 1
+	if v := ctx.Input.Query("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond.Offset = offset
+	cond.Limit = limit
+	cond.Sort = ctx.Input.Query("sort")
+	cond.SortType = ctx.Input.Query("sort_type")
+
+	uc := h.newClientUC(h.ormer)
+	count, err := uc.CountByCondition(cond)
 	if err != nil {
 		writeError(ctx, err)
 		return
 	}
-	writeJSON(ctx, http.StatusOK, mapClientList(clients))
+	clients, err := uc.FindByCondition(cond)
+	if err != nil {
+		writeError(ctx, err)
+		return
+	}
+
+	pager := BuildPager(count, limit, offset, len(clients))
+	writeJSON(ctx, http.StatusOK, map[string]interface{}{
+		"data":  mapClientList(clients),
+		"pager": pager,
+	})
 }
 
 func (h *ClientHandler) Show(ctx *beecontext.Context) {
@@ -85,18 +114,13 @@ func (h *ClientHandler) Show(ctx *beecontext.Context) {
 }
 
 func (h *ClientHandler) Store(ctx *beecontext.Context) {
-	var body struct {
-		Name     string `json:"name"`
-		PostCode string `json:"post_code"`
-		Pref     string `json:"pref"`
-		City     string `json:"city"`
-		Address  string `json:"address"`
-		Building string `json:"building"`
-		Tel      string `json:"tel"`
-		Email    string `json:"email"`
+	var body StoreClientBody
+	if err := json.Unmarshal(ctx.Input.RequestBody, &body); err != nil {
+		writeError(ctx, apperror.UnprocessableEntity("validation_error"))
+		return
 	}
-	if err := json.Unmarshal(ctx.Input.RequestBody, &body); err != nil || body.Name == "" {
-		writeError(ctx, apperror.BadRequest("validation_error"))
+	if err := validateStruct(&body); err != nil {
+		writeError(ctx, err)
 		return
 	}
 
@@ -144,19 +168,13 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 		return
 	}
 
-	var body struct {
-		Name     *string `json:"name"`
-		PostCode *string `json:"post_code"`
-		Pref     *string `json:"pref"`
-		City     *string `json:"city"`
-		Address  *string `json:"address"`
-		Building *string `json:"building"`
-		Tel      *string `json:"tel"`
-		Email    *string `json:"email"`
-		Status   *int    `json:"status"`
-	}
+	var body UpdateClientBody
 	if err = json.Unmarshal(ctx.Input.RequestBody, &body); err != nil {
-		writeError(ctx, apperror.BadRequest("validation_error"))
+		writeError(ctx, apperror.UnprocessableEntity("validation_error"))
+		return
+	}
+	if err = validateStruct(&body); err != nil {
+		writeError(ctx, err)
 		return
 	}
 

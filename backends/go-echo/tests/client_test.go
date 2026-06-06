@@ -109,8 +109,8 @@ func TestClient_Store(t *testing.T) {
 
 	t.Run("name必須バリデーション", func(t *testing.T) {
 		w := do(http.MethodPost, "/api/clients/store", map[string]string{})
-		if w.Code != http.StatusBadRequest {
-			t.Errorf("want 400, got %d", w.Code)
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("want 422, got %d", w.Code)
 		}
 	})
 }

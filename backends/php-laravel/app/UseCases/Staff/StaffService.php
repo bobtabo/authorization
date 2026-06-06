@@ -20,6 +20,7 @@ use App\Domain\Staff\ValueObjects\StaffRemoveVo;
 use App\Domain\Staff\ValueObjects\StaffResourceVo;
 use App\Support\Exceptions\AppException;
 use App\Support\Mappers\SimpleMapper;
+use App\Support\Repositories\Conditions\Option;
 use App\Support\Services\AbstractService;
 use App\UseCases\Staff\Dtos\StaffDto;
 use Illuminate\Database\QueryException;
@@ -80,11 +81,15 @@ class StaffService extends AbstractService
         $condition->keyword = $dto->keyword;
         $condition->roles = $dto->roles;
         $condition->statuses = $dto->statuses;
+        $condition->option = new Option($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
 
+        $count = $this->repository->countByCondition($condition);
         $list = $this->repository->findByCondition($condition);
 
         $vo = new StaffListVo();
         $vo->assignStaff($list);
+        $vo->setCount($count);
+        $vo->setPaging($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
 
         return $vo;
     }

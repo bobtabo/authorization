@@ -13,7 +13,9 @@ pub type DomainError = Box<dyn std::error::Error + Send + Sync>;
 #[async_trait]
 pub trait Repository: Send + Sync {
     /// 検索条件に合致するクライアント一覧を返します。
-    async fn find_by_condition(&self, cond: Condition) -> Result<Vec<Client>, DomainError>;
+    async fn find_by_condition(&self, cond: &Condition) -> Result<Vec<Client>, DomainError>;
+    /// 検索条件に合致するクライアントの総件数を返します。
+    async fn count_by_condition(&self, cond: &Condition) -> Result<i64, DomainError>;
     /// ID でクライアントを返します。存在しない場合は None を返します。
     async fn find_by_id(&self, id: u64) -> Result<Option<Client>, DomainError>;
     /// アクセストークンでクライアントを返します。

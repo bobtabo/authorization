@@ -43,4 +43,13 @@ return [
             'activate' => 'templates.mails.activate',
         ],
     ],
+    //ページング設定
+    'pager' => [
+        //現在ページ
+        'current' => 1,
+        //ページ番号の表示数
+        'page' => 5,
+        //1ページのデータ表示件数
+        'limit' => 20,
+    ],
 ];

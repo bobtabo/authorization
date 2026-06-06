@@ -43,7 +43,7 @@ class StoreClientRequest extends AppRequest
             'city' => ['required', 'string', 'max:100'],
             'address' => ['required', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
-            'tel' => ['required', 'string', 'max:255'],
+            'tel' => ['required', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['required', 'string', 'email', 'max:255'],
         ];
     }

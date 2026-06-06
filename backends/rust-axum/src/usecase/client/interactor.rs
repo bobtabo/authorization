@@ -34,9 +34,30 @@ impl Interactor {
             start_from: dto.start_from.and_then(|s| parse_datetime(&s)),
             start_to:   dto.start_to.and_then(|s| parse_datetime(&s)),
             statuses:   dto.statuses,
+            offset:     dto.offset,
+            limit:      dto.limit,
+            sort:       dto.sort,
+            sort_type:  dto.sort_type,
         };
-        let clients = self.repo.find_by_condition(cond).await?;
+        let clients = self.repo.find_by_condition(&cond).await?;
         Ok(clients.into_iter().map(to_list_item).collect())
+    }
+
+    /// 検索条件に合致するクライアント一覧と総件数を返します。
+    pub async fn find_by_condition_with_count(&self, dto: ListConditionDto) -> Result<(Vec<ListItem>, i64), UseCaseError> {
+        let cond = Condition {
+            keyword:    dto.keyword,
+            start_from: dto.start_from.and_then(|s| parse_datetime(&s)),
+            start_to:   dto.start_to.and_then(|s| parse_datetime(&s)),
+            statuses:   dto.statuses,
+            offset:     dto.offset,
+            limit:      dto.limit,
+            sort:       dto.sort,
+            sort_type:  dto.sort_type,
+        };
+        let count = self.repo.count_by_condition(&cond).await?;
+        let clients = self.repo.find_by_condition(&cond).await?;
+        Ok((clients.into_iter().map(to_list_item).collect(), count))
     }
 
     /// ID でクライアント詳細の VO を返します。存在しない場合はエラーを返します。
@@ -356,8 +377,11 @@ mod tests {
 
     #[async_trait]
     impl Repository for MockRepo {
-        async fn find_by_condition(&self, _cond: Condition) -> Result<Vec<Client>, DomainError> {
+        async fn find_by_condition(&self, _cond: &Condition) -> Result<Vec<Client>, DomainError> {
             Ok(self.find_by_condition.lock().unwrap().take().unwrap_or_default())
+        }
+        async fn count_by_condition(&self, _cond: &Condition) -> Result<i64, DomainError> {
+            Ok(0)
         }
         async fn find_by_id(&self, _id: u64) -> Result<Option<Client>, DomainError> {
             Ok(self.find_by_id.lock().unwrap().take().unwrap_or(None))
@@ -419,7 +443,7 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.find_by_condition.lock().unwrap() = Some(vec![make_client(1), make_client(2)]);
         let uc = Interactor::new(mock);
-        let dto = ListConditionDto { keyword: None, start_from: None, start_to: None, statuses: vec![] };
+        let dto = ListConditionDto { keyword: None, start_from: None, start_to: None, statuses: vec![], offset: 0, limit: 20, sort: None, sort_type: None };
         let result = uc.find_by_condition(dto).await.unwrap();
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].id, 1);

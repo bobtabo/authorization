@@ -43,6 +43,7 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-kotlin:$dotenv_version")
     implementation("com.nimbusds:nimbus-jose-jwt:$nimbus_jwt_version")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
+    implementation("io.konform:konform:0.10.0")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

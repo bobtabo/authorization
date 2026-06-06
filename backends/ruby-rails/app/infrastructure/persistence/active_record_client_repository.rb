@@ -14,6 +14,19 @@ module Infrastructure
       end
 
       def find_by_condition(cond)
+        q = apply_filters(cond)
+        q = apply_sort(q, cond)
+        q = q.offset(cond.offset).limit(cond.limit) if cond.limit && cond.limit > 0
+        q.map { |r| row_to_list_item(r) }
+      end
+
+      def count_by_condition(cond)
+        apply_filters(cond).count
+      end
+
+      private
+
+      def apply_filters(cond)
         q = @model.all
         if cond.keyword.present?
           q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%")
@@ -21,8 +34,19 @@ module Infrastructure
         q = q.where(status: cond.statuses) if cond.statuses.present?
         q = q.where("start_at >= ?", cond.start_from) if cond.start_from
         q = q.where("start_at <= ?", cond.start_to)   if cond.start_to
-        q.order(created_at: :desc).map { |r| row_to_list_item(r) }
+        q
       end
+
+      def apply_sort(q, cond)
+        if cond.sort.present?
+          dir = cond.sort_type == "desc" ? :desc : :asc
+          q.order(cond.sort => dir)
+        else
+          q.order(created_at: :desc)
+        end
+      end
+
+      public
 
       def find_by_id(id)
         r = @model.find_by(id: id, deleted_at: nil)

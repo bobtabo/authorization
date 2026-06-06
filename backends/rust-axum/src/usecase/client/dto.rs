@@ -38,6 +38,10 @@ pub struct ListConditionDto {
     pub start_from: Option<String>,
     pub start_to:   Option<String>,
     pub statuses:   Vec<i32>,
+    pub offset:     i64,
+    pub limit:      i64,
+    pub sort:       Option<String>,
+    pub sort_type:  Option<String>,
 }
 
 /// スマホ連携: 利用開始結果 VO。

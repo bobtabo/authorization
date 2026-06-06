@@ -12,6 +12,19 @@ module Infrastructure
       end
 
       def find_by_condition(cond)
+        q = apply_filters(cond)
+        q = apply_sort(q, cond)
+        q = q.offset(cond.offset).limit(cond.limit) if cond.limit && cond.limit > 0
+        q.all.map { |r| row_to_list_item(r) }
+      end
+
+      def count_by_condition(cond)
+        apply_filters(cond).count
+      end
+
+      private
+
+      def apply_filters(cond)
         q = @ds
 
         if cond.keyword && !cond.keyword.to_s.empty?
@@ -22,9 +35,19 @@ module Infrastructure
         q = q.where(status: cond.statuses) if cond.statuses && !cond.statuses.empty?
         q = q.where { start_at >= cond.start_from } if cond.start_from
         q = q.where { start_at <= cond.start_to }   if cond.start_to
-
-        q.order(Sequel.desc(:created_at)).all.map { |r| row_to_list_item(r) }
+        q
       end
+
+      def apply_sort(q, cond)
+        if cond.sort && !cond.sort.to_s.empty?
+          col = cond.sort.to_sym
+          cond.sort_type == "desc" ? q.order(Sequel.desc(col)) : q.order(Sequel.asc(col))
+        else
+          q.order(Sequel.desc(:created_at))
+        end
+      end
+
+      public
 
       def find_by_id(id)
         r = @ds.where(id: id, deleted_at: nil).first

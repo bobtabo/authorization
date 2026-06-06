@@ -35,6 +35,11 @@ func NotFound(message string) *AppError {
 	return &AppError{Code: http.StatusNotFound, Message: message}
 }
 
+// UnprocessableEntity は 422 Unprocessable Entity の AppError を生成します。
+func UnprocessableEntity(message string) *AppError {
+	return &AppError{Code: http.StatusUnprocessableEntity, Message: message}
+}
+
 // Conflict は 409 Conflict の AppError を生成します。
 func Conflict(message string) *AppError {
 	return &AppError{Code: http.StatusConflict, Message: message}

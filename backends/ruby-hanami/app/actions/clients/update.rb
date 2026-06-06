@@ -16,8 +16,11 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
-          executor_id = staff_id_from_cookie(request)
           p = request.params
+          validation = ::UpdateClientContract.new.call(p.to_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email, :status))
+          return json_response(response, { errors: validation.errors.to_h }, status: 422) unless validation.success?
+
+          executor_id = staff_id_from_cookie(request)
           client = transaction do
             container[:client_uc].update(
               ::UseCase::Client::UpdateDto.new(

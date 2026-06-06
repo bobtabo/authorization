@@ -32,6 +32,10 @@ func Internal(message string) *AppError {
 	return &AppError{Code: http.StatusInternalServerError, Message: message}
 }
 
+func UnprocessableEntity(message string) *AppError {
+	return &AppError{Code: http.StatusUnprocessableEntity, Message: message}
+}
+
 func Conflict(message string) *AppError {
 	return &AppError{Code: http.StatusConflict, Message: message}
 }

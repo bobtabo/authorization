@@ -31,6 +31,14 @@ interface StaffRepository
     public function findByCondition(StaffCondition $condition): Collection;
 
     /**
+     * 条件でスタッフ件数を取得します。
+     *
+     * @param StaffCondition $condition 検索条件
+     * @return int 件数
+     */
+    public function countByCondition(StaffCondition $condition): int;
+
+    /**
      * ID でスタッフを取得します。
      *
      * @param StaffCondition $condition 検索条件（id を設定すること）

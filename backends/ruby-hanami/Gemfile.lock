@@ -37,6 +37,14 @@ GEM
       dry-configurable (~> 1.0, < 2)
       dry-core (~> 1.0, < 2)
       dry-events (~> 1.0, < 2)
+    dry-schema (1.16.0)
+      concurrent-ruby (~> 1.0)
+      dry-configurable (~> 1.0, >= 1.0.1)
+      dry-core (~> 1.1)
+      dry-initializer (~> 3.2)
+      dry-logic (~> 1.6)
+      dry-types (~> 1.9, >= 1.9.1)
+      zeitwerk (~> 2.6)
     dry-struct (1.8.1)
       dry-core (~> 1.1)
       dry-types (~> 1.8, >= 1.8.2)
@@ -56,6 +64,12 @@ GEM
       dry-core (~> 1.0)
       dry-inflector (~> 1.0)
       dry-logic (~> 1.4)
+      zeitwerk (~> 2.6)
+    dry-validation (1.11.1)
+      concurrent-ruby (~> 1.0)
+      dry-core (~> 1.1)
+      dry-initializer (~> 3.2)
+      dry-schema (~> 1.14)
       zeitwerk (~> 2.6)
     erb (6.0.3)
     hanami (2.3.2)
@@ -212,6 +226,7 @@ PLATFORMS
 
 DEPENDENCIES
   dotenv
+  dry-validation
   hanami
   hanami-controller
   hanami-router
@@ -245,10 +260,12 @@ CHECKSUMS
   dry-logger (1.2.2) sha256=eaf91bbc131135b2148d779fb22b8aff4a1b1ad616c721dab6d113beaa5e41c7
   dry-logic (1.6.0) sha256=da6fedbc0f90fc41f9b0cc7e6f05f5d529d1efaef6c8dcc8e0733f685745cea2
   dry-monitor (1.0.1) sha256=4ac8ed1f85b14bfde1aa0bce9496d7d2fc699c5a4a1131010c8014d5f9e7a309
+  dry-schema (1.16.0) sha256=cd3aaeabc0f1af66ec82a29096d4c4fb92a0a58b9dae29a22b1bbceb78985727
   dry-struct (1.8.1) sha256=033868594c45241540172bf1ebbc8bb76b72b4f0717072325deba38ac13e80f1
   dry-system (1.2.5) sha256=a02f57c18cbcc6c9c4ea99a7eed0afc830263d2051c855a46a7229ea3708d143
   dry-transformer (1.1.0) sha256=87bfe22a708aa69f3e6e76a6119aba0b42999f154e4fe7c261d4673720534da3
   dry-types (1.9.1) sha256=baebeecdb9f8395d6c9d227b62011279440943e3ef2468fe8ccc1ba11467f178
+  dry-validation (1.11.1) sha256=70900bb5a2d911c8aab566d3e360c6bff389b8bf92ea8e04885ce51c41ff8085
   erb (6.0.3) sha256=e43685a8a0a0ea6a924871b2162e8953ef73147ce46b75b36d1f6774fd286e91
   hanami (2.3.2) sha256=2f1e7e10d760bd0c3929bcb55a42f38281bd5da507e40b98e62282f52f452e3b
   hanami-cli (2.3.5) sha256=213fc8181e566930821d830eae335b22e93c3e5018f4f22d0c13792d1e76f05e

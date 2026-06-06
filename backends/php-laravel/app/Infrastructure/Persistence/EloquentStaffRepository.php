@@ -15,6 +15,7 @@ use App\Domain\Staff\Entities\Staff as Entity;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Models\Staff as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
+use App\Support\Repositories\Traits\OptionBuilder;
 use Illuminate\Support\Collection;
 
 /**
@@ -25,6 +26,8 @@ use Illuminate\Support\Collection;
  */
 class EloquentStaffRepository extends AbstractEloquentRepository implements StaffRepository
 {
+    use OptionBuilder;
+
     /**
      * {@inheritdoc}
      */
@@ -34,6 +37,37 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
         $query = Model::withTrashed()->newQuery()
             ->select('staffs.*');
 
+        $this->applyFilters($query, $condition);
+
+        if ($condition->isPaging()) {
+            $query = $this->addOption($query, $condition->option);
+        }
+
+        return $this->findByQuery($query);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function countByCondition(StaffCondition $condition): int
+    {
+        $query = Model::withTrashed()->newQuery()
+            ->select('staffs.*');
+
+        $this->applyFilters($query, $condition);
+
+        return $query->count();
+    }
+
+    /**
+     * 検索フィルタをクエリに適用します。
+     *
+     * @param \Illuminate\Contracts\Database\Eloquent\Builder $query クエリ
+     * @param StaffCondition $condition 検索条件
+     */
+    private function applyFilters($query, StaffCondition $condition): void
+    {
         if (!empty($condition->keyword)) {
             $keyword = str($condition->keyword)->trim()->replace(' ', '')->value();
             $query->where(function ($subQuery) use ($keyword) {
@@ -43,14 +77,12 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
         }
 
         if (!empty($condition->roles)) {
-            $query->whereIn('clients.role', $condition->roles);
+            $query->whereIn('staffs.role', $condition->roles);
         }
 
         if (!empty($condition->statuses)) {
-            $query->whereIn('clients.status', $condition->statuses);
+            $query->whereIn('staffs.status', $condition->statuses);
         }
-
-        return $this->findByQuery($query);
     }
 
     /**
