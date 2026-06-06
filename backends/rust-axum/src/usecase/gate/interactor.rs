@@ -206,7 +206,8 @@ mod tests {
 
     #[async_trait]
     impl ClientRepo for MockClientRepo {
-        async fn find_by_condition(&self, _: Condition) -> Result<Vec<Client>, DomainError> { Ok(vec![]) }
+        async fn find_by_condition(&self, _: &Condition) -> Result<Vec<Client>, DomainError> { Ok(vec![]) }
+        async fn count_by_condition(&self, _: &Condition) -> Result<i64, DomainError> { Ok(0) }
         async fn find_by_id(&self, _: u64) -> Result<Option<Client>, DomainError> { Ok(None) }
         async fn find_by_access_token(&self, _: &str) -> Result<Option<Client>, DomainError> {
             Ok(self.by_access_token.lock().unwrap().take().unwrap_or(None))

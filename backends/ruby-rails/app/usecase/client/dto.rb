@@ -22,7 +22,7 @@ module UseCase
     DestroyDto = Struct.new(:id, :executor_id, :version, keyword_init: true)
 
     # クライアント一覧取得時に渡す DTO です。
-    ListConditionDto = Struct.new(:keyword, :start_from, :start_to, :statuses, keyword_init: true)
+    ListConditionDto = Struct.new(:keyword, :start_from, :start_to, :statuses, :offset, :limit, :sort, :sort_type, keyword_init: true)
 
     # identifier でクライアントを取得する際に渡す DTO です。
     FindByIdentifierDto = Struct.new(:identifier, keyword_init: true)

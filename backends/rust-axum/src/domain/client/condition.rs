@@ -9,6 +9,10 @@ use chrono::{DateTime, Utc};
 pub struct Condition {
     pub keyword:    Option<String>,
     pub start_from: Option<DateTime<Utc>>,
-    pub start_to: Option<DateTime<Utc>>,
+    pub start_to:   Option<DateTime<Utc>>,
     pub statuses:   Vec<i32>,
+    pub offset:     i64,
+    pub limit:      i64,
+    pub sort:       Option<String>,
+    pub sort_type:  Option<String>,
 }

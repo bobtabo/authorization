@@ -3,6 +3,7 @@
 
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
+import math
 import threading
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
@@ -17,6 +18,37 @@ from app.infrastructure.mail.mailer import send_activation
 from app.config.settings import get_settings
 
 router = APIRouter()
+
+DEFAULT_PAGE_COUNT = 5
+
+
+def _build_pager(count: int, limit: int, offset: int, record_count: int) -> dict:
+    """ページング情報を構築します。"""
+    if limit <= 0:
+        limit = 20
+    page_count = max(1, math.ceil(count / limit))
+    last_page_offset = (page_count * limit) - limit
+    if count > 0 and offset > last_page_offset:
+        offset = last_page_offset
+    page = int(math.floor(math.ceil(offset / limit))) + 1 if limit > 0 else 1
+    start_page = max(1, page - (DEFAULT_PAGE_COUNT - 1))
+    end_page = min(page_count, start_page + (DEFAULT_PAGE_COUNT - 1))
+    return {
+        "count": count,
+        "limit": limit,
+        "next": page_count > page,
+        "previous": page > 1,
+        "page": page,
+        "nextPage": page + 1,
+        "previousPage": page - 1,
+        "pageCount": page_count,
+        "first": page > 1,
+        "last": page_count > page,
+        "firstRecordCount": offset + 1,
+        "lastRecordCount": offset + record_count,
+        "startPage": start_page,
+        "endPage": end_page,
+    }
 
 
 def _map_list_item(c) -> dict:
@@ -57,10 +89,24 @@ def _map_detail(c) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     status: Optional[int] = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1),
+    page: int = Query(default=1, ge=1),
+    sort: Optional[str] = Query(default=None),
+    sort_type: Optional[str] = Query(default=None),
     interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    clients = interactor.find_all(keyword=keyword, status=status)
-    return [_map_list_item(c) for c in clients]
+    actual_offset = offset if offset > 0 else limit * (page - 1)
+    clients, count = interactor.find_all(
+        keyword=keyword,
+        status=status,
+        offset=actual_offset,
+        limit=limit,
+        sort=sort,
+        sort_type=sort_type,
+    )
+    pager = _build_pager(count, limit, actual_offset, len(clients))
+    return {"data": [_map_list_item(c) for c in clients], "pager": pager}
 
 
 @router.get("/clients/{client_id}")

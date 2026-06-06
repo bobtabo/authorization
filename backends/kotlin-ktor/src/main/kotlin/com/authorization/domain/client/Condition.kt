@@ -17,4 +17,8 @@ data class Condition(
     val startFrom: LocalDateTime?   = null,
     val startTo:   LocalDateTime?   = null,
     val statuses:  List<Int>        = emptyList(),
+    val offset:    Int              = 0,
+    val limit:     Int              = 20,
+    val sort:      String?          = null,
+    val sortType:  String?          = null,
 )

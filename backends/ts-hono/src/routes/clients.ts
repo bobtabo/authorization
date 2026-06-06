@@ -8,6 +8,7 @@ import { z } from "zod";
 import { config } from "../config.js";
 import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
 import { badRequest, AppError } from "../lib/errors.js";
+import { buildPager } from "../lib/pager.js";
 import { db, asTx } from "../db/client.js";
 import { DrizzleClientRepository } from "../infrastructure/persistence/drizzleClientRepository.js";
 import { DrizzleJwtHistoryRepository } from "../infrastructure/persistence/drizzleJwtHistoryRepository.js";
@@ -72,9 +73,20 @@ app.get("/clients", async (c) => {
   const keyword = c.req.query("keyword");
   const statusStr = c.req.query("status");
   const status = statusStr !== undefined ? parseInt(statusStr, 10) : undefined;
+  const limitStr = c.req.query("limit");
+  const pageStr = c.req.query("page");
+  const offsetStr = c.req.query("offset");
+  const sort = c.req.query("sort");
+  const sortType = c.req.query("sort_type");
+
+  const limit = limitStr ? parseInt(limitStr, 10) : 20;
+  const page = pageStr ? parseInt(pageStr, 10) : 1;
+  const offset = offsetStr ? parseInt(offsetStr, 10) : limit * (page - 1);
+
   const uc = new ClientInteractor(new DrizzleClientRepository(db));
-  const list = await uc.getAllClients(keyword, status);
-  return c.json(list.map(mapListItem));
+  const { items, count } = await uc.getAllClients(keyword, status, { offset, limit, sort, sortType });
+  const pager = buildPager(count, limit, offset, items.length);
+  return c.json({ data: items.map(mapListItem), pager });
 });
 
 app.get("/clients/:id", async (c) => {

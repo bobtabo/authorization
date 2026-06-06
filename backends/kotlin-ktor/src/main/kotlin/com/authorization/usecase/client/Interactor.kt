@@ -43,8 +43,28 @@ class Interactor(private val repo: Repository) {
             startFrom = dto.startFrom?.let { parseDateTime(it) },
             startTo   = dto.startTo?.let { parseDateTime(it) },
             statuses  = dto.statuses,
+            offset    = dto.offset,
+            limit     = dto.limit,
+            sort      = dto.sort,
+            sortType  = dto.sortType,
         )
         return repo.findByCondition(cond)
+    }
+
+    suspend fun findByConditionWithCount(dto: ListConditionDto): Pair<List<Client>, Int> {
+        val cond = Condition(
+            keyword   = dto.keyword,
+            startFrom = dto.startFrom?.let { parseDateTime(it) },
+            startTo   = dto.startTo?.let { parseDateTime(it) },
+            statuses  = dto.statuses,
+            offset    = dto.offset,
+            limit     = dto.limit,
+            sort      = dto.sort,
+            sortType  = dto.sortType,
+        )
+        val count = repo.countByCondition(cond)
+        val items = repo.findByCondition(cond)
+        return Pair(items, count)
     }
 
     /**

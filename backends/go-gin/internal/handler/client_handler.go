@@ -70,12 +70,46 @@ func (h *ClientHandler) Index(c *gin.Context) {
 		}
 	}
 
-	clients, err := h.newClientUC(h.db).FindByCondition(cond)
+	limit := 20
+	if v := c.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	page := 1
+	if v := c.Query("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	if v := c.Query("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			offset = n
+		}
+	}
+	cond.Offset = offset
+	cond.Limit = limit
+	cond.Sort = c.Query("sort")
+	cond.SortType = c.Query("sort_type")
+
+	uc := h.newClientUC(h.db)
+	count, err := uc.CountByCondition(cond)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, mapClientList(clients))
+	clients, err := uc.FindByCondition(cond)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	pager := BuildPager(count, limit, offset, len(clients))
+	c.JSON(http.StatusOK, gin.H{
+		"data":  mapClientList(clients),
+		"pager": pager,
+	})
 }
 
 // Show はIDでクライアント詳細を返します。

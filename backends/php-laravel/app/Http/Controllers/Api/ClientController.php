@@ -51,6 +51,11 @@ class ClientController extends Controller
         $dto = new ClientDto();
         $dto->assign($request->input());
 
+        $page = (int) ($request->input('page') ?? 1);
+        if (!empty($dto->limit)) {
+            $dto->setPage($page);
+        }
+
         $value = $service->getClients($dto);
 
         $response = new IndexResponse();

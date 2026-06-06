@@ -23,9 +23,8 @@ func NewGormClientRepository(db *gorm.DB) *GormClientRepository {
 	return &GormClientRepository{db: db}
 }
 
-// FindByCondition は検索条件に合致するクライアントエンティティを返します。
-func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
-	q := r.db.Unscoped().Order("id ASC")
+// applyFilters は共通のフィルタ条件をクエリに適用します。
+func (r *GormClientRepository) applyFilters(q *gorm.DB, cond domclient.Condition) *gorm.DB {
 	if cond.Keyword != nil && *cond.Keyword != "" {
 		q = q.Where("name LIKE ?", "%"+*cond.Keyword+"%")
 	}
@@ -38,6 +37,28 @@ func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*dom
 	if len(cond.Statuses) > 0 {
 		q = q.Where("status IN ?", cond.Statuses)
 	}
+	return q
+}
+
+// FindByCondition は検索条件に合致するクライアントエンティティを返します。
+func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
+	q := r.db.Unscoped()
+	q = r.applyFilters(q, cond)
+
+	if cond.Sort != "" {
+		dir := "ASC"
+		if cond.SortType == "desc" {
+			dir = "DESC"
+		}
+		q = q.Order(cond.Sort + " " + dir)
+	} else {
+		q = q.Order("id ASC")
+	}
+
+	if cond.Limit > 0 {
+		q = q.Limit(cond.Limit).Offset(cond.Offset)
+	}
+
 	var ms []*model.Client
 	if err := q.Find(&ms).Error; err != nil {
 		return nil, err
@@ -47,6 +68,17 @@ func (r *GormClientRepository) FindByCondition(cond domclient.Condition) ([]*dom
 		out = append(out, clientToDomain(m))
 	}
 	return out, nil
+}
+
+// CountByCondition は検索条件に合致するクライアントの総件数を返します。
+func (r *GormClientRepository) CountByCondition(cond domclient.Condition) (int, error) {
+	q := r.db.Unscoped().Model(&model.Client{})
+	q = r.applyFilters(q, cond)
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }
 
 // FindByID はIDでクライアントエンティティを返します。存在しない場合は nil を返します。

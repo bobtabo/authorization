@@ -23,6 +23,14 @@ interface Repository {
     suspend fun findByCondition(cond: Condition): List<Client>
 
     /**
+     * 検索条件に一致するクライアントの総件数を返します。
+     *
+     * @param cond 検索条件
+     * @return 総件数
+     */
+    suspend fun countByCondition(cond: Condition): Int
+
+    /**
      * 指定した ID のクライアントを取得します。
      *
      * @param id クライアント ID

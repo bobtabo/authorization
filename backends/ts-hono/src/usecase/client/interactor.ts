@@ -62,11 +62,17 @@ export class ClientInteractor {
    * 検索条件に合致するクライアント一覧の VO を返します。
    * @param keyword - キーワード検索
    * @param status - ステータスフィルター
-   * @returns ClientListItem の配列
+   * @param options - ページングオプション
+   * @returns ClientListItem の配列と総件数のタプル
    */
-  async getAllClients(keyword?: string, status?: number): Promise<ClientListItem[]> {
-    const clients = await this.repo.findAll(keyword, status);
-    return mapper.mapArray(clients, ClientSymbol, ClientListItemSymbol);
+  async getAllClients(
+    keyword?: string,
+    status?: number,
+    options?: { offset?: number; limit?: number; sort?: string; sortType?: string },
+  ): Promise<{ items: ClientListItem[]; count: number }> {
+    const count = await this.repo.countAll(keyword, status);
+    const clients = await this.repo.findAll(keyword, status, options);
+    return { items: mapper.mapArray(clients, ClientSymbol, ClientListItemSymbol), count };
   }
 
   /**

@@ -33,6 +33,11 @@ pub struct IndexQuery {
     pub keyword:    Option<String>,
     pub start_from: Option<String>,
     pub start_to:   Option<String>,
+    pub offset:     Option<i64>,
+    pub limit:      Option<i64>,
+    pub page:       Option<i64>,
+    pub sort:       Option<String>,
+    pub sort_type:  Option<String>,
 }
 
 /// クライアント登録リクエストボディ。
@@ -87,19 +92,55 @@ pub struct DestroyBody {
     pub version: i32,
 }
 
+const DEFAULT_PAGE_COUNT: i64 = 5;
+
+fn build_pager(count: i64, limit: i64, offset: i64, record_count: i64) -> Value {
+    let effective_limit = if limit <= 0 { 20 } else { limit };
+    let page_count = std::cmp::max(1, (count as f64 / effective_limit as f64).ceil() as i64);
+    let last_page_offset = (page_count * effective_limit) - effective_limit;
+    let effective_offset = if count > 0 && offset > last_page_offset { last_page_offset } else { offset };
+    let page = (effective_offset as f64 / effective_limit as f64).ceil() as i64 + 1;
+    let start_page = std::cmp::max(1, page - (DEFAULT_PAGE_COUNT - 1));
+    let end_page = std::cmp::min(page_count, start_page + (DEFAULT_PAGE_COUNT - 1));
+    json!({
+        "count": count,
+        "limit": effective_limit,
+        "next": page_count > page,
+        "previous": page > 1,
+        "page": page,
+        "nextPage": page + 1,
+        "previousPage": page - 1,
+        "pageCount": page_count,
+        "first": page > 1,
+        "last": page_count > page,
+        "firstRecordCount": effective_offset + 1,
+        "lastRecordCount": effective_offset + record_count,
+        "startPage": start_page,
+        "endPage": end_page,
+    })
+}
+
 /// クライアント一覧を返します。
 pub async fn index(
     State(state): State<AppState>,
     Query(q): Query<IndexQuery>,
 ) -> (StatusCode, Json<Value>) {
+    let limit = q.limit.unwrap_or(20).max(1);
+    let page = q.page.unwrap_or(1).max(1);
+    let offset = q.offset.unwrap_or_else(|| limit * (page - 1)).max(0);
+
     let dto = ListConditionDto {
         keyword:    q.keyword,
         start_from: q.start_from,
         start_to:   q.start_to,
         statuses:   vec![],
+        offset,
+        limit,
+        sort:       q.sort,
+        sort_type:  q.sort_type,
     };
-    match state.client_uc.find_by_condition(dto).await {
-        Ok(clients) => {
+    match state.client_uc.find_by_condition_with_count(dto).await {
+        Ok((clients, count)) => {
             let list: Vec<Value> = clients.iter().map(|c| json!({
                 "id":         c.id,
                 "name":       c.name,
@@ -109,7 +150,8 @@ pub async fn index(
                 "created_at": c.created_at.format(TIME_FORMAT).to_string(),
                 "updated_at": c.updated_at.format(TIME_FORMAT).to_string(),
             })).collect();
-            (StatusCode::OK, Json(json!(list)))
+            let pager = build_pager(count, limit, offset, list.len() as i64);
+            (StatusCode::OK, Json(json!({"data": list, "pager": pager})))
         }
         Err(e) => {
             tracing::error!("client index error: {e}");

@@ -34,6 +34,34 @@ private fun LocalDateTime.fmt() = format(fmt)
 private fun LocalDateTime.fmtSec() = format(fmtSec)
 private fun LocalDateTime?.fmtOrNull(): JsonElement = if (this == null) JsonNull else JsonPrimitive(format(fmt))
 
+private const val DEFAULT_PAGE_COUNT = 5
+
+private fun buildPager(count: Int, limit: Int, offset: Int, recordCount: Int): JsonObject {
+    val effectiveLimit = if (limit <= 0) 20 else limit
+    val pageCount = maxOf(1, kotlin.math.ceil(count.toDouble() / effectiveLimit).toInt())
+    val lastPageOffset = (pageCount * effectiveLimit) - effectiveLimit
+    val effectiveOffset = if (count > 0 && offset > lastPageOffset) lastPageOffset else offset
+    val page = (kotlin.math.ceil(effectiveOffset.toDouble() / effectiveLimit).toInt()) + 1
+    val startPage = maxOf(1, page - (DEFAULT_PAGE_COUNT - 1))
+    val endPage = minOf(pageCount, startPage + (DEFAULT_PAGE_COUNT - 1))
+    return buildJsonObject {
+        put("count", count)
+        put("limit", effectiveLimit)
+        put("next", pageCount > page)
+        put("previous", page > 1)
+        put("page", page)
+        put("nextPage", page + 1)
+        put("previousPage", page - 1)
+        put("pageCount", pageCount)
+        put("first", page > 1)
+        put("last", pageCount > page)
+        put("firstRecordCount", effectiveOffset + 1)
+        put("lastRecordCount", effectiveOffset + recordCount)
+        put("startPage", startPage)
+        put("endPage", endPage)
+    }
+}
+
 /**
  * クライアント API のハンドラーです。
  *
@@ -56,9 +84,25 @@ class ClientHandler(
         val keyword   = call.request.queryParameters["keyword"]
         val startFrom = call.request.queryParameters["start_from"]
         val startTo   = call.request.queryParameters["start_to"]
-        val clients = clientUC.findByCondition(ListConditionDto(keyword = keyword, startFrom = startFrom, startTo = startTo))
-        val list = buildJsonArray {
-            clients.forEach { c ->
+        val limitStr  = call.request.queryParameters["limit"]
+        val pageStr   = call.request.queryParameters["page"]
+        val offsetStr = call.request.queryParameters["offset"]
+        val sort      = call.request.queryParameters["sort"]
+        val sortType  = call.request.queryParameters["sort_type"]
+
+        val limit  = limitStr?.toIntOrNull()?.coerceAtLeast(1) ?: 20
+        val page   = pageStr?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+        val offset = offsetStr?.toIntOrNull()?.coerceAtLeast(0) ?: (limit * (page - 1))
+
+        val dto = ListConditionDto(
+            keyword = keyword, startFrom = startFrom, startTo = startTo,
+            offset = offset, limit = limit, sort = sort, sortType = sortType,
+        )
+        val (items, count) = clientUC.findByConditionWithCount(dto)
+        val pager = buildPager(count, limit, offset, items.size)
+
+        val data = buildJsonArray {
+            items.forEach { c ->
                 add(buildJsonObject {
                     put("id",         c.id)
                     put("name",       c.name)
@@ -70,7 +114,10 @@ class ClientHandler(
                 })
             }
         }
-        call.respond(list)
+        call.respond(buildJsonObject {
+            put("data", data)
+            put("pager", pager)
+        })
     }
 
     /**
