@@ -86,13 +86,12 @@ class ClientHandler(
         val startTo   = call.request.queryParameters["start_to"]
         val limitStr  = call.request.queryParameters["limit"]
         val pageStr   = call.request.queryParameters["page"]
-        val offsetStr = call.request.queryParameters["offset"]
         val sort      = call.request.queryParameters["sort"]
         val sortType  = call.request.queryParameters["sort_type"]
 
         val limit  = limitStr?.toIntOrNull()?.coerceAtLeast(1) ?: 20
         val page   = pageStr?.toIntOrNull()?.coerceAtLeast(1) ?: 1
-        val offset = offsetStr?.toIntOrNull()?.coerceAtLeast(0) ?: (limit * (page - 1))
+        val offset = limit * (page - 1)
 
         val dto = ListConditionDto(
             keyword = keyword, startFrom = startFrom, startTo = startTo,

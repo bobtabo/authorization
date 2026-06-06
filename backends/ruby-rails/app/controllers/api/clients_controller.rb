@@ -11,7 +11,7 @@ class Api::ClientsController < Api::BaseController
   def index
     limit  = (params[:limit]  || 20).to_i
     page   = (params[:page]   || 1).to_i
-    offset = params[:offset] ? params[:offset].to_i : limit * (page - 1)
+    offset = limit * (page - 1)
 
     result = container[:client_uc].find_by_condition(
       UseCase::Client::ListConditionDto.new(

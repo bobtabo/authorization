@@ -64,11 +64,6 @@ func (h *ClientHandler) Index(c echo.Context) error {
 		}
 	}
 	offset := limit * (page - 1)
-	if v := c.QueryParam("offset"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
-			offset = n
-		}
-	}
 	cond.Offset = offset
 	cond.Limit = limit
 	cond.Sort = c.QueryParam("sort")

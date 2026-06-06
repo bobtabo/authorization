@@ -76,9 +76,7 @@ class ClientService extends AbstractService
             'statuses' => 'statuses',
         ]);
 
-        if (!empty($dto->limit)) {
-            $condition->option = new Option($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
-        }
+        $condition->option = new Option($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
 
         $count = $this->repository->countByCondition($condition);
         $list = $this->repository->findByCondition($condition);

@@ -75,13 +75,12 @@ app.get("/clients", async (c) => {
   const status = statusStr !== undefined ? parseInt(statusStr, 10) : undefined;
   const limitStr = c.req.query("limit");
   const pageStr = c.req.query("page");
-  const offsetStr = c.req.query("offset");
   const sort = c.req.query("sort");
   const sortType = c.req.query("sort_type");
 
   const limit = limitStr ? parseInt(limitStr, 10) : 20;
   const page = pageStr ? parseInt(pageStr, 10) : 1;
-  const offset = offsetStr ? parseInt(offsetStr, 10) : limit * (page - 1);
+  const offset = limit * (page - 1);
 
   const uc = new ClientInteractor(new DrizzleClientRepository(db));
   const { items, count } = await uc.getAllClients(keyword, status, { offset, limit, sort, sortType });

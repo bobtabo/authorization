@@ -75,11 +75,6 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 		}
 	}
 	offset := limit * (page - 1)
-	if v := ctx.Input.Query("offset"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
-			offset = n
-		}
-	}
 	cond.Offset = offset
 	cond.Limit = limit
 	cond.Sort = ctx.Input.Query("sort")
