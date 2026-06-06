@@ -10,14 +10,14 @@ RSpec.describe "Clients", type: :request do
       get "/api/clients"
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
-      expect(body).to be_an(Array)
-      expect(body.size).to eq(2)
+      expect(body["data"]).to be_an(Array)
+      expect(body["data"].size).to eq(2)
     end
 
     it "クライアントが存在しない場合空リストを返す" do
       get "/api/clients"
       expect(response).to have_http_status(200)
-      expect(JSON.parse(response.body)).to eq([])
+      expect(JSON.parse(response.body)["data"]).to eq([])
     end
   end
 

@@ -3,6 +3,7 @@
 
 SET FOREIGN_KEY_CHECKS=0;
 
+DROP TABLE IF EXISTS `jwt_histories`;
 DROP TABLE IF EXISTS `notifications`;
 DROP TABLE IF EXISTS `invitations`;
 DROP TABLE IF EXISTS `clients`;
@@ -73,6 +74,23 @@ CREATE TABLE `invitations` (
     `version`       INT UNSIGNED    NOT NULL DEFAULT 1,
     PRIMARY KEY (`id`),
     UNIQUE KEY `invitations_token_unique` (`token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `jwt_histories` (
+    `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `client_id`  BIGINT UNSIGNED NOT NULL,
+    `member_id`  VARCHAR(255)    NOT NULL,
+    `issue_at`   TIMESTAMP       NOT NULL,
+    `jwt`        TEXT            NOT NULL,
+    `created_at` TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_by` INT UNSIGNED    NOT NULL DEFAULT 0,
+    `updated_at` TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `updated_by` INT UNSIGNED    NOT NULL DEFAULT 0,
+    `deleted_at` TIMESTAMP       NULL,
+    `deleted_by` INT UNSIGNED    NULL,
+    `version`    INT UNSIGNED    NOT NULL DEFAULT 1,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_jwt_histories_client_id` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `notifications` (

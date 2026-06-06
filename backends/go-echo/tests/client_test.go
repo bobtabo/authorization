@@ -313,10 +313,11 @@ func TestClient_SoftDelete(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d", w.Code)
 		}
-		var list []map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &list)
-		if len(list) != 1 {
-			t.Errorf("want 1 item (including soft-deleted), got %d", len(list))
+		var response map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &response)
+		data := response["data"].([]interface{})
+		if len(data) != 1 {
+			t.Errorf("want 1 item (including soft-deleted), got %d", len(data))
 		}
 	})
 
