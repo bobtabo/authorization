@@ -32,8 +32,6 @@ class StaffIndexResponse extends AbstractResponse
 
     /**
      * {@inheritdoc}
-     *
-     * @return array{data: list<array<string, mixed>>, pager: mixed}
      */
     #[\Override]
     public function attributes(): array
