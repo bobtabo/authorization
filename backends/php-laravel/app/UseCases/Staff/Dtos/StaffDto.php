@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace App\UseCases\Staff\Dtos;
 
 use App\Domain\Staff\Enums\StaffRole;
-use App\Support\Dtos\AbstractDto;
+use App\Support\Dtos\PagerDto;
 
 /**
  * スタッフ API 用の入力 DTO です（一覧・権限更新・削除・単体取得で共用します）。
@@ -19,7 +19,7 @@ use App\Support\Dtos\AbstractDto;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Staff\Dtos
  */
-class StaffDto extends AbstractDto
+class StaffDto extends PagerDto
 {
     public ?int $id = null;
 

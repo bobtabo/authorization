@@ -38,16 +38,8 @@ class StaffController extends Controller
      */
     public function index(AppRequest $request, StaffService $service): JsonResponse
     {
-        $keyword = $request->query('keyword');
-        $keyword = is_string($keyword) && $keyword !== '' ? $keyword : null;
-
-        $roles = $this->intListFromQuery($request->query('roles'));
-        $statuses = $this->intListFromQuery($request->query('statuses'));
-
         $dto = new StaffDto();
-        $dto->keyword = $keyword;
-        $dto->roles = $roles;
-        $dto->statuses = $statuses;
+        $dto->assign($request->input());
 
         $vo = $service->index($dto);
 
@@ -114,26 +106,4 @@ class StaffController extends Controller
         return response()->success(['id' => $vo->getId()]);
     }
 
-    /**
-     * クエリの単一値または配列を int のリストにします。
-     *
-     * @param array<int|string>|string|int|null $raw
-     * @return array<int, int>
-     */
-    private function intListFromQuery(array|string|int|null $raw): array
-    {
-        if ($raw === null || $raw === '' || $raw === []) {
-            return [];
-        }
-        $list = is_array($raw) ? $raw : [$raw];
-        $out = [];
-        foreach ($list as $v) {
-            if ($v === '' || $v === null) {
-                continue;
-            }
-            $out[] = (int)$v;
-        }
-
-        return $out;
-    }
 }
