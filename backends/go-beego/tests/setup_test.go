@@ -294,7 +294,7 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 			c.Status = v.(int)
 		}
 	}
-	if _, err = testOrmer.Insert(c); err != nil {
+	if _, err := testOrmer.Insert(c); err != nil {
 		t.Fatalf("createClient: %v", err)
 	}
 	return c

@@ -304,7 +304,7 @@ func createClient(t *testing.T, overrides map[string]interface{}) *model.Client 
 	if v, ok := overrides["status"]; ok {
 		c.Status = v.(int)
 	}
-	if err = testDB.Create(c).Error; err != nil {
+	if err := testDB.Create(c).Error; err != nil {
 		t.Fatalf("createClient: %v", err)
 	}
 	return c
