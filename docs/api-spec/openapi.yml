@@ -346,14 +346,6 @@ paths:
               type: integer
           style: form
           explode: true
-        - name: offset
-          in: query
-          required: false
-          description: 取得開始位置（0始まり）
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
         - name: limit
           in: query
           required: false
@@ -669,14 +661,6 @@ paths:
             type: integer
             format: int64
           description: クライアントID
-        - name: offset
-          in: query
-          required: false
-          description: 取得開始位置（0始まり）
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
         - name: limit
           in: query
           required: false
@@ -751,14 +735,6 @@ paths:
               type: integer
           style: form
           explode: true
-        - name: offset
-          in: query
-          required: false
-          description: 取得開始位置（0始まり）
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
         - name: limit
           in: query
           required: false
