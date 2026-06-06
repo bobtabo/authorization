@@ -33,10 +33,6 @@ class IndexResponse extends AbstractResponse
 
     /**
      * {@inheritdoc}
-     *
-     * サーバーサイドページング対応: { data: [...], pager: {...} } を返します。
-     *
-     * @return array{data: list<array<string, mixed>>, pager: mixed}
      */
     #[\Override]
     public function attributes(): array

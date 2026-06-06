@@ -77,8 +77,6 @@ class StaffListVo extends AbstractValueObject
 
     /**
      * {@inheritdoc}
-     *
-     * @return array<string, mixed>
      */
     #[\Override]
     public function attributes(): array
