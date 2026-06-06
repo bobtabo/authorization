@@ -17,8 +17,7 @@ func NewEntClientRepository(db *ent.Client) *EntClientRepository {
 	return &EntClientRepository{db: db}
 }
 
-func (r *EntClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
-	q := r.db.AppClient.Query().Order(ent.Asc(appclient.FieldID))
+func (r *EntClientRepository) applyFilters(q *ent.AppClientQuery, cond domclient.Condition) *ent.AppClientQuery {
 	if cond.Keyword != nil && *cond.Keyword != "" {
 		q = q.Where(appclient.NameContains(*cond.Keyword))
 	}
@@ -31,6 +30,27 @@ func (r *EntClientRepository) FindByCondition(cond domclient.Condition) ([]*domc
 	if len(cond.Statuses) > 0 {
 		q = q.Where(appclient.StatusIn(cond.Statuses...))
 	}
+	return q
+}
+
+func (r *EntClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
+	q := r.db.AppClient.Query()
+	q = r.applyFilters(q, cond)
+
+	if cond.Sort != "" {
+		if cond.SortType == "desc" {
+			q = q.Order(ent.Desc(cond.Sort))
+		} else {
+			q = q.Order(ent.Asc(cond.Sort))
+		}
+	} else {
+		q = q.Order(ent.Asc(appclient.FieldID))
+	}
+
+	if cond.Limit > 0 {
+		q = q.Limit(cond.Limit).Offset(cond.Offset)
+	}
+
 	ms, err := q.All(context.Background())
 	if err != nil {
 		return nil, err
@@ -40,6 +60,12 @@ func (r *EntClientRepository) FindByCondition(cond domclient.Condition) ([]*domc
 		out = append(out, entAppClientToDomain(m))
 	}
 	return out, nil
+}
+
+func (r *EntClientRepository) CountByCondition(cond domclient.Condition) (int, error) {
+	q := r.db.AppClient.Query()
+	q = r.applyFilters(q, cond)
+	return q.Count(context.Background())
 }
 
 func (r *EntClientRepository) FindByID(c *domclient.Client) (*domclient.Client, error) {

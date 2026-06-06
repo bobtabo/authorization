@@ -13,6 +13,8 @@ type JwtHistoryRepository interface {
 type Repository interface {
 	// FindByCondition は条件に合うクライアント一覧を取得します。
 	FindByCondition(cond Condition) ([]*Client, error)
+	// CountByCondition は検索条件に合致するクライアントの総件数を返します。
+	CountByCondition(cond Condition) (int, error)
 	// FindByID はIDでクライアントを取得します。
 	FindByID(c *Client) (*Client, error)
 	// FindByAccessToken はアクセストークンでクライアントを取得します。

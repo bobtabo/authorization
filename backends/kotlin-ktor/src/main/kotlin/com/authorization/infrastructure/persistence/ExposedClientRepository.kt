@@ -37,7 +37,7 @@ class ExposedClientRepository(private val db: Database) : Repository {
      * @param cond 検索条件
      * @return クライアント一覧
      */
-    override suspend fun findByCondition(cond: Condition): List<Client> = newSuspendedTransaction(db = db) {
+    private fun applyFilters(cond: Condition): org.jetbrains.exposed.sql.Query {
         var query = Clients.selectAll()
         cond.keyword?.let { kw ->
             query = query.andWhere { (Clients.name like "%$kw%") or (Clients.email like "%$kw%") }
@@ -51,7 +51,32 @@ class ExposedClientRepository(private val db: Database) : Repository {
         if (cond.statuses.isNotEmpty()) {
             query = query.andWhere { Clients.status inList cond.statuses }
         }
-        query.orderBy(Clients.createdAt to SortOrder.DESC).map { rowToClient(it) }
+        return query
+    }
+
+    override suspend fun findByCondition(cond: Condition): List<Client> = newSuspendedTransaction(db = db) {
+        var query = applyFilters(cond)
+
+        val sortColumn = when (cond.sort) {
+            "name" -> Clients.name
+            "status" -> Clients.status
+            "created_at" -> Clients.createdAt
+            "updated_at" -> Clients.updatedAt
+            "start_at" -> Clients.startAt
+            else -> Clients.createdAt
+        }
+        val sortOrder = if (cond.sortType == "asc") SortOrder.ASC else SortOrder.DESC
+        query = query.orderBy(sortColumn to sortOrder)
+
+        if (cond.limit > 0) {
+            query = query.limit(cond.limit).offset(cond.offset.toLong())
+        }
+
+        query.map { rowToClient(it) }
+    }
+
+    override suspend fun countByCondition(cond: Condition): Int = newSuspendedTransaction(db = db) {
+        applyFilters(cond).count().toInt()
     }
 
     /**

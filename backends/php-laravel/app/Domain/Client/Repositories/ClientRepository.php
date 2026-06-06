@@ -31,6 +31,14 @@ interface ClientRepository
     public function findByCondition(ClientCondition $condition): Collection;
 
     /**
+     * 検索条件に合致するクライアントの総件数を返します。
+     *
+     * @param ClientCondition $condition 検索条件
+     * @return int 総件数
+     */
+    public function countByCondition(ClientCondition $condition): int;
+
+    /**
      * クライアントを取得します。
      *
      * @param ClientCondition $condition 検索条件

@@ -5,7 +5,7 @@ Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 from typing import Optional
 
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
@@ -36,6 +36,15 @@ class SqlAlchemyClientRepository(ClientRepository):
         """
         self.db = db
 
+    def _apply_filters(self, q, cond: ClientCondition):
+        """共通フィルタを適用します。"""
+        if cond.keyword:
+            like = f"%{cond.keyword}%"
+            q = q.filter(or_(ClientModel.name.like(like), ClientModel.identifier.like(like)))
+        if cond.status is not None:
+            q = q.filter(ClientModel.status == cond.status)
+        return q
+
     def find_all_clients(self, cond: ClientCondition) -> list[Client]:
         """検索条件に合致するクライアントエンティティを返します。
 
@@ -46,12 +55,34 @@ class SqlAlchemyClientRepository(ClientRepository):
             クライアントエンティティのリスト
         """
         q = self.db.query(ClientModel)
-        if cond.keyword:
-            like = f"%{cond.keyword}%"
-            q = q.filter(or_(ClientModel.name.like(like), ClientModel.identifier.like(like)))
-        if cond.status is not None:
-            q = q.filter(ClientModel.status == cond.status)
-        return [_to_entity(m) for m in q.order_by(ClientModel.id).all()]
+        q = self._apply_filters(q, cond)
+
+        if cond.sort:
+            col = getattr(ClientModel, cond.sort, None)
+            if col is not None:
+                q = q.order_by(col.desc() if cond.sort_type == "desc" else col.asc())
+            else:
+                q = q.order_by(ClientModel.id)
+        else:
+            q = q.order_by(ClientModel.id)
+
+        if cond.limit > 0:
+            q = q.offset(cond.offset).limit(cond.limit)
+
+        return [_to_entity(m) for m in q.all()]
+
+    def count_clients(self, cond: ClientCondition) -> int:
+        """検索条件に合致するクライアントの総件数を返します。
+
+        Args:
+            cond: 検索条件
+
+        Returns:
+            総件数
+        """
+        q = self.db.query(func.count(ClientModel.id))
+        q = self._apply_filters(q, cond)
+        return q.scalar() or 0
 
     def find_client_by_id(self, client_id: int) -> Optional[Client]:
         """IDでクライアントエンティティを返します。存在しない場合は None を返します。

@@ -16,6 +16,7 @@ use App\Domain\Client\Enums\ClientStatus;
 use App\Domain\Client\Repositories\ClientRepository;
 use App\Infrastructure\Models\Client as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
+use App\Support\Repositories\Traits\OptionBuilder;
 use Illuminate\Support\Collection;
 
 /**
@@ -26,6 +27,8 @@ use Illuminate\Support\Collection;
  */
 class EloquentClientRepository extends AbstractEloquentRepository implements ClientRepository
 {
+    use OptionBuilder;
+
     /**
      * {@inheritdoc}
      */
@@ -35,6 +38,37 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
         $query = Model::withTrashed()->newQuery()
             ->select('clients.*');
 
+        $this->applyFilters($query, $condition);
+
+        if ($condition->isPaging()) {
+            $query = $this->addOption($query, $condition->option);
+        }
+
+        return $this->findByQuery($query);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    public function countByCondition(ClientCondition $condition): int
+    {
+        $query = Model::withTrashed()->newQuery()
+            ->select('clients.*');
+
+        $this->applyFilters($query, $condition);
+
+        return $query->count();
+    }
+
+    /**
+     * 検索フィルタをクエリに適用します。
+     *
+     * @param \Illuminate\Contracts\Database\Eloquent\Builder $query クエリ
+     * @param ClientCondition $condition 検索条件
+     */
+    private function applyFilters($query, ClientCondition $condition): void
+    {
         if (!empty($condition->keyword)) {
             $keyword = str($condition->keyword)->trim()->replace(' ', '')->value();
             $query->whereLike('clients.name', "%{$keyword}%");
@@ -47,8 +81,6 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
         if (!empty($condition->statuses)) {
             $query->whereIn('clients.status', $condition->statuses);
         }
-
-        return $this->findByQuery($query);
     }
 
     /**

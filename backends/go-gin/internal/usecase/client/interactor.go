@@ -59,6 +59,14 @@ func (uc *Interactor) FindByCondition(cond domclient.Condition) ([]*domclient.Li
 	return items, nil
 }
 
+// CountByCondition は検索条件に合致するクライアントの総件数を返します。
+//
+// cond: 検索条件
+// 戻り値: 総件数、またはエラー
+func (uc *Interactor) CountByCondition(cond domclient.Condition) (int, error) {
+	return uc.repo.CountByCondition(cond)
+}
+
 // FindByID はIDでクライアント詳細の値オブジェクトを返します。
 //
 // id: クライアントID

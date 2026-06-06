@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace App\UseCases\Client\Dtos;
 
 use App\Domain\Client\Enums\ClientStatus;
-use App\Support\Dtos\AbstractDto;
+use App\Support\Dtos\PagerDto;
 
 /**
  * クライアントDTOクラスです。
@@ -21,7 +21,7 @@ use App\Support\Dtos\AbstractDto;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\Client\Dtos
  */
-class ClientDto extends AbstractDto
+class ClientDto extends PagerDto
 {
     public ?int $id = null;
     public ?string $keyword = null;

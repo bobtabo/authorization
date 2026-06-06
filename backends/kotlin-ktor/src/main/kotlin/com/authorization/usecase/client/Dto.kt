@@ -51,6 +51,10 @@ data class ListConditionDto(
     val startFrom: String?    = null,
     val startTo:   String?    = null,
     val statuses:  List<Int>  = emptyList(),
+    val offset:    Int         = 0,
+    val limit:     Int         = 20,
+    val sort:      String?    = null,
+    val sortType:  String?    = null,
 )
 
 /**

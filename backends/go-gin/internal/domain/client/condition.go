@@ -8,4 +8,8 @@ type Condition struct {
 	StartFrom *time.Time
 	StartTo   *time.Time
 	Statuses  []int
+	Offset    int
+	Limit     int
+	Sort      string
+	SortType  string
 }

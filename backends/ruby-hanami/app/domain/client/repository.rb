@@ -12,6 +12,10 @@ module Domain
       # @return [Array<Domain::Client::Entity>] クライアントエンティティの配列
       def find_by_condition(cond)      = raise NotImplementedError
 
+      # @param cond [Domain::Client::Condition] 検索条件
+      # @return [Integer] 検索条件に合致する総件数
+      def count_by_condition(cond)     = raise NotImplementedError
+
       # @param id [Integer] クライアント ID
       # @return [Domain::Client::Entity] クライアントエンティティ
       def find_by_id(id)               = raise NotImplementedError

@@ -127,19 +127,35 @@ class ClientInteractor:
         self,
         keyword: Optional[str] = None,
         status: Optional[int] = None,
-    ) -> list[ClientListItem]:
+        offset: int = 0,
+        limit: int = 20,
+        sort: Optional[str] = None,
+        sort_type: Optional[str] = None,
+    ) -> tuple[list[ClientListItem], int]:
         """検索条件に合致するクライアント一覧の Vo を返します。
 
         Args:
             keyword: キーワード検索文字列
             status: ステータスフィルター
+            offset: 取得開始位置
+            limit: 取得件数
+            sort: ソート対象
+            sort_type: ソート順
 
         Returns:
-            ClientListItem のリスト
+            (ClientListItem のリスト, 総件数) のタプル
         """
-        cond = ClientCondition(keyword=keyword, status=status)
+        cond = ClientCondition(
+            keyword=keyword,
+            status=status,
+            offset=offset,
+            limit=limit,
+            sort=sort,
+            sort_type=sort_type,
+        )
+        count = self.repository.count_clients(cond)
         clients = self.repository.find_all_clients(cond)
-        return [_to_list_item(c) for c in clients]
+        return [_to_list_item(c) for c in clients], count
 
     def find_by_id(self, client_id: int) -> ClientDetailVo:
         """IDでクライアント詳細の Vo を返します。

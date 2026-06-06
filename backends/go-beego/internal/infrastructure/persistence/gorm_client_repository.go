@@ -18,8 +18,7 @@ func NewOrmClientRepository(o QueryOrmer) *OrmClientRepository {
 	return &OrmClientRepository{o: o}
 }
 
-func (r *OrmClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
-	qs := r.o.QueryTable(new(model.Client)).OrderBy("id")
+func (r *OrmClientRepository) applyFilters(qs orm.QuerySeter, cond domclient.Condition) orm.QuerySeter {
 	if cond.Keyword != nil && *cond.Keyword != "" {
 		qs = qs.Filter("name__contains", *cond.Keyword)
 	}
@@ -32,6 +31,27 @@ func (r *OrmClientRepository) FindByCondition(cond domclient.Condition) ([]*domc
 	if len(cond.Statuses) > 0 {
 		qs = qs.Filter("status__in", cond.Statuses)
 	}
+	return qs
+}
+
+func (r *OrmClientRepository) FindByCondition(cond domclient.Condition) ([]*domclient.Client, error) {
+	qs := r.o.QueryTable(new(model.Client))
+	qs = r.applyFilters(qs, cond)
+
+	if cond.Sort != "" {
+		orderField := cond.Sort
+		if cond.SortType == "desc" {
+			orderField = "-" + orderField
+		}
+		qs = qs.OrderBy(orderField)
+	} else {
+		qs = qs.OrderBy("id")
+	}
+
+	if cond.Limit > 0 {
+		qs = qs.Limit(cond.Limit).Offset(cond.Offset)
+	}
+
 	var ms []*model.Client
 	if _, err := qs.All(&ms); err != nil {
 		return nil, err
@@ -41,6 +61,16 @@ func (r *OrmClientRepository) FindByCondition(cond domclient.Condition) ([]*domc
 		out = append(out, clientToDomain(m))
 	}
 	return out, nil
+}
+
+func (r *OrmClientRepository) CountByCondition(cond domclient.Condition) (int, error) {
+	qs := r.o.QueryTable(new(model.Client))
+	qs = r.applyFilters(qs, cond)
+	cnt, err := qs.Count()
+	if err != nil {
+		return 0, err
+	}
+	return int(cnt), nil
 }
 
 func (r *OrmClientRepository) FindByID(c *domclient.Client) (*domclient.Client, error) {

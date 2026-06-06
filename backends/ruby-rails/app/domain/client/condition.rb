@@ -7,6 +7,6 @@
 module Domain
   module Client
     # クライアント一覧取得の検索条件です。
-    Condition = Struct.new(:keyword, :start_from, :start_to, :statuses, keyword_init: true)
+    Condition = Struct.new(:keyword, :start_from, :start_to, :statuses, :offset, :limit, :sort, :sort_type, keyword_init: true)
   end
 end
