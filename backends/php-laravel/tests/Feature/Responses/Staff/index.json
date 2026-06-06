@@ -1,3 +1,7 @@
 {
-    "items": []
+    "data": [],
+    "pager": {
+        "count": 0,
+        "limit": 20
+    }
 }
