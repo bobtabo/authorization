@@ -33,7 +33,6 @@ pub struct IndexQuery {
     pub keyword:    Option<String>,
     pub start_from: Option<String>,
     pub start_to:   Option<String>,
-    pub offset:     Option<i64>,
     pub limit:      Option<i64>,
     pub page:       Option<i64>,
     pub sort:       Option<String>,
@@ -127,7 +126,7 @@ pub async fn index(
 ) -> (StatusCode, Json<Value>) {
     let limit = q.limit.unwrap_or(20).max(1);
     let page = q.page.unwrap_or(1).max(1);
-    let offset = q.offset.unwrap_or_else(|| limit * (page - 1)).max(0);
+    let offset = limit * (page - 1);
 
     let dto = ListConditionDto {
         keyword:    q.keyword,

@@ -1,6 +1,5 @@
 {
     "keyword": null,
-    "offset": 0,
     "limit": 20,
     "page": 1,
     "sort": "created_at",

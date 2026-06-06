@@ -89,14 +89,13 @@ def _map_detail(c) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     status: Optional[int] = Query(default=None),
-    offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1),
     page: int = Query(default=1, ge=1),
     sort: Optional[str] = Query(default=None),
     sort_type: Optional[str] = Query(default=None),
     interactor: ClientInteractor = Depends(get_client_interactor),
 ):
-    actual_offset = offset if offset > 0 else limit * (page - 1)
+    actual_offset = limit * (page - 1)
     clients, count = interactor.find_all(
         keyword=keyword,
         status=status,

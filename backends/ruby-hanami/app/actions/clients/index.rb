@@ -18,7 +18,7 @@ module Authorization
         def handle(request, response)
           limit  = (request.params[:limit]  || 20).to_i
           page   = (request.params[:page]   || 1).to_i
-          offset = request.params[:offset] ? request.params[:offset].to_i : limit * (page - 1)
+          offset = limit * (page - 1)
 
           result = container[:client_uc].find_by_condition(
             ::UseCase::Client::ListConditionDto.new(
