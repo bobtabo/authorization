@@ -127,7 +127,7 @@ trait Pager
         if (empty($this->limit)) {
             return 1;
         }
-        return floor(ceil($this->getOffset() / $this->limit) + 1);
+        return intval(floor(ceil($this->getOffset() / $this->limit) + 1));
     }
 
     /**
@@ -172,7 +172,7 @@ trait Pager
             return 1;
         }
 
-        $result = ceil($this->count / $this->limit);
+        $result = intval(ceil($this->count / $this->limit));
         if ($result < 1) {
             $result = 1;
         }
