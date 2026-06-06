@@ -11,14 +11,15 @@ describe("Clients", () => {
       await makeClientRecord({ identifier: "c-002", email: "c2@example.com" });
       const res = await app.request("/api/clients");
       expect(res.status).toBe(200);
-      const body = await res.json() as unknown[];
-      expect(body.length).toBe(2);
+      const body = await res.json() as { data: unknown[]; pager: unknown };
+      expect(body.data.length).toBe(2);
     });
 
     test("クライアントが存在しない場合空リストを返す", async () => {
       const res = await app.request("/api/clients");
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual([]);
+      const body = await res.json() as { data: unknown[] };
+      expect(body.data).toEqual([]);
     });
   });
 
@@ -184,8 +185,8 @@ describe("Clients", () => {
       await app.request(`/api/clients/${c.id}/delete`, { method: "DELETE" });
       const res = await app.request("/api/clients");
       expect(res.status).toBe(200);
-      const body = await res.json() as unknown[];
-      expect(body.length).toBe(1);
+      const body = await res.json() as { data: unknown[] };
+      expect(body.data.length).toBe(1);
     });
 
     test("論理削除済みのクライアント詳細が取得できる", async () => {

@@ -22,6 +22,7 @@ RSpec.describe UseCase::Client::Interactor do
 
   let(:stub_repo) do
     double("ClientRepo",
+      count_by_condition:  0,
       find_by_condition:   [],
       find_by_id:          make_entity.call,
       save:                make_entity.call,
@@ -32,11 +33,13 @@ RSpec.describe UseCase::Client::Interactor do
   end
 
   describe "#find_by_condition" do
-    it "returns list from repo" do
+    it "returns items and count from repo" do
+      allow(stub_repo).to receive(:count_by_condition).and_return(1)
       allow(stub_repo).to receive(:find_by_condition).and_return([make_entity.call])
       dto = UseCase::Client::ListConditionDto.new(keyword: nil, start_from: nil, start_to: nil, statuses: nil)
       result = described_class.new(stub_repo).find_by_condition(dto)
-      expect(result.size).to eq 1
+      expect(result[:items].size).to eq 1
+      expect(result[:count]).to eq 1
     end
   end
 

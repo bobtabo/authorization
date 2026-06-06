@@ -2,6 +2,8 @@ package staff
 
 // Repository はスタッフの永続化インターフェースです。
 type Repository interface {
+	// CountByCondition は検索条件に合致するスタッフの総件数を返します。
+	CountByCondition(cond Condition) (int, error)
 	// FindByCondition は検索条件に合致するスタッフエンティティを返します。
 	FindByCondition(cond Condition) ([]*Staff, error)
 	// FindByID はIDでスタッフエンティティを返します。存在しない場合は nil を返します。

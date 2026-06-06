@@ -8,4 +8,8 @@
 export interface StaffCondition {
   keyword?: string;
   roles?: number[];
+  offset?: number;
+  limit?: number;
+  sort?: string;
+  sortType?: string;
 }

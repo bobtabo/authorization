@@ -5,9 +5,18 @@
  */
 import type { Staff } from "./entity.js";
 
+/** スタッフ一覧検索オプション。 */
+export interface FindAllStaffOptions {
+  offset?: number;
+  limit?: number;
+  sort?: string;
+  sortType?: string;
+}
+
 /** スタッフのリポジトリインターフェース。 */
 export interface StaffRepository {
-  findAll(keyword?: string, roles?: number[]): Promise<Staff[]>;
+  countAll(keyword?: string, roles?: number[]): Promise<number>;
+  findAll(keyword?: string, roles?: number[], options?: FindAllStaffOptions): Promise<Staff[]>;
   findById(id: number): Promise<Staff | undefined>;
   findByIdUnscoped(id: number): Promise<Staff | undefined>;
   findByProvider(provider: number, providerId: string): Promise<Staff | undefined>;

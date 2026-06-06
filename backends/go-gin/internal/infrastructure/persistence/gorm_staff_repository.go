@@ -23,16 +23,37 @@ func NewGormStaffRepository(db *gorm.DB) *GormStaffRepository {
 	return &GormStaffRepository{db: db}
 }
 
+// CountByCondition は検索条件に合致するスタッフの総件数を返します。
+func (r *GormStaffRepository) CountByCondition(cond domstaff.Condition) (int, error) {
+	var count int64
+	q := r.db.Model(&model.Staff{}).Unscoped()
+	q = r.applyFilters(q, cond)
+	if err := q.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
 // FindByCondition は検索条件に合致するスタッフエンティティを返します。
 func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
-	q := r.db.Unscoped().Order("id ASC")
-	if cond.Keyword != nil && *cond.Keyword != "" {
-		like := "%" + *cond.Keyword + "%"
-		q = q.Where("name LIKE ? OR email LIKE ?", like, like)
+	q := r.db.Unscoped()
+	q = r.applyFilters(q, cond)
+
+	if cond.Limit > 0 {
+		q = q.Limit(cond.Limit).Offset(cond.Offset)
 	}
-	if len(cond.Roles) > 0 {
-		q = q.Where("role IN ?", cond.Roles)
+
+	allowedSort := map[string]bool{"name": true, "role": true, "status": true, "created_at": true}
+	sort := "id"
+	if cond.Sort != "" && allowedSort[cond.Sort] {
+		sort = cond.Sort
 	}
+	if cond.SortType == "desc" {
+		q = q.Order(sort + " DESC")
+	} else {
+		q = q.Order(sort + " ASC")
+	}
+
 	var ms []*model.Staff
 	if err := q.Find(&ms).Error; err != nil {
 		return nil, err
@@ -42,6 +63,17 @@ func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domst
 		out = append(out, staffToDomain(m))
 	}
 	return out, nil
+}
+
+func (r *GormStaffRepository) applyFilters(q *gorm.DB, cond domstaff.Condition) *gorm.DB {
+	if cond.Keyword != nil && *cond.Keyword != "" {
+		like := "%" + *cond.Keyword + "%"
+		q = q.Where("name LIKE ? OR email LIKE ?", like, like)
+	}
+	if len(cond.Roles) > 0 {
+		q = q.Where("role IN ?", cond.Roles)
+	}
+	return q
 }
 
 // FindByID はIDでスタッフエンティティを返します。存在しない場合は nil を返します。

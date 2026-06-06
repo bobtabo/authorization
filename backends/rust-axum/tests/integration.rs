@@ -59,7 +59,8 @@ async fn get_clients_returns_list() {
 
     let body = res.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!(json.as_array().unwrap().len(), 2);
+    assert_eq!(json["data"].as_array().unwrap().len(), 2);
+    assert!(json["pager"].is_object());
 }
 
 #[tokio::test]
@@ -152,7 +153,8 @@ async fn get_staffs_returns_list() {
 
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(json["items"].as_array().unwrap().len(), 2);
+    assert_eq!(json["data"].as_array().unwrap().len(), 2);
+    assert!(json["pager"].is_object());
 }
 
 #[tokio::test]

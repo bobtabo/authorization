@@ -13,6 +13,14 @@ package com.authorization.domain.staff
 interface Repository {
 
     /**
+     * 検索条件に一致するスタッフの総件数を返します。
+     *
+     * @param cond 検索条件
+     * @return 総件数
+     */
+    suspend fun countByCondition(cond: Condition): Int
+
+    /**
      * 検索条件に一致するスタッフ一覧を取得します。
      *
      * @param cond 検索条件

@@ -13,6 +13,18 @@ class StaffRepository(ABC):
     """スタッフの永続化インターフェース。"""
 
     @abstractmethod
+    def count_staffs(self, cond: StaffCondition) -> int:
+        """検索条件に合致するスタッフの総件数を返します。
+
+        Args:
+            cond: 検索条件
+
+        Returns:
+            総件数
+        """
+        ...
+
+    @abstractmethod
     def find_all_staffs(self, cond: StaffCondition) -> list[Staff]:
         """検索条件に合致するスタッフの一覧を返します。
 

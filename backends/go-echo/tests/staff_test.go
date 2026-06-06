@@ -17,8 +17,11 @@ func TestStaff_Index(t *testing.T) {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
 		body := parseBody(w)
-		if body["items"] == nil {
-			t.Error("items not found in response")
+		if body["data"] == nil {
+			t.Error("data not found in response")
+		}
+		if body["pager"] == nil {
+			t.Error("pager not found in response")
 		}
 	})
 
@@ -29,9 +32,9 @@ func TestStaff_Index(t *testing.T) {
 			t.Errorf("want 200, got %d", w.Code)
 		}
 		body := parseBody(w)
-		items, ok := body["items"].([]interface{})
-		if !ok || len(items) != 0 {
-			t.Errorf("want empty items, got %v", body["items"])
+		data, ok := body["data"].([]interface{})
+		if !ok || len(data) != 0 {
+			t.Errorf("want empty data, got %v", body["data"])
 		}
 	})
 }

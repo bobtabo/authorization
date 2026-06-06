@@ -18,16 +18,32 @@ func NewOrmStaffRepository(o QueryOrmer) *OrmStaffRepository {
 	return &OrmStaffRepository{o: o}
 }
 
+func (r *OrmStaffRepository) CountByCondition(cond domstaff.Condition) (int, error) {
+	qs := r.o.QueryTable(new(model.Staff))
+	qs = r.applyFilters(qs, cond)
+	count, err := qs.Count()
+	return int(count), err
+}
+
 func (r *OrmStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
-	qs := r.o.QueryTable(new(model.Staff)).OrderBy("id")
-	if cond.Keyword != nil && *cond.Keyword != "" {
-		kw := *cond.Keyword
-		kwCond := orm.NewCondition().And("name__contains", kw).Or("email__contains", kw)
-		qs = qs.SetCond(kwCond)
+	qs := r.o.QueryTable(new(model.Staff))
+	qs = r.applyFilters(qs, cond)
+
+	if cond.Limit > 0 {
+		qs = qs.Limit(cond.Limit, cond.Offset)
 	}
-	if len(cond.Roles) > 0 {
-		qs = qs.Filter("role__in", cond.Roles)
+
+	allowedSort := map[string]bool{"name": true, "role": true, "status": true, "created_at": true}
+	sort := "id"
+	if cond.Sort != "" && allowedSort[cond.Sort] {
+		sort = cond.Sort
 	}
+	if cond.SortType == "desc" {
+		qs = qs.OrderBy("-" + sort)
+	} else {
+		qs = qs.OrderBy(sort)
+	}
+
 	var ms []*model.Staff
 	if _, err := qs.All(&ms); err != nil {
 		return nil, err
@@ -37,6 +53,18 @@ func (r *OrmStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domsta
 		out = append(out, staffToDomain(m))
 	}
 	return out, nil
+}
+
+func (r *OrmStaffRepository) applyFilters(qs orm.QuerySeter, cond domstaff.Condition) orm.QuerySeter {
+	if cond.Keyword != nil && *cond.Keyword != "" {
+		kw := *cond.Keyword
+		kwCond := orm.NewCondition().And("name__contains", kw).Or("email__contains", kw)
+		qs = qs.SetCond(kwCond)
+	}
+	if len(cond.Roles) > 0 {
+		qs = qs.Filter("role__in", cond.Roles)
+	}
+	return qs
 }
 
 func (r *OrmStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {

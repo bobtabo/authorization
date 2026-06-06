@@ -51,6 +51,8 @@ fn row_to_entity(r: StaffRow) -> Staff {
     }
 }
 
+const ALLOWED_SORT: &[&str] = &["name", "role", "created_at"];
+
 /// SQLx を用いたスタッフリポジトリ実装。
 pub struct SqlxStaffRepository {
     pool: MySqlPool,
@@ -71,15 +73,9 @@ impl SqlxStaffRepository {
         .await?;
         Ok(row.map(row_to_entity))
     }
-}
 
-#[async_trait]
-impl Repository for SqlxStaffRepository {
-    async fn find_by_condition(&self, cond: Condition) -> Result<Vec<Staff>, DomainError> {
-        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
-            "SELECT * FROM staffs WHERE 1=1"
-        );
-        if let Some(ref kw) = cond.keyword {
+    fn push_filters<'a>(qb: &mut QueryBuilder<'a, sqlx::MySql>, cond: &'a Condition) {
+        if let Some(kw) = &cond.keyword {
             if !kw.is_empty() {
                 let like = format!("%{}%", kw);
                 qb.push(" AND (name LIKE ");
@@ -97,7 +93,36 @@ impl Repository for SqlxStaffRepository {
             }
             qb.push(")");
         }
-        qb.push(" ORDER BY id ASC");
+    }
+}
+
+#[async_trait]
+impl Repository for SqlxStaffRepository {
+    async fn count_by_condition(&self, cond: Condition) -> Result<i64, DomainError> {
+        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
+            "SELECT COUNT(*) FROM staffs WHERE 1=1"
+        );
+        SqlxStaffRepository::push_filters(&mut qb, &cond);
+        let row: (i64,) = qb.build_query_as().fetch_one(&self.pool).await?;
+        Ok(row.0)
+    }
+
+    async fn find_by_condition(&self, cond: Condition) -> Result<Vec<Staff>, DomainError> {
+        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
+            "SELECT * FROM staffs WHERE 1=1"
+        );
+        SqlxStaffRepository::push_filters(&mut qb, &cond);
+        let sort_col = match cond.sort.as_deref() {
+            Some(s) if ALLOWED_SORT.contains(&s) => s,
+            _ => "id",
+        };
+        let sort_dir = if cond.sort_type.as_deref() == Some("desc") { "DESC" } else { "ASC" };
+        qb.push(format!(" ORDER BY {} {}", sort_col, sort_dir));
+        let limit = if cond.limit > 0 { cond.limit } else { 20 };
+        qb.push(" LIMIT ");
+        qb.push_bind(limit);
+        qb.push(" OFFSET ");
+        qb.push_bind(cond.offset);
         let rows = qb.build_query_as::<StaffRow>().fetch_all(&self.pool).await?;
         Ok(rows.into_iter().map(row_to_entity).collect())
     }
