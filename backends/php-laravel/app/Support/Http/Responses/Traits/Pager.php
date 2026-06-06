@@ -197,6 +197,6 @@ trait Pager
      */
     protected function getDefaultPageCount(): int
     {
-        return config('authorization.app.page.count');
+        return config('authorization.app.pager.page');
     }
 }
