@@ -45,6 +45,18 @@ TestingSession = sessionmaker(bind=test_engine, autocommit=False, autoflush=Fals
 # テーブルをモデル定義に基づいて作成（存在しない場合のみ）
 Base.metadata.create_all(test_engine)
 
+# 2048-bit RSA 鍵生成は重いため、モジュール読み込み時に 1 回だけ生成して再利用する。
+_cached_rsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+_cached_pub_pem = _cached_rsa_key.public_key().public_bytes(
+    serialization.Encoding.PEM,
+    serialization.PublicFormat.SubjectPublicKeyInfo,
+).decode()
+_cached_priv_pem = _cached_rsa_key.private_bytes(
+    serialization.Encoding.PEM,
+    serialization.PrivateFormat.TraditionalOpenSSL,
+    serialization.NoEncryption(),
+).decode()
+
 
 # ---------------------------------------------------------------------------
 # テスト用フェイク Redis（実 Redis への依存を除去）
@@ -136,18 +148,7 @@ def make_staff(db, **kwargs) -> StaffModel:
 
 
 def make_client_record(db, **kwargs) -> ClientModel:
-    """RSA キーペア付きのクライアントレコードを作成します（2048bit: テスト用）。"""
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    pub_pem = private_key.public_key().public_bytes(
-        serialization.Encoding.PEM,
-        serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode()
-    priv_pem = private_key.private_bytes(
-        serialization.Encoding.PEM,
-        serialization.PrivateFormat.TraditionalOpenSSL,
-        serialization.NoEncryption(),
-    ).decode()
-
+    """RSA キーペア付きのクライアントレコードを作成します（キャッシュ済みキーを再利用）。"""
     defaults = {
         "name": "テストクライアント",
         "identifier": "test-client-001",
@@ -159,8 +160,8 @@ def make_client_record(db, **kwargs) -> ClientModel:
         "tel": "0312345678",
         "email": "client@example.com",
         "token": secrets.token_hex(32),
-        "public_key": pub_pem,
-        "private_key": priv_pem,
+        "public_key": _cached_pub_pem,
+        "private_key": _cached_priv_pem,
         "fingerprint": f"SHA256:{secrets.token_hex(16)}",
         "status": 1,
     }
