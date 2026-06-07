@@ -5,11 +5,25 @@ export type ClientsQuery = {
   start_from?: string;
   start_to?: string;
   statuses?: number[];
+  page?: number;
+  limit?: number;
+  sort?: string;
+  sort_type?: string;
+};
+
+export type ClientApiRow = {
+  id: number;
+  name: string;
+  status: number;
+  start_at: string | null;
+  stop_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 /** GET /clients */
-export async function getClients(params?: ClientsQuery): Promise<unknown> {
-  return apiGet("/clients", { params });
+export async function getClients(params?: ClientsQuery): Promise<{ data: ClientApiRow[]; pager: Pager }> {
+  return apiGet<{ data: ClientApiRow[]; pager: Pager }>("/clients", { params });
 }
 
 /** GET /clients/{id} */
@@ -49,8 +63,35 @@ export type JwtHistory = {
   jwt: string;
 };
 
+export type Pager = {
+  count: number;
+  limit: number;
+  next: boolean;
+  previous: boolean;
+  page: number;
+  nextPage: number;
+  previousPage: number;
+  pageCount: number;
+  first: boolean;
+  last: boolean;
+  firstRecordCount: number;
+  lastRecordCount: number;
+  startPage: number;
+  endPage: number;
+};
+
+export type JwtHistoriesQuery = {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  sort_type?: string;
+};
+
 /** GET /clients/{id}/jwt-histories — JWT履歴一覧取得 */
-export async function getJwtHistories(clientId: number | string): Promise<JwtHistory[]> {
-  return apiGet<JwtHistory[]>(`/clients/${clientId}/jwt-histories`);
+export async function getJwtHistories(
+  clientId: number | string,
+  params?: JwtHistoriesQuery,
+): Promise<{ data: JwtHistory[]; pager: Pager }> {
+  return apiGet<{ data: JwtHistory[]; pager: Pager }>(`/clients/${clientId}/jwt-histories`, { params });
 }
 

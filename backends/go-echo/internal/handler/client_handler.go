@@ -51,11 +51,14 @@ func (h *ClientHandler) Index(c echo.Context) error {
 		}
 	}
 
-	limit := 20
+	limit := 10
 	if v := c.QueryParam("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n
 		}
+	}
+	if limit > 500 {
+		limit = 500
 	}
 	page := 1
 	if v := c.QueryParam("page"); v != "" {
@@ -235,7 +238,36 @@ func (h *ClientHandler) JwtHistories(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
-	histories, err := h.historyRepo.FindByClientID(id)
+
+	limit := 10
+	if v := c.QueryParam("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	page := 1
+	if v := c.QueryParam("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond := domclient.JwtHistoryCondition{
+		ClientID: id,
+		Offset:   offset,
+		Limit:    limit,
+		Sort:     c.QueryParam("sort"),
+		SortType: c.QueryParam("sort_type"),
+	}
+
+	count, err := h.historyRepo.CountByCondition(cond)
+	if err != nil {
+		return err
+	}
+	histories, err := h.historyRepo.FindByCondition(cond)
 	if err != nil {
 		return err
 	}
@@ -248,7 +280,8 @@ func (h *ClientHandler) JwtHistories(c echo.Context) error {
 			"jwt":       hist.Jwt,
 		})
 	}
-	return c.JSON(http.StatusOK, out)
+	pager := BuildPager(count, limit, offset, len(histories))
+	return c.JSON(http.StatusOK, map[string]interface{}{"data": out, "pager": pager})
 }
 
 func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {

@@ -3,7 +3,7 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use super::{condition::Condition, entity::{Client, JwtHistory}};
+use super::{condition::Condition, entity::{Client, JwtHistory, JwtHistoryCondition}};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
@@ -31,8 +31,10 @@ pub trait Repository: Send + Sync {
 /// JWT 履歴リポジトリのインターフェース。
 #[async_trait]
 pub trait JwtHistoryRepository: Send + Sync {
-    /// 指定したクライアント ID の JWT 履歴一覧を issue_at 降順で返します。
-    async fn find_by_client_id(&self, client_id: u64) -> Result<Vec<JwtHistory>, DomainError>;
+    /// 検索条件に合致する JWT 履歴の総件数を返します。
+    async fn count_by_condition(&self, cond: &JwtHistoryCondition) -> Result<i64, DomainError>;
+    /// 検索条件に合致する JWT 履歴一覧を返します。
+    async fn find_by_condition(&self, cond: &JwtHistoryCondition) -> Result<Vec<JwtHistory>, DomainError>;
     /// JWT 履歴を保存します。
     async fn save(
         &self,

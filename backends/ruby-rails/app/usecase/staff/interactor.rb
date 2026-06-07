@@ -15,7 +15,9 @@ module UseCase
       end
 
       def find_by_condition(cond)
-        @repo.find_by_condition(cond)
+        count = @repo.count_by_condition(cond)
+        items = @repo.find_by_condition(cond)
+        { items: items, count: count }
       end
 
       def update_role(dto)

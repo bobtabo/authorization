@@ -10,8 +10,8 @@ class TestIndex:
         res = client.get("/api/clients")
         assert res.status_code == 200
         data = res.json()
-        assert isinstance(data, list)
-        assert len(data) == 2
+        assert isinstance(data["data"], list)
+        assert len(data["data"]) == 2
 
     def test_キーワードでフィルタできる(self, client, db_session):
         make_client_record(db_session, identifier="c-001", name="株式会社テスト")
@@ -19,13 +19,13 @@ class TestIndex:
         res = client.get("/api/clients?keyword=テスト")
         assert res.status_code == 200
         data = res.json()
-        assert len(data) == 1
-        assert data[0]["name"] == "株式会社テスト"
+        assert len(data["data"]) == 1
+        assert data["data"][0]["name"] == "株式会社テスト"
 
     def test_クライアントが存在しない場合空リストを返す(self, client):
         res = client.get("/api/clients")
         assert res.status_code == 200
-        assert res.json() == []
+        assert res.json()["data"] == []
 
 
 class TestShow:
@@ -95,7 +95,7 @@ class TestSoftDelete:
         res = client.get("/api/clients")
         assert res.status_code == 200
         data = res.json()
-        assert len(data) == 1
+        assert len(data["data"]) == 1
 
     def test_論理削除済みのクライアント詳細が取得できる(self, client, db_session):
         c = make_client_record(db_session)

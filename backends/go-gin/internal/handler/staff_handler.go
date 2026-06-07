@@ -36,12 +36,44 @@ func (h *StaffHandler) Index(c *gin.Context) {
 	}
 	cond.Roles = parseIntList(c.QueryArray("roles"))
 
-	staffs, err := h.newStaffUC(h.db).FindByCondition(cond)
+	limit := 10
+	if v := c.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	page := 1
+	if v := c.Query("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond.Offset = offset
+	cond.Limit = limit
+	cond.Sort = c.Query("sort")
+	cond.SortType = c.Query("sort_type")
+
+	uc := h.newStaffUC(h.db)
+	count, err := uc.CountByCondition(cond)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"items": mapStaffList(staffs)})
+	staffs, err := uc.FindByCondition(cond)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	pager := BuildPager(count, limit, offset, len(staffs))
+	c.JSON(http.StatusOK, gin.H{
+		"data":  mapStaffList(staffs),
+		"pager": pager,
+	})
 }
 
 // UpdateRole はスタッフの権限を更新します。

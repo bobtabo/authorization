@@ -22,7 +22,7 @@ class NotificationDto extends AbstractDto
 {
     public ?int $staffId = null;
     public ?string $cursor = null;
-    public int $limit = 20;
+    public int $limit = 10;
 
     /**
      * 一括更新対象の通知 ID（空配列は ids 未指定）。

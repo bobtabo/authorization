@@ -14,14 +14,19 @@ export class StaffInteractor {
   constructor(private readonly repo: StaffRepository) {}
 
   /**
-   * 検索条件に合致するスタッフ一覧の VO を返します。
+   * 検索条件に合致するスタッフ一覧の VO と総件数を返します。
    * @param keyword - キーワード検索
    * @param roles - ロールフィルター
-   * @returns StaffListItem の配列
+   * @param offset - オフセット
+   * @param limit - 取得件数
+   * @param sort - ソート対象
+   * @param sortType - ソート順
+   * @returns StaffListItem の配列と総件数のタプル
    */
-  async findByCondition(keyword?: string, roles?: number[]): Promise<StaffListItem[]> {
-    const staffs = await this.repo.findAll(keyword, roles);
-    return mapper.mapArray(staffs, StaffSymbol, StaffListItemSymbol);
+  async findByCondition(keyword?: string, roles?: number[], offset = 0, limit = 10, sort?: string, sortType?: string): Promise<[StaffListItem[], number]> {
+    const count = await this.repo.countAll(keyword, roles);
+    const staffs = await this.repo.findAll(keyword, roles, { offset, limit, sort, sortType });
+    return [mapper.mapArray(staffs, StaffSymbol, StaffListItemSymbol), count];
   }
 
   /**

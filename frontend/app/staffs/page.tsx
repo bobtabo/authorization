@@ -1,12 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Search,
   ArrowUpDown,
   ArrowUp,
@@ -16,7 +12,9 @@ import {
 } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { UserAvatar } from "@/components/user-avatar";
+import { Pager } from "@/components/pager";
 import { getStaffs, updateStaffRole, deleteStaff, restoreStaff } from "@/src/api/staff";
+import type { Pager as PagerData } from "@/src/api/clients";
 import { getAuthMe } from "@/src/api/auth";
 import { ConsoleFooter } from "@/components/console-footer";
 
@@ -34,69 +32,35 @@ interface StaffRow {
   version: number;
 }
 
-type SortKey = keyof Pick<
-  StaffRow,
-  "name" | "email" | "role" | "active" | "createdAt" | "updatedAt"
->;
+type SortKey = "name" | "role" | "status" | "created_at";
 type SortOrder = "asc" | "desc";
 
 function getRoleBadgeClass(role: StaffRole): string {
   switch (role) {
-    case "管理者":
-      return "bg-violet-100 text-violet-800 border border-violet-200";
-    case "メンバー":
-      return "bg-sky-100 text-sky-800 border border-sky-200";
+    case "管理者": return "bg-violet-100 text-violet-800 border border-violet-200";
+    case "メンバー": return "bg-sky-100 text-sky-800 border border-sky-200";
   }
 }
 
 function getActiveBadgeClass(active: StaffActive): string {
   return active === "有効"
     ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-    : // 無効ON: 未選択のグレーと差がつくよう少し濃く
-      "bg-slate-300 text-slate-900 border border-slate-500";
+    : "bg-slate-300 text-slate-900 border border-slate-500";
 }
 
 const segmentInactive = "text-gray-500 hover:text-gray-700 hover:bg-gray-100/80";
 
 function RoleSegmentSwitch({
-  role,
-  onChange,
-  ariaLabel,
-  disabled = false,
-}: {
-  role: StaffRole;
-  onChange: (r: StaffRole) => void;
-  ariaLabel: string;
-  disabled?: boolean;
-}): React.JSX.Element {
+  role, onChange, ariaLabel, disabled = false,
+}: { role: StaffRole; onChange: (r: StaffRole) => void; ariaLabel: string; disabled?: boolean }): React.JSX.Element {
   return (
-    <div
-      className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-      role="group"
-      aria-label={ariaLabel}
-    >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange("メンバー")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
-          role === "メンバー"
-            ? `${getRoleBadgeClass("メンバー")} shadow-sm`
-            : segmentInactive
-        }`}
-      >
+    <div className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`} role="group" aria-label={ariaLabel}>
+      <button type="button" disabled={disabled} onClick={() => onChange("メンバー")}
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${role === "メンバー" ? `${getRoleBadgeClass("メンバー")} shadow-sm` : segmentInactive}`}>
         メンバー
       </button>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange("管理者")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
-          role === "管理者"
-            ? `${getRoleBadgeClass("管理者")} shadow-sm`
-            : segmentInactive
-        }`}
-      >
+      <button type="button" disabled={disabled} onClick={() => onChange("管理者")}
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${role === "管理者" ? `${getRoleBadgeClass("管理者")} shadow-sm` : segmentInactive}`}>
         管理者
       </button>
     </div>
@@ -104,44 +68,16 @@ function RoleSegmentSwitch({
 }
 
 function ActiveSegmentSwitch({
-  active,
-  onChange,
-  ariaLabel,
-  disabled = false,
-}: {
-  active: StaffActive;
-  onChange: (a: StaffActive) => void;
-  ariaLabel: string;
-  disabled?: boolean;
-}): React.JSX.Element {
+  active, onChange, ariaLabel, disabled = false,
+}: { active: StaffActive; onChange: (a: StaffActive) => void; ariaLabel: string; disabled?: boolean }): React.JSX.Element {
   return (
-    <div
-      className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-      role="group"
-      aria-label={ariaLabel}
-    >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange("無効")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
-          active === "無効"
-            ? `${getActiveBadgeClass("無効")} shadow-sm`
-            : segmentInactive
-        }`}
-      >
+    <div className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`} role="group" aria-label={ariaLabel}>
+      <button type="button" disabled={disabled} onClick={() => onChange("無効")}
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${active === "無効" ? `${getActiveBadgeClass("無効")} shadow-sm` : segmentInactive}`}>
         無効
       </button>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onChange("有効")}
-        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${
-          active === "有効"
-            ? `${getActiveBadgeClass("有効")} shadow-sm`
-            : segmentInactive
-        }`}
-      >
+      <button type="button" disabled={disabled} onClick={() => onChange("有効")}
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${active === "有効" ? `${getActiveBadgeClass("有効")} shadow-sm` : segmentInactive}`}>
         有効
       </button>
     </div>
@@ -151,16 +87,19 @@ function ActiveSegmentSwitch({
 const ROLE_MAP: Record<number, StaffRole> = { 1: "管理者", 2: "メンバー" };
 const STATUS_MAP: Record<number, StaffActive> = { 1: "有効", 0: "無効" };
 const ROLE_VALUE: Record<StaffRole, number> = { 管理者: 1, メンバー: 2 };
+const ACTIVE_VALUE: Record<StaffActive, number> = { 有効: 1, 無効: 0 };
 
 export default function StaffPage(): React.JSX.Element {
-  const [staff, setStaff] = useState<StaffRow[]>([]);
+  const [rows, setRows] = useState<StaffRow[]>([]);
+  const [pager, setPager] = useState<PagerData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [myStaffId, setMyStaffId] = useState<number | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
-  const [query, setQuery] = useState<string>("");
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
+  const [queryInput, setQueryInput] = useState<string>("");
+  const [query, setQuery] = useState<string>("");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [selectedActiveFilters, setSelectedActiveFilters] = useState<StaffActive[]>([]);
@@ -175,50 +114,59 @@ export default function StaffPage(): React.JSX.Element {
       .finally(() => setAuthLoading(false));
   }, []);
 
+  // キーワードをデバウンス
   useEffect(() => {
-    getStaffs()
-      .then((res) => {
-        const data = res as { items: Array<Record<string, unknown>> };
-        setStaff(
-          data.items.map((row) => ({
-            id: row.id as number,
-            name: row.name as string,
-            email: row.email as string,
-            role: ROLE_MAP[row.role as number] ?? "メンバー",
-            active: STATUS_MAP[row.status as number] ?? "有効",
-            createdAt: (row.created_at as string | null) ?? "",
-            updatedAt: (row.updated_at as string | null) ?? "",
-            version: (row.version as number) ?? 1,
-          }))
-        );
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    const t = setTimeout(() => {
+      setQuery(queryInput);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [queryInput]);
 
-  const setStaffRowActive = (id: number, active: StaffActive) => {
-    const found = staff.find((a) => a.id === id);
+  // データ取得
+  useEffect(() => {
+    setLoading(true);
+    getStaffs({
+      keyword: query || undefined,
+      roles: selectedRoleFilters.length > 0 ? selectedRoleFilters.map((r) => ROLE_VALUE[r]) : undefined,
+      statuses: selectedActiveFilters.length > 0 ? selectedActiveFilters.map((a) => ACTIVE_VALUE[a]) : undefined,
+      page: currentPage,
+      limit: pageSize,
+      sort: sortKey,
+      sort_type: sortOrder,
+    }).then((res) => {
+      setRows(res.data.map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        role: ROLE_MAP[r.role] ?? "メンバー",
+        active: STATUS_MAP[r.status] ?? "有効",
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        version: r.version ?? 1,
+      })));
+      setPager(res.pager);
+    }).finally(() => setLoading(false));
+  }, [query, sortKey, sortOrder, currentPage, pageSize, selectedActiveFilters, selectedRoleFilters]);
+
+  const setRowActive = (id: number, active: StaffActive) => {
+    const found = rows.find((r) => r.id === id);
     const prev = found?.active;
     const version = found?.version ?? 1;
-    setStaff((s) => s.map((a) => (a.id === id ? { ...a, active } : a)));
-    const apiCall =
-      active === "無効" ? deleteStaff(id, { version }, myStaffId) : restoreStaff(id, myStaffId);
+    setRows((s) => s.map((r) => (r.id === id ? { ...r, active } : r)));
+    const apiCall = active === "無効" ? deleteStaff(id, { version }, myStaffId) : restoreStaff(id, myStaffId);
     apiCall.catch(() => {
-      if (prev !== undefined) {
-        setStaff((s) => s.map((a) => (a.id === id ? { ...a, active: prev } : a)));
-      }
+      if (prev !== undefined) setRows((s) => s.map((r) => (r.id === id ? { ...r, active: prev } : r)));
     });
   };
 
-  const setStaffRowRole = (id: number, role: StaffRole) => {
-    const found = staff.find((a) => a.id === id);
+  const setRowRole = (id: number, role: StaffRole) => {
+    const found = rows.find((r) => r.id === id);
     const prev = found?.role;
     const version = found?.version ?? 1;
-    setStaff((s) => s.map((a) => (a.id === id ? { ...a, role } : a)));
+    setRows((s) => s.map((r) => (r.id === id ? { ...r, role } : r)));
     updateStaffRole(id, { role: ROLE_VALUE[role], version }, myStaffId).catch(() => {
-      // 失敗時はロールバック
-      if (prev !== undefined) {
-        setStaff((s) => s.map((a) => (a.id === id ? { ...a, role: prev } : a)));
-      }
+      if (prev !== undefined) setRows((s) => s.map((r) => (r.id === id ? { ...r, role: prev } : r)));
     });
   };
 
@@ -229,6 +177,7 @@ export default function StaffPage(): React.JSX.Element {
       setSortKey(key);
       setSortOrder("asc");
     }
+    setCurrentPage(1);
   };
 
   const toggleActiveFilter = (value: StaffActive) => {
@@ -248,50 +197,8 @@ export default function StaffPage(): React.JSX.Element {
   const allActiveFilters: StaffActive[] = ["有効", "無効"];
   const allRoleFilters: StaffRole[] = ["管理者", "メンバー"];
 
-  const sortedStaff = useMemo<StaffRow[]>(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = staff.filter((a) => {
-      const matchedQuery =
-        q === "" ||
-        a.name.toLowerCase().includes(q) ||
-        a.email.toLowerCase().includes(q);
-      const matchedActive =
-        selectedActiveFilters.length === 0 || selectedActiveFilters.includes(a.active);
-      const matchedRole =
-        selectedRoleFilters.length === 0 || selectedRoleFilters.includes(a.role);
-      return matchedQuery && matchedActive && matchedRole;
-    });
-
-    const activeRank = (x: StaffActive): number => (x === "有効" ? 0 : 1);
-
-    return [...filtered].sort((a, b) => {
-      if (sortKey === "active") {
-        const diff = activeRank(a.active) - activeRank(b.active);
-        if (diff !== 0) return sortOrder === "asc" ? diff : -diff;
-        return 0;
-      }
-
-      const aValue = a[sortKey] ?? "";
-      const bValue = b[sortKey] ?? "";
-
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [staff, query, selectedActiveFilters, selectedRoleFilters, sortKey, sortOrder]);
-
-  const totalPages = Math.max(1, Math.ceil(sortedStaff.length / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * pageSize;
-  const paginatedStaff = sortedStaff.slice(startIndex, startIndex + pageSize);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
   const handleClearFilters = () => {
+    setQueryInput("");
     setQuery("");
     setSelectedActiveFilters([]);
     setSelectedRoleFilters([]);
@@ -325,11 +232,8 @@ export default function StaffPage(): React.JSX.Element {
                     <input
                       type="text"
                       placeholder="名前・メールで検索"
-                      value={query}
-                      onChange={(e) => {
-                        setQuery(e.target.value);
-                        setCurrentPage(1);
-                      }}
+                      value={queryInput}
+                      onChange={(e) => setQueryInput(e.target.value)}
                       className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
@@ -338,19 +242,8 @@ export default function StaffPage(): React.JSX.Element {
                     <legend className="px-0.5 text-xs font-semibold text-gray-600">権限</legend>
                     <div className="mt-0.5 flex flex-wrap gap-1.5">
                       <label className="cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedRoleFilters.length === 0}
-                          onChange={() => setSelectedRoleFilters([])}
-                          className="sr-only"
-                        />
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                            selectedRoleFilters.length === 0
-                              ? "bg-white text-indigo-700 border-indigo-200 ring-2 ring-indigo-100"
-                              : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"
-                          }`}
-                        >
+                        <input type="checkbox" checked={selectedRoleFilters.length === 0} onChange={() => { setSelectedRoleFilters([]); setCurrentPage(1); }} className="sr-only" />
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${selectedRoleFilters.length === 0 ? "bg-white text-indigo-700 border-indigo-200 ring-2 ring-indigo-100" : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"}`}>
                           すべて
                         </span>
                       </label>
@@ -358,19 +251,8 @@ export default function StaffPage(): React.JSX.Element {
                         const selected = selectedRoleFilters.includes(role);
                         return (
                           <label key={role} className="cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => toggleRoleFilter(role)}
-                              className="sr-only"
-                            />
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                                selected
-                                  ? `${getRoleBadgeClass(role)} ring-2 ring-offset-1 ring-indigo-100`
-                                  : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"
-                              }`}
-                            >
+                            <input type="checkbox" checked={selected} onChange={() => toggleRoleFilter(role)} className="sr-only" />
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${selected ? `${getRoleBadgeClass(role)} ring-2 ring-offset-1 ring-indigo-100` : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"}`}>
                               {role}
                             </span>
                           </label>
@@ -380,24 +262,11 @@ export default function StaffPage(): React.JSX.Element {
                   </fieldset>
 
                   <fieldset className="w-fit max-w-full shrink-0 rounded-lg border border-gray-200 bg-gray-50/80 px-2.5 py-2">
-                    <legend className="px-0.5 text-xs font-semibold text-gray-600 whitespace-nowrap">
-                      状態
-                    </legend>
+                    <legend className="px-0.5 text-xs font-semibold text-gray-600 whitespace-nowrap">状態</legend>
                     <div className="mt-0.5 flex flex-wrap gap-1.5">
                       <label className="cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedActiveFilters.length === 0}
-                          onChange={() => setSelectedActiveFilters([])}
-                          className="sr-only"
-                        />
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                            selectedActiveFilters.length === 0
-                              ? "bg-white text-indigo-700 border-indigo-200 ring-2 ring-indigo-100"
-                              : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"
-                          }`}
-                        >
+                        <input type="checkbox" checked={selectedActiveFilters.length === 0} onChange={() => { setSelectedActiveFilters([]); setCurrentPage(1); }} className="sr-only" />
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${selectedActiveFilters.length === 0 ? "bg-white text-indigo-700 border-indigo-200 ring-2 ring-indigo-100" : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"}`}>
                           すべて
                         </span>
                       </label>
@@ -405,19 +274,8 @@ export default function StaffPage(): React.JSX.Element {
                         const selected = selectedActiveFilters.includes(act);
                         return (
                           <label key={act} className="cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => toggleActiveFilter(act)}
-                              className="sr-only"
-                            />
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                                selected
-                                  ? `${getActiveBadgeClass(act)} ring-2 ring-offset-1 ring-indigo-100`
-                                  : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"
-                              }`}
-                            >
+                            <input type="checkbox" checked={selected} onChange={() => toggleActiveFilter(act)} className="sr-only" />
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${selected ? `${getActiveBadgeClass(act)} ring-2 ring-offset-1 ring-indigo-100` : "bg-white/80 text-gray-500 border-gray-200 hover:bg-white"}`}>
                               {act}
                             </span>
                           </label>
@@ -450,110 +308,49 @@ export default function StaffPage(): React.JSX.Element {
                   <table className="w-full text-sm text-left">
                     <thead className="bg-indigo-50 text-indigo-700 uppercase tracking-wide text-xs border-b border-indigo-100">
                       <tr>
-                        <th
-                          onClick={() => handleSort("name")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
-                        >
-                          <div className="flex items-center gap-1">
-                            名前
-                            {getSortIcon("name")}
-                          </div>
+                        <th onClick={() => handleSort("name")} className="px-6 py-3 font-medium cursor-pointer select-none">
+                          <div className="flex items-center gap-1">名前{getSortIcon("name")}</div>
                         </th>
-                        <th
-                          onClick={() => handleSort("email")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
-                        >
-                          <div className="flex items-center gap-1">
-                            メールアドレス
-                            {getSortIcon("email")}
-                          </div>
+                        <th className="px-6 py-3 font-medium">メールアドレス</th>
+                        <th onClick={() => handleSort("role")} className="px-6 py-3 font-medium cursor-pointer select-none">
+                          <div className="flex items-center gap-1">権限{getSortIcon("role")}</div>
                         </th>
-                        <th
-                          onClick={() => handleSort("role")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
-                        >
-                          <div className="flex items-center gap-1">
-                            権限
-                            {getSortIcon("role")}
-                          </div>
+                        <th onClick={() => handleSort("created_at")} className="px-6 py-3 font-medium cursor-pointer select-none">
+                          <div className="flex items-center gap-1">登録日時{getSortIcon("created_at")}</div>
                         </th>
-                        <th
-                          onClick={() => handleSort("createdAt")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
-                        >
-                          <div className="flex items-center gap-1">
-                            登録日時
-                            {getSortIcon("createdAt")}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("updatedAt")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
-                        >
-                          <div className="flex items-center gap-1">
-                            更新日時
-                            {getSortIcon("updatedAt")}
-                          </div>
-                        </th>
-                        <th
-                          onClick={() => handleSort("active")}
-                          className="px-6 py-3 text-right font-medium cursor-pointer select-none normal-case"
-                        >
-                          <div className="flex items-center justify-end gap-1">
-                            状態
-                            {getSortIcon("active")}
-                          </div>
+                        <th className="px-6 py-3 font-medium">更新日時</th>
+                        <th onClick={() => handleSort("status")} className="px-6 py-3 text-right font-medium cursor-pointer select-none normal-case">
+                          <div className="flex items-center justify-end gap-1">状態{getSortIcon("status")}</div>
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedStaff.length === 0 ? (
+                      {rows.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                             スタッフが見つかりません
                           </td>
                         </tr>
                       ) : (
-                        paginatedStaff.map((row) => (
-                          <motion.tr
-                            key={row.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="border-t border-gray-200 hover:bg-gray-50"
-                          >
+                        rows.map((row) => (
+                          <motion.tr key={row.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="border-t border-gray-200 hover:bg-gray-50">
                             <td className="px-6 py-4 font-medium text-gray-900">
                               <div className="flex min-h-[1.75rem] items-center gap-2.5 min-w-0">
                                 <UserAvatar name={row.name} />
                                 <span className="truncate leading-tight">{row.name}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-gray-600 break-all max-w-[14rem]">
-                              {row.email}
-                            </td>
+                            <td className="px-6 py-4 text-gray-600 break-all max-w-[14rem]">{row.email}</td>
                             <td className="px-6 py-4">
                               <div className="flex min-h-[1.75rem] items-center">
-                                <RoleSegmentSwitch
-                                  role={row.role}
-                                  onChange={(r) => setStaffRowRole(row.id, r)}
-                                  ariaLabel={`${row.name}の権限`}
-                                  disabled={authLoading || row.id === myStaffId}
-                                />
+                                <RoleSegmentSwitch role={row.role} onChange={(r) => setRowRole(row.id, r)} ariaLabel={`${row.name}の権限`} disabled={authLoading || row.id === myStaffId} />
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
-                              {row.createdAt}
-                            </td>
-                            <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
-                              {row.updatedAt}
-                            </td>
+                            <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{row.createdAt}</td>
+                            <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{row.updatedAt}</td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex min-h-[1.75rem] items-center justify-end">
-                                <ActiveSegmentSwitch
-                                  active={row.active}
-                                  onChange={(a) => setStaffRowActive(row.id, a)}
-                                  ariaLabel={`${row.name}の状態`}
-                                  disabled={authLoading || row.id === myStaffId}
-                                />
+                                <ActiveSegmentSwitch active={row.active} onChange={(a) => setRowActive(row.id, a)} ariaLabel={`${row.name}の状態`} disabled={authLoading || row.id === myStaffId} />
                               </div>
                             </td>
                           </motion.tr>
@@ -563,63 +360,14 @@ export default function StaffPage(): React.JSX.Element {
                   </table>
                 </div>
 
-                <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
-                  <div className="text-sm text-gray-600">
-                    全 {sortedStaff.length} 件中 {startIndex + 1} -{" "}
-                    {Math.min(startIndex + pageSize, sortedStaff.length)} 件表示
-                  </div>
-
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-gray-300 bg-white rounded-md px-2 py-1 text-sm text-gray-700"
-                    >
-                      <option value={10}>10件</option>
-                      <option value={50}>50件</option>
-                      <option value={100}>100件</option>
-                      <option value={500}>500件</option>
-                      <option value={1000}>1000件</option>
-                    </select>
-
-                    <button
-                      disabled={safePage === 1}
-                      onClick={() => setCurrentPage(1)}
-                      className="p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-700 disabled:hover:bg-white"
-                    >
-                      <ChevronsLeft size={16} />
-                    </button>
-                    <button
-                      disabled={safePage === 1}
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className="p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-700 disabled:hover:bg-white"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-
-                    <span className="text-sm px-2 font-medium text-gray-700">
-                      {safePage} / {totalPages}
-                    </span>
-
-                    <button
-                      disabled={safePage === totalPages}
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      className="p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-700 disabled:hover:bg-white"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                    <button
-                      disabled={safePage === totalPages}
-                      onClick={() => setCurrentPage(totalPages)}
-                      className="p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-700 disabled:hover:bg-white"
-                    >
-                      <ChevronsRight size={16} />
-                    </button>
-                  </div>
-                </div>
+                {pager && (
+                  <Pager
+                    pager={pager}
+                    onPageChange={(p) => setCurrentPage(p)}
+                    onLimitChange={(l) => { setPageSize(l); setCurrentPage(1); }}
+                    limitOptions={[10, 50, 100, 250, 500]}
+                  />
+                )}
               </>
             )}
           </div>

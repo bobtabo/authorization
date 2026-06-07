@@ -59,6 +59,7 @@ class InteractorTest {
         byToken: Client? = null,
         byIdentifier: Client? = null,
     ): ClientRepository = object : ClientRepository {
+        override suspend fun countByCondition(cond: Condition) = 0
         override suspend fun findByCondition(cond: Condition) = emptyList<Client>()
         override suspend fun findById(id: Long)               = null
         override suspend fun findByAccessToken(token: String) = byToken

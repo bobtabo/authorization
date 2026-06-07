@@ -3,21 +3,51 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { and, eq, inArray, isNull, like, or } from "drizzle-orm";
+import { and, asc, count as drizzleCount, desc, eq, inArray, isNull, like, or } from "drizzle-orm";
 import { staffs } from "../model/schema.js";
-import type { StaffRepository } from "../../domain/staff/repository.js";
+import type { StaffRepository, FindAllStaffOptions } from "../../domain/staff/repository.js";
 import type { Staff } from "../../domain/staff/entity.js";
 import type { DB } from "../../db/client.js";
 import { conflict } from "../../lib/errors.js";
 
+const _allowedSort: Record<string, any> = {
+  name: staffs.name,
+  role: staffs.role,
+  created_at: staffs.createdAt,
+};
+
 export class DrizzleStaffRepository implements StaffRepository {
   constructor(private readonly db: DB) {}
 
-  async findAll(keyword?: string, roles?: number[]): Promise<Staff[]> {
+  private buildWhere(keyword?: string, roles?: number[]) {
     const conds = [];
     if (keyword) conds.push(or(like(staffs.name, `%${keyword}%`), like(staffs.email, `%${keyword}%`))!);
     if (roles && roles.length > 0) conds.push(inArray(staffs.role, roles));
-    return this.db.select().from(staffs).where(conds.length ? and(...conds) : undefined).orderBy(staffs.id);
+    return conds.length ? and(...conds) : undefined;
+  }
+
+  async countAll(keyword?: string, roles?: number[]): Promise<number> {
+    const where = this.buildWhere(keyword, roles);
+    const rows = await this.db.select({ value: drizzleCount(staffs.id) }).from(staffs).where(where);
+    return rows[0]?.value ?? 0;
+  }
+
+  async findAll(keyword?: string, roles?: number[], options?: FindAllStaffOptions): Promise<Staff[]> {
+    const where = this.buildWhere(keyword, roles);
+    let q = this.db.select().from(staffs).where(where).$dynamic();
+
+    const sortCol = options?.sort ? _allowedSort[options.sort] : undefined;
+    if (sortCol) {
+      q = q.orderBy(options?.sortType === "desc" ? desc(sortCol) : asc(sortCol));
+    } else {
+      q = q.orderBy(asc(staffs.id));
+    }
+
+    if (options?.limit && options.limit > 0) {
+      q = q.limit(options.limit).offset(options.offset ?? 0);
+    }
+
+    return q;
   }
 
   async findById(id: number): Promise<Staff | undefined> {

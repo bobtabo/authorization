@@ -53,3 +53,16 @@ data class JwtHistory(
     val createdAt: LocalDateTime  = LocalDateTime.now(),
     val deletedAt: LocalDateTime? = null,
 )
+
+/**
+ * JWT 履歴の検索条件です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class JwtHistoryCondition(
+    val clientId:  Long   = 0,
+    val offset:    Int    = 0,
+    val limit:     Int    = 10,
+    val sort:      String = "issue_at",
+    val sortType:  String = "desc",
+)

@@ -30,6 +30,23 @@ import java.time.LocalDateTime
 class ExposedStaffRepository(private val db: Database) : Repository {
 
     /**
+     * 検索条件に一致するスタッフの総件数を返します。
+     *
+     * @param cond 検索条件
+     * @return 総件数
+     */
+    override suspend fun countByCondition(cond: Condition): Int = newSuspendedTransaction(db = db) {
+        var query = Staffs.selectAll()
+        cond.keyword?.let { kw ->
+            query = query.andWhere { (Staffs.name like "%$kw%") or (Staffs.email like "%$kw%") }
+        }
+        if (cond.roles.isNotEmpty()) {
+            query = query.andWhere { Staffs.role inList cond.roles }
+        }
+        query.count().toInt()
+    }
+
+    /**
      * 検索条件に一致するスタッフ一覧を取得します。
      *
      * @param cond 検索条件
@@ -43,7 +60,17 @@ class ExposedStaffRepository(private val db: Database) : Repository {
         if (cond.roles.isNotEmpty()) {
             query = query.andWhere { Staffs.role inList cond.roles }
         }
-        query.orderBy(Staffs.createdAt to SortOrder.DESC).map { rowToStaff(it) }
+
+        val sortOrder = if (cond.sortType == "desc") SortOrder.DESC else SortOrder.ASC
+        val sortCol: org.jetbrains.exposed.sql.Expression<*> = when (cond.sort) {
+            "name"       -> Staffs.name
+            "role"       -> Staffs.role
+            "created_at" -> Staffs.createdAt
+            else         -> Staffs.id
+        }
+        query = query.orderBy(sortCol to sortOrder)
+
+        query.limit(maxOf(1, minOf(cond.limit, 500))).offset(cond.offset.toLong()).map { rowToStaff(it) }
     }
 
     /**

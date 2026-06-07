@@ -32,13 +32,22 @@ class StaffHandler(private val staffUC: StaffUC) {
      * @param call アプリケーションコール
      */
     suspend fun index(call: ApplicationCall) {
-        val keyword = call.request.queryParameters["keyword"]
-        val roles = call.request.queryParameters.getAll("roles")
+        val keyword  = call.request.queryParameters["keyword"]
+        val roles    = call.request.queryParameters.getAll("roles")
             ?.flatMap { it.split(",") }
             ?.mapNotNull { it.trim().toIntOrNull() }
             ?: emptyList()
-        val staffs = staffUC.findByCondition(Condition(keyword = keyword, roles = roles))
-        val items = buildJsonArray {
+        val sort     = call.request.queryParameters["sort"]
+        val sortType = call.request.queryParameters["sort_type"]
+        val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 10
+        val page     = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+        val offset   = limit * (page - 1)
+
+        val cond = Condition(keyword = keyword, roles = roles, offset = offset, limit = limit, sort = sort, sortType = sortType)
+        val (staffs, count) = staffUC.findByConditionWithCount(cond)
+        val pager = buildPager(count, limit, offset, staffs.size)
+
+        val data = buildJsonArray {
             staffs.forEach { s ->
                 add(buildJsonObject {
                     put("id",         s.id)
@@ -51,7 +60,10 @@ class StaffHandler(private val staffUC: StaffUC) {
                 })
             }
         }
-        call.respond(buildJsonObject { put("items", items) })
+        call.respond(buildJsonObject {
+            put("data", data)
+            put("pager", pager)
+        })
     }
 
     /**

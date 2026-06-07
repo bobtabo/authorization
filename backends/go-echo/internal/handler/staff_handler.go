@@ -27,11 +27,43 @@ func (h *StaffHandler) Index(c echo.Context) error {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(c.QueryParams()["roles"])
-	staffs, err := h.newStaffUC(h.db).FindByCondition(cond)
+
+	limit := 10
+	if v := c.QueryParam("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	page := 1
+	if v := c.QueryParam("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond.Offset = offset
+	cond.Limit = limit
+	cond.Sort = c.QueryParam("sort")
+	cond.SortType = c.QueryParam("sort_type")
+
+	uc := h.newStaffUC(h.db)
+	count, err := uc.CountByCondition(cond)
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, map[string]interface{}{"items": mapStaffList(staffs)})
+	staffs, err := uc.FindByCondition(cond)
+	if err != nil {
+		return err
+	}
+
+	pager := BuildPager(count, limit, offset, len(staffs))
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"data":  mapStaffList(staffs),
+		"pager": pager,
+	})
 }
 
 func (h *StaffHandler) UpdateRole(c echo.Context) error {

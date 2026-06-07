@@ -11,6 +11,10 @@ package com.authorization.domain.staff
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 data class Condition(
-    val keyword: String?    = null,
-    val roles:   List<Int>  = emptyList(),
+    val keyword:  String?   = null,
+    val roles:    List<Int> = emptyList(),
+    val offset:   Int       = 0,
+    val limit:    Int       = 10,
+    val sort:     String?   = null,
+    val sortType: String?   = null,
 )

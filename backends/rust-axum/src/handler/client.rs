@@ -94,7 +94,7 @@ pub struct DestroyBody {
 const DEFAULT_PAGE_COUNT: i64 = 5;
 
 fn build_pager(count: i64, limit: i64, offset: i64, record_count: i64) -> Value {
-    let effective_limit = if limit <= 0 { 20 } else { limit };
+    let effective_limit = if limit <= 0 { 10 } else { limit };
     let page_count = std::cmp::max(1, (count as f64 / effective_limit as f64).ceil() as i64);
     let last_page_offset = (page_count * effective_limit) - effective_limit;
     let effective_offset = if count > 0 && offset > last_page_offset { last_page_offset } else { offset };
@@ -124,7 +124,7 @@ pub async fn index(
     State(state): State<AppState>,
     Query(q): Query<IndexQuery>,
 ) -> (StatusCode, Json<Value>) {
-    let limit = q.limit.unwrap_or(20).max(1);
+    let limit = q.limit.unwrap_or(10).max(1);
     let page = q.page.unwrap_or(1).max(1);
     let offset = limit * (page - 1);
 
@@ -339,12 +339,39 @@ pub async fn destroy(
     (StatusCode::OK, Json(json!({})))
 }
 
+/// JWT 履歴一覧取得クエリ。
+#[derive(Deserialize)]
+pub struct JwtHistoriesQuery {
+    pub limit:     Option<i64>,
+    pub page:      Option<i64>,
+    pub sort:      Option<String>,
+    pub sort_type: Option<String>,
+}
+
 /// 指定したクライアント ID の JWT 履歴一覧を返します。
 pub async fn jwt_histories(
     State(state): State<AppState>,
     Path(id): Path<u64>,
+    Query(q): Query<JwtHistoriesQuery>,
 ) -> (StatusCode, Json<Value>) {
-    match state.jwt_history_repo.find_by_client_id(id).await {
+    let limit  = q.limit.unwrap_or(10).max(1);
+    let page   = q.page.unwrap_or(1).max(1);
+    let offset = limit * (page - 1);
+    let cond = crate::domain::client::entity::JwtHistoryCondition {
+        client_id: id,
+        offset,
+        limit,
+        sort:      q.sort.unwrap_or_else(|| "issue_at".to_string()),
+        sort_type: q.sort_type.unwrap_or_else(|| "desc".to_string()),
+    };
+    let count = match state.jwt_history_repo.count_by_condition(&cond).await {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::error!("jwt_histories count error: {e}");
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        }
+    };
+    match state.jwt_history_repo.find_by_condition(&cond).await {
         Ok(histories) => {
             let list: Vec<Value> = histories.iter().map(|h| json!({
                 "id":        h.id,
@@ -352,7 +379,8 @@ pub async fn jwt_histories(
                 "issue_at":  h.issue_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 "jwt":       h.jwt,
             })).collect();
-            (StatusCode::OK, Json(json!(list)))
+            let pager = build_pager(count, limit, offset, list.len() as i64);
+            (StatusCode::OK, Json(json!({"data": list, "pager": pager})))
         }
         Err(e) => {
             tracing::error!("jwt_histories error: {e}");

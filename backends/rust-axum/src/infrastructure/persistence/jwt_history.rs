@@ -7,7 +7,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
 use crate::domain::client::{
-    entity::JwtHistory,
+    entity::{JwtHistory, JwtHistoryCondition},
     repository::{DomainError, JwtHistoryRepository},
 };
 
@@ -48,16 +48,35 @@ impl SqlxJwtHistoryRepository {
 
 #[async_trait]
 impl JwtHistoryRepository for SqlxJwtHistoryRepository {
-    async fn find_by_client_id(&self, client_id: u64) -> Result<Vec<JwtHistory>, DomainError> {
-        let rows = sqlx::query_as::<_, JwtHistoryRow>(
+    async fn count_by_condition(&self, cond: &JwtHistoryCondition) -> Result<i64, DomainError> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM jwt_histories WHERE client_id = ? AND deleted_at IS NULL"
+        )
+        .bind(cond.client_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(count)
+    }
+
+    async fn find_by_condition(&self, cond: &JwtHistoryCondition) -> Result<Vec<JwtHistory>, DomainError> {
+        let sort_col = match cond.sort.as_str() {
+            "member_id" => "member_id",
+            _           => "issue_at",
+        };
+        let sort_order = if cond.sort_type.eq_ignore_ascii_case("asc") { "ASC" } else { "DESC" };
+        let sql = format!(
             "SELECT id, client_id, member_id, issue_at, jwt, created_at, deleted_at \
              FROM jwt_histories \
              WHERE client_id = ? AND deleted_at IS NULL \
-             ORDER BY issue_at DESC"
-        )
-        .bind(client_id)
-        .fetch_all(&self.pool)
-        .await?;
+             ORDER BY {} {} LIMIT ? OFFSET ?",
+            sort_col, sort_order
+        );
+        let rows = sqlx::query_as::<_, JwtHistoryRow>(&sql)
+            .bind(cond.client_id)
+            .bind(cond.limit.max(1))
+            .bind(cond.offset)
+            .fetch_all(&self.pool)
+            .await?;
         Ok(rows.into_iter().map(row_to_entity).collect())
     }
 

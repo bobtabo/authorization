@@ -21,7 +21,7 @@ module UseCase
           start_to:   dto.start_to,
           statuses:   dto.statuses,
           offset:     dto.respond_to?(:offset) ? dto.offset : 0,
-          limit:      dto.respond_to?(:limit)  ? dto.limit  : 20,
+          limit:      dto.respond_to?(:limit)  ? dto.limit  : 10,
           sort:       dto.respond_to?(:sort)   ? dto.sort   : nil,
           sort_type:  dto.respond_to?(:sort_type) ? dto.sort_type : nil,
         )

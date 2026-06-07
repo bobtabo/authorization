@@ -21,6 +21,20 @@ data class NotificationRow(val id: Long, val staffId: Long)
 
 object TestHelper {
     val cfg by lazy { ConfigLoader.load() }
+
+    // 2048-bit RSA 鍵生成は重いため、テスト全体で 1 回だけ生成して再利用する。
+    private val cachedKeyPair by lazy {
+        val kpg = KeyPairGenerator.getInstance("RSA").also { it.initialize(2048) }
+        kpg.generateKeyPair()
+    }
+    private val cachedPrivateKeyPem: String by lazy {
+        val enc = Base64.getMimeEncoder(64, "\n".toByteArray())
+        "-----BEGIN PRIVATE KEY-----\n${enc.encodeToString(cachedKeyPair.private.encoded)}\n-----END PRIVATE KEY-----"
+    }
+    private val cachedPublicKeyPem: String by lazy {
+        val enc = Base64.getMimeEncoder(64, "\n".toByteArray())
+        "-----BEGIN PUBLIC KEY-----\n${enc.encodeToString(cachedKeyPair.public.encoded)}\n-----END PUBLIC KEY-----"
+    }
     val db: Database by lazy {
         val (database, _) = initDatabase(cfg)
         transaction(database) {
@@ -64,11 +78,6 @@ object TestHelper {
 
     fun createClient(): ClientRow {
         val now = LocalDateTime.now()
-        val kpg = KeyPairGenerator.getInstance("RSA").also { it.initialize(2048) }
-        val kp  = kpg.generateKeyPair()
-        val enc = Base64.getMimeEncoder(64, "\n".toByteArray())
-        val privateKeyPem = "-----BEGIN PRIVATE KEY-----\n${enc.encodeToString(kp.private.encoded)}\n-----END PRIVATE KEY-----"
-        val publicKeyPem  = "-----BEGIN PUBLIC KEY-----\n${enc.encodeToString(kp.public.encoded)}\n-----END PUBLIC KEY-----"
         val token      = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "")
         val identifier = "test-client-${UUID.randomUUID().toString().take(8)}"
         val id = transaction(db) {
@@ -83,8 +92,8 @@ object TestHelper {
                 it[Clients.tel]         = "0312345678"
                 it[Clients.email]       = "client-${UUID.randomUUID().toString().take(8)}@example.com"
                 it[Clients.accessToken] = token
-                it[Clients.privateKey]  = privateKeyPem
-                it[Clients.publicKey]   = publicKeyPem
+                it[Clients.privateKey]  = cachedPrivateKeyPem
+                it[Clients.publicKey]   = cachedPublicKeyPem
                 it[Clients.fingerprint] = "SHA256:test"
                 it[Clients.status]      = ClientStatus.ACTIVE
                 it[Clients.createdAt]   = now

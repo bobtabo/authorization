@@ -27,8 +27,8 @@ class ClientIntegrationTest {
         TestHelper.createClient()
         val response = client.get("/api/clients")
         assertEquals(HttpStatusCode.OK, response.status)
-        val body = Json.parseToJsonElement(response.bodyAsText()).jsonArray
-        assertEquals(2, body.size)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertEquals(2, body["data"]!!.jsonArray.size)
     }
 
     @Test
@@ -36,7 +36,7 @@ class ClientIntegrationTest {
         application { module(TestHelper.cfg) }
         val response = client.get("/api/clients")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals(0, Json.parseToJsonElement(response.bodyAsText()).jsonArray.size)
+        assertEquals(0, Json.parseToJsonElement(response.bodyAsText()).jsonObject["data"]!!.jsonArray.size)
     }
 
     @Test

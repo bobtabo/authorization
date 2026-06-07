@@ -179,6 +179,7 @@ mod tests {
 
     #[async_trait]
     impl StaffRepository for MockStaffRepo {
+        async fn count_by_condition(&self, _: Condition) -> Result<i64, StaffDomainError> { Ok(0) }
         async fn find_by_condition(&self, _: Condition) -> Result<Vec<Staff>, StaffDomainError> { Ok(vec![]) }
         async fn find_by_id(&self, id: u32) -> Result<Option<Staff>, StaffDomainError> { Ok(Some(make_staff(id))) }
         async fn find_by_provider(&self, _: i32, _: &str) -> Result<Option<Staff>, StaffDomainError> { Ok(None) }

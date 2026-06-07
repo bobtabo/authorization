@@ -248,6 +248,7 @@ class ClientController extends Controller
     public function jwtHistories(AppRequest $request, JwtHistoryService $service): JsonResponse
     {
         $dto = new JwtHistoryDto();
+        $dto->assign($request->input());
         $dto->clientId = (int)$request->route('id');
 
         $vo = $service->getHistories($dto);

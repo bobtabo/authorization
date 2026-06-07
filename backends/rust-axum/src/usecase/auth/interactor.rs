@@ -155,6 +155,7 @@ mod tests {
 
     #[async_trait]
     impl Repository for MockStaffRepo {
+        async fn count_by_condition(&self, _: Condition) -> Result<i64, DomainError> { Ok(0) }
         async fn find_by_condition(&self, _: Condition) -> Result<Vec<Staff>, DomainError> { Ok(vec![]) }
         async fn find_by_id(&self, id: u32) -> Result<Option<Staff>, DomainError> {
             Ok(self.find_by_id.lock().unwrap().take().unwrap_or(Some(make_staff(id))))

@@ -1,9 +1,25 @@
 import { apiDelete, apiGet, apiPatch } from "./http";
+import type { Pager } from "./clients";
 
 export type StaffsQuery = {
   keyword?: string;
   roles?: number[];
   statuses?: number[];
+  page?: number;
+  limit?: number;
+  sort?: string;
+  sort_type?: string;
+};
+
+export type StaffApiRow = {
+  id: number;
+  name: string;
+  email: string;
+  role: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+  version?: number;
 };
 
 function executorHeader(executorId?: number | null): Record<string, string> {
@@ -11,8 +27,8 @@ function executorHeader(executorId?: number | null): Record<string, string> {
 }
 
 /** GET /staffs */
-export async function getStaffs(params?: StaffsQuery): Promise<unknown> {
-  return apiGet("/staffs", { params });
+export async function getStaffs(params?: StaffsQuery): Promise<{ data: StaffApiRow[]; pager: Pager }> {
+  return apiGet<{ data: StaffApiRow[]; pager: Pager }>("/staffs", { params });
 }
 
 /** PATCH /staffs/{id}/updateRole */

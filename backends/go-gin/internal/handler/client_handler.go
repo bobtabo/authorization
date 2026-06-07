@@ -70,11 +70,14 @@ func (h *ClientHandler) Index(c *gin.Context) {
 		}
 	}
 
-	limit := 20
+	limit := 10
 	if v := c.Query("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n
 		}
+	}
+	if limit > 500 {
+		limit = 500
 	}
 	page := 1
 	if v := c.Query("page"); v != "" {
@@ -309,7 +312,37 @@ func (h *ClientHandler) JwtHistories(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid_id"})
 		return
 	}
-	histories, err := h.historyRepo.FindByClientID(id)
+
+	limit := 10
+	if v := c.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	page := 1
+	if v := c.Query("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond := domclient.JwtHistoryCondition{
+		ClientID: id,
+		Offset:   offset,
+		Limit:    limit,
+		Sort:     c.Query("sort"),
+		SortType: c.Query("sort_type"),
+	}
+
+	count, err := h.historyRepo.CountByCondition(cond)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
+		return
+	}
+	histories, err := h.historyRepo.FindByCondition(cond)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal_error"})
 		return
@@ -323,7 +356,8 @@ func (h *ClientHandler) JwtHistories(c *gin.Context) {
 			"jwt":       hist.Jwt,
 		})
 	}
-	c.JSON(http.StatusOK, out)
+	pager := BuildPager(count, limit, offset, len(histories))
+	c.JSON(http.StatusOK, gin.H{"data": out, "pager": pager})
 }
 
 // ---------- 変換ヘルパー ----------

@@ -16,12 +16,24 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
+          limit  = (request.params[:limit]  || 10).to_i
+          page   = (request.params[:page]   || 1).to_i
+          offset = limit * (page - 1)
           keyword = request.params[:keyword]
           roles   = Array(request.params[:roles]).flat_map { |r| r.to_s.split(",") }.filter_map(&:to_i)
-          staffs  = container[:staff_uc].find_by_condition(
-            ::Domain::Staff::Condition.new(keyword: keyword, roles: roles)
+
+          result = container[:staff_uc].find_by_condition(
+            ::Domain::Staff::Condition.new(
+              keyword:   keyword,
+              roles:     roles,
+              offset:    offset,
+              limit:     limit,
+              sort:      request.params[:sort],
+              sort_type: request.params[:sort_type],
+            )
           )
-          json_response(response, { items: staffs.map { |s|
+
+          data = result[:items].map { |s|
             {
               id:         s.id,
               name:       s.name,
@@ -31,7 +43,9 @@ module Authorization
               created_at: s.created_at.strftime(TIME_FORMAT),
               updated_at: s.updated_at.strftime(TIME_FORMAT),
             }
-          }})
+          }
+          pager = build_pager(result[:count], limit, offset, data.size)
+          json_response(response, { data: data, pager: pager })
         end
       end
     end

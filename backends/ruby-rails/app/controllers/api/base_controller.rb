@@ -20,7 +20,7 @@ class Api::BaseController < ApplicationController
   DEFAULT_PAGE_COUNT = 5
 
   def build_pager(count, limit, offset, record_count)
-    limit = 20 if limit <= 0
+    limit = 10 if limit <= 0
     page_count = [1, (count.to_f / limit).ceil].max
     last_page_offset = (page_count * limit) - limit
     offset = last_page_offset if count > 0 && offset > last_page_offset

@@ -6,7 +6,7 @@ Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 from typing import Optional
 
 from datetime import datetime, timezone
-from sqlalchemy import or_
+from sqlalchemy import or_, asc, desc
 from sqlalchemy.orm import Session
 
 from app.domain.staff.entity import Staff
@@ -35,6 +35,27 @@ class SqlAlchemyStaffRepository(StaffRepository):
         """
         self.db = db
 
+    def _apply_filters(self, q, cond: StaffCondition):
+        if cond.keyword:
+            like = f"%{cond.keyword}%"
+            q = q.filter(or_(StaffModel.name.like(like), StaffModel.email.like(like)))
+        if cond.roles:
+            q = q.filter(StaffModel.role.in_(cond.roles))
+        return q
+
+    def count_staffs(self, cond: StaffCondition) -> int:
+        """検索条件に合致するスタッフの総件数を返します。
+
+        Args:
+            cond: 検索条件
+
+        Returns:
+            総件数
+        """
+        q = self.db.query(StaffModel)
+        q = self._apply_filters(q, cond)
+        return q.count()
+
     def find_all_staffs(self, cond: StaffCondition) -> list[Staff]:
         """検索条件に合致するスタッフエンティティを返します。
 
@@ -45,12 +66,14 @@ class SqlAlchemyStaffRepository(StaffRepository):
             スタッフエンティティのリスト
         """
         q = self.db.query(StaffModel)
-        if cond.keyword:
-            like = f"%{cond.keyword}%"
-            q = q.filter(or_(StaffModel.name.like(like), StaffModel.email.like(like)))
-        if cond.roles:
-            q = q.filter(StaffModel.role.in_(cond.roles))
-        return [_to_entity(m) for m in q.order_by(StaffModel.id).all()]
+        q = self._apply_filters(q, cond)
+
+        _allowed_sort = {"name": StaffModel.name, "role": StaffModel.role, "created_at": StaffModel.created_at}
+        sort_col = _allowed_sort.get(cond.sort, StaffModel.id) if cond.sort else StaffModel.id
+        order_fn = desc if cond.sort_type == "desc" else asc
+        q = q.order_by(order_fn(sort_col))
+
+        return [_to_entity(m) for m in q.offset(cond.offset).limit(cond.limit).all()]
 
     def find_staff_by_id(self, staff_id: int) -> Optional[Staff]:
         """IDで有効なスタッフエンティティを返します。存在しない場合は None を返します。

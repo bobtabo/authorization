@@ -17,15 +17,35 @@ func NewEntStaffRepository(db *ent.Client) *EntStaffRepository {
 	return &EntStaffRepository{db: db}
 }
 
+func (r *EntStaffRepository) CountByCondition(cond domstaff.Condition) (int, error) {
+	q := r.db.Staff.Query()
+	q = r.applyFilters(q, cond)
+	return q.Count(context.Background())
+}
+
 func (r *EntStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domstaff.Staff, error) {
-	q := r.db.Staff.Query().Order(ent.Asc(staff.FieldID))
-	if cond.Keyword != nil && *cond.Keyword != "" {
-		like := *cond.Keyword
-		q = q.Where(staff.Or(staff.NameContains(like), staff.EmailContains(like)))
+	q := r.db.Staff.Query()
+	q = r.applyFilters(q, cond)
+
+	if cond.Limit > 0 {
+		q = q.Limit(cond.Limit).Offset(cond.Offset)
 	}
-	if len(cond.Roles) > 0 {
-		q = q.Where(staff.RoleIn(cond.Roles...))
+
+	allowedSort := map[string]string{
+		"name":       staff.FieldName,
+		"role":       staff.FieldRole,
+		"created_at": staff.FieldCreatedAt,
 	}
+	sortField := staff.FieldID
+	if f, ok := allowedSort[cond.Sort]; ok {
+		sortField = f
+	}
+	if cond.SortType == "desc" {
+		q = q.Order(ent.Desc(sortField))
+	} else {
+		q = q.Order(ent.Asc(sortField))
+	}
+
 	ms, err := q.All(context.Background())
 	if err != nil {
 		return nil, err
@@ -35,6 +55,17 @@ func (r *EntStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domsta
 		out = append(out, entStaffToDomain(m))
 	}
 	return out, nil
+}
+
+func (r *EntStaffRepository) applyFilters(q *ent.StaffQuery, cond domstaff.Condition) *ent.StaffQuery {
+	if cond.Keyword != nil && *cond.Keyword != "" {
+		like := *cond.Keyword
+		q = q.Where(staff.Or(staff.NameContains(like), staff.EmailContains(like)))
+	}
+	if len(cond.Roles) > 0 {
+		q = q.Where(staff.RoleIn(cond.Roles...))
+	}
+	return q
 }
 
 func (r *EntStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {

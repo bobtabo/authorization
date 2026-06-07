@@ -2,7 +2,7 @@
     "data": [],
     "pager": {
         "count": 0,
-        "limit": 20,
+        "limit": 10,
         "next": false,
         "previous": false,
         "page": 1,

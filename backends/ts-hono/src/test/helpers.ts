@@ -5,6 +5,11 @@
 import { generateKeyPairSync, randomBytes } from "crypto";
 import * as mysql from "mysql2/promise";
 
+// 2048-bit RSA 鍵生成は重いため、モジュール読み込み時に 1 回だけ生成して再利用する。
+const _cachedKeyPair = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const _cachedPrivatePem = _cachedKeyPair.privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+const _cachedPublicPem = _cachedKeyPair.publicKey.export({ type: "spki", format: "pem" }) as string;
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST ?? "host.docker.internal",
   port: Number(process.env.DB_PORT ?? 3306),
@@ -64,9 +69,6 @@ export async function makeStaff(overrides: Partial<TestStaff & { email: string }
 }
 
 export async function makeClientRecord(overrides: Partial<{ identifier: string; email: string; name: string; status: number }> = {}): Promise<TestClient> {
-  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
-  const privatePem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
-  const publicPem = publicKey.export({ type: "spki", format: "pem" }) as string;
   const token = randomBytes(32).toString("hex");
 
   const data = {
@@ -81,10 +83,10 @@ export async function makeClientRecord(overrides: Partial<{ identifier: string; 
     `INSERT INTO clients (name, identifier, post_code, pref, city, address, tel, email, access_token, public_key, private_key, fingerprint, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.name, data.identifier, "100-0001", "東京都", "千代田区", "千代田1-1", "0312345678",
-     data.email, token, publicPem, privatePem, "SHA256:test", data.status],
+     data.email, token, _cachedPublicPem, _cachedPrivatePem, "SHA256:test", data.status],
   ) as mysql.ResultSetHeader[];
 
-  return { id: result.insertId, name: data.name, identifier: data.identifier, token, privateKey: privatePem, publicKey: publicPem };
+  return { id: result.insertId, name: data.name, identifier: data.identifier, token, privateKey: _cachedPrivatePem, publicKey: _cachedPublicPem };
 }
 
 export async function makeInvitation(tokenStr?: string, role = 2): Promise<TestInvitation> {

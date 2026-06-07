@@ -6,6 +6,7 @@
 import { Hono } from "hono";
 import { badRequest } from "../lib/errors.js";
 import { formatTime, getStaffIdFromCookie } from "../lib/cookie.js";
+import { buildPager } from "../lib/pager.js";
 import { db, asTx } from "../db/client.js";
 import { DrizzleStaffRepository } from "../infrastructure/persistence/drizzleStaffRepository.js";
 import { StaffInteractor } from "../usecase/staff/interactor.js";
@@ -24,9 +25,16 @@ app.get("/staffs", async (c) => {
   const keyword = c.req.query("keyword");
   const rolesRaw = c.req.queries("roles") ?? [];
   const roles = rolesRaw.flatMap(r => r.split(",")).map(Number).filter(n => !isNaN(n));
+  const limit = Math.max(1, parseInt(c.req.query("limit") ?? "10", 10) || 10);
+  const page = Math.max(1, parseInt(c.req.query("page") ?? "1", 10) || 1);
+  const offset = limit * (page - 1);
+  const sort = c.req.query("sort");
+  const sortType = c.req.query("sort_type");
+
   const uc = new StaffInteractor(new DrizzleStaffRepository(db));
-  const list = await uc.findByCondition(keyword, roles);
-  return c.json({ items: list.map(mapStaff) });
+  const [list, count] = await uc.findByCondition(keyword, roles, offset, limit, sort, sortType);
+  const pager = buildPager(count, limit, offset, list.length);
+  return c.json({ data: list.map(mapStaff), pager });
 });
 
 app.patch("/staffs/:id/updateRole", async (c) => {

@@ -13,13 +13,30 @@ module Infrastructure
         @model = Infrastructure::Model::Staff
       end
 
-      def find_by_condition(cond)
-        q = @model.all
-        if cond.keyword.present?
-          q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%")
-        end
+      ALLOWED_SORT = %w[name role created_at].freeze
+
+      def apply_filters(q, cond)
+        q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%") if cond.keyword.present?
         q = q.where(role: cond.roles) if cond.roles.present?
-        q.order(created_at: :desc).map { |r| row_to_list_item(r) }
+        q
+      end
+
+      def count_by_condition(cond)
+        apply_filters(@model.all, cond).count
+      end
+
+      def find_by_condition(cond)
+        q = apply_filters(@model.all, cond)
+
+        sort_col = ALLOWED_SORT.include?(cond.sort) ? cond.sort : "id"
+        sort_dir = cond.sort_type.to_s.downcase == "desc" ? :desc : :asc
+        q = q.order(sort_col => sort_dir)
+
+        limit  = (cond.limit  || 10).to_i
+        offset = (cond.offset || 0).to_i
+        q = q.limit(limit).offset(offset) if limit > 0
+
+        q.map { |r| row_to_list_item(r) }
       end
 
       def find_by_id(id)

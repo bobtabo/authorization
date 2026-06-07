@@ -7,16 +7,33 @@ module Infrastructure
         @ds = rom.gateways[:default].connection[:staffs]
       end
 
-      def find_by_condition(cond)
-        q = @ds
+      ALLOWED_SORT = %w[name role created_at].freeze
 
+      def apply_filters(q, cond)
         if cond.keyword && !cond.keyword.to_s.empty?
           kw = "%#{cond.keyword}%"
           q = q.where(Sequel.|(Sequel.like(:name, kw), Sequel.like(:email, kw)))
         end
-
         q = q.where(role: cond.roles) if cond.roles && !cond.roles.empty?
-        q.order(Sequel.desc(:created_at)).all.map { |r| row_to_list_item(r) }
+        q
+      end
+
+      def count_by_condition(cond)
+        apply_filters(@ds, cond).count
+      end
+
+      def find_by_condition(cond)
+        q = apply_filters(@ds, cond)
+
+        sort_col = ALLOWED_SORT.include?(cond.sort) ? cond.sort.to_sym : :id
+        sort_dir = cond.sort_type == "desc" ? :desc : :asc
+        q = q.order(Sequel.send(sort_dir, sort_col))
+
+        limit  = (cond.limit  || 10).to_i
+        offset = (cond.offset || 0).to_i
+        q = q.limit(limit).offset(offset) if limit > 0
+
+        q.all.map { |r| row_to_list_item(r) }
       end
 
       def find_by_id(id)
