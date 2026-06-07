@@ -5,11 +5,25 @@ export type ClientsQuery = {
   start_from?: string;
   start_to?: string;
   statuses?: number[];
+  page?: number;
+  limit?: number;
+  sort?: string;
+  sort_type?: string;
+};
+
+export type ClientApiRow = {
+  id: number;
+  name: string;
+  status: number;
+  start_at: string | null;
+  stop_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 /** GET /clients */
-export async function getClients(params?: ClientsQuery): Promise<unknown> {
-  return apiGet("/clients", { params });
+export async function getClients(params?: ClientsQuery): Promise<{ data: ClientApiRow[]; pager: Pager }> {
+  return apiGet<{ data: ClientApiRow[]; pager: Pager }>("/clients", { params });
 }
 
 /** GET /clients/{id} */
