@@ -48,4 +48,13 @@ class StaffDto extends PagerDto
      * 操作を実行したスタッフID。
      */
     public ?int $executorId = null;
+
+    /** {@inheritdoc} */
+    public function assign(array $values, array $convert = [], array $excludes = []): mixed
+    {
+        if (isset($values['sort_type'])) {
+            $values['sort_type'] = strtoupper($values['sort_type']);
+        }
+        return parent::assign($values, $convert, $excludes);
+    }
 }
