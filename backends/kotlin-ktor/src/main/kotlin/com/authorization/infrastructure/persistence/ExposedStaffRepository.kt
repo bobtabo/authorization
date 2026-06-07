@@ -70,7 +70,7 @@ class ExposedStaffRepository(private val db: Database) : Repository {
         }
         query = query.orderBy(sortCol to sortOrder)
 
-        query.limit(cond.limit).offset(cond.offset.toLong()).map { rowToStaff(it) }
+        query.limit(maxOf(1, minOf(cond.limit, 500))).offset(cond.offset.toLong()).map { rowToStaff(it) }
     }
 
     /**

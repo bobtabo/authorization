@@ -55,7 +55,7 @@ class ExposedJwtHistoryRepository(private val db: Database) : JwtHistoryReposito
         JwtHistories.selectAll()
             .where { (JwtHistories.clientId eq cond.clientId) and JwtHistories.deletedAt.isNull() }
             .orderBy(col to sortOrder)
-            .limit(maxOf(1, cond.limit)).offset(cond.offset.toLong())
+            .limit(maxOf(1, minOf(cond.limit, 500))).offset(cond.offset.toLong())
             .map { row ->
                 JwtHistory(
                     id        = row[JwtHistories.id].value,

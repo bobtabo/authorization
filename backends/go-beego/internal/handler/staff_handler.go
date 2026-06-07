@@ -38,6 +38,9 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 			limit = n
 		}
 	}
+	if limit > 500 {
+		limit = 500
+	}
 	page := 1
 	if v := ctx.Input.Query("page"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {

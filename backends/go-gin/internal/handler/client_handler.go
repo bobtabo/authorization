@@ -76,6 +76,9 @@ func (h *ClientHandler) Index(c *gin.Context) {
 			limit = n
 		}
 	}
+	if limit > 500 {
+		limit = 500
+	}
 	page := 1
 	if v := c.Query("page"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
@@ -315,6 +318,9 @@ func (h *ClientHandler) JwtHistories(c *gin.Context) {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n
 		}
+	}
+	if limit > 500 {
+		limit = 500
 	}
 	page := 1
 	if v := c.Query("page"); v != "" {

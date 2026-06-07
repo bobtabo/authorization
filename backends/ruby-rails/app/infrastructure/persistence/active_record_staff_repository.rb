@@ -29,7 +29,7 @@ module Infrastructure
         q = apply_filters(@model.all, cond)
 
         sort_col = ALLOWED_SORT.include?(cond.sort) ? cond.sort : "id"
-        sort_dir = cond.sort_type == "desc" ? :desc : :asc
+        sort_dir = cond.sort_type.to_s.downcase == "desc" ? :desc : :asc
         q = q.order(sort_col => sort_dir)
 
         limit  = (cond.limit  || 10).to_i

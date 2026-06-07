@@ -46,10 +46,12 @@ apiClient.interceptors.response.use(
     if (
       typeof window !== "undefined" &&
       axios.isAxiosError(error) &&
-      error.response?.status === 401 &&
       !PUBLIC_PATHS.some((p) => window.location.pathname.startsWith(p))
     ) {
-      window.location.href = "/login";
+      const status = error.response?.status;
+      if (status === 401 || status === 502) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },

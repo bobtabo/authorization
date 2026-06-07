@@ -68,6 +68,9 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 			limit = n
 		}
 	}
+	if limit > 500 {
+		limit = 500
+	}
 	page := 1
 	if v := ctx.Input.Query("page"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
@@ -287,6 +290,9 @@ func (h *ClientHandler) JwtHistories(ctx *beecontext.Context) {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n
 		}
+	}
+	if limit > 500 {
+		limit = 500
 	}
 	page := 1
 	if v := ctx.Input.Query("page"); v != "" {
