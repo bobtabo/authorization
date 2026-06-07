@@ -49,8 +49,10 @@ apiClient.interceptors.response.use(
       !PUBLIC_PATHS.some((p) => window.location.pathname.startsWith(p))
     ) {
       const status = error.response?.status;
-      if (status === 401 || status === 502) {
+      if (status === 401) {
         window.location.href = "/login";
+      } else if (status !== undefined && status >= 500) {
+        window.location.href = "/error";
       }
     }
     return Promise.reject(error);
