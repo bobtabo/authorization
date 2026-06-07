@@ -80,12 +80,20 @@ interface Repository {
 interface JwtHistoryRepository {
 
     /**
-     * 指定したクライアント ID の JWT 履歴一覧を issue_at 降順で取得します。
+     * 検索条件に一致する JWT 履歴の総件数を返します。
      *
-     * @param clientId クライアント ID
+     * @param cond 検索条件
+     * @return 総件数
+     */
+    suspend fun countByCondition(cond: JwtHistoryCondition): Int
+
+    /**
+     * 検索条件に一致する JWT 履歴一覧を取得します。
+     *
+     * @param cond 検索条件
      * @return JWT 履歴一覧
      */
-    suspend fun findByClientId(clientId: Long): List<JwtHistory>
+    suspend fun findByCondition(cond: JwtHistoryCondition): List<JwtHistory>
 
     /**
      * JWT 履歴を保存します。

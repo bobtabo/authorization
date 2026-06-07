@@ -43,8 +43,16 @@ class Api::ClientsController < Api::BaseController
 
   # JWT 履歴一覧を返します。
   def jwt_histories
-    histories = container[:jwt_history_repo].find_by_client_id(params[:id].to_i)
-    render json: histories.map { |h|
+    limit     = (params[:limit]     || 20).to_i
+    page      = (params[:page]      || 1).to_i
+    offset    = limit * (page - 1)
+    sort      = params[:sort]      || "issue_at"
+    sort_type = params[:sort_type] || "desc"
+
+    repo  = container[:jwt_history_repo]
+    count = repo.count_by_client_id(params[:id].to_i)
+    histories = repo.find_by_condition(params[:id].to_i, offset: offset, limit: limit, sort: sort, sort_type: sort_type)
+    data = histories.map { |h|
       {
         id:        h.id,
         member_id: h.member_id,
@@ -52,6 +60,8 @@ class Api::ClientsController < Api::BaseController
         jwt:       h.jwt,
       }
     }
+    pager = build_pager(count, limit, offset, data.size)
+    render json: { data: data, pager: pager }
   end
 
   # クライアント詳細を返します。

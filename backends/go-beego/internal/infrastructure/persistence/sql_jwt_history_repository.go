@@ -3,8 +3,15 @@ package persistence
 import (
 	domclient "authorization-go-beego/internal/domain/client"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 )
+
+var jwtHistorySortWhitelist = map[string]bool{
+	"issue_at":  true,
+	"member_id": true,
+}
 
 // SQLJwtHistoryRepository は生 SQL で jwt_histories を操作するリポジトリです。
 type SQLJwtHistoryRepository struct {
@@ -15,10 +22,35 @@ func NewSQLJwtHistoryRepository(db *sql.DB) *SQLJwtHistoryRepository {
 	return &SQLJwtHistoryRepository{db: db}
 }
 
-func (r *SQLJwtHistoryRepository) FindByClientID(clientID uint64) ([]*domclient.JwtHistory, error) {
+func (r *SQLJwtHistoryRepository) CountByCondition(cond domclient.JwtHistoryCondition) (int, error) {
+	var count int
+	err := r.db.QueryRow(
+		"SELECT COUNT(*) FROM jwt_histories WHERE client_id = ? AND deleted_at IS NULL",
+		cond.ClientID,
+	).Scan(&count)
+	return count, err
+}
+
+func (r *SQLJwtHistoryRepository) FindByCondition(cond domclient.JwtHistoryCondition) ([]*domclient.JwtHistory, error) {
+	sortCol := "issue_at"
+	if jwtHistorySortWhitelist[cond.Sort] {
+		sortCol = cond.Sort
+	}
+	order := "DESC"
+	if strings.EqualFold(cond.SortType, "asc") {
+		order = "ASC"
+	}
+	limit := cond.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+
 	rows, err := r.db.Query(
-		"SELECT id, client_id, member_id, issue_at, jwt FROM jwt_histories WHERE client_id = ? AND deleted_at IS NULL ORDER BY issue_at DESC",
-		clientID,
+		fmt.Sprintf(
+			"SELECT id, client_id, member_id, issue_at, jwt FROM jwt_histories WHERE client_id = ? AND deleted_at IS NULL ORDER BY %s %s LIMIT ? OFFSET ?",
+			sortCol, order,
+		),
+		cond.ClientID, limit, cond.Offset,
 	)
 	if err != nil {
 		return nil, err

@@ -49,8 +49,35 @@ export type JwtHistory = {
   jwt: string;
 };
 
+export type Pager = {
+  count: number;
+  limit: number;
+  next: boolean;
+  previous: boolean;
+  page: number;
+  nextPage: number;
+  previousPage: number;
+  pageCount: number;
+  first: boolean;
+  last: boolean;
+  firstRecordCount: number;
+  lastRecordCount: number;
+  startPage: number;
+  endPage: number;
+};
+
+export type JwtHistoriesQuery = {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  sort_type?: string;
+};
+
 /** GET /clients/{id}/jwt-histories — JWT履歴一覧取得 */
-export async function getJwtHistories(clientId: number | string): Promise<JwtHistory[]> {
-  return apiGet<JwtHistory[]>(`/clients/${clientId}/jwt-histories`);
+export async function getJwtHistories(
+  clientId: number | string,
+  params?: JwtHistoriesQuery,
+): Promise<{ data: JwtHistory[]; pager: Pager }> {
+  return apiGet<{ data: JwtHistory[]; pager: Pager }>(`/clients/${clientId}/jwt-histories`, { params });
 }
 

@@ -346,17 +346,32 @@ class ClientHandler(
     suspend fun jwtHistories(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
-        val histories = jwtHistoryRepo.findByClientId(id)
-        val list = buildJsonArray {
+
+        val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 20
+        val page     = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+        val offset   = limit * (page - 1)
+        val sort     = call.request.queryParameters["sort"]     ?: "issue_at"
+        val sortType = call.request.queryParameters["sort_type"] ?: "desc"
+
+        val cond = com.authorization.domain.client.JwtHistoryCondition(
+            clientId = id, offset = offset, limit = limit, sort = sort, sortType = sortType,
+        )
+        val count     = jwtHistoryRepo.countByCondition(cond)
+        val histories = jwtHistoryRepo.findByCondition(cond)
+        val data = buildJsonArray {
             histories.forEach { h ->
                 add(buildJsonObject {
-                    put("id",       h.id)
+                    put("id",        h.id)
                     put("member_id", h.memberId)
-                    put("issue_at", h.issueAt.fmtSec())
-                    put("jwt",      h.jwt)
+                    put("issue_at",  h.issueAt.fmtSec())
+                    put("jwt",       h.jwt)
                 })
             }
         }
-        call.respond(list)
+        val pager = buildPager(count, limit, offset, histories.size)
+        call.respond(buildJsonObject {
+            put("data",  data)
+            put("pager", pager)
+        })
     }
 }

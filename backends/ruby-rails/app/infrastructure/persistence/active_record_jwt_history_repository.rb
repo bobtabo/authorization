@@ -8,14 +8,24 @@ module Infrastructure
   module Persistence
     # ActiveRecord を用いた JWT 履歴リポジトリの実装クラスです。
     class ActiveRecordJwtHistoryRepository
+      ALLOWED_SORT = %w[issue_at member_id].freeze
+
       def initialize
         @model = Infrastructure::Model::JwtHistory
       end
 
-      def find_by_client_id(client_id)
+      def count_by_client_id(client_id)
+        @model.where(client_id: client_id, deleted_at: nil).count
+      end
+
+      def find_by_condition(client_id, offset: 0, limit: 20, sort: "issue_at", sort_type: "desc")
+        sort_col  = ALLOWED_SORT.include?(sort.to_s) ? sort.to_s : "issue_at"
+        direction = sort_type.to_s.downcase == "asc" ? :asc : :desc
         @model
           .where(client_id: client_id, deleted_at: nil)
-          .order(issue_at: :desc)
+          .order(sort_col => direction)
+          .limit([limit.to_i, 1].max)
+          .offset(offset.to_i)
           .all
       end
 

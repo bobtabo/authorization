@@ -96,14 +96,23 @@ app.get("/clients/:id", async (c) => {
 
 app.get("/clients/:id/jwt-histories", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
+  const limit = Math.max(1, parseInt(c.req.query("limit") ?? "20", 10) || 20);
+  const page  = Math.max(1, parseInt(c.req.query("page")  ?? "1",  10) || 1);
+  const offset = limit * (page - 1);
+  const sort     = c.req.query("sort")      ?? "";
+  const sortType = c.req.query("sort_type") ?? "";
+
   const repo = new DrizzleJwtHistoryRepository(db);
-  const histories = await repo.findByClientId(id);
-  return c.json(histories.map((h) => ({
+  const count = await repo.countByClientId(id);
+  const histories = await repo.findByCondition(id, offset, limit, sort, sortType);
+  const data = histories.map((h) => ({
     id: h.id,
     member_id: h.memberId,
     issue_at: formatTimeSec(h.issueAt),
     jwt: h.jwt,
-  })));
+  }));
+  const pager = buildPager(count, limit, offset, data.length);
+  return c.json({ data, pager });
 });
 
 app.post("/clients/store", async (c) => {

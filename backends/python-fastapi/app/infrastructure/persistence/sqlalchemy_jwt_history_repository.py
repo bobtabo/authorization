@@ -5,9 +5,12 @@ Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 from datetime import datetime, timezone
 
+from sqlalchemy import asc, desc, func
 from sqlalchemy.orm import Session
 
 from app.infrastructure.model.model import JwtHistoryModel
+
+_ALLOWED_SORT = {"issue_at", "member_id"}
 
 
 class SqlAlchemyJwtHistoryRepository:
@@ -16,11 +19,30 @@ class SqlAlchemyJwtHistoryRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def find_by_client_id(self, client_id: int) -> list[JwtHistoryModel]:
+    def count_by_client_id(self, client_id: int) -> int:
+        return (
+            self.db.query(func.count(JwtHistoryModel.id))
+            .filter(JwtHistoryModel.client_id == client_id, JwtHistoryModel.deleted_at.is_(None))
+            .scalar() or 0
+        )
+
+    def find_by_condition(
+        self,
+        client_id: int,
+        offset: int = 0,
+        limit: int = 20,
+        sort: str = "issue_at",
+        sort_type: str = "desc",
+    ) -> list[JwtHistoryModel]:
+        sort_col = sort if sort in _ALLOWED_SORT else "issue_at"
+        col = getattr(JwtHistoryModel, sort_col)
+        order = asc(col) if sort_type.lower() == "asc" else desc(col)
         return (
             self.db.query(JwtHistoryModel)
             .filter(JwtHistoryModel.client_id == client_id, JwtHistoryModel.deleted_at.is_(None))
-            .order_by(JwtHistoryModel.issue_at.desc())
+            .order_by(order)
+            .limit(max(1, limit))
+            .offset(offset)
             .all()
         )
 

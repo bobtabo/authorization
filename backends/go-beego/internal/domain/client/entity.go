@@ -10,6 +10,15 @@ type JwtHistory struct {
 	Jwt      string
 }
 
+// JwtHistoryCondition は JWT 履歴の検索条件です。
+type JwtHistoryCondition struct {
+	ClientID uint64
+	Offset   int
+	Limit    int
+	Sort     string
+	SortType string
+}
+
 type Client struct {
 	ID          uint64
 	Name        string

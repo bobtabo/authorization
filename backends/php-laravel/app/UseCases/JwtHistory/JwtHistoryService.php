@@ -13,6 +13,8 @@ namespace App\UseCases\JwtHistory;
 use App\Domain\Client\Condition\JwtHistoryCondition;
 use App\Domain\Client\Repositories\JwtHistoryRepository;
 use App\Domain\Client\ValueObjects\JwtHistoryListVo;
+use App\Support\Enums\SortType;
+use App\Support\Repositories\Conditions\Option;
 use App\Support\Services\AbstractService;
 use App\UseCases\JwtHistory\Dtos\JwtHistoryDto;
 
@@ -42,13 +44,24 @@ class JwtHistoryService extends AbstractService
      */
     public function getHistories(JwtHistoryDto $dto): JwtHistoryListVo
     {
+        if (empty($dto->sort)) {
+            $dto->sort = 'issue_at';
+        }
+        if ($dto->sortType === SortType::NONE) {
+            $dto->sortType = SortType::DESC;
+        }
+
         $condition = new JwtHistoryCondition();
         $condition->clientId = $dto->clientId;
+        $condition->option = new Option($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
 
+        $count = $this->repository->countByClientId($condition);
         $list = $this->repository->findByClientId($condition);
 
         $vo = new JwtHistoryListVo();
         $vo->assignItems($list);
+        $vo->setCount($count);
+        $vo->setPaging($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
 
         return $vo;
     }

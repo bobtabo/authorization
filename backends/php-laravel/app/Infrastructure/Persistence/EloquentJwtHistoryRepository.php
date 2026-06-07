@@ -29,11 +29,23 @@ class EloquentJwtHistoryRepository extends AbstractEloquentRepository implements
      * {@inheritdoc}
      */
     #[\Override]
+    public function countByClientId(JwtHistoryCondition $condition): int
+    {
+        return Model::query()
+            ->where('client_id', $condition->clientId)
+            ->count();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
     public function findByClientId(JwtHistoryCondition $condition): Collection
     {
         $query = Model::query()
-            ->where('client_id', $condition->clientId)
-            ->orderBy('issue_at', 'desc');
+            ->where('client_id', $condition->clientId);
+
+        $query = $this->addOption($query, $condition->option);
 
         return $this->findByQuery($query);
     }

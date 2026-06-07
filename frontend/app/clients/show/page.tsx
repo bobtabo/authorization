@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
-import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory } from "@/src/api/clients";
+import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory, type Pager } from "@/src/api/clients";
 import { formatTimestamp } from "@/lib/format-datetime";
 import { extractApiError } from "@/lib/api-error";
 
@@ -116,7 +116,8 @@ export default function ClientShowPage(): React.JSX.Element {
   const [stopOpen, setStopOpen] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [histories, setHistories] = useState<JwtHistory[]>([]);
+  const [jwtData, setJwtData] = useState<JwtHistory[]>([]);
+  const [jwtPager, setJwtPager] = useState<Pager | null>(null);
   const [activeTab, setActiveTab] = useState<"info" | "history">("info");
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize, setHistoryPageSize] = useState(10);
@@ -149,8 +150,19 @@ export default function ClientShowPage(): React.JSX.Element {
     if (!id) return;
     setClientId(Number(id));
     loadDetail(id);
-    getJwtHistories(id).then(setHistories).catch(() => {});
+    getJwtHistories(id, { page: 1, limit: 10 }).then((res) => {
+      setJwtData(res.data);
+      setJwtPager(res.pager);
+    }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!clientId) return;
+    getJwtHistories(clientId, { page: historyPage, limit: historyPageSize }).then((res) => {
+      setJwtData(res.data);
+      setJwtPager(res.pager);
+    }).catch(() => {});
+  }, [clientId, historyPage, historyPageSize]);
 
   useEffect(() => {
     if (!toast) return;
@@ -364,12 +376,7 @@ export default function ClientShowPage(): React.JSX.Element {
                     </div>
                   </div>
                 </>
-              ) : (() => {
-                const totalHistoryPages = Math.max(1, Math.ceil(histories.length / historyPageSize));
-                const safHistoryPage = Math.min(historyPage, totalHistoryPages);
-                const historyStart = (safHistoryPage - 1) * historyPageSize;
-                const pagedHistories = histories.slice(historyStart, historyStart + historyPageSize);
-                return (
+              ) : (
                   <>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
@@ -381,12 +388,12 @@ export default function ClientShowPage(): React.JSX.Element {
                           </tr>
                         </thead>
                         <tbody>
-                          {histories.length === 0 ? (
+                          {jwtData.length === 0 ? (
                             <tr>
                               <td colSpan={3} className="px-6 py-10 text-center text-sm text-gray-400">発行履歴はありません</td>
                             </tr>
                           ) : (
-                            pagedHistories.map((h) => (
+                            jwtData.map((h) => (
                               <tr key={h.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                                 <td className="px-6 py-3 whitespace-nowrap text-gray-700">{formatTimestamp(h.issue_at)}</td>
                                 <td className="px-6 py-3 whitespace-nowrap text-gray-700 font-mono">{h.member_id}</td>
@@ -400,7 +407,7 @@ export default function ClientShowPage(): React.JSX.Element {
 
                     <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between bg-gray-50/80">
                       <div className="text-xs text-gray-500">
-                        全 {histories.length} 件中 {histories.length === 0 ? 0 : historyStart + 1}–{Math.min(historyStart + historyPageSize, histories.length)} 件表示
+                        全 {jwtPager?.count ?? 0} 件中 {jwtPager && jwtPager.count > 0 ? jwtPager.firstRecordCount : 0}–{jwtPager?.lastRecordCount ?? 0} 件表示
                       </div>
                       <div className="flex items-center gap-2 text-gray-700">
                         <select
@@ -412,28 +419,27 @@ export default function ClientShowPage(): React.JSX.Element {
                           <option value={20}>20件</option>
                           <option value={50}>50件</option>
                         </select>
-                        <button disabled={safHistoryPage === 1} onClick={() => setHistoryPage(1)}
+                        <button disabled={!jwtPager?.previous} onClick={() => setHistoryPage(1)}
                           className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
                           <ChevronsLeft size={14} />
                         </button>
-                        <button disabled={safHistoryPage === 1} onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                        <button disabled={!jwtPager?.previous} onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                           className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
                           <ChevronLeft size={14} />
                         </button>
-                        <span className="text-xs px-1 font-medium text-gray-700">{safHistoryPage} / {totalHistoryPages}</span>
-                        <button disabled={safHistoryPage === totalHistoryPages} onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                        <span className="text-xs px-1 font-medium text-gray-700">{jwtPager?.page ?? 1} / {jwtPager?.pageCount ?? 1}</span>
+                        <button disabled={!jwtPager?.next} onClick={() => setHistoryPage((p) => p + 1)}
                           className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
                           <ChevronRight size={14} />
                         </button>
-                        <button disabled={safHistoryPage === totalHistoryPages} onClick={() => setHistoryPage(totalHistoryPages)}
+                        <button disabled={!jwtPager?.next} onClick={() => setHistoryPage(jwtPager?.pageCount ?? 1)}
                           className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
                           <ChevronsRight size={14} />
                         </button>
                       </div>
                     </div>
                   </>
-                );
-              })()}
+              )}
             </motion.div>
           )}
         </div>

@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace App\UseCases\JwtHistory\Dtos;
 
-use App\Support\Dtos\AbstractDto;
+use App\Support\Dtos\PagerDto;
 
 /**
  * JWT履歴DTOクラスです。
@@ -18,7 +18,7 @@ use App\Support\Dtos\AbstractDto;
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  * @package App\UseCases\JwtHistory\Dtos
  */
-class JwtHistoryDto extends AbstractDto
+class JwtHistoryDto extends PagerDto
 {
     public ?int $clientId = null;
 }

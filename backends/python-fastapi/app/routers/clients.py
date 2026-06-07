@@ -114,9 +114,18 @@ def show(client_id: int, interactor: ClientInteractor = Depends(get_client_inter
 
 
 @router.get("/clients/{client_id}/jwt-histories")
-def jwt_histories(client_id: int, repo: SqlAlchemyJwtHistoryRepository = Depends(get_jwt_history_repo)):
-    histories = repo.find_by_client_id(client_id)
-    return [
+def jwt_histories(
+    client_id: int,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1),
+    sort: str = Query(default="issue_at"),
+    sort_type: str = Query(default="desc"),
+    repo: SqlAlchemyJwtHistoryRepository = Depends(get_jwt_history_repo),
+):
+    offset = limit * (page - 1)
+    count = repo.count_by_client_id(client_id)
+    histories = repo.find_by_condition(client_id, offset=offset, limit=limit, sort=sort, sort_type=sort_type)
+    data = [
         {
             "id": h.id,
             "member_id": h.member_id,
@@ -125,6 +134,8 @@ def jwt_histories(client_id: int, repo: SqlAlchemyJwtHistoryRepository = Depends
         }
         for h in histories
     ]
+    pager = _build_pager(count, limit, offset, len(data))
+    return {"data": data, "pager": pager}
 
 
 class StoreBody(BaseModel):

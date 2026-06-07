@@ -43,3 +43,12 @@ pub struct JwtHistory {
     pub created_at: DateTime<Utc>,
     pub deleted_at: Option<DateTime<Utc>>,
 }
+
+/// JWT 履歴の検索条件。
+pub struct JwtHistoryCondition {
+    pub client_id:  u64,
+    pub offset:     i64,
+    pub limit:      i64,
+    pub sort:       String,
+    pub sort_type:  String,
+}

@@ -23,6 +23,14 @@ use Illuminate\Support\Collection;
 interface JwtHistoryRepository
 {
     /**
+     * クライアントIDに紐づくJWT履歴の総件数を返します。
+     *
+     * @param JwtHistoryCondition $condition 検索条件
+     * @return int 総件数
+     */
+    public function countByClientId(JwtHistoryCondition $condition): int;
+
+    /**
      * クライアントIDに紐づくJWT履歴を返します。
      *
      * @param JwtHistoryCondition $condition 検索条件

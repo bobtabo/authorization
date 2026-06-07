@@ -4,7 +4,8 @@ import "time"
 
 // JwtHistoryRepository は JWT 履歴の永続化インターフェースです。
 type JwtHistoryRepository interface {
-	FindByClientID(clientID uint64) ([]*JwtHistory, error)
+	FindByCondition(cond JwtHistoryCondition) ([]*JwtHistory, error)
+	CountByCondition(cond JwtHistoryCondition) (int, error)
 	Save(clientID uint64, memberID string, issueAt time.Time, jwt string) error
 }
 

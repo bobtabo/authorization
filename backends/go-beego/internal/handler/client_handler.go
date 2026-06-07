@@ -281,7 +281,34 @@ func (h *ClientHandler) JwtHistories(ctx *beecontext.Context) {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	histories, err := h.historyRepo.FindByClientID(id)
+
+	limit := 20
+	if v := ctx.Input.Query("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			limit = n
+		}
+	}
+	page := 1
+	if v := ctx.Input.Query("page"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			page = n
+		}
+	}
+	offset := limit * (page - 1)
+	cond := domclient.JwtHistoryCondition{
+		ClientID: id,
+		Offset:   offset,
+		Limit:    limit,
+		Sort:     ctx.Input.Query("sort"),
+		SortType: ctx.Input.Query("sort_type"),
+	}
+
+	count, err := h.historyRepo.CountByCondition(cond)
+	if err != nil {
+		writeError(ctx, err)
+		return
+	}
+	histories, err := h.historyRepo.FindByCondition(cond)
 	if err != nil {
 		writeError(ctx, err)
 		return
@@ -295,7 +322,8 @@ func (h *ClientHandler) JwtHistories(ctx *beecontext.Context) {
 			"jwt":       hist.Jwt,
 		})
 	}
-	writeJSON(ctx, http.StatusOK, out)
+	pager := BuildPager(count, limit, offset, len(histories))
+	writeJSON(ctx, http.StatusOK, map[string]interface{}{"data": out, "pager": pager})
 }
 
 func mapClientList(clients []*domclient.ListItem) []map[string]interface{} {
