@@ -231,7 +231,10 @@ mod tests {
 
     #[async_trait]
     impl JwtHistoryRepository for MockJwtHistoryRepo {
-        async fn find_by_client_id(&self, _: u64) -> Result<Vec<JwtHistory>, DomainError> {
+        async fn count_by_condition(&self, _: &crate::domain::client::entity::JwtHistoryCondition) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn find_by_condition(&self, _: &crate::domain::client::entity::JwtHistoryCondition) -> Result<Vec<JwtHistory>, DomainError> {
             Ok(vec![])
         }
         async fn save(&self, _: u64, _: &str, _: DateTime<Utc>, _: &str) -> Result<(), DomainError> {
