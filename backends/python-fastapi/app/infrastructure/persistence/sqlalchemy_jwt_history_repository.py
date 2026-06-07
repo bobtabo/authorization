@@ -30,7 +30,7 @@ class SqlAlchemyJwtHistoryRepository:
         self,
         client_id: int,
         offset: int = 0,
-        limit: int = 20,
+        limit: int = 10,
         sort: str = "issue_at",
         sort_type: str = "desc",
     ) -> list[JwtHistoryModel]:

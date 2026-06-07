@@ -37,7 +37,7 @@ private fun LocalDateTime?.fmtOrNull(): JsonElement = if (this == null) JsonNull
 private const val DEFAULT_PAGE_COUNT = 5
 
 private fun buildPager(count: Int, limit: Int, offset: Int, recordCount: Int): JsonObject {
-    val effectiveLimit = if (limit <= 0) 20 else limit
+    val effectiveLimit = if (limit <= 0) 10 else limit
     val pageCount = maxOf(1, kotlin.math.ceil(count.toDouble() / effectiveLimit).toInt())
     val lastPageOffset = (pageCount * effectiveLimit) - effectiveLimit
     val effectiveOffset = if (count > 0 && offset > lastPageOffset) lastPageOffset else offset
@@ -89,7 +89,7 @@ class ClientHandler(
         val sort      = call.request.queryParameters["sort"]
         val sortType  = call.request.queryParameters["sort_type"]
 
-        val limit  = limitStr?.toIntOrNull()?.coerceAtLeast(1) ?: 20
+        val limit  = limitStr?.toIntOrNull()?.coerceAtLeast(1) ?: 10
         val page   = pageStr?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         val offset = limit * (page - 1)
 
@@ -347,7 +347,7 @@ class ClientHandler(
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
 
-        val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 20
+        val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 10
         val page     = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         val offset   = limit * (page - 1)
         val sort     = call.request.queryParameters["sort"]     ?: "issue_at"

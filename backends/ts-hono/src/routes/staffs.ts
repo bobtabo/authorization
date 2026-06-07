@@ -25,7 +25,7 @@ app.get("/staffs", async (c) => {
   const keyword = c.req.query("keyword");
   const rolesRaw = c.req.queries("roles") ?? [];
   const roles = rolesRaw.flatMap(r => r.split(",")).map(Number).filter(n => !isNaN(n));
-  const limit = Math.max(1, parseInt(c.req.query("limit") ?? "20", 10) || 20);
+  const limit = Math.max(1, parseInt(c.req.query("limit") ?? "10", 10) || 10);
   const page = Math.max(1, parseInt(c.req.query("page") ?? "1", 10) || 1);
   const offset = limit * (page - 1);
   const sort = c.req.query("sort");

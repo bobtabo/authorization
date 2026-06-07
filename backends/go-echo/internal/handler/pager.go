@@ -26,7 +26,7 @@ type Pager struct {
 // BuildPager はページング情報を構築します。
 func BuildPager(count, limit, offset, recordCount int) Pager {
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 
 	pageCount := int(math.Ceil(float64(count) / float64(limit)))

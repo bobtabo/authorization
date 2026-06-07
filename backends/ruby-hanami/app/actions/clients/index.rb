@@ -16,7 +16,7 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
-          limit  = (request.params[:limit]  || 20).to_i
+          limit  = (request.params[:limit]  || 10).to_i
           page   = (request.params[:page]   || 1).to_i
           offset = limit * (page - 1)
 

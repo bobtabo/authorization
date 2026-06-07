@@ -365,7 +365,7 @@ export default function StaffPage(): React.JSX.Element {
                     pager={pager}
                     onPageChange={(p) => setCurrentPage(p)}
                     onLimitChange={(l) => { setPageSize(l); setCurrentPage(1); }}
-                    limitOptions={[10, 50, 100]}
+                    limitOptions={[10, 50, 100, 250, 500]}
                   />
                 )}
               </>

@@ -22,7 +22,7 @@ private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 private const val DEFAULT_PAGE_COUNT = 5
 
 private fun buildPager(count: Int, limit: Int, offset: Int, recordCount: Int): JsonObject {
-    val effectiveLimit = if (limit <= 0) 20 else limit
+    val effectiveLimit = if (limit <= 0) 10 else limit
     val pageCount = maxOf(1, kotlin.math.ceil(count.toDouble() / effectiveLimit).toInt())
     val lastPageOffset = (pageCount * effectiveLimit) - effectiveLimit
     val effectiveOffset = if (count > 0 && offset > lastPageOffset) lastPageOffset else offset
@@ -67,7 +67,7 @@ class StaffHandler(private val staffUC: StaffUC) {
             ?: emptyList()
         val sort     = call.request.queryParameters["sort"]
         val sortType = call.request.queryParameters["sort_type"]
-        val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 20
+        val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 10
         val page     = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         val offset   = limit * (page - 1)
 

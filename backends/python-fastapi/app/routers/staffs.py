@@ -18,7 +18,7 @@ _DEFAULT_PAGE_COUNT = 5
 
 def _build_pager(count: int, limit: int, offset: int, record_count: int) -> dict:
     if limit <= 0:
-        limit = 20
+        limit = 10
     page_count = max(1, math.ceil(count / limit))
     last_page_offset = (page_count * limit) - limit
     if count > 0 and offset > last_page_offset:
@@ -60,7 +60,7 @@ def _map_staff(s) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     roles: Optional[list[int]] = Query(default=None),
-    limit: int = Query(default=20, ge=1),
+    limit: int = Query(default=10, ge=1),
     page: int = Query(default=1, ge=1),
     sort: Optional[str] = Query(default=None),
     sort_type: Optional[str] = Query(default=None),

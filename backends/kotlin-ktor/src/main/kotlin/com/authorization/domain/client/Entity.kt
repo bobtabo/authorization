@@ -62,7 +62,7 @@ data class JwtHistory(
 data class JwtHistoryCondition(
     val clientId:  Long   = 0,
     val offset:    Int    = 0,
-    val limit:     Int    = 20,
+    val limit:     Int    = 10,
     val sort:      String = "issue_at",
     val sortType:  String = "desc",
 )

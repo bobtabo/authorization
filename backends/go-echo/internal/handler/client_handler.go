@@ -51,7 +51,7 @@ func (h *ClientHandler) Index(c echo.Context) error {
 		}
 	}
 
-	limit := 20
+	limit := 10
 	if v := c.QueryParam("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n
@@ -236,7 +236,7 @@ func (h *ClientHandler) JwtHistories(c echo.Context) error {
 		return apperror.BadRequest("invalid_id")
 	}
 
-	limit := 20
+	limit := 10
 	if v := c.QueryParam("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n

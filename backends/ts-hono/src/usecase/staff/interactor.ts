@@ -23,7 +23,7 @@ export class StaffInteractor {
    * @param sortType - ソート順
    * @returns StaffListItem の配列と総件数のタプル
    */
-  async findByCondition(keyword?: string, roles?: number[], offset = 0, limit = 20, sort?: string, sortType?: string): Promise<[StaffListItem[], number]> {
+  async findByCondition(keyword?: string, roles?: number[], offset = 0, limit = 10, sort?: string, sortType?: string): Promise<[StaffListItem[], number]> {
     const count = await this.repo.countAll(keyword, roles);
     const staffs = await this.repo.findAll(keyword, roles, { offset, limit, sort, sortType });
     return [mapper.mapArray(staffs, StaffSymbol, StaffListItemSymbol), count];

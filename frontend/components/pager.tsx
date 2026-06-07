@@ -14,7 +14,7 @@ type Props = {
 const NAV_BTN =
   "p-1.5 rounded-md border border-gray-300 bg-white text-gray-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:pointer-events-none";
 
-export function Pager({ pager, onPageChange, onLimitChange, limitOptions = [10, 50, 100] }: Props): React.JSX.Element {
+export function Pager({ pager, onPageChange, onLimitChange, limitOptions = [10, 50, 100, 250, 500] }: Props): React.JSX.Element {
   const pages: number[] = [];
   for (let p = pager.startPage; p <= pager.endPage; p++) pages.push(p);
 

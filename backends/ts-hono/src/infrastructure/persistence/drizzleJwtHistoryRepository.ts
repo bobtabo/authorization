@@ -35,7 +35,7 @@ export class DrizzleJwtHistoryRepository {
       .from(jwtHistories)
       .where(and(eq(jwtHistories.clientId, clientId), isNull(jwtHistories.deletedAt)))
       .orderBy(orderExpr)
-      .limit(limit > 0 ? limit : 20)
+      .limit(limit > 0 ? limit : 10)
       .offset(offset);
   }
 

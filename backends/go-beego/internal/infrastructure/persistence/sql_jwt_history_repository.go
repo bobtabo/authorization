@@ -42,7 +42,7 @@ func (r *SQLJwtHistoryRepository) FindByCondition(cond domclient.JwtHistoryCondi
 	}
 	limit := cond.Limit
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 
 	rows, err := r.db.Query(

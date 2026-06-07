@@ -128,7 +128,7 @@ class ClientInteractor:
         keyword: Optional[str] = None,
         status: Optional[int] = None,
         offset: int = 0,
-        limit: int = 20,
+        limit: int = 10,
         sort: Optional[str] = None,
         sort_type: Optional[str] = None,
     ) -> tuple[list[ClientListItem], int]:

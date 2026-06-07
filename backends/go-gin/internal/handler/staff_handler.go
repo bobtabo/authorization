@@ -36,7 +36,7 @@ func (h *StaffHandler) Index(c *gin.Context) {
 	}
 	cond.Roles = parseIntList(c.QueryArray("roles"))
 
-	limit := 20
+	limit := 10
 	if v := c.Query("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n

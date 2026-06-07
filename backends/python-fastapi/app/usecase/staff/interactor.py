@@ -54,7 +54,7 @@ class StaffInteractor:
         keyword: Optional[str] = None,
         roles: Optional[list[int]] = None,
         offset: int = 0,
-        limit: int = 20,
+        limit: int = 10,
         sort: Optional[str] = None,
         sort_type: Optional[str] = None,
     ) -> tuple[list[StaffListItem], int]:

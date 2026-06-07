@@ -24,7 +24,7 @@ export interface PagerResponse {
 }
 
 export function buildPager(count: number, limit: number, offset: number, recordCount: number): PagerResponse {
-  if (limit <= 0) limit = 20;
+  if (limit <= 0) limit = 10;
 
   let pageCount = Math.max(1, Math.ceil(count / limit));
   const lastPageOffset = (pageCount * limit) - limit;

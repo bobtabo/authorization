@@ -118,7 +118,7 @@ impl Repository for SqlxStaffRepository {
         };
         let sort_dir = if cond.sort_type.as_deref() == Some("desc") { "DESC" } else { "ASC" };
         qb.push(format!(" ORDER BY {} {}", sort_col, sort_dir));
-        let limit = if cond.limit > 0 { cond.limit } else { 20 };
+        let limit = if cond.limit > 0 { cond.limit } else { 10 };
         qb.push(" LIMIT ");
         qb.push_bind(limit);
         qb.push(" OFFSET ");

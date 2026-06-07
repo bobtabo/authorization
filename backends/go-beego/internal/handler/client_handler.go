@@ -62,7 +62,7 @@ func (h *ClientHandler) Index(ctx *beecontext.Context) {
 		}
 	}
 
-	limit := 20
+	limit := 10
 	if v := ctx.Input.Query("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n
@@ -282,7 +282,7 @@ func (h *ClientHandler) JwtHistories(ctx *beecontext.Context) {
 		return
 	}
 
-	limit := 20
+	limit := 10
 	if v := ctx.Input.Query("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n

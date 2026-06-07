@@ -94,7 +94,7 @@ pub struct DestroyBody {
 const DEFAULT_PAGE_COUNT: i64 = 5;
 
 fn build_pager(count: i64, limit: i64, offset: i64, record_count: i64) -> Value {
-    let effective_limit = if limit <= 0 { 20 } else { limit };
+    let effective_limit = if limit <= 0 { 10 } else { limit };
     let page_count = std::cmp::max(1, (count as f64 / effective_limit as f64).ceil() as i64);
     let last_page_offset = (page_count * effective_limit) - effective_limit;
     let effective_offset = if count > 0 && offset > last_page_offset { last_page_offset } else { offset };
@@ -124,7 +124,7 @@ pub async fn index(
     State(state): State<AppState>,
     Query(q): Query<IndexQuery>,
 ) -> (StatusCode, Json<Value>) {
-    let limit = q.limit.unwrap_or(20).max(1);
+    let limit = q.limit.unwrap_or(10).max(1);
     let page = q.page.unwrap_or(1).max(1);
     let offset = limit * (page - 1);
 
@@ -354,7 +354,7 @@ pub async fn jwt_histories(
     Path(id): Path<u64>,
     Query(q): Query<JwtHistoriesQuery>,
 ) -> (StatusCode, Json<Value>) {
-    let limit  = q.limit.unwrap_or(20).max(1);
+    let limit  = q.limit.unwrap_or(10).max(1);
     let page   = q.page.unwrap_or(1).max(1);
     let offset = limit * (page - 1);
     let cond = crate::domain::client::entity::JwtHistoryCondition {

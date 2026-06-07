@@ -9,7 +9,7 @@
 class Api::StaffsController < Api::BaseController
   # スタッフ一覧を返します。
   def index
-    limit  = (params[:limit]  || 20).to_i
+    limit  = (params[:limit]  || 10).to_i
     page   = (params[:page]   || 1).to_i
     offset = limit * (page - 1)
     keyword = params[:keyword]

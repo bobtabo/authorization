@@ -32,7 +32,7 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 	}
 	cond.Roles = parseIntList(ctx.Request.URL.Query()["roles"])
 
-	limit := 20
+	limit := 10
 	if v := ctx.Input.Query("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n

@@ -12,7 +12,7 @@ module Authorization
         include Authorization::Actions::Base
 
         def handle(request, response)
-          limit     = (request.params[:limit]     || 20).to_i
+          limit     = (request.params[:limit]     || 10).to_i
           page      = (request.params[:page]      || 1).to_i
           offset    = limit * (page - 1)
           sort      = request.params[:sort]      || "issue_at"

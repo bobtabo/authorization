@@ -9,7 +9,7 @@
 class Api::ClientsController < Api::BaseController
   # クライアント一覧を返します。
   def index
-    limit  = (params[:limit]  || 20).to_i
+    limit  = (params[:limit]  || 10).to_i
     page   = (params[:page]   || 1).to_i
     offset = limit * (page - 1)
 
@@ -43,7 +43,7 @@ class Api::ClientsController < Api::BaseController
 
   # JWT 履歴一覧を返します。
   def jwt_histories
-    limit     = (params[:limit]     || 20).to_i
+    limit     = (params[:limit]     || 10).to_i
     page      = (params[:page]      || 1).to_i
     offset    = limit * (page - 1)
     sort      = params[:sort]      || "issue_at"

@@ -32,7 +32,7 @@ module Infrastructure
         sort_dir = cond.sort_type == "desc" ? :desc : :asc
         q = q.order(sort_col => sort_dir)
 
-        limit  = (cond.limit  || 20).to_i
+        limit  = (cond.limit  || 10).to_i
         offset = (cond.offset || 0).to_i
         q = q.limit(limit).offset(offset) if limit > 0
 

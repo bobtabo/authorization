@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check } from "lucide-react";
+import { Pager } from "@/components/pager";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
 import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory, type Pager } from "@/src/api/clients";
@@ -405,39 +406,14 @@ export default function ClientShowPage(): React.JSX.Element {
                       </table>
                     </div>
 
-                    <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between bg-gray-50/80">
-                      <div className="text-xs text-gray-500">
-                        全 {jwtPager?.count ?? 0} 件中 {jwtPager && jwtPager.count > 0 ? jwtPager.firstRecordCount : 0}–{jwtPager?.lastRecordCount ?? 0} 件表示
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <select
-                          value={historyPageSize}
-                          onChange={(e) => { setHistoryPageSize(Number(e.target.value)); setHistoryPage(1); }}
-                          className="border border-gray-300 bg-white rounded-md px-2 py-1 text-xs text-gray-700"
-                        >
-                          <option value={10}>10件</option>
-                          <option value={20}>20件</option>
-                          <option value={50}>50件</option>
-                        </select>
-                        <button disabled={!jwtPager?.previous} onClick={() => setHistoryPage(1)}
-                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
-                          <ChevronsLeft size={14} />
-                        </button>
-                        <button disabled={!jwtPager?.previous} onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
-                          <ChevronLeft size={14} />
-                        </button>
-                        <span className="text-xs px-1 font-medium text-gray-700">{jwtPager?.page ?? 1} / {jwtPager?.pageCount ?? 1}</span>
-                        <button disabled={!jwtPager?.next} onClick={() => setHistoryPage((p) => p + 1)}
-                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
-                          <ChevronRight size={14} />
-                        </button>
-                        <button disabled={!jwtPager?.next} onClick={() => setHistoryPage(jwtPager?.pageCount ?? 1)}
-                          className="p-1 rounded border border-gray-300 bg-white text-gray-600 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-35 disabled:hover:border-gray-300 disabled:hover:text-gray-600 disabled:hover:bg-white">
-                          <ChevronsRight size={14} />
-                        </button>
-                      </div>
-                    </div>
+                    {jwtPager && (
+                      <Pager
+                        pager={jwtPager}
+                        onPageChange={(p) => setHistoryPage(p)}
+                        onLimitChange={(l) => { setHistoryPageSize(l); setHistoryPage(1); }}
+                        limitOptions={[10, 50, 100, 250, 500]}
+                      />
+                    )}
                   </>
               )}
             </motion.div>

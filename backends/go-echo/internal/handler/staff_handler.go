@@ -28,7 +28,7 @@ func (h *StaffHandler) Index(c echo.Context) error {
 	}
 	cond.Roles = parseIntList(c.QueryParams()["roles"])
 
-	limit := 20
+	limit := 10
 	if v := c.QueryParam("limit"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			limit = n

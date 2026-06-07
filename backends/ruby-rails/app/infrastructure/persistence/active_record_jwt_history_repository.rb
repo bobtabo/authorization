@@ -18,7 +18,7 @@ module Infrastructure
         @model.where(client_id: client_id, deleted_at: nil).count
       end
 
-      def find_by_condition(client_id, offset: 0, limit: 20, sort: "issue_at", sort_type: "desc")
+      def find_by_condition(client_id, offset: 0, limit: 10, sort: "issue_at", sort_type: "desc")
         sort_col  = ALLOWED_SORT.include?(sort.to_s) ? sort.to_s : "issue_at"
         direction = sort_type.to_s.downcase == "asc" ? :asc : :desc
         @model
