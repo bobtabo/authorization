@@ -61,4 +61,10 @@ export const config = {
     fromAddress: env("MAIL_FROM_ADDRESS", "no-reply@example.com"),
     appName: env("APP_NAME", "Authorization Gateway"),
   },
+  aws: {
+    region: env("AWS_REGION", "ap-northeast-1"),
+    endpoint: env("AWS_ENDPOINT_URL", ""),
+    accessKeyId: env("AWS_ACCESS_KEY_ID", ""),
+    secretAccessKey: env("AWS_SECRET_ACCESS_KEY", ""),
+  },
 } as const;

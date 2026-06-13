@@ -21,3 +21,15 @@ variable "stage_name" {
   type        = string
   default     = "local"
 }
+
+variable "ses_domain" {
+  description = "SES で検証するドメイン"
+  type        = string
+  default     = "example.com"
+}
+
+variable "ses_from_address" {
+  description = "SES 送信元メールアドレス"
+  type        = string
+  default     = "no-reply@example.com"
+}

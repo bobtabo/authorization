@@ -69,7 +69,7 @@ func main() {
 	gateUC := ugate.NewInteractor(persistence.NewGormClientRepository(database), jwtHistoryRepo, gateCacheRepo, cfg)
 
 	// --- Mail ---
-	mailer := mail.NewMailer(cfg.Mail)
+	mailer := mail.NewMailer(cfg.Mail, cfg.AWS)
 
 	// --- Handlers ---
 	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)

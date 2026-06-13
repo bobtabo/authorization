@@ -149,6 +149,26 @@ make output
 > フロントエンドから接続する場合は `frontend/.env.localstack` を `.env.local` にコピーし、</br>
 > API Gateway ID を反映する（詳細は `.env.localstack` 内のコメントを参照）。
 
+#### 5c. SES メール送信（LocalStack）
+
+Terraform で SES ドメイン認証・送信元アドレスを LocalStack 上に作成します。</br>
+`make apply` を実行すれば API Gateway / Lambda と合わせて SES リソースも作成されます。
+
+各バックエンドの `.env` に以下を設定してください:
+
+```bash
+AWS_REGION=ap-northeast-1
+AWS_ENDPOINT_URL=http://localstack:4566
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+```
+
+> [!NOTE]
+>
+> メール送信は全バックエンドで AWS SES SDK を使用しています。</br>
+> ローカル開発では LocalStack の SES エンドポイントにリクエストが送られます。</br>
+> 本番環境では `AWS_ENDPOINT_URL` を空にし、IAM ロールまたはアクセスキーで認証します。
+
 ### 6. フロントエンドの起動
 
 ```bash

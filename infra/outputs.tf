@@ -17,3 +17,13 @@ output "lambda_function_name" {
   description = "Lambda 関数名"
   value       = aws_lambda_function.http_function.function_name
 }
+
+output "ses_domain" {
+  description = "SES 検証済みドメイン"
+  value       = aws_ses_domain_identity.main.domain
+}
+
+output "ses_from_address" {
+  description = "SES 送信元メールアドレス"
+  value       = aws_ses_email_identity.sender.email
+}

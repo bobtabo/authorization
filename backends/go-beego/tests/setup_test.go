@@ -107,7 +107,7 @@ func buildRouter() http.Handler {
 
 	gateUC := ugate.NewInteractor(persistence.NewOrmClientRepository(testOrmer), nil, gateCacheRepo, testCfg)
 
-	mailer := mail.NewMailer(testCfg.Mail)
+	mailer := mail.NewMailer(testCfg.Mail, testCfg.AWS)
 	authH := handler.NewAuthHandler(testOrmer, newAuthUC, newInviteUC, testCfg)
 	clientH := handler.NewClientHandler(testOrmer, newClientUC, newNotifUC, mailer, nil, "")
 	staffH := handler.NewStaffHandler(testOrmer, newStaffUC)
