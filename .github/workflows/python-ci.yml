@@ -4,8 +4,8 @@ name: Python CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'backends/python-fastapi/**'
   workflow_dispatch:

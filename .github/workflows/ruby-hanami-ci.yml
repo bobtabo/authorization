@@ -4,8 +4,8 @@ name: Ruby Hanami CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'backends/ruby-hanami/**'
   workflow_dispatch:

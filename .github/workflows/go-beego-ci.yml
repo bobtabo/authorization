@@ -2,8 +2,8 @@ name: Go Beego CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'backends/go-beego/**'
   workflow_dispatch:

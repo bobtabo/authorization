@@ -2,8 +2,8 @@ name: Go Echo CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'backends/go-echo/**'
   workflow_dispatch:

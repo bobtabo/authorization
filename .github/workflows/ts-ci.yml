@@ -4,8 +4,8 @@ name: TypeScript CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'backends/ts-hono/**'
   workflow_dispatch:
