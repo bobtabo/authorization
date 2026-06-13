@@ -46,7 +46,7 @@ pub async fn build_state(cfg: Arc<config::Config>) -> (AppState, sqlx::MySqlPool
     let invitation_uc   = Arc::new(usecase::invitation::Interactor::new(invitation_repo, invitation_auth_cache));
     let gate_uc         = Arc::new(usecase::gate::Interactor::new(client_repo.clone(), gate_cache, cfg.clone(), jwt_history_repo.clone()));
     let notification_uc = Arc::new(usecase::notification::Interactor::new(notification_repo, staff_repo.clone()));
-    let mailer          = Arc::new(infrastructure::mail::Mailer::new(cfg.mail.clone()));
+    let mailer          = Arc::new(infrastructure::mail::Mailer::new(cfg.mail.clone(), cfg.aws.clone()));
 
     let app_state = AppState {
         cfg: cfg.clone(),
