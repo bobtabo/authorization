@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     mail_from_address: str = "no-reply@example.com"
     app_name: str = "Authorization Gateway"
 
+    aws_region: str = "ap-northeast-1"
+    aws_endpoint_url: str = ""
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+
     # JWT固定値
     jwt_issuer: str = "authorization"
     jwt_algorithm: str = "RS256"
