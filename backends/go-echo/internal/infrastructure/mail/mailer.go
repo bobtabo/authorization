@@ -57,7 +57,7 @@ func (m *Mailer) SendActivation(to, clientName, activateURL string) {
 	if to == "" {
 		return
 	}
-	subject := mailSubject(m.mailCfg.AppEnv, fmt.Sprintf("【%s / Go】ご利用開始のご案内", m.mailCfg.AppName))
+	subject := mailSubject(m.mailCfg.AppEnv, fmt.Sprintf("【%s / Echo】ご利用開始のご案内", m.mailCfg.AppName))
 	body := buildActivationHTML(clientName, activateURL, m.mailCfg.AppName)
 
 	ctx := context.Background()
