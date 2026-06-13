@@ -59,14 +59,14 @@ variable "ssm_db_name" {
 variable "ssm_db_username" {
   description = "SSM: データベースユーザー名"
   type        = string
-  default     = "develop"
+  default     = "your-db-username"
   sensitive   = true
 }
 
 variable "ssm_db_password" {
   description = "SSM: データベースパスワード"
   type        = string
-  default     = "docker#DOCKER1234"
+  default     = "your-db-password"
   sensitive   = true
 }
 

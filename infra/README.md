@@ -94,6 +94,22 @@ ssm_parameter_paths  = [
 | `/authorization/app/env` | String | アプリケーション環境名 |
 | `/authorization/app/jwt_secret` | SecureString | JWT シークレット |
 
+### 実際の値の設定
+
+`variables.tf` のデフォルト値はプレースホルダーです。</br>
+ローカル開発で実際の値を使用する場合は `infra/terraform.tfvars` を作成してください（`.gitignore` 対象）。
+
+```hcl
+# infra/terraform.tfvars
+ssm_db_username        = "develop"
+ssm_db_password        = "docker#DOCKER1234"
+ssm_google_client_id   = "your-real-google-client-id"
+ssm_google_client_secret = "your-real-google-client-secret"
+ssm_github_client_id   = "your-real-github-client-id"
+ssm_github_client_secret = "your-real-github-client-secret"
+ssm_app_jwt_secret     = "your-real-jwt-secret"
+```
+
 ### パラメータの取得（AWS CLI）
 
 ```bash
