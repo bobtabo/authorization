@@ -22,7 +22,12 @@ MailConfig = Struct.new(
   keyword_init: true
 )
 
-Config = Struct.new(:app, :db, :redis, :oauth, :jwt, :mail, keyword_init: true)
+AwsConfig = Struct.new(
+  :region, :endpoint, :access_key, :secret_key,
+  keyword_init: true
+)
+
+Config = Struct.new(:app, :db, :redis, :oauth, :jwt, :mail, :aws, keyword_init: true)
 
 module ConfigLoader
   def self.load
@@ -71,6 +76,12 @@ module ConfigLoader
         from_address: ENV.fetch('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
         app_name:     ENV.fetch('APP_NAME', 'Authorization Gateway'),
         app_env:      ENV.fetch('APP_ENV', 'local'),
+      ),
+      aws: AwsConfig.new(
+        region:     ENV.fetch('AWS_REGION', 'ap-northeast-1'),
+        endpoint:   ENV.fetch('AWS_ENDPOINT_URL', ''),
+        access_key: ENV.fetch('AWS_ACCESS_KEY_ID', ''),
+        secret_key: ENV.fetch('AWS_SECRET_ACCESS_KEY', ''),
       ),
     )
   end
