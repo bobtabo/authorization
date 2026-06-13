@@ -1,22 +1,34 @@
+// Package mail はメール送信の実装を提供します。
 package mail
 
 import (
 	"authorization-go-echo/internal/config"
+	"context"
 	"fmt"
 	"log"
-	"mime"
-	"net/smtp"
 	"strings"
 	"time"
+
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/ses"
+	"github.com/aws/aws-sdk-go-v2/service/ses/types"
 )
 
+// Mailer は SES メール送信サービスです。
 type Mailer struct {
-	cfg config.MailConfig
+	mailCfg config.MailConfig
+	awsCfg  config.AWSConfig
 }
 
-func NewMailer(cfg config.MailConfig) *Mailer {
-	return &Mailer{cfg: cfg}
+// NewMailer は Mailer を生成します。
+//
+// mailCfg: メール設定
+// awsCfg: AWS設定
+func NewMailer(mailCfg config.MailConfig, awsCfg config.AWSConfig) *Mailer {
+	return &Mailer{mailCfg: mailCfg, awsCfg: awsCfg}
 }
+
 
 func envLabel(env string) string {
 	switch env {
@@ -40,29 +52,73 @@ func mailSubject(env, subject string) string {
 	return subject
 }
 
+// SendActivation はクライアントにご利用開始のご案内をメールで送信します。
 func (m *Mailer) SendActivation(to, clientName, activateURL string) {
 	if to == "" {
 		return
 	}
-	subject := mailSubject(m.cfg.AppEnv, fmt.Sprintf("【%s / Echo】ご利用開始のご案内", m.cfg.AppName))
-	body := buildActivationHTML(clientName, activateURL, m.cfg.AppName)
+	subject := mailSubject(m.mailCfg.AppEnv, fmt.Sprintf("【%s / Go】ご利用開始のご案内", m.mailCfg.AppName))
+	body := buildActivationHTML(clientName, activateURL, m.mailCfg.AppName)
 
-	fromHeader := mime.QEncoding.Encode("UTF-8", m.cfg.AppName) + " <" + m.cfg.FromAddress + ">"
-	msg := "MIME-Version: 1.0\r\n" +
-		"Content-Type: text/html; charset=UTF-8\r\n" +
-		"From: " + fromHeader + "\r\n" +
-		"To: " + to + "\r\n" +
-		"Subject: " + mime.QEncoding.Encode("UTF-8", subject) + "\r\n" +
-		"\r\n" + body
-
-	addr := m.cfg.Host + ":" + m.cfg.Port
-	var auth smtp.Auth
-	if m.cfg.Username != "" {
-		auth = smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
+	ctx := context.Background()
+	client, err := m.newSESClient(ctx)
+	if err != nil {
+		log.Printf("ses client error: %v", err)
+		return
 	}
-	if err := smtp.SendMail(addr, auth, m.cfg.FromAddress, []string{to}, []byte(msg)); err != nil {
+
+	source := fmt.Sprintf("%s <%s>", m.mailCfg.AppName, m.mailCfg.FromAddress)
+	input := &ses.SendEmailInput{
+		Source: &source,
+		Destination: &types.Destination{
+			ToAddresses: []string{to},
+		},
+		Message: &types.Message{
+			Subject: &types.Content{
+				Data:    &subject,
+				Charset: strPtr("UTF-8"),
+			},
+			Body: &types.Body{
+				Html: &types.Content{
+					Data:    &body,
+					Charset: strPtr("UTF-8"),
+				},
+			},
+		},
+	}
+
+	if _, err := client.SendEmail(ctx, input); err != nil {
 		log.Printf("mail send error: %v", err)
 	}
+}
+
+func (m *Mailer) newSESClient(ctx context.Context) (*ses.Client, error) {
+	opts := []func(*awsconfig.LoadOptions) error{
+		awsconfig.WithRegion(m.awsCfg.Region),
+	}
+	if m.awsCfg.AccessKey != "" {
+		opts = append(opts, awsconfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(m.awsCfg.AccessKey, m.awsCfg.SecretKey, ""),
+		))
+	}
+
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	sesOpts := []func(*ses.Options){}
+	if m.awsCfg.Endpoint != "" {
+		sesOpts = append(sesOpts, func(o *ses.Options) {
+			o.BaseEndpoint = &m.awsCfg.Endpoint
+		})
+	}
+
+	return ses.NewFromConfig(cfg, sesOpts...), nil
+}
+
+func strPtr(s string) *string {
+	return &s
 }
 
 func buildActivationHTML(name, activateURL, appName string) string {

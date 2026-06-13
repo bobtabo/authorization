@@ -58,7 +58,7 @@ func main() {
 	jwtHistoryRepo := persistence.NewSQLJwtHistoryRepository(rawDB)
 	gateUC := ugate.NewInteractor(persistence.NewEntClientRepository(database), jwtHistoryRepo, gateCacheRepo, cfg)
 
-	mailer := mail.NewMailer(cfg.Mail)
+	mailer := mail.NewMailer(cfg.Mail, cfg.AWS)
 
 	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
 	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo, cfg.App.FrontendURL)

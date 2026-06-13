@@ -15,6 +15,7 @@ type Config struct {
 	OAuth OAuthConfig
 	JWT   JWTConfig
 	Mail  MailConfig
+	AWS   AWSConfig
 }
 
 type AppConfig struct {
@@ -61,6 +62,13 @@ type MailConfig struct {
 	FromAddress string
 	AppName     string
 	AppEnv      string
+}
+
+type AWSConfig struct {
+	Region    string
+	Endpoint  string
+	AccessKey string
+	SecretKey string
 }
 
 func Load() *Config {
@@ -110,6 +118,12 @@ func Load() *Config {
 			FromAddress: getEnv("MAIL_FROM_ADDRESS", "no-reply@example.com"),
 			AppName:     getEnv("APP_NAME", "Authorization Gateway"),
 			AppEnv:      getEnv("APP_ENV", "local"),
+		},
+		AWS: AWSConfig{
+			Region:    getEnv("AWS_REGION", "ap-northeast-1"),
+			Endpoint:  getEnv("AWS_ENDPOINT_URL", ""),
+			AccessKey: getEnv("AWS_ACCESS_KEY_ID", ""),
+			SecretKey: getEnv("AWS_SECRET_ACCESS_KEY", ""),
 		},
 	}
 }

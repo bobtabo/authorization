@@ -109,7 +109,7 @@ func buildRouter() *echo.Echo {
 
 	gateUC := ugate.NewInteractor(persistence.NewEntClientRepository(testDB), nil, gateCacheRepo, testCfg)
 
-	mailer := mail.NewMailer(testCfg.Mail)
+	mailer := mail.NewMailer(testCfg.Mail, testCfg.AWS)
 	authH := handler.NewAuthHandler(testDB, newAuthUC, newInviteUC, testCfg)
 	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer, nil, "")
 	staffH := handler.NewStaffHandler(testDB, newStaffUC)
