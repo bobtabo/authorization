@@ -53,6 +53,7 @@
 │   └── ui-flow/           # 画面フロー
 ├── 📂 frontend/           # 認可管理画面（React / Next.js）
 ├── 📂 function/           # AWS Lambda 関数（Go）
+├── 📂 infra/              # Terraform IaC 定義（LocalStack 向け）
 └── 📜 README.md
 ```
 
@@ -68,6 +69,7 @@
 | **`docs/ui-flow`**  | 画面フロー                             | [README.md](./docs/ui-flow/README.md)  |
 | **`frontend/`**     | 認可管理画面（React / Next.js）           | [README.md](./frontend/README.md)      |
 | **`function/`**     | AWS Lambda 関数（Go）                 | [README.md](./function/README.md)      |
+| **`infra/`**        | Terraform IaC 定義（LocalStack 向け）    | [README.md](./infra/README.md)         |
 
 ---
 
@@ -76,7 +78,7 @@
 ### 前提
 
 - Docker Engine / Docker Compose がインストール済みであること
-- ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`9000`（Lambda）、`8080`（API Gateway エミュレータ）、`8025`（MailPit）がローカルで空いていること
+- ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`9000`（Lambda）、`8080`（API Gateway エミュレータ）、`4566`（LocalStack）、`8025`（MailPit）がローカルで空いていること
 - Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（<a href="https://console.cloud.google.com/">Google Cloud Console</a>）
 - GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers">GitHub Developer Settings</a>）
 
@@ -95,7 +97,7 @@ find ./bin -type f -exec chmod 755 {} +
 bin/docker-environment.sh
 ```
 
-### 3. 共通コンテナの起動（Nginx Proxy / MySQL / Redis / Lambda / MailPit）
+### 3. 共通コンテナの起動（Nginx Proxy / MySQL / Redis / Lambda / LocalStack / MailPit）
 
 ```bash
 bin/docker-common.sh up
@@ -109,6 +111,8 @@ bin/docker-backends.sh up
 
 ### 5. API Gateway エミュレーターの起動
 
+#### 5a. カスタムエミュレーター（従来方式）
+
 ```bash
 cd function
 make run-apigw-emulator
@@ -116,6 +120,34 @@ make run-apigw-emulator
 > [!NOTE]
 >
 > HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。</br>Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送する。
+
+#### 5b. LocalStack + Terraform（IaC 方式）
+
+LocalStack 上に API Gateway / Lambda を Terraform で構築する方式。</br>
+本番 AWS 構成に近い形でローカル検証できる。
+
+```bash
+# 1. Lambda 関数を zip にまとめる
+cd function
+make zip  # → function.zip（bootstrap バイナリ含む）が生成される
+
+# 2. tflocal をインストール（初回のみ）
+pip install terraform-local
+
+# 3. Terraform でリソースを作成
+cd ../infra
+make apply
+
+# 4. API Gateway URL を確認
+make output
+```
+
+> [!NOTE]
+>
+> LocalStack コンテナが起動済みであること（手順 3 で `docker-common.sh up` 済み）。</br>
+> `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
+> フロントエンドから接続する場合は `frontend/.env.localstack` を `.env.local` にコピーし、</br>
+> API Gateway ID を反映する（詳細は `.env.localstack` 内のコメントを参照）。
 
 ### 6. フロントエンドの起動
 
@@ -245,6 +277,7 @@ http://localhost:3000/invitation/8f13761980983d1d9e3950d11b42016f
 | ツール | URL |
 |:---|:---|
 | MailPit（メール確認） | http://localhost:8025/ |
+| LocalStack | http://localhost:4566/ |
 
 ---
 

@@ -103,3 +103,19 @@ services:
       options:
         max-size: "5m"
         max-file: "10"
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: ${LOCALSTACK_CONTAINER}
+    ports:
+      - "${LOCALSTACK_PORT}:4566"
+    environment:
+      - SERVICES=apigateway,lambda,iam
+      - LAMBDA_DOCKER_NETWORK=authorization
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/localstack:/var/lib/localstack
+    networks:
+      - authorization
