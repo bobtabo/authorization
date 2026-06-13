@@ -1,6 +1,6 @@
 # ──────────────────────────────────────────────
 # LocalStack 向け Terraform 定義
-# tflocal apply で API Gateway + Lambda を構築する
+# tflocal apply で API Gateway + Lambda + SES + SSM を構築する
 # ──────────────────────────────────────────────
 
 terraform {
@@ -28,5 +28,6 @@ provider "aws" {
     lambda     = var.localstack_endpoint
     s3         = var.localstack_endpoint
     ses        = var.localstack_endpoint
+    ssm        = var.localstack_endpoint
   }
 }
