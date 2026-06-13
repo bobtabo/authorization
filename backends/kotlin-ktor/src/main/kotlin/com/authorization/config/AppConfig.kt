@@ -51,6 +51,13 @@ data class MailConfig(
     val appEnv: String,
 )
 
+data class AwsConfig(
+    val region: String,
+    val endpoint: String,
+    val accessKey: String,
+    val secretKey: String,
+)
+
 data class Config(
     val app: AppConfig,
     val db: DbConfig,
@@ -58,6 +65,7 @@ data class Config(
     val oauth: OAuthConfig,
     val jwt: JwtConfig,
     val mail: MailConfig,
+    val aws: AwsConfig,
 )
 
 object ConfigLoader {
@@ -122,6 +130,12 @@ object ConfigLoader {
                 fromAddress = str("MAIL_FROM_ADDRESS", "no-reply@example.com"),
                 appName     = str("APP_NAME", "Authorization Gateway"),
                 appEnv      = str("APP_ENV", "local"),
+            ),
+            aws = AwsConfig(
+                region    = str("AWS_REGION", "ap-northeast-1"),
+                endpoint  = str("AWS_ENDPOINT_URL", ""),
+                accessKey = str("AWS_ACCESS_KEY_ID", ""),
+                secretKey = str("AWS_SECRET_ACCESS_KEY", ""),
             ),
         )
     }

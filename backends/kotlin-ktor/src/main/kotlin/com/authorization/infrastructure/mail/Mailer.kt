@@ -1,77 +1,87 @@
 /*
- * メール送信モジュール。
+ * メール送信インフラストラクチャー。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 package com.authorization.infrastructure.mail
 
+import com.authorization.config.AwsConfig
 import com.authorization.config.MailConfig
-import jakarta.mail.Authenticator
-import jakarta.mail.Message
-import jakarta.mail.PasswordAuthentication
-import jakarta.mail.Session
-import jakarta.mail.Transport
-import jakarta.mail.internet.InternetAddress
-import jakarta.mail.internet.MimeMessage
+import aws.sdk.kotlin.services.ses.SesClient
+import aws.sdk.kotlin.services.ses.model.*
+import aws.smithy.kotlin.runtime.net.url.Url
+import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
 import java.time.Year
-import java.util.Properties
 
 /**
- * メール送信クラスです。
+ * SES メール送信クラスです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-class Mailer(private val cfg: MailConfig) {
+class Mailer(private val mailCfg: MailConfig, private val awsCfg: AwsConfig) {
 
     /**
-     * クライアントへご利用開始のご案内メールを送信します。
+     * クライアントへ利用開始のご案内メールを送信します。
      *
      * @param to 宛先メールアドレス
      * @param clientName クライアント名
-     * @param activateUrl QRページURL
+     * @param activateUrl アクティベートページURL
      */
-    fun sendActivation(to: String, clientName: String, activateUrl: String) {
+    suspend fun sendActivation(to: String, clientName: String, activateUrl: String) {
         if (to.isBlank()) return
 
-        val subject = mailSubject("【${cfg.appName} / Kotlin】ご利用開始のご案内")
-        val body = buildActivationHtml(clientName, activateUrl, cfg.appName)
-
-        val props = Properties().apply {
-            put("mail.smtp.host", cfg.host)
-            put("mail.smtp.port", cfg.port)
-            put("mail.smtp.auth", cfg.username.isNotBlank().toString())
-        }
-
-        val session = if (cfg.username.isNotBlank()) {
-            Session.getInstance(props, object : Authenticator() {
-                override fun getPasswordAuthentication() =
-                    PasswordAuthentication(cfg.username, cfg.password)
-            })
-        } else {
-            Session.getInstance(props)
-        }
+        val subject = mailSubject("【${mailCfg.appName} / Kotlin】ご利用開始のご案内")
+        val body = buildActivationHtml(clientName, activateUrl, mailCfg.appName)
 
         try {
-            val msg = MimeMessage(session).apply {
-                setFrom(InternetAddress(cfg.fromAddress, cfg.appName, "UTF-8"))
-                setRecipients(Message.RecipientType.TO, InternetAddress.parse(to))
-                setSubject(subject, "UTF-8")
-                setContent(body, "text/html; charset=UTF-8")
+            val client = buildSesClient()
+            client.use { ses ->
+                val request = SendEmailRequest {
+                    source = "${mailCfg.appName} <${mailCfg.fromAddress}>"
+                    destination = Destination { toAddresses = listOf(to) }
+                    message = Message {
+                        this.subject = Content {
+                            data = subject
+                            charset = "UTF-8"
+                        }
+                        this.body = Body {
+                            html = Content {
+                                data = body
+                                charset = "UTF-8"
+                            }
+                        }
+                    }
+                }
+                ses.sendEmail(request)
             }
-            Transport.send(msg)
         } catch (e: Exception) {
             System.err.println("mail send error: ${e.message}")
         }
     }
 
+    private fun buildSesClient(): SesClient {
+        return SesClient {
+            region = awsCfg.region
+            if (awsCfg.endpoint.isNotBlank()) {
+                endpointUrl = Url.parse(awsCfg.endpoint)
+            }
+            if (awsCfg.accessKey.isNotBlank()) {
+                credentialsProvider = StaticCredentialsProvider {
+                    accessKeyId = awsCfg.accessKey
+                    secretAccessKey = awsCfg.secretKey
+                }
+            }
+        }
+    }
+
     /**
-     * 環境に応じたメール件名プレフィックスを付与します。
+     * 環境に応じメール件名にラベルを付与します。
      *
      * @param subject 件名
      * @return プレフィックス付き件名
      */
     private fun mailSubject(subject: String): String {
-        val label = when (cfg.appEnv) {
+        val label = when (mailCfg.appEnv) {
             "local"   -> "Local"
             "testing" -> "Test"
             "develop" -> "Develop"
@@ -83,10 +93,10 @@ class Mailer(private val cfg: MailConfig) {
 }
 
 /**
- * ご利用開始のご案内メールの HTML を生成します。
+ * ご利用開始のご案内メールのHTML を生成します。
  *
  * @param name クライアント名
- * @param activateUrl QRページURL
+ * @param activateUrl アクティベートページURL
  * @param appName アプリケーション名
  * @return HTML 文字列
  */

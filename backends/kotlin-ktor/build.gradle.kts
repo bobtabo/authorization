@@ -40,6 +40,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:$hikari_version")
     implementation("redis.clients:jedis:$jedis_version")
     implementation("org.eclipse.angus:angus-mail:$angus_mail_version")
+    implementation("aws.sdk.kotlin:ses:1.4.119")
     implementation("io.github.cdimascio:dotenv-kotlin:$dotenv_version")
     implementation("com.nimbusds:nimbus-jose-jwt:$nimbus_jwt_version")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
