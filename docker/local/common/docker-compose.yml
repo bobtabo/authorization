@@ -110,7 +110,7 @@ services:
     ports:
       - "${LOCALSTACK_PORT}:4566"
     environment:
-      - SERVICES=apigateway,lambda,iam
+      - SERVICES=apigateway,lambda,iam,ses
       - LAMBDA_DOCKER_NETWORK=authorization
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DEBUG=0

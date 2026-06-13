@@ -27,5 +27,6 @@ provider "aws" {
     iam        = var.localstack_endpoint
     lambda     = var.localstack_endpoint
     s3         = var.localstack_endpoint
+    ses        = var.localstack_endpoint
   }
 }
