@@ -27,3 +27,27 @@ output "ses_from_address" {
   description = "SES 送信元メールアドレス"
   value       = aws_ses_email_identity.sender.email
 }
+
+output "ssm_parameter_prefix" {
+  description = "SSM Parameter Store のプレフィックス"
+  value       = "/authorization"
+}
+
+output "ssm_parameter_paths" {
+  description = "作成された SSM パラメータのパス一覧"
+  value = [
+    aws_ssm_parameter.db_host.name,
+    aws_ssm_parameter.db_port.name,
+    aws_ssm_parameter.db_name.name,
+    aws_ssm_parameter.db_username.name,
+    aws_ssm_parameter.db_password.name,
+    aws_ssm_parameter.redis_host.name,
+    aws_ssm_parameter.redis_port.name,
+    aws_ssm_parameter.google_client_id.name,
+    aws_ssm_parameter.google_client_secret.name,
+    aws_ssm_parameter.github_client_id.name,
+    aws_ssm_parameter.github_client_secret.name,
+    aws_ssm_parameter.app_env.name,
+    aws_ssm_parameter.app_jwt_secret.name,
+  ]
+}

@@ -169,6 +169,33 @@ AWS_SECRET_ACCESS_KEY=test
 > ローカル開発では LocalStack の SES エンドポイントにリクエストが送られます。</br>
 > 本番環境では `AWS_ENDPOINT_URL` を空にし、IAM ロールまたはアクセスキーで認証します。
 
+#### 5d. SSM Parameter Store（LocalStack）
+
+Terraform で SSM Parameter Store のパラメータを LocalStack 上に作成します。</br>
+`make apply` を実行すれば API Gateway / Lambda / SES と合わせて SSM リソースも作成されます。
+
+```bash
+# パラメータ一覧を確認
+aws --endpoint-url=http://localhost:4566 ssm get-parameters-by-path \
+  --path "/authorization" --recursive --with-decryption
+```
+
+管理対象パラメータ:
+
+| パス | 用途 |
+|:---|:---|
+| `/authorization/database/*` | DB 接続情報（host / port / name / username / password） |
+| `/authorization/redis/*` | Redis 接続情報（host / port） |
+| `/authorization/oauth/google/*` | Google OAuth クライアント情報 |
+| `/authorization/oauth/github/*` | GitHub OAuth クライアント情報 |
+| `/authorization/app/*` | アプリケーション共通設定（env / jwt_secret） |
+
+> [!NOTE]
+>
+> 本番 AWS では SSM Parameter Store で秘密情報を一元管理し、各バックエンドが起動時に取得します。</br>
+> ローカル開発では LocalStack の SSM エンドポイントから取得できます。</br>
+> `variables.tf` のデフォルト値を変更するか、`terraform.tfvars` で上書きしてください。
+
 ### 6. フロントエンドの起動
 
 ```bash
