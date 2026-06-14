@@ -37,7 +37,7 @@ done
 
 if [ ${ELAPSED} -ge ${MAX_WAIT} ]; then
     echo "⚠️  LocalStack の起動がタイムアウトしました（${MAX_WAIT}秒）"
-    echo "   手動で起動を確認し、cd infra && make apply を実行してください"
+    echo "   手動で起動を確認し、cd terraform/local && make apply を実行してください"
     exit 0
 fi
 
@@ -55,7 +55,7 @@ fi
 # ── 3. tflocal apply ──
 echo ""
 echo "🏗️  Terraform リソースを作成中..."
-cd "${PROJECT_ROOT}/infra"
+cd "${PROJECT_ROOT}/terraform/local"
 if command -v tflocal &>/dev/null; then
     make apply
 else
