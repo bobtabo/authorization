@@ -36,7 +36,8 @@ if [ ! -f "${TEMPLATE}" ]; then
 fi
 
 cp "${TEMPLATE}" "${OUTPUT}"
-sed -i "s/{api-id}/${API_GATEWAY_ID}/g" "${OUTPUT}"
+TMP="$(mktemp)"
+sed "s/{api-id}/${API_GATEWAY_ID}/g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
 
 echo "✅ ${OUTPUT} を生成しました"
 echo "   NEXT_PUBLIC_API_URL=http://localhost:4566/restapis/${API_GATEWAY_ID}/local/_user_request_/function/php/api"
