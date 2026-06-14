@@ -13,7 +13,7 @@ variable "localstack_endpoint" {
 variable "lambda_zip_path" {
   description = "Lambda デプロイ用 ZIP ファイルのパス"
   type        = string
-  default     = "../function/function.zip"
+  default     = "../../function/function.zip"
 }
 
 variable "stage_name" {

@@ -53,7 +53,11 @@
 │   └── ui-flow/           # 画面フロー
 ├── 📂 frontend/           # 認可管理画面（React / Next.js）
 ├── 📂 function/           # AWS Lambda 関数（Go）
-├── 📂 infra/              # Terraform IaC 定義（LocalStack 向け）
+├── 📂 terraform/          # Terraform IaC 定義（環境別）
+│   ├── local/             # LocalStack 向け
+│   ├── develop/           # 実 AWS 開発環境用（予約）
+│   ├── staging/           # 実 AWS ステージング用（予約）
+│   └── production/        # 実 AWS 本番用（予約）
 └── 📜 README.md
 ```
 
@@ -69,7 +73,7 @@
 | **`docs/ui-flow`**  | 画面フロー                             | [README.md](./docs/ui-flow/README.md)  |
 | **`frontend/`**     | 認可管理画面（React / Next.js）           | [README.md](./frontend/README.md)      |
 | **`function/`**     | AWS Lambda 関数（Go）                 | [README.md](./function/README.md)      |
-| **`infra/`**        | Terraform IaC 定義（LocalStack 向け）    | [README.md](./infra/README.md)         |
+| **`terraform/`**    | Terraform IaC 定義（環境別）              | [README.md](./terraform/local/README.md) |
 
 ---
 
@@ -135,7 +139,7 @@ make zip  # → function.zip（bootstrap バイナリ含む）が生成される
 pip install terraform-local
 
 # 3. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
-cd ../infra
+cd ../terraform/local
 make apply
 ```
 
@@ -145,7 +149,7 @@ make apply
 > `docker-common.sh up` を実行した場合は、LocalStack 起動後に自動で `tflocal apply` + `.env.local` 生成が行われる。</br>
 > `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
 > `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
-> 手動で再生成する場合は `cd infra && make setup-env` を実行。
+> 手動で再生成する場合は `cd terraform/local && make setup-env` を実行。
 
 #### 5b-2. ngrok による外部公開（LocalStack 環境）
 

@@ -1,4 +1,4 @@
-# infra/ — LocalStack + Terraform IaC 定義
+# terraform/local/ — LocalStack + Terraform IaC 定義
 
 ローカル開発環境で API Gateway / Lambda / SES / SSM Parameter Store を **LocalStack + Terraform** で IaC 管理するための定義です。
 
@@ -36,11 +36,11 @@ pip install terraform-local
 
 ```bash
 # 1. Lambda バイナリをビルド & ZIP 化
-cd ../function
+cd ../../function
 make zip
 
 # 2. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
-cd ../infra
+cd ../terraform/local
 make apply
 
 # 3. API Gateway URL を確認
@@ -104,10 +104,10 @@ ssm_parameter_paths  = [
 ### 実際の値の設定
 
 `variables.tf` のデフォルト値はプレースホルダーです。</br>
-ローカル開発で実際の値を使用する場合は `infra/terraform.tfvars` を作成してください（`.gitignore` 対象）。
+ローカル開発で実際の値を使用する場合は `terraform/local/terraform.tfvars` を作成してください（`.gitignore` 対象）。
 
 ```hcl
-# infra/terraform.tfvars
+# terraform/local/terraform.tfvars
 ssm_db_username        = "develop"
 ssm_db_password        = "docker#DOCKER1234"
 ssm_google_client_id   = "your-real-google-client-id"

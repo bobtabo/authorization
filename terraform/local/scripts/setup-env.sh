@@ -4,7 +4,7 @@
 # frontend/.env.localstack をテンプレートとして frontend/.env.local を生成するスクリプト
 #
 # 使い方:
-#   cd infra && bash scripts/setup-env.sh
+#   cd terraform/local && bash scripts/setup-env.sh
 #   または make setup-env
 #
 
@@ -12,7 +12,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 INFRA_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-PROJECT_ROOT="$(cd "${INFRA_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${INFRA_DIR}/../.." && pwd)"
 
 TEMPLATE="${PROJECT_ROOT}/frontend/.env.localstack"
 OUTPUT="${PROJECT_ROOT}/frontend/.env.local"
