@@ -13,7 +13,7 @@
   - [前提](#前提)
   - [1. リポジトリのクローン](#1-リポジトリのクローン)
   - [2. 初回セットアップ](#2-初回セットアップ)
-  - [3. 共通コンテナの起動](#3-共通コンテナの起動nginx-proxy--mysql--redis--lambda--mailpit)
+  - [3. 共通コンテナの起動](#3-共通コンテナの起動)
   - [4. バックエンドコンテナの起動](#4-バックエンドコンテナの起動)
   - [5. API Gateway エミュレーターの起動](#5-api-gateway-エミュレーターの起動)
   - [6. フロントエンドの起動](#6-フロントエンドの起動)
@@ -47,7 +47,7 @@
 │   ├── ruby-rails/
 │   ├── rust-axum/
 │   └── ts-hono/
-├── 📂 docker/             # コンテナ定義
+├── 📂 docker/             # コンテナ定義（BACKEND_MODE で切り替え）
 ├── 📂 docs/
 │   ├── api-spec/          # API 仕様書（OpenAPI / Swagger UI）
 │   └── ui-flow/           # 画面フロー
@@ -101,11 +101,31 @@ find ./bin -type f -exec chmod 755 {} +
 bin/docker-environment.sh
 ```
 
-### 3. 共通コンテナの起動（Nginx Proxy / MySQL / Redis / Lambda / LocalStack / MailPit）
+### 3. 共通コンテナの起動
+
+`BACKEND_MODE` に応じて起動するサービスが切り替わります。
+
+| モード | 環境 | 費用 | 状態 |
+|:---|:---|:---|:---|
+| `localstack`（デフォルト）| LocalStack Community | 無料 | **推奨** |
+| `localstack-pro` | LocalStack Pro | 有料 | 将来対応 |
+| `emulator` | Lambda 常駐 + MailPit | 無料 | 非推奨（LocalStack が使えない環境向け）|
 
 ```bash
+# デフォルト（localstack モード）で起動
 bin/docker-common.sh up
+
+# モードを切り替える場合は .env の BACKEND_MODE を変更してから実行
+# vi docker/local/common/.env
+# BACKEND_MODE=emulator
 ```
+
+> [!NOTE]
+>
+> `docker-common.sh up` は `BACKEND_MODE` に応じた Docker Compose ファイルを自動選択します。</br>
+> **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行されます。</br>
+> **emulator**: `docker-compose.yml` + `docker-compose.emulator.yml` で起動します（非推奨）。</br>
+> フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。
 
 ### 4. バックエンドコンテナの起動
 
