@@ -134,20 +134,43 @@ make zip  # → function.zip（bootstrap バイナリ含む）が生成される
 # 2. tflocal をインストール（初回のみ）
 pip install terraform-local
 
-# 3. Terraform でリソースを作成
+# 3. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
 cd ../infra
 make apply
-
-# 4. API Gateway URL を確認
-make output
 ```
 
 > [!NOTE]
 >
 > LocalStack コンテナが起動済みであること（手順 3 で `docker-common.sh up` 済み）。</br>
+> `docker-common.sh up` を実行した場合は、LocalStack 起動後に自動で `tflocal apply` + `.env.local` 生成が行われる。</br>
 > `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
-> フロントエンドから接続する場合は `frontend/.env.localstack` を `.env.local` にコピーし、</br>
-> API Gateway ID を反映する（詳細は `.env.localstack` 内のコメントを参照）。
+> `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
+> 手動で再生成する場合は `cd infra && make setup-env` を実行。
+
+#### 5b-2. ngrok による外部公開（LocalStack 環境）
+
+LocalStack 移行後は、ngrok の接続先を API Gateway エミュレーター（Port:8080）から LocalStack（Port:4566）に変更する。
+
+```yaml
+# ~/.config/ngrok/ngrok.yml
+tunnels:
+  apigw:
+    proto: http
+    addr: 4566  # 8080 → 4566 に変更
+    domain: your-domain.ngrok-free.dev
+```
+
+```bash
+# ngrok トンネルの起動
+ngrok start apigw
+```
+
+> [!NOTE]
+>
+> ngrok 固定ドメインを使用しているため、URL は再起動しても変わらない。</br>
+> LocalStack 移行後の URL 形式: `https://{domain}/restapis/{api-id}/{stage}/_user_request_/...`</br>
+> `api-id` は `tflocal apply` 実行ごとに変わる可能性があるが、`make apply` 時に `.env.local` へ自動反映される。</br>
+> ShowCase CI 等の外部からのアクセスは、このリポジトリ側で対応する（Repository variable 等の外部設定は不要）。
 
 #### 5c. SES メール送信（LocalStack）
 

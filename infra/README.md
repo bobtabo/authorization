@@ -16,6 +16,7 @@
 | `ssm.tf` | SSM Parameter Store（DB / Redis / OAuth / アプリ設定） |
 | `outputs.tf` | API Gateway URL 等の出力値 |
 | `Makefile` | tflocal 操作のショートカット |
+| `scripts/setup-env.sh` | API Gateway ID を取得し `frontend/.env.local` を自動生成 |
 
 ---
 
@@ -38,13 +39,19 @@ pip install terraform-local
 cd ../function
 make zip
 
-# 2. Terraform でリソースを作成
+# 2. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
 cd ../infra
 make apply
 
 # 3. API Gateway URL を確認
 make output
 ```
+
+> [!NOTE]
+>
+> `make apply` 完了時に `scripts/setup-env.sh` が自動実行され、</br>
+> `frontend/.env.localstack` をテンプレートとして `frontend/.env.local` が生成される。</br>
+> `.env.local` の再生成のみ行いたい場合は `make setup-env` を実行する。
 
 ### 出力例
 
