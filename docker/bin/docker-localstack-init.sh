@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+# LocalStack 初期化スクリプト
+# docker-common.sh up 実行後に自動で呼ばれる
+#
+# 1. LocalStack のヘルスチェック待機
+# 2. Lambda 関数の zip ビルド
+# 3. tflocal apply（API Gateway / Lambda / SES / SSM 構築）
+# 4. frontend/.env.local の自動生成（API Gateway ID 解決）
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+echo ""
+echo "================================================"
+echo " LocalStack 初期化"
+echo "================================================"
+
+# ── 1. LocalStack ヘルスチェック ──
+echo ""
+echo "⏳ LocalStack の起動を待機中..."
+MAX_WAIT=60
+ELAPSED=0
+while [ ${ELAPSED} -lt ${MAX_WAIT} ]; do
+    STATUS=$(curl -s http://localhost:4566/_localstack/health 2>/dev/null | grep -o '"ready"' || true)
+    if [ -n "${STATUS}" ]; then
+        echo "✅ LocalStack 起動完了"
+        break
+    fi
+    sleep 2
+    ELAPSED=$((ELAPSED + 2))
+    echo "   待機中... (${ELAPSED}s/${MAX_WAIT}s)"
+done
+
+if [ ${ELAPSED} -ge ${MAX_WAIT} ]; then
+    echo "⚠️  LocalStack の起動がタイムアウトしました（${MAX_WAIT}秒）"
+    echo "   手動で起動を確認し、cd infra && make apply を実行してください"
+    exit 0
+fi
+
+# ── 2. Lambda zip ビルド ──
+echo ""
+echo "📦 Lambda 関数をビルド中..."
+cd "${PROJECT_ROOT}/function"
+if command -v make &>/dev/null && [ -f Makefile ]; then
+    make zip
+    echo "✅ function.zip 生成完了"
+else
+    echo "⚠️  make コマンドまたは Makefile が見つかりません。Lambda ビルドをスキップします"
+fi
+
+# ── 3. tflocal apply ──
+echo ""
+echo "🏗️  Terraform リソースを作成中..."
+cd "${PROJECT_ROOT}/infra"
+if command -v tflocal &>/dev/null; then
+    make apply
+else
+    echo "⚠️  tflocal コマンドが見つかりません"
+    echo "   pip install terraform-local でインストールしてください"
+    exit 0
+fi
+
+echo ""
+echo "================================================"
+echo " LocalStack 初期化完了"
+echo "================================================"

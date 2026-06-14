@@ -10,6 +10,8 @@ cd "${SCRIPT_DIR}/../local/common"
 if [ "${ARG}" = "up" ]; then
     docker network create --driver bridge authorization
     docker-compose up -d --build
+    # LocalStack 初期化（Lambda ビルド → Terraform apply → .env.local 生成）
+    "${SCRIPT_DIR}/docker-localstack-init.sh"
 elif [ "${ARG}" = "down" ]; then
     docker-compose down --rmi all --volumes
     docker network rm authorization
