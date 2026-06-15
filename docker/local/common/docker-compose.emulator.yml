@@ -6,17 +6,19 @@ networks:
 # emulator モード（非推奨）
 # ============================================================
 # LocalStack が使えない環境向けのフォールバックです。
-# Lambda 常駐起動 + MailPit による従来方式。
+# Lambda 常駐起動 + LocalStack (SES のみ) による方式。
 # 新規開発では localstack モードを推奨します。
 # ============================================================
 
 services:
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: ${MAILPIT_CONTAINER}
+  localstack:
+    image: localstack/localstack
+    container_name: ${LOCALSTACK_CONTAINER:-auth-localstack}
     ports:
-      - "${MAILPIT_SMTP_PORT}:1025"
-      - "${MAILPIT_UI_PORT}:8025"
+      - "${LOCALSTACK_PORT:-4566}:4566"
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}
+      - SERVICES=ses
     networks:
       - authorization
 
