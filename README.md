@@ -137,11 +137,6 @@ bin/docker-common.sh up
 `docker-common.sh down` 後の再起動や、Terraform 定義を変更した場合など、手動で再デプロイが必要な場合のみ以下を実行してください。通常は `docker-common.sh up` で自動完了するため手動実行は不要です。
 
 ```bash
-# 初回のみ: Terraform & tflocal のインストール
-# macOS: brew tap hashicorp/tap && brew install hashicorp/tap/terraform
-# その他: https://developer.hashicorp.com/terraform/install
-pip3 install terraform-local
-
 # 1. Lambda 関数を zip にまとめる
 cd function
 make zip  # → function.zip（bootstrap バイナリ含む）が生成される
