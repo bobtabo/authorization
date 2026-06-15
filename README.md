@@ -144,7 +144,9 @@ LocalStack 上に API Gateway / Lambda を Terraform で構築します。</br>
 本番 AWS 構成に近い形でローカル検証できます。
 
 ```bash
-# 初回のみ: tflocal のインストール
+# 初回のみ: Terraform & tflocal のインストール
+# macOS: brew tap hashicorp/tap && brew install hashicorp/tap/terraform
+# その他: https://developer.hashicorp.com/terraform/install
 pip3 install terraform-local
 
 # 1. Lambda 関数を zip にまとめる
