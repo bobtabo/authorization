@@ -18,38 +18,37 @@ if [ -f ./.env ]; then
 fi
 BACKEND_MODE="${BACKEND_MODE:-localstack}"
 
-# モードに応じた compose ファイルを決定
-compose_files() {
-    case "${BACKEND_MODE}" in
-        localstack-pro)
-            echo "-f docker-compose.yml -f docker-compose.localstack-pro.yml"
-            ;;
-        emulator)
-            echo "-f docker-compose.yml -f docker-compose.emulator.yml"
-            ;;
-        *)
-            # デフォルト: localstack
-            echo "-f docker-compose.yml -f docker-compose.localstack.yml"
-            ;;
-    esac
-}
+# モードに応じた compose コマンドを組み立て
+compose_cmd=(docker compose -f docker-compose.yml)
+case "${BACKEND_MODE}" in
+    localstack-pro)
+        compose_cmd+=(-f docker-compose.localstack-pro.yml)
+        ;;
+    emulator)
+        compose_cmd+=(-f docker-compose.emulator.yml)
+        ;;
+    *)
+        # デフォルト: localstack
+        compose_cmd+=(-f docker-compose.localstack.yml)
+        ;;
+esac
 
 if [ "${ARG}" = "up" ]; then
     docker network create --driver bridge authorization 2>/dev/null || true
-    eval "docker compose $(compose_files) up -d --build"
+    "${compose_cmd[@]}" up -d --build
     # LocalStack モード時のみ初期化スクリプトを実行
     if [ "${BACKEND_MODE}" != "emulator" ]; then
         "${SCRIPT_DIR}/docker-localstack-init.sh"
     fi
 elif [ "${ARG}" = "down" ]; then
-    eval "docker compose $(compose_files) down --rmi all --volumes"
+    "${compose_cmd[@]}" down --rmi all --volumes
     docker network rm authorization 2>/dev/null || true
     rm -fdR data
     rm -fdR logs
 elif [ "${ARG}" = "start" ]; then
-    eval "docker compose $(compose_files) start"
+    "${compose_cmd[@]}" start
 elif [ "${ARG}" = "stop" ]; then
-    eval "docker compose $(compose_files) stop"
+    "${compose_cmd[@]}" stop
 elif [ "${ARG}" = "env" ]; then
     cp ./environment/default.crt ./proxy/certs/default.crt
     cp ./environment/default.key ./proxy/certs/default.key

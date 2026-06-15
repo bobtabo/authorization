@@ -125,7 +125,8 @@ bin/docker-common.sh up
 > `docker-common.sh up` は `BACKEND_MODE` に応じた Docker Compose ファイルを自動選択します。</br>
 > **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行されます。</br>
 > **emulator**: `docker-compose.yml` + `docker-compose.emulator.yml` で起動します（非推奨）。</br>
-> フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。
+> フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。</br>
+> `down` / `stop` を実行する際は、`BACKEND_MODE` を起動時と同じ値にしてください。異なるモードで実行すると対象コンテナが正しく停止されません。
 
 ### 4. バックエンドコンテナの起動
 
