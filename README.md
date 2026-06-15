@@ -15,7 +15,7 @@
   - [2. 初回セットアップ](#2-初回セットアップ)
   - [3. 共通コンテナの起動](#3-共通コンテナの起動)
   - [4. バックエンドコンテナの起動](#4-バックエンドコンテナの起動)
-  - [5. API Gateway エミュレーターの起動](#5-api-gateway-エミュレーターの起動)
+  - [5. LocalStack デプロイ（API Gateway / Lambda）](#5-localstack-デプロイapi-gateway--lambda)
   - [6. フロントエンドの起動](#6-フロントエンドの起動)
   - [7. バックエンドの初期設定](#7-バックエンドの初期設定)
     - [7.1 PHP（Laravel）](#71-phplaravel)
@@ -73,7 +73,7 @@
 | **`docs/ui-flow`**  | 画面フロー                             | [README.md](./docs/ui-flow/README.md)  |
 | **`frontend/`**     | 認可管理画面（React / Next.js）           | [README.md](./frontend/README.md)      |
 | **`function/`**     | AWS Lambda 関数（Go）                 | [README.md](./function/README.md)      |
-| **`terraform/`**    | Terraform IaC 定義（環境別）              | [README.md](./terraform/local/README.md) |
+| **`terraform/`**    | Terraform IaC 定義（環境別）              | [README.md](./terraform/README.md)       |
 
 ---
 
@@ -82,7 +82,10 @@
 ### 前提
 
 - Docker Engine / Docker Compose がインストール済みであること
-- ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`9000`（Lambda）、`8080`（API Gateway エミュレータ）、`4566`（LocalStack）、`8025`（MailPit）がローカルで空いていること
+- ポート `443`（プロキシ）、`3306`（MySQL）、`6379`（Redis）、`4566`（LocalStack）がローカルで空いていること
+- [LocalStack CLI](https://docs.localstack.cloud/getting-started/installation/) がインストール済みであること
+- [Terraform](https://developer.hashicorp.com/terraform/install) がインストール済みであること
+- [tflocal](https://github.com/localstack/terraform-local)（`pip install terraform-local`）がインストール済みであること
 - Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（<a href="https://console.cloud.google.com/">Google Cloud Console</a>）
 - GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers">GitHub Developer Settings</a>）
 
@@ -134,32 +137,17 @@ bin/docker-common.sh up
 bin/docker-backends.sh up
 ```
 
-### 5. API Gateway エミュレーターの起動
+### 5. LocalStack デプロイ（API Gateway / Lambda）
 
-#### 5a. カスタムエミュレーター（従来方式）
-
-```bash
-cd function
-make run-apigw-emulator
-```
-> [!NOTE]
->
-> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。</br>Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送する。
-
-#### 5b. LocalStack + Terraform（IaC 方式）
-
-LocalStack 上に API Gateway / Lambda を Terraform で構築する方式。</br>
-本番 AWS 構成に近い形でローカル検証できる。
+LocalStack 上に API Gateway / Lambda を Terraform で構築します。</br>
+本番 AWS 構成に近い形でローカル検証できます。
 
 ```bash
 # 1. Lambda 関数を zip にまとめる
 cd function
 make zip  # → function.zip（bootstrap バイナリ含む）が生成される
 
-# 2. tflocal をインストール（初回のみ）
-pip install terraform-local
-
-# 3. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
+# 2. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
 cd ../terraform/local
 make apply
 ```
@@ -172,16 +160,26 @@ make apply
 > `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
 > 手動で再生成する場合は `cd terraform/local && make setup-env` を実行。
 
-#### 5b-2. ngrok による外部公開（LocalStack 環境）
+> [!TIP]
+>
+> **emulator モード（非推奨）** を使用する場合は、カスタム API Gateway エミュレーターを手動起動します:
+> ```bash
+> cd function
+> make run-apigw-emulator
+> ```
+> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送します。</br>
+> LocalStack が使えない環境でのみ使用してください。
 
-LocalStack 移行後は、ngrok の接続先を API Gateway エミュレーター（Port:8080）から LocalStack（Port:4566）に変更する。
+#### ngrok による外部公開
+
+ngrok の接続先を LocalStack（Port:4566）に設定する。
 
 ```yaml
 # ~/.config/ngrok/ngrok.yml
 tunnels:
   apigw:
     proto: http
-    addr: 4566  # 8080 → 4566 に変更
+    addr: 4566
     domain: your-domain.ngrok-free.dev
 ```
 
@@ -197,7 +195,7 @@ ngrok start apigw
 > `api-id` は `tflocal apply` 実行ごとに変わる可能性があるが、`make apply` 時に `.env.local` へ自動反映される。</br>
 > ShowCase CI 等の外部からのアクセスは、このリポジトリ側で対応する（Repository variable 等の外部設定は不要）。
 
-#### 5c. SES メール送信（LocalStack）
+#### SES メール送信（LocalStack）
 
 Terraform で SES ドメイン認証・送信元アドレスを LocalStack 上に作成します。</br>
 `make apply` を実行すれば API Gateway / Lambda と合わせて SES リソースも作成されます。
@@ -217,7 +215,7 @@ AWS_SECRET_ACCESS_KEY=test
 > ローカル開発では LocalStack の SES エンドポイントにリクエストが送られます。</br>
 > 本番環境では `AWS_ENDPOINT_URL` を空にし、IAM ロールまたはアクセスキーで認証します。
 
-#### 5d. SSM Parameter Store（LocalStack）
+#### SSM Parameter Store（LocalStack）
 
 Terraform で SSM Parameter Store のパラメータを LocalStack 上に作成します。</br>
 `make apply` を実行すれば API Gateway / Lambda / SES と合わせて SSM リソースも作成されます。
@@ -371,8 +369,39 @@ http://localhost:3000/invitation/8f13761980983d1d9e3950d11b42016f
 
 | ツール | URL |
 |:---|:---|
-| MailPit（メール確認） | http://localhost:8025/ |
-| LocalStack | http://localhost:4566/ |
+| LocalStack Web UI | http://localhost:4566/ |
+
+---
+
+## :gear: BACKEND_MODE
+
+`BACKEND_MODE` 環境変数で、バックエンドのインフラ構成を切り替えます。
+
+| モード | 構成 | 費用 | 状態 |
+|:---|:---|:---|:---|
+| `localstack`（デフォルト）| LocalStack Community（API Gateway + Lambda + SES + SSM）| 無料 | **推奨** |
+| `localstack-pro` | LocalStack Pro | 有料 | 将来対応 |
+| `emulator` | カスタム API Gateway エミュレーター + Lambda 常駐 + MailPit | 無料 | 非推奨 |
+
+### 切り替え方法
+
+```bash
+# docker/local/common/.env の BACKEND_MODE を変更
+vi docker/local/common/.env
+# BACKEND_MODE=localstack  ← デフォルト（推奨）
+# BACKEND_MODE=emulator    ← 非推奨
+
+# 変更後にコンテナを再起動
+cd docker
+bin/docker-common.sh up
+```
+
+### フロントエンド環境変数
+
+| モード | 環境変数ファイル |
+|:---|:---|
+| `localstack` | `frontend/.env.local`（`make apply` 時に自動生成） |
+| `emulator` | `frontend/.env.emulator` |
 
 ---
 

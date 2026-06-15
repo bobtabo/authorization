@@ -7,7 +7,7 @@
 &nbsp;&nbsp;
 <a href="https://redis.io/" target="_blank"><img src="https://media.ffycdn.net/us/redis/MAQLWqeBKmrz2TFQDmA7.svg" height="72" alt="Redis"></a>
 &nbsp;&nbsp;
-<a href="https://mailpit.axllent.org/" target="_blank"><img src="https://dimitri.codes/logos/mailpit.png" height="72" alt="Mailpit"></a>
+<a href="https://localstack.cloud/" target="_blank"><img src="https://avatars.githubusercontent.com/u/28732122?s=200&v=4" height="72" alt="LocalStack"></a>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 <a href="https://nginx.org/"><img src="https://img.shields.io/badge/nginx_proxy-latest-009639?logo=nginx&logoColor=white" alt="nginx proxy"></a>
 <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8.0-00758F?logo=mysql&logoColor=white" alt="MySQL 8.0"></a>
 <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7.0-FF4438?logo=redis&logoColor=white" alt="Redis 7.0"></a>
-<a href="https://mailpit.axllent.org/"><img src="https://img.shields.io/badge/Mailpit-latest-00B786?logoColor=white" alt="Mailpit"></a>
+<a href="https://localstack.cloud/"><img src="https://img.shields.io/badge/LocalStack-latest-4728E3?logoColor=white" alt="LocalStack"></a>
 </p>
 
 ---
@@ -36,6 +36,10 @@
 | [`local/app-rust/`](local/app-rust/)         | Rust（Axum）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/app-ts/`](local/app-ts/)             | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/common/`](local/common/)             | 複数バックエンドで共有する共通インフラ。                                              |
+| `local/common/docker-compose.yml`            | 共通サービス（MySQL / Redis / Nginx Proxy / Let's Encrypt）               |
+| `local/common/docker-compose.localstack.yml` | localstack モード用（LocalStack Community）                              |
+| `local/common/docker-compose.localstack-pro.yml` | localstack-pro モード用（将来対応）                                      |
+| `local/common/docker-compose.emulator.yml`   | emulator モード用（Lambda 常駐 + MailPit、非推奨）                          |
 | [`production/`](./production/)                                       | AWSの本番環境用を想定                                                       |
 | [`staging/`](./staging/)                                             | AWSの検証環境用を想定                                                       |
 
@@ -47,6 +51,14 @@
 - ポート **443**（プロキシ）、**3306**（MySQL）、**6379**（Redis）などがローカルで空いていること（`.env` で変更可）
 
 ## :whale: 共通コンテナ操作
+
+`BACKEND_MODE`（`docker/local/common/.env`）に応じて、起動する Docker Compose ファイルが自動選択されます。
+
+| モード | 起動ファイル | 補足 |
+|:---|:---|:---|
+| `localstack`（デフォルト）| `docker-compose.yml` + `docker-compose.localstack.yml` | 推奨 |
+| `localstack-pro` | `docker-compose.yml` + `docker-compose.localstack-pro.yml` | 将来対応 |
+| `emulator` | `docker-compose.yml` + `docker-compose.emulator.yml` | 非推奨 |
 
 ### 事前準備
 ```bash
@@ -206,4 +218,4 @@ bin/docker-backends.sh down
 
 | ツール     | URL |
 |---------| ---- |
-| MailPit | http://localhost:8025/ |
+| LocalStack Web UI | http://localhost:4566/ |
