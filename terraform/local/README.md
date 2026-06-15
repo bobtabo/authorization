@@ -34,6 +34,11 @@ pip install terraform-local
 
 ## 使い方
 
+> [!IMPORTANT]
+> 通常は `bin/docker-common.sh up` を実行すれば、以下の手順が自動で行われます。
+> 再適用が必要な場合のみ手動で実行してください。
+> その場合は先に LocalStack が起動済みであること（`docker ps` で確認）を確認してください。
+
 ```bash
 # 1. Lambda バイナリをビルド & ZIP 化
 cd ../../function
@@ -140,6 +145,10 @@ aws --endpoint-url=http://localhost:4566 ssm get-parameter \
 ```bash
 make destroy
 ```
+
+> [!TIP]
+> LocalStack 再起動後は全リソースが消えるため、残存する `terraform.tfstate` と実態が食い違う場合があります。
+> `make apply` を再実行すれば自動的に再作成されますが、エラーが出た場合は `make clean` で tfstate を削除してから再試行してください。
 
 ---
 
