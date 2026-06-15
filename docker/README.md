@@ -67,8 +67,6 @@ cd docker
 # 初回のみ: スクリプトに実行権限
 find ./bin -type f -exec chmod 755 {} +
 # 証明書・環境変数の配置
-bin/docker-environment.sh
-# .env 生成（BACKEND_MODE 等）
 bin/docker-common.sh env
 ```
 

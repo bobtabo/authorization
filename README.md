@@ -101,7 +101,7 @@ cd authorization
 ```bash
 cd docker
 find ./bin -type f -exec chmod 755 {} +
-bin/docker-environment.sh
+bin/docker-common.sh env
 ```
 
 ### 3. 共通コンテナの起動
