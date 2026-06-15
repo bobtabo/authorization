@@ -38,8 +38,7 @@ while [ ${ELAPSED} -lt ${MAX_WAIT} ]; do
         echo "   docker logs ${LOCALSTACK_CONTAINER}"
         exit 1
     fi
-    STATUS=$(curl -s http://localhost:4566/_localstack/health 2>/dev/null | grep -o '"ready"' || true)
-    if [ -n "${STATUS}" ]; then
+    if curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1; then
         echo "✅ LocalStack 起動完了"
         break
     fi
