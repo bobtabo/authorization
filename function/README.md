@@ -56,7 +56,28 @@ make zip        # amd64
 
 生成物: ルート直下の `bootstrap` と `function.zip`（`.gitignore` 対象）。
 
-## :rocket: SAM でデプロイ（例）
+## :rocket: LocalStack へのデプロイ（ローカル開発）
+
+Terraform（tflocal）を使って LocalStack 上に Lambda をデプロイします。
+
+```bash
+# 1. Lambda 関数を zip にまとめる
+make zip  # → function.zip（bootstrap バイナリ含む）が生成される
+
+# 2. Terraform で LocalStack にデプロイ
+cd ../terraform/local
+make apply
+```
+
+> [!NOTE]
+>
+> `make apply` で API Gateway / Lambda / SES / SSM が一括作成されます。</br>
+> 完了時に `frontend/.env.local` が自動生成されます（API Gateway ID 自動解決）。</br>
+> 詳細は [`terraform/local/README.md`](../terraform/local/README.md) を参照してください。
+
+## :cloud: SAM でデプロイ（本番 AWS）
+
+本番 AWS 環境へのデプロイには AWS SAM を使用します。
 
 ```bash
 sam build
