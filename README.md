@@ -127,21 +127,14 @@ bin/docker-common.sh up
 > [!NOTE]
 >
 > `docker-common.sh up` は `BACKEND_MODE` に応じた Docker Compose ファイルを自動選択します。</br>
-> **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行されます。</br>
+> **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行され、**`make zip` → `make apply`（Terraform デプロイ）→ `frontend/.env.local` 生成まで自動完了**します。</br>
 > **emulator**: `docker-compose.yml` + `docker-compose.emulator.yml` で起動します（非推奨）。</br>
 > フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。</br>
 > `down` / `stop` を実行する際は、`BACKEND_MODE` を起動時と同じ値にしてください。異なるモードで実行すると対象コンテナが正しく停止されません。
 
-### 4. バックエンドコンテナの起動
+#### 補足: LocalStack を再デプロイしたい場合
 
-```bash
-bin/docker-backends.sh up
-```
-
-### 5. LocalStack デプロイ（API Gateway / Lambda）
-
-LocalStack 上に API Gateway / Lambda を Terraform で構築します。</br>
-本番 AWS 構成に近い形でローカル検証できます。
+`docker-common.sh down` 後の再起動や、Terraform 定義を変更した場合など、手動で再デプロイが必要な場合のみ以下を実行してください。通常は `docker-common.sh up` で自動完了するため手動実行は不要です。
 
 ```bash
 # 初回のみ: Terraform & tflocal のインストール
@@ -160,8 +153,6 @@ make apply
 
 > [!NOTE]
 >
-> LocalStack コンテナが起動済みであること（手順 3 で `docker-common.sh up` 済み）。</br>
-> `docker-common.sh up` を実行した場合は、LocalStack 起動後に自動で `tflocal apply` + `.env.local` 生成が行われる。</br>
 > `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
 > `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
 > 手動で再生成する場合は `cd terraform/local && make setup-env` を実行。
@@ -175,6 +166,12 @@ make apply
 > ```
 > HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送します。</br>
 > LocalStack が使えない環境でのみ使用してください。
+
+### 4. バックエンドコンテナの起動
+
+```bash
+bin/docker-backends.sh up
+```
 
 #### ngrok による外部公開
 
@@ -248,7 +245,7 @@ aws --endpoint-url=http://localhost:4566 ssm get-parameters-by-path \
 > ローカル開発では LocalStack の SSM エンドポイントから取得できます。</br>
 > `variables.tf` のデフォルト値を変更するか、`terraform.tfvars` で上書きしてください。
 
-### 6. フロントエンドの起動
+### 5. フロントエンドの起動
 
 ```bash
 cd frontend
@@ -256,12 +253,12 @@ npm install
 npm run dev
 ```
 
-### 7. バックエンドの初期設定
+### 6. バックエンドの初期設定
 
 各バックエンドで環境変数の設定が必要です。</br>
 使用するバックエンドのみ実施してください。
 
-#### 7.1 PHP（Laravel）
+#### 6.1 PHP（Laravel）
 
 ```bash
 # コンテナに入る
@@ -282,7 +279,7 @@ php artisan migrate --seed
 > 
 > マイグレーションは PHP（Laravel）に一本化している。</br>他のバックエンドはテスト用のスキーマ定義を個別に持つ。
 
-#### 7.2 Go（Gin）
+#### 6.2 Go（Gin）
 
 ```bash
 bin/docker-go-gin.sh exec
@@ -290,7 +287,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.3 Go（Beego）
+#### 6.3 Go（Beego）
 
 ```bash
 bin/docker-go-beego.sh exec
@@ -298,7 +295,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.4 Go（Echo）
+#### 6.4 Go（Echo）
 
 ```bash
 bin/docker-go-echo.sh exec
@@ -306,7 +303,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.5 Kotlin（Ktor）
+#### 6.5 Kotlin（Ktor）
 
 ```bash
 bin/docker-kotlin.sh exec
@@ -315,7 +312,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.6 Python（FastAPI）
+#### 6.6 Python（FastAPI）
 
 ```bash
 bin/docker-python.sh exec
@@ -324,7 +321,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.7 TypeScript（Hono）
+#### 6.7 TypeScript（Hono）
 
 ```bash
 bin/docker-ts.sh exec
@@ -333,7 +330,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.8 Ruby（Rails）
+#### 6.8 Ruby（Rails）
 
 ```bash
 bin/docker-rb-rails.sh exec
@@ -342,7 +339,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.9 Ruby（Hanami）
+#### 6.9 Ruby（Hanami）
 
 ```bash
 bin/docker-rb-hanami.sh exec
@@ -351,7 +348,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-#### 7.10 Rust（Axum）
+#### 6.10 Rust（Axum）
 
 ```bash
 bin/docker-rust.sh exec
@@ -360,7 +357,7 @@ cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
 ```
 
-### 8. 初回ログイン
+### 7. 初回ログイン
 
 初回は招待リンクからアクセスする必要があります。</br>
 招待リンクなしでは、ログイン画面からサインインできません。
