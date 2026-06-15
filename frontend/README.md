@@ -103,7 +103,7 @@ cp .env.localstack .env.local
 # .env.local 内の {api-id} を実際の API Gateway ID に置換する
 
 # emulator モード（非推奨）:
-# cp .env.emulator .env
+# cp .env.emulator .env.local
 ```
 
 ### 3. 起動

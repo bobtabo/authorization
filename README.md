@@ -401,7 +401,7 @@ bin/docker-common.sh up
 | モード | 環境変数ファイル |
 |:---|:---|
 | `localstack` | `frontend/.env.local`（`make apply` 時に自動生成） |
-| `emulator` | `frontend/.env.emulator` |
+| `emulator` | `frontend/.env.local`（`cp .env.emulator .env.local`） |
 
 ---
 
