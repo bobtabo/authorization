@@ -9,6 +9,7 @@ services:
     ports:
       - "${LOCALSTACK_PORT}:4566"
     environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}
       - SERVICES=apigateway,lambda,iam,ses,ssm
       - LAMBDA_DOCKER_NETWORK=authorization
       - DOCKER_HOST=unix:///var/run/docker.sock
