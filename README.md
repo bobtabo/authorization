@@ -86,6 +86,7 @@
 - [LocalStack CLI](https://docs.localstack.cloud/getting-started/installation/) がインストール済みであること
 - [Terraform](https://developer.hashicorp.com/terraform/install) がインストール済みであること
 - [tflocal](https://github.com/localstack/terraform-local)（`pip install terraform-local`）がインストール済みであること
+- LocalStack の認証トークンを取得済みであること（<a href="https://app.localstack.cloud/">LocalStack Web App</a>）
 - Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（<a href="https://console.cloud.google.com/">Google Cloud Console</a>）
 - GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers">GitHub Developer Settings</a>）
 
