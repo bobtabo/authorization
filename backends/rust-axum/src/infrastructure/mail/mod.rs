@@ -36,7 +36,7 @@ impl Mailer {
         let subject_content = Content::builder().data(&subject).charset("UTF-8").build().unwrap();
         let body_content = Content::builder().data(&body).charset("UTF-8").build().unwrap();
         let ses_body = Body::builder().html(body_content).build();
-        let message = Message::builder().subject(subject_content).body(ses_body).build().unwrap();
+        let message = Message::builder().subject(subject_content).body(ses_body).build();
 
         if let Err(e) = client.send_email()
             .source(&source)
@@ -94,7 +94,7 @@ fn mail_subject(env: &str, subject: &str) -> String {
 fn build_activation_html(name: &str, activate_url: &str, app_name: &str) -> String {
     let year = chrono::Utc::now().year();
     format!(
-        r#"<!DOCTYPE html>
+        r##"<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
@@ -138,7 +138,7 @@ fn build_activation_html(name: &str, activate_url: &str, app_name: &str) -> Stri
 </td></tr>
 </table>
 </body>
-</html>"#,
+</html>"##,
         app_name = app_name,
         name = name,
         activate_url = activate_url,
