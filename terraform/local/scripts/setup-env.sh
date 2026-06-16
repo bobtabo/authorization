@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # tflocal apply 後に API Gateway ID を取得し、
-# frontend/.env.localstack をテンプレートとして frontend/.env.local を生成するスクリプト
+# frontend/.env.localstack をテンプレートとして frontend/.env を生成するスクリプト
 #
 # 使い方:
 #   cd terraform/local && bash scripts/setup-env.sh
@@ -15,7 +15,7 @@ INFRA_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PROJECT_ROOT="$(cd "${INFRA_DIR}/../.." && pwd)"
 
 TEMPLATE="${PROJECT_ROOT}/frontend/.env.localstack"
-OUTPUT="${PROJECT_ROOT}/frontend/.env.local"
+OUTPUT="${PROJECT_ROOT}/frontend/.env"
 
 # API Gateway ID を tflocal output から取得
 echo "🔍 API Gateway ID を取得中..."
@@ -35,9 +35,17 @@ if [ ! -f "${TEMPLATE}" ]; then
   exit 1
 fi
 
-cp "${TEMPLATE}" "${OUTPUT}"
 TMP="$(mktemp)"
-sed "s/{api-id}/${API_GATEWAY_ID}/g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
+if [ -f "${OUTPUT}" ]; then
+  # 既存ファイルは API Gateway ID の URL 部分だけ差し替える（POSTCODE_API_KEY 等は保持）
+  sed "s|/restapis/[^/]*/|/restapis/${API_GATEWAY_ID}/|g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
+else
+  # 初回のみテンプレートから生成
+  cp "${TEMPLATE}" "${OUTPUT}"
+  sed "s/{api-id}/${API_GATEWAY_ID}/g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
+fi
 
 echo "✅ ${OUTPUT} を生成しました"
 echo "   NEXT_PUBLIC_API_URL=http://localhost:4566/restapis/${API_GATEWAY_ID}/local/_user_request_/function/php/api"
+echo ""
+echo "⚠️  NEXT_PUBLIC_POSTCODE_API_KEY が未設定の場合は ${OUTPUT} に実際のキーを設定してください"

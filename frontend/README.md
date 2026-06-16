@@ -97,13 +97,13 @@ npm install
 ### 2. 環境変数の設定
 
 ```bash
-# LocalStack モード（推奨）: make apply 時に .env.local が自動生成される
+# LocalStack モード（推奨）: make apply 時に .env が自動生成される
 # 手動で作成する場合:
-cp .env.localstack .env.local
-# .env.local 内の {api-id} を実際の API Gateway ID に置換する
+cp .env.localstack .env
+# .env 内の {api-id} を実際の API Gateway ID に置換する
 
 # emulator モード（非推奨）:
-# cp .env.emulator .env.local
+# cp .env.emulator .env
 ```
 
 ### 3. 起動

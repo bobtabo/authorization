@@ -15,20 +15,9 @@
   - [2. 初回セットアップ](#2-初回セットアップ)
   - [3. 共通コンテナの起動](#3-共通コンテナの起動)
   - [4. バックエンドコンテナの起動](#4-バックエンドコンテナの起動)
-  - [5. LocalStack デプロイ（API Gateway / Lambda）](#5-localstack-デプロイapi-gateway--lambda)
-  - [6. フロントエンドの起動](#6-フロントエンドの起動)
-  - [7. バックエンドの初期設定](#7-バックエンドの初期設定)
-    - [7.1 PHP（Laravel）](#71-phplaravel)
-    - [7.2 Go（Gin）](#72-gogin)
-    - [7.3 Go（Beego）](#73-gobeego)
-    - [7.4 Go（Echo）](#74-goecho)
-    - [7.5 Kotlin（Ktor）](#75-kotlinktor)
-    - [7.6 Python（FastAPI）](#76-pythonfastapi)
-    - [7.7 TypeScript（Hono）](#77-typescripthono)
-    - [7.8 Ruby（Rails）](#78-rubyrails)
-    - [7.9 Ruby（Hanami）](#79-rubyhanami)
-    - [7.10 Rust（Axum）](#710-rustaxum)
-  - [8. 初回ログイン](#8-初回ログイン)
+  - [5. フロントエンドの起動](#5-フロントエンドの起動)
+  - [6. バックエンドの初期設定](#6-バックエンドの初期設定)
+  - [7. 初回ログイン](#7-初回ログイン)
 - [クイックスタート](#クイックスタート)
 
 ---
@@ -137,53 +126,6 @@ bin/docker-backends.sh up
 ngrok start apigw
 ```
 
-#### SES メール送信（LocalStack）
-
-Terraform で SES ドメイン認証・送信元アドレスを LocalStack 上に作成します。</br>
-`make apply` を実行すれば API Gateway / Lambda と合わせて SES リソースも作成されます。
-
-各バックエンドの `.env` に以下を設定してください:
-
-```bash
-AWS_REGION=ap-northeast-1
-AWS_ENDPOINT_URL=http://localstack:4566
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
-```
-
-> [!NOTE]
->
-> メール送信は全バックエンドで AWS SES SDK を使用しています。</br>
-> ローカル開発では LocalStack の SES エンドポイントにリクエストが送られます。</br>
-> 本番環境では `AWS_ENDPOINT_URL` を空にし、IAM ロールまたはアクセスキーで認証します。
-
-#### SSM Parameter Store（LocalStack）
-
-Terraform で SSM Parameter Store のパラメータを LocalStack 上に作成します。</br>
-`make apply` を実行すれば API Gateway / Lambda / SES と合わせて SSM リソースも作成されます。
-
-```bash
-# パラメータ一覧を確認
-aws --endpoint-url=http://localhost:4566 ssm get-parameters-by-path \
-  --path "/authorization" --recursive --with-decryption
-```
-
-管理対象パラメータ:
-
-| パス | 用途 |
-|:---|:---|
-| `/authorization/database/*` | DB 接続情報（host / port / name / username / password） |
-| `/authorization/redis/*` | Redis 接続情報（host / port） |
-| `/authorization/oauth/google/*` | Google OAuth クライアント情報 |
-| `/authorization/oauth/github/*` | GitHub OAuth クライアント情報 |
-| `/authorization/app/*` | アプリケーション共通設定（env / jwt_secret） |
-
-> [!NOTE]
->
-> 本番 AWS では SSM Parameter Store で秘密情報を一元管理し、各バックエンドが起動時に取得します。</br>
-> ローカル開発では LocalStack の SSM エンドポイントから取得できます。</br>
-> `variables.tf` のデフォルト値を変更するか、`terraform.tfvars` で上書きしてください。
-
 ### 5. フロントエンドの起動
 
 ```bash
@@ -228,38 +170,6 @@ http://localhost:3000/invitation/8f13761980983d1d9e3950d11b42016f
 | ツール | URL |
 |:---|:---|
 | LocalStack Web UI | http://localhost:4566/ |
-
----
-
-## :gear: BACKEND_MODE
-
-`BACKEND_MODE` 環境変数で、バックエンドのインフラ構成を切り替えます。
-
-| モード | 構成 | 費用 | 状態 |
-|:---|:---|:---|:---|
-| `localstack`（デフォルト）| LocalStack Community（API Gateway + Lambda + SES + SSM）| 無料 | **推奨** |
-| `localstack-pro` | LocalStack Pro | 有料 | 将来対応 |
-| `emulator` | カスタム API Gateway エミュレーター + Lambda 常駐 + MailPit | 無料 | 非推奨 |
-
-### 切り替え方法
-
-```bash
-# docker/local/common/.env の BACKEND_MODE を変更
-vi docker/local/common/.env
-# BACKEND_MODE=localstack  ← デフォルト（推奨）
-# BACKEND_MODE=emulator    ← 非推奨
-
-# 変更後にコンテナを再起動
-cd docker
-bin/docker-common.sh up
-```
-
-### フロントエンド環境変数
-
-| モード | 環境変数ファイル |
-|:---|:---|
-| `localstack` | `frontend/.env.local`（`make apply` 時に自動生成） |
-| `emulator` | `frontend/.env.local`（`cp .env.emulator .env.local`） |
 
 ---
 
