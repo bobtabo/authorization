@@ -192,6 +192,8 @@ npm install
 npm run dev
 ```
 
+> セットアップの詳細は [frontend/README.md](./frontend/README.md) を参照。
+
 ### 6. バックエンドの初期設定
 
 使用するバックエンドのコンテナに入り、環境変数の設定とセットアップを行います。</br>
