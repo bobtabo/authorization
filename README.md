@@ -89,6 +89,16 @@
 - LocalStack の認証トークンを取得済みであること（<a href="https://app.localstack.cloud/">LocalStack Web App</a>）
 - Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（<a href="https://console.cloud.google.com/">Google Cloud Console</a>）
 - GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers">GitHub Developer Settings</a>）
+- [ngrok](https://ngrok.com/) がインストール済みであること
+- ngrok の固定ドメインを取得済みで、`~/.config/ngrok/ngrok.yml` に以下を設定済みであること
+
+  ```yaml
+  tunnels:
+    apigw:
+      proto: http
+      addr: 4566
+      domain: your-domain.ngrok-free.dev
+  ```
 
 ### 1. リポジトリのクローン
 
@@ -123,28 +133,9 @@ bin/docker-backends.sh up
 
 #### ngrok による外部公開
 
-ngrok の接続先を LocalStack（Port:4566）に設定する。
-
-```yaml
-# ~/.config/ngrok/ngrok.yml
-tunnels:
-  apigw:
-    proto: http
-    addr: 4566
-    domain: your-domain.ngrok-free.dev
-```
-
 ```bash
-# ngrok トンネルの起動
 ngrok start apigw
 ```
-
-> [!NOTE]
->
-> ngrok 固定ドメインを使用しているため、URL は再起動しても変わらない。</br>
-> LocalStack 移行後の URL 形式: `https://{domain}/restapis/{api-id}/{stage}/_user_request_/...`</br>
-> `api-id` は `tflocal apply` 実行ごとに変わる可能性があるが、`make apply` 時に `.env.local` へ自動反映される。</br>
-> ShowCase CI 等の外部からのアクセスは、このリポジトリ側で対応する（Repository variable 等の外部設定は不要）。
 
 #### SES メール送信（LocalStack）
 
