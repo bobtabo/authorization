@@ -102,71 +102,18 @@ cd authorization
 ```bash
 cd docker
 find ./bin -type f -exec chmod 755 {} +
-# 証明書・環境変数の配置
 bin/docker-common.sh env
-
-# docker/local/common/.env を編集して LOCALSTACK_AUTH_TOKEN を設定する
-# トークンは https://app.localstack.cloud/ から取得
-vi local/common/.env
-# LOCALSTACK_AUTH_TOKEN=ls-xxxx...
 ```
+
+> 詳細（`LOCALSTACK_AUTH_TOKEN` の設定・`BACKEND_MODE` 等）は [docker/README.md](./docker/README.md) を参照。
 
 ### 3. 共通コンテナの起動
 
-`BACKEND_MODE` に応じて起動するサービスが切り替わります。
-
-| モード | 環境 | 費用 | 状態 |
-|:---|:---|:---|:---|
-| `localstack`（デフォルト）| LocalStack Community | 無料 | **推奨** |
-| `localstack-pro` | LocalStack Pro | 有料 | 将来対応 |
-| `emulator` | Lambda 常駐 + MailPit | 無料 | 非推奨（LocalStack が使えない環境向け）|
-
 ```bash
-# デフォルト（localstack モード）で起動
 bin/docker-common.sh up
-
-# モードを切り替える場合は .env の BACKEND_MODE を変更してから実行
-# vi docker/local/common/.env
-# BACKEND_MODE=emulator
 ```
 
-> [!NOTE]
->
-> `docker-common.sh up` は `BACKEND_MODE` に応じた Docker Compose ファイルを自動選択します。</br>
-> **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行され、**`make zip` → `make apply`（Terraform デプロイ）→ `frontend/.env.local` 生成まで自動完了**します。</br>
-> **emulator**: `docker-compose.yml` + `docker-compose.emulator.yml` で起動します（非推奨）。</br>
-> フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。</br>
-> `down` / `stop` を実行する際は、`BACKEND_MODE` を起動時と同じ値にしてください。異なるモードで実行すると対象コンテナが正しく停止されません。
-
-#### 補足: LocalStack を再デプロイしたい場合
-
-`docker-common.sh down` 後の再起動や、Terraform 定義を変更した場合など、手動で再デプロイが必要な場合のみ以下を実行してください。通常は `docker-common.sh up` で自動完了するため手動実行は不要です。
-
-```bash
-# 1. Lambda 関数を zip にまとめる
-cd function
-make zip  # → function.zip（bootstrap バイナリ含む）が生成される
-
-# 2. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
-cd ../terraform/local
-make apply
-```
-
-> [!NOTE]
->
-> `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
-> `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
-> 手動で再生成する場合は `cd terraform/local && make setup-env` を実行。
-
-> [!TIP]
->
-> **emulator モード（非推奨）** を使用する場合は、カスタム API Gateway エミュレーターを手動起動します:
-> ```bash
-> cd function
-> make run-apigw-emulator
-> ```
-> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送します。</br>
-> LocalStack が使えない環境でのみ使用してください。
+> モード切替・LocalStack 再デプロイ等の詳細は [docker/README.md](./docker/README.md) を参照。
 
 ### 4. バックエンドコンテナの起動
 
@@ -256,107 +203,21 @@ npm run dev
 
 ### 6. バックエンドの初期設定
 
-各バックエンドで環境変数の設定が必要です。</br>
-使用するバックエンドのみ実施してください。
-
-#### 6.1 PHP（Laravel）
+使用するバックエンドのコンテナに入り、環境変数の設定とセットアップを行います。</br>
+各バックエンドの詳細は `backends/*/README.md` を参照してください。
 
 ```bash
-# コンテナに入る
-bin/docker-php.sh exec
-
-# パッケージインストール
-composer install
-
-# 環境変数の設定
+# 共通手順: コンテナに入って .env を設定
+bin/docker-<backend>.sh exec
 cp .env.example .env
 # .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-
-# マイグレーション
-php artisan migrate --seed
 ```
 
 > [!NOTE]
 > 
-> マイグレーションは PHP（Laravel）に一本化している。</br>他のバックエンドはテスト用のスキーマ定義を個別に持つ。
-
-#### 6.2 Go（Gin）
-
-```bash
-bin/docker-go-gin.sh exec
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.3 Go（Beego）
-
-```bash
-bin/docker-go-beego.sh exec
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.4 Go（Echo）
-
-```bash
-bin/docker-go-echo.sh exec
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.5 Kotlin（Ktor）
-
-```bash
-bin/docker-kotlin.sh exec
-gradle build
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.6 Python（FastAPI）
-
-```bash
-bin/docker-python.sh exec
-pip install -r requirements.txt
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.7 TypeScript（Hono）
-
-```bash
-bin/docker-ts.sh exec
-npm install
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.8 Ruby（Rails）
-
-```bash
-bin/docker-rb-rails.sh exec
-bundle install
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.9 Ruby（Hanami）
-
-```bash
-bin/docker-rb-hanami.sh exec
-bundle install
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
-
-#### 6.10 Rust（Axum）
-
-```bash
-bin/docker-rust.sh exec
-cargo build
-cp .env.example .env
-# .env の GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET を設定する
-```
+> マイグレーションは PHP（Laravel）に一本化している。</br>
+> `bin/docker-php.sh exec` → `composer install` → `php artisan migrate --seed` を最初に実行してください。</br>
+> 他のバックエンドはテスト用のスキーマ定義を個別に持つ。
 
 ### 7. 初回ログイン
 

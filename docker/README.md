@@ -64,6 +64,11 @@ cd docker
 find ./bin -type f -exec chmod 755 {} +
 # 証明書・環境変数の配置
 bin/docker-common.sh env
+
+# docker/local/common/.env を編集して LOCALSTACK_AUTH_TOKEN を設定する
+# トークンは https://app.localstack.cloud/ から取得
+vi local/common/.env
+# LOCALSTACK_AUTH_TOKEN=ls-xxxx...
 ```
 
 ### コンテナを起動する
@@ -71,6 +76,44 @@ bin/docker-common.sh env
 # 起動（内部で authorization ネットワーク作成 + compose up）
 bin/docker-common.sh up
 ```
+
+> [!NOTE]
+>
+> `docker-common.sh up` は `BACKEND_MODE` に応じた Docker Compose ファイルを自動選択します。</br>
+> **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行され、**`make zip` → `make apply`（Terraform デプロイ）→ `frontend/.env.local` 生成まで自動完了**します。</br>
+> **emulator**: `docker-compose.yml` + `docker-compose.emulator.yml` で起動します（非推奨）。</br>
+> フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。</br>
+> `down` / `stop` を実行する際は、`BACKEND_MODE` を起動時と同じ値にしてください。異なるモードで実行すると対象コンテナが正しく停止されません。
+
+#### 補足: LocalStack を再デプロイしたい場合
+
+`docker-common.sh down` 後の再起動や、Terraform 定義を変更した場合など、手動で再デプロイが必要な場合のみ以下を実行してください。通常は `docker-common.sh up` で自動完了するため手動実行は不要です。
+
+```bash
+# 1. Lambda 関数を zip にまとめる
+cd function
+make zip  # → function.zip（bootstrap バイナリ含む）が生成される
+
+# 2. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
+cd ../terraform/local
+make apply
+```
+
+> [!NOTE]
+>
+> `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
+> `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
+> 手動で再生成する場合は `cd terraform/local && make setup-env` を実行。
+
+> [!TIP]
+>
+> **emulator モード（非推奨）** を使用する場合は、カスタム API Gateway エミュレーターを手動起動します:
+> ```bash
+> cd function
+> make run-apigw-emulator
+> ```
+> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送します。</br>
+> LocalStack が使えない環境でのみ使用してください。
 
 ### コンテナを停止する
 ```bash
