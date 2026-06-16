@@ -102,7 +102,13 @@ cd authorization
 ```bash
 cd docker
 find ./bin -type f -exec chmod 755 {} +
+# 証明書・環境変数の配置
 bin/docker-common.sh env
+
+# docker/local/common/.env を編集して LOCALSTACK_AUTH_TOKEN を設定する
+# トークンは https://app.localstack.cloud/ から取得
+vi local/common/.env
+# LOCALSTACK_AUTH_TOKEN=ls-xxxx...
 ```
 
 ### 3. 共通コンテナの起動
