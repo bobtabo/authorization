@@ -36,10 +36,6 @@
 | [`local/app-rust/`](local/app-rust/)         | Rust（Axum）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/app-ts/`](local/app-ts/)             | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/common/`](local/common/)             | 複数バックエンドで共有する共通インフラ。                                              |
-| `local/common/docker-compose.yml`            | 共通サービス（MySQL / Redis / Nginx Proxy / Let's Encrypt）               |
-| `local/common/docker-compose.localstack.yml` | localstack モード用（LocalStack Community）                              |
-| `local/common/docker-compose.localstack-pro.yml` | localstack-pro モード用（将来対応）                                      |
-| `local/common/docker-compose.emulator.yml`   | emulator モード用（Lambda 常駐 + MailPit、非推奨）                          |
 | [`production/`](./production/)                                       | AWSの本番環境用を想定                                                       |
 | [`staging/`](./staging/)                                             | AWSの検証環境用を想定                                                       |
 
