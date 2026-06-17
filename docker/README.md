@@ -258,5 +258,6 @@ bin/docker-backends.sh down
 
 | ツール | URL | 備考 |
 |:---|:---|:---|
+| LocalStack ヘルスチェック | http://localhost:4566/_localstack/health | Community 版で利用可 |
 | LocalStack Web UI | http://localhost:4566/ | Pro 版のみ |
 
