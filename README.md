@@ -115,7 +115,7 @@ bin/docker-backends.sh up
 #### ngrok による外部公開
 
 ```bash
-ngrok http --domain=your-domain.ngrok-free.dev 4566
+ngrok http --url=your-domain.ngrok-free.dev 4566
 ```
 
 ### 5. フロントエンドの起動
