@@ -14,8 +14,18 @@ services:
       - LAMBDA_DOCKER_NETWORK=authorization
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DEBUG=0
+      - SMTP_HOST=${MAILPIT_CONTAINER}:1025
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data/localstack:/var/lib/localstack
+    networks:
+      - authorization
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${MAILPIT_CONTAINER}
+    ports:
+      - "${MAILPIT_SMTP_PORT}:1025"
+      - "${MAILPIT_UI_PORT}:8025"
     networks:
       - authorization

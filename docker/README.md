@@ -260,4 +260,5 @@ bin/docker-backends.sh down
 |:---|:---|:---|
 | LocalStack ヘルスチェック | http://localhost:4566/_localstack/health | Community 版で利用可 |
 | LocalStack Web UI | http://localhost:4566/ | Pro 版のみ |
+| MailPit（メール確認） | http://localhost:8025/ | localstack モードで利用可 |
 
