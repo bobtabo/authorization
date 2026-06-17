@@ -78,16 +78,8 @@
 - LocalStack の認証トークンを取得済みであること（<a href="https://app.localstack.cloud/">LocalStack Web App</a>）
 - Google OAuth 2.0 のクライアント ID / シークレットを取得済みであること（<a href="https://console.cloud.google.com/">Google Cloud Console</a>）
 - GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers">GitHub Developer Settings</a>）
-- [ngrok](https://ngrok.com/) がインストール済みであること
-- ngrok の固定ドメインを取得済みで、`~/.config/ngrok/ngrok.yml` に以下を設定済みであること
-
-  ```yaml
-  tunnels:
-    apigw:
-      proto: http
-      addr: 4566
-      domain: your-domain.ngrok-free.dev
-  ```
+- [ngrok](https://ngrok.com/) がインストール済みであること（モバイル / ShowCase CI 連携時に必要）
+- ngrok の固定ドメインを取得済みであること（同上、<a href="https://dashboard.ngrok.com/">ngrok ダッシュボード</a>から取得）
 
 ### 1. リポジトリのクローン
 
@@ -123,7 +115,7 @@ bin/docker-backends.sh up
 #### ngrok による外部公開
 
 ```bash
-ngrok start apigw
+ngrok http --domain=your-domain.ngrok-free.dev 4566
 ```
 
 ### 5. フロントエンドの起動
