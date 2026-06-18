@@ -36,13 +36,16 @@ if [ ! -f "${TEMPLATE}" ]; then
 fi
 
 TMP="$(mktemp)"
+LAMBDA_TARGET="http://localhost:4566/restapis/${API_GATEWAY_ID}/local/_user_request_"
+
 if [ -f "${OUTPUT}" ]; then
-  # 既存ファイルは API Gateway ID の URL 部分だけ差し替える（POSTCODE_API_KEY 等は保持）
-  sed "s|/restapis/[^/]*/|/restapis/${API_GATEWAY_ID}/|g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
+  # LAMBDA_PROXY_TARGET の行だけ更新する（NEXT_PUBLIC_POSTCODE_API_KEY 等は一切触れない）
+  sed "s|LAMBDA_PROXY_TARGET=.*|LAMBDA_PROXY_TARGET=${LAMBDA_TARGET}|g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
 else
-  # 初回のみテンプレートから生成
+  # 初回のみテンプレートから生成し LAMBDA_PROXY_TARGET を差し込む
   cp "${TEMPLATE}" "${OUTPUT}"
-  sed "s/{api-id}/${API_GATEWAY_ID}/g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
+  sed "s|LAMBDA_PROXY_TARGET=.*|LAMBDA_PROXY_TARGET=${LAMBDA_TARGET}|g" "${OUTPUT}" > "${TMP}" && mv "${TMP}" "${OUTPUT}"
+  echo "⚠️  初回生成: NEXT_PUBLIC_POSTCODE_API_KEY を ${OUTPUT} に設定してください"
 fi
 
 echo "✅ ${OUTPUT} を生成しました"
