@@ -46,6 +46,7 @@ else
 fi
 
 echo "✅ ${OUTPUT} を生成しました"
-echo "   NEXT_PUBLIC_API_URL=http://localhost:4566/restapis/${API_GATEWAY_ID}/local/_user_request_/function/php/api"
+echo "   NEXT_PUBLIC_API_URL=/function/php/api"
+echo "   LAMBDA_PROXY_TARGET=http://localhost:4566/restapis/${API_GATEWAY_ID}/local/_user_request_"
 echo ""
 echo "⚠️  NEXT_PUBLIC_POSTCODE_API_KEY が未設定の場合は ${OUTPUT} に実際のキーを設定してください"
