@@ -1,13 +1,12 @@
 """
-メール送信モジュール。
+メール送信インフラストラクチャー。
 
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 import logging
-import smtplib
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
+import boto3
 
 from app.config.settings import get_settings
 
@@ -23,7 +22,7 @@ _ENV_LABELS = {
 
 
 def _mail_subject(env: str, subject: str) -> str:
-    """環境ラベルを付与したメール件名を返します。
+    """環境ラベル付きメール件名を返します。
 
     Args:
         env: アプリケーション環境名
@@ -36,13 +35,28 @@ def _mail_subject(env: str, subject: str) -> str:
     return f"[{label}]{subject}" if label else subject
 
 
+def _build_ses_client():
+    """SES クライアントを生成します。"""
+    settings = get_settings()
+    kwargs = {
+        "service_name": "ses",
+        "region_name": settings.aws_region,
+    }
+    if settings.aws_access_key_id:
+        kwargs["aws_access_key_id"] = settings.aws_access_key_id
+        kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+    if settings.aws_endpoint_url:
+        kwargs["endpoint_url"] = settings.aws_endpoint_url
+    return boto3.client(**kwargs)
+
+
 def send_activation(to: str, client_name: str, activate_url: str) -> None:
-    """クライアントにご利用開始のご案内をメール送信します。
+    """クライアントに利用開始のご案内をメールで送信します。
 
     Args:
         to: 送信先メールアドレス
         client_name: クライアント名
-        activate_url: QRページURL
+        activate_url: アクティベートページURL
     """
     if not to:
         return
@@ -50,27 +64,26 @@ def send_activation(to: str, client_name: str, activate_url: str) -> None:
     subject = _mail_subject(settings.app_env, f"【{settings.app_name} / Python】ご利用開始のご案内")
     html = _build_html(client_name, activate_url, settings.app_name)
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{settings.app_name} <{settings.mail_from_address}>"
-    msg["To"] = to
-    msg.attach(MIMEText(html, "html", "utf-8"))
-
     try:
-        with smtplib.SMTP(settings.mail_host, settings.mail_port) as smtp:
-            if settings.mail_username:
-                smtp.login(settings.mail_username, settings.mail_password)
-            smtp.sendmail(settings.mail_from_address, [to], msg.as_string())
+        client = _build_ses_client()
+        client.send_email(
+            Source=f"{settings.app_name} <{settings.mail_from_address}>",
+            Destination={"ToAddresses": [to]},
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {"Html": {"Data": html, "Charset": "UTF-8"}},
+            },
+        )
     except Exception as e:
         logger.error("mail send error: %s", e)
 
 
 def _build_html(name: str, activate_url: str, app_name: str) -> str:
-    """ご利用開始のご案内メールの HTML 本文を生成します。
+    """ご利用開始のご案内メールのHTML 本文を生成します。
 
     Args:
         name: クライアント名
-        activate_url: QRページURL
+        activate_url: アクティベートページURL
         app_name: アプリケーション名
 
     Returns:

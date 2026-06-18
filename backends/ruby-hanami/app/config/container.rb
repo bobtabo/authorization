@@ -23,7 +23,7 @@ module AppContainer
     jwt_history_repo      = Infrastructure::Persistence::RomJwtHistoryRepository.new(rom)
     gate_cache            = Infrastructure::Cache::RedisGateRepository.new(cfg)
     invitation_auth_cache = Infrastructure::Cache::RedisInvitationAuthRepository.new(cfg)
-    mailer                = Infrastructure::Mail::Mailer.new(cfg)
+    mailer                = Infrastructure::Mail::Mailer.new(cfg.mail, cfg.aws)
 
     {
       cfg:             cfg,

@@ -1,9 +1,9 @@
 /**
- * メール送信インフラモジュール。
+ * メール送信インフラストラクチャー。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import nodemailer from "nodemailer";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { config } from "../../config.js";
 
 const ENV_LABELS: Record<string, string> = {
@@ -18,8 +18,24 @@ function mailSubject(subject: string): string {
   return label ? `[${label}]${subject}` : subject;
 }
 
+function buildSesClient(): SESClient {
+  const opts: Record<string, unknown> = {
+    region: config.aws.region,
+  };
+  if (config.aws.accessKeyId) {
+    opts.credentials = {
+      accessKeyId: config.aws.accessKeyId,
+      secretAccessKey: config.aws.secretAccessKey,
+    };
+  }
+  if (config.aws.endpoint) {
+    opts.endpoint = config.aws.endpoint;
+  }
+  return new SESClient(opts);
+}
+
 /**
- * クライアントにご利用開始のご案内をメール送信します。
+ * クライアントに利用開始のご案内をメールで送信します。
  * @param to - 送信先メールアドレス
  * @param clientName - クライアント名
  * @param activateUrl - QRページURL
@@ -27,24 +43,21 @@ function mailSubject(subject: string): string {
 export async function sendActivation(to: string, clientName: string, activateUrl: string): Promise<void> {
   if (!to) return;
 
-  const { host, port, username, password, fromAddress, appName } = config.mail;
+  const { fromAddress, appName } = config.mail;
   const subject = mailSubject(`【${appName} / TypeScript】ご利用開始のご案内`);
   const html = buildHtml(clientName, activateUrl, appName);
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: false,
-    ...(username ? { auth: { user: username, pass: password } } : {}),
-  });
-
   try {
-    await transporter.sendMail({
-      from: `"${appName}" <${fromAddress}>`,
-      to,
-      subject,
-      html,
+    const client = buildSesClient();
+    const command = new SendEmailCommand({
+      Source: `${appName} <${fromAddress}>`,
+      Destination: { ToAddresses: [to] },
+      Message: {
+        Subject: { Data: subject, Charset: "UTF-8" },
+        Body: { Html: { Data: html, Charset: "UTF-8" } },
+      },
     });
+    await client.send(command);
   } catch (err) {
     console.error("mail send error:", err);
   }

@@ -7,7 +7,7 @@
 &nbsp;&nbsp;
 <a href="https://redis.io/" target="_blank"><img src="https://media.ffycdn.net/us/redis/MAQLWqeBKmrz2TFQDmA7.svg" height="72" alt="Redis"></a>
 &nbsp;&nbsp;
-<a href="https://mailpit.axllent.org/" target="_blank"><img src="https://dimitri.codes/logos/mailpit.png" height="72" alt="Mailpit"></a>
+<a href="https://localstack.cloud/" target="_blank"><img src="https://avatars.githubusercontent.com/u/28732122?s=200&v=4" height="72" alt="LocalStack"></a>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 <a href="https://nginx.org/"><img src="https://img.shields.io/badge/nginx_proxy-latest-009639?logo=nginx&logoColor=white" alt="nginx proxy"></a>
 <a href="https://www.mysql.com/"><img src="https://img.shields.io/badge/MySQL-8.0-00758F?logo=mysql&logoColor=white" alt="MySQL 8.0"></a>
 <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7.0-FF4438?logo=redis&logoColor=white" alt="Redis 7.0"></a>
-<a href="https://mailpit.axllent.org/"><img src="https://img.shields.io/badge/Mailpit-latest-00B786?logoColor=white" alt="Mailpit"></a>
+<a href="https://localstack.cloud/"><img src="https://img.shields.io/badge/LocalStack-latest-4728E3?logoColor=white" alt="LocalStack"></a>
 </p>
 
 ---
@@ -48,13 +48,27 @@
 
 ## :whale: 共通コンテナ操作
 
+`BACKEND_MODE`（`docker/local/common/.env`）に応じて、起動する Docker Compose ファイルが自動選択されます。
+
+| モード | 起動ファイル | 補足 |
+|:---|:---|:---|
+| `localstack`（デフォルト）| `docker-compose.yml` + `docker-compose.localstack.yml` | 推奨 |
+| `localstack-pro` | `docker-compose.yml` + `docker-compose.localstack-pro.yml` | 将来対応 |
+| `emulator` | `docker-compose.yml` + `docker-compose.emulator.yml` | 非推奨 |
+
 ### 事前準備
 ```bash
 cd docker
 
-# 初回のみ: スクリプトに実行権限、証明書・環境変数
+# 初回のみ: スクリプトに実行権限
 find ./bin -type f -exec chmod 755 {} +
-bin/docker-environment.sh
+# 証明書・環境変数の配置
+bin/docker-common.sh env
+
+# docker/local/common/.env を編集して LOCALSTACK_AUTH_TOKEN を設定する
+# トークンは https://app.localstack.cloud/ から取得
+vi local/common/.env
+# LOCALSTACK_AUTH_TOKEN=ls-xxxx...
 ```
 
 ### コンテナを起動する
@@ -62,6 +76,44 @@ bin/docker-environment.sh
 # 起動（内部で authorization ネットワーク作成 + compose up）
 bin/docker-common.sh up
 ```
+
+> [!NOTE]
+>
+> `docker-common.sh up` は `BACKEND_MODE` に応じた Docker Compose ファイルを自動選択します。</br>
+> **localstack / localstack-pro**: `docker-compose.yml` + `docker-compose.localstack[|-pro].yml` で起動後、`docker-localstack-init.sh` が自動実行され、**`make zip` → `make apply`（Terraform デプロイ）→ `frontend/.env.local` 生成まで自動完了**します。</br>
+> **emulator**: `docker-compose.yml` + `docker-compose.emulator.yml` で起動します（非推奨）。</br>
+> フロントエンド用の `.env` もモードに合わせて切り替えてください（`.env.localstack` / `.env.emulator`）。</br>
+> `down` / `stop` を実行する際は、`BACKEND_MODE` を起動時と同じ値にしてください。異なるモードで実行すると対象コンテナが正しく停止されません。
+
+#### 補足: LocalStack を再デプロイしたい場合
+
+`docker-common.sh down` 後の再起動や、Terraform 定義を変更した場合など、手動で再デプロイが必要な場合のみ以下を実行してください。通常は `docker-common.sh up` で自動完了するため手動実行は不要です。
+
+```bash
+# 1. Lambda 関数を zip にまとめる
+cd function
+make zip  # → function.zip（bootstrap バイナリ含む）が生成される
+
+# 2. Terraform でリソースを作成（完了後に frontend/.env.local が自動生成される）
+cd ../terraform/local
+make apply
+```
+
+> [!NOTE]
+>
+> `tflocal` は Terraform コマンドを LocalStack エンドポイントに向けるラッパー。</br>
+> `make apply` 完了時に `frontend/.env.local` が自動生成される（API Gateway ID 自動解決）。</br>
+> 手動で再生成する場合は `cd terraform/local && make setup-env` を実行。
+
+> [!TIP]
+>
+> **emulator モード（非推奨）** を使用する場合は、カスタム API Gateway エミュレーターを手動起動します:
+> ```bash
+> cd function
+> make run-apigw-emulator
+> ```
+> HTTP ↔ Lambda イベント変換を担うローカル専用プロセス。Port:8080 で待ち受け、Port:9000 の Lambda コンテナへ転送します。</br>
+> LocalStack が使えない環境でのみ使用してください。
 
 ### コンテナを停止する
 ```bash
@@ -202,8 +254,11 @@ bin/docker-backends.sh down
 - `docker-xxx-down.sh` は **データディレクトリやログを削除する**処理が入っています。実行前に内容を確認してください。
 - 証明書・パスワード類は **開発用サンプル**です。共有環境では流用しないでください。
 
-# :bulb: 各ツール
+## :bulb: 各ツール
 
-| ツール     | URL |
-|---------| ---- |
-| MailPit | http://localhost:8025/ |
+| ツール | URL | 備考 |
+|:---|:---|:---|
+| LocalStack ヘルスチェック | http://localhost:4566/_localstack/health | Community 版で利用可 |
+| LocalStack Web UI | http://localhost:4566/ | Pro 版のみ |
+| MailPit（メール確認） | http://localhost:8025/ | localstack モードで利用可 |
+

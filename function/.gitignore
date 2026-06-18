@@ -1,6 +1,7 @@
 bootstrap
 function.zip
 apigw-emulator
+index.handler
 *.test
 .env
 .env.*

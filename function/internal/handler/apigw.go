@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -17,16 +18,16 @@ import (
 // backendURL はパスプレフィックスからバックエンドのベース URL を返す。
 // 環境変数で上書き可能（本番デプロイ時など）。
 var backendURL = map[string]string{
-	"/function/php":      getenv("BACKEND_PHP_URL",      "https://apis.authorization-php.dev"),
-	"/function/go-gin":   getenv("BACKEND_GO_GIN_URL",   "https://apis.authorization-go-gin.dev"),
-	"/function/go-beego": getenv("BACKEND_GO_BEEGO_URL", "https://apis.authorization-go-beego.dev"),
-	"/function/go-echo":  getenv("BACKEND_GO_ECHO_URL",  "https://apis.authorization-go-echo.dev"),
-	"/function/kotlin":   getenv("BACKEND_KOTLIN_URL",   "https://apis.authorization-kotlin.dev"),
-	"/function/python":   getenv("BACKEND_PYTHON_URL",   "https://apis.authorization-python.dev"),
-	"/function/rb-hanami":getenv("BACKEND_RB_HANAMI_URL","https://apis.authorization-rb-hanami.dev"),
-	"/function/rb-rails": getenv("BACKEND_RB_RAILS_URL", "https://apis.authorization-rb-rails.dev"),
-	"/function/rust":     getenv("BACKEND_RUST_URL",     "https://apis.authorization-rust.dev"),
-	"/function/ts":       getenv("BACKEND_TS_URL",       "https://apis.authorization-ts.dev"),
+	"/function/php":       getenv("BACKEND_PHP_URL",       "https://apis.authorization-php.dev"),
+	"/function/go-gin":    getenv("BACKEND_GO_GIN_URL",    "https://apis.authorization-go-gin.dev"),
+	"/function/go-beego":  getenv("BACKEND_GO_BEEGO_URL",  "https://apis.authorization-go-beego.dev"),
+	"/function/go-echo":   getenv("BACKEND_GO_ECHO_URL",   "https://apis.authorization-go-echo.dev"),
+	"/function/kotlin":    getenv("BACKEND_KOTLIN_URL",    "https://apis.authorization-kotlin.dev"),
+	"/function/python":    getenv("BACKEND_PYTHON_URL",    "https://apis.authorization-python.dev"),
+	"/function/rb-hanami": getenv("BACKEND_RB_HANAMI_URL", "https://apis.authorization-rb-hanami.dev"),
+	"/function/rb-rails":  getenv("BACKEND_RB_RAILS_URL",  "https://apis.authorization-rb-rails.dev"),
+	"/function/rust":      getenv("BACKEND_RUST_URL",      "https://apis.authorization-rust.dev"),
+	"/function/ts":        getenv("BACKEND_TS_URL",        "https://apis.authorization-ts.dev"),
 }
 
 func getenv(key, fallback string) string {
@@ -36,7 +37,7 @@ func getenv(key, fallback string) string {
 	return fallback
 }
 
-// Handler は HTTP API v2 用の Lambda ハンドラ。外部依存は adapter 経由で注入する。
+// Handler は REST API (v1) 用の Lambda ハンドラ。外部依存は adapter 経由で注入する。
 type Handler struct {
 	deps *adapter.Deps
 }
@@ -49,65 +50,83 @@ func New(deps *adapter.Deps) *Handler {
 	return &Handler{deps: deps}
 }
 
-// HandleAPIGatewayV2 は HTTP API v2 のリクエストを処理する。
+// Handle は REST API (v1) のリクエストを処理する。
 // パスプレフィックス（/function/php 等）で対象バックエンドを判定し、リクエストを転送する。
-func (h *Handler) HandleAPIGatewayV2(
+func (h *Handler) Handle(
 	ctx context.Context,
-	req events.APIGatewayV2HTTPRequest,
-) (events.APIGatewayV2HTTPResponse, error) {
+	req events.APIGatewayProxyRequest,
+) (events.APIGatewayProxyResponse, error) {
 	slog.InfoContext(ctx, "request",
-		"method", req.RequestContext.HTTP.Method,
-		"path", req.RawPath,
+		"method", req.HTTPMethod,
+		"path", req.Path,
 		"request_id", req.RequestContext.RequestID,
 	)
 
 	// パスプレフィックスからバックエンド URL とバックエンド側パスを決定する
-	base, backendPath := resolveBackend(req.RawPath)
+	base, backendPath := resolveBackend(req.Path)
 	if base == "" {
-		return events.APIGatewayV2HTTPResponse{StatusCode: 404}, nil
+		return events.APIGatewayProxyResponse{
+			StatusCode: 404,
+			Headers:    map[string]string{},
+		}, nil
 	}
 
 	targetURL := base + backendPath
-	if req.RawQueryString != "" {
-		targetURL += "?" + req.RawQueryString
+	if len(req.MultiValueQueryStringParameters) > 0 {
+		vals := url.Values{}
+		for k, vs := range req.MultiValueQueryStringParameters {
+			for _, v := range vs {
+				vals.Add(k, v)
+			}
+		}
+		targetURL += "?" + vals.Encode()
 	}
 
 	// HTTP リクエストを組み立てる
-	httpReq, err := newRequest(ctx, req.RequestContext.HTTP.Method, targetURL, req.Body, req.Headers)
+	httpReq, err := newRequest(ctx, req.HTTPMethod, targetURL, req.Body, req.Headers)
 	if err != nil {
 		slog.ErrorContext(ctx, "build request", "error", err)
-		return events.APIGatewayV2HTTPResponse{StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Headers:    map[string]string{},
+		}, err
 	}
 
 	// バックエンドへ転送する
 	resp, err := h.deps.HTTPClient().Do(httpReq)
 	if err != nil {
 		slog.ErrorContext(ctx, "forward request", "url", targetURL, "error", err)
-		return events.APIGatewayV2HTTPResponse{StatusCode: 502}, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: 502,
+			Headers:    map[string]string{},
+		}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return events.APIGatewayV2HTTPResponse{StatusCode: 500}, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: 500,
+			Headers:    map[string]string{},
+		}, err
 	}
 
-	// Set-Cookie は複数値を持てるため Cookies フィールドへ、それ以外は Headers へ
+	// Set-Cookie は複数値を持てるため MultiValueHeaders へ、それ以外は Headers へ
 	headers := make(map[string]string, len(resp.Header))
-	var cookies []string
+	multiValueHeaders := make(map[string][]string)
 	for k, v := range resp.Header {
 		if strings.EqualFold(k, "set-cookie") {
-			cookies = append(cookies, v...)
+			multiValueHeaders[k] = v
 		} else {
 			headers[k] = v[0]
 		}
 	}
 
-	return events.APIGatewayV2HTTPResponse{
-		StatusCode: resp.StatusCode,
-		Headers:    headers,
-		Cookies:    cookies,
-		Body:       string(body),
+	return events.APIGatewayProxyResponse{
+		StatusCode:        resp.StatusCode,
+		Headers:           headers,
+		MultiValueHeaders: multiValueHeaders,
+		Body:              string(body),
 	}, nil
 }
 
@@ -116,26 +135,26 @@ func (h *Handler) HandleAPIGatewayV2(
 // /function/go が /function/go-beego に誤マッチしないよう、
 // プレフィックスの直後が "/" または末尾であることを確認する。
 func resolveBackend(rawPath string) (base, path string) {
-	for prefix, url := range backendURL {
+	for prefix, u := range backendURL {
 		if rawPath == prefix || strings.HasPrefix(rawPath, prefix+"/") {
 			p := strings.TrimPrefix(rawPath, prefix)
 			if p == "" {
 				p = "/"
 			}
-			return url, p
+			return u, p
 		}
 	}
 	return "", ""
 }
 
 // newRequest は API Gateway イベントのフィールドから *http.Request を組み立てる。
-func newRequest(ctx context.Context, method, url, body string, headers map[string]string) (*http.Request, error) {
+func newRequest(ctx context.Context, method, targetURL, body string, headers map[string]string) (*http.Request, error) {
 	var bodyReader io.Reader
 	if body != "" {
 		bodyReader = strings.NewReader(body)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, targetURL, bodyReader)
 	if err != nil {
 		return nil, err
 	}

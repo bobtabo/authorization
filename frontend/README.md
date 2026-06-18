@@ -22,7 +22,7 @@
 認可サーバーの **フロントエンド** 実装です。
 
 スタッフ向けの管理コンソール（クライアント管理・スタッフ管理・通知）を提供します。  
-バックエンドとの通信は API Gateway エミュレータ経由で行います。  
+バックエンドとの通信は LocalStack API Gateway 経由で行います。  
 API 仕様は [`docs/api-spec/openapi.yml`](../docs/api-spec/openapi.yml) を参照してください。
 
 ---
@@ -43,7 +43,7 @@ API クライアント（src/api/）
     │  axios による HTTP リクエスト
     ▼
 Next.js Rewrites（/function/*）
-    │  API Gateway エミュレータ（Port:8080）へ転送
+    │  LocalStack API Gateway（Port:4566）へ転送
     ▼
 バックエンド API
 ```
@@ -97,7 +97,13 @@ npm install
 ### 2. 環境変数の設定
 
 ```bash
-cp .env.example .env
+# LocalStack モード（推奨）: make apply 時に .env が自動生成される
+# 手動で作成する場合:
+cp .env.localstack .env
+# .env 内の {api-id} を実際の API Gateway ID に置換する
+
+# emulator モード（非推奨）:
+# cp .env.emulator .env
 ```
 
 ### 3. 起動
