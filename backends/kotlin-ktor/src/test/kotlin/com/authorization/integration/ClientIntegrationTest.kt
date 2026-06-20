@@ -86,7 +86,7 @@ class ClientIntegrationTest {
         val response = client.put("/api/clients/${c.id}/update") {
             contentType(ContentType.Application.Json)
             header(HttpHeaders.Cookie, "staff_id=${staff.id}")
-            setBody(buildJsonObject { put("name", "更新後クライアント名") }.toString())
+            setBody(buildJsonObject { put("name", "更新後クライアント名"); put("version", c.version) }.toString())
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject

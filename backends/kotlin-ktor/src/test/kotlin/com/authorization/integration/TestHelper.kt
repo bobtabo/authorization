@@ -15,7 +15,7 @@ import java.util.Base64
 import java.util.UUID
 
 data class StaffRow(val id: Long, val email: String)
-data class ClientRow(val id: Long, val identifier: String, val accessToken: String)
+data class ClientRow(val id: Long, val identifier: String, val accessToken: String, val version: Int = 1)
 data class InvitationRow(val id: Int, val token: String)
 data class NotificationRow(val id: Long, val staffId: Long)
 
@@ -103,7 +103,7 @@ object TestHelper {
                 it[Clients.version]     = 1
             }.value
         }
-        return ClientRow(id, identifier, token)
+        return ClientRow(id, identifier, token, version = 1)
     }
 
     fun createInvitation(
