@@ -32,7 +32,8 @@ jobs:
         working-directory: frontend
 
       - name: Run E2E tests
-        run: npx playwright test --project=chromium
+        run: npm run test:e2e
         working-directory: frontend
         env:
           CI: true
+          NEXT_PUBLIC_API_URL: /function/php/api
