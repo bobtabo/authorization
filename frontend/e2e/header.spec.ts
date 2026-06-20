@@ -33,6 +33,9 @@ test.describe("通知 / URLリンク遷移", () => {
         },
       }),
     );
+    await page.route(`${PHP_NOTIF_API}/notifications/*`, (route) =>
+      route.fulfill({ status: 200, json: {} }),
+    );
     await page.route(`${PHP_NOTIF_API}/clients/1/jwt-histories*`, (route) =>
       route.fulfill({ json: { data: [], pager: { ...mockPager, count: 0 } } }),
     );
@@ -73,6 +76,9 @@ test.describe("ヘッダー / バックエンド切り替え", () => {
     );
     await page.route(`${GO_GIN_API}/notifications*`, (route) =>
       route.fulfill({ json: { items: [], next_cursor: null } }),
+    );
+    await page.route(`${GO_GIN_API}/clients*`, (route) =>
+      route.fulfill({ json: mockClients }),
     );
     await page.goto("/clients");
   });
