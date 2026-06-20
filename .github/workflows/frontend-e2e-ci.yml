@@ -1,0 +1,40 @@
+# フロントエンド E2E CI ワークフロー
+# frontend/** の変更時に Playwright モック版テスト（chromium プロジェクト）を実行
+# real-* プロジェクト（LocalStack + Lambda が必要）はローカル実行のみ
+name: Frontend E2E CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        working-directory: frontend
+        env:
+          CI: true
+          NEXT_PUBLIC_API_URL: /function/php/api
+          NEXT_PUBLIC_POSTCODE_API_KEY: ${{ secrets.NEXT_PUBLIC_POSTCODE_API_KEY }}

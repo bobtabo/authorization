@@ -52,7 +52,7 @@ fun Application.module(cfg: Config) {
     val invitationUC   = InvitationInteractor(invitationRepo, invitationAuthCache)
     val gateUC         = GateInteractor(clientRepo, gateCache, cfg, jwtHistoryRepo)
     val notificationUC = NotificationInteractor(notificationRepo, staffRepo)
-    val mailer         = Mailer(cfg.mail)
+    val mailer         = Mailer(cfg.mail, cfg.aws)
 
     val authH         = AuthHandler(authUC, invitationUC, cfg)
     val clientH       = ClientHandler(clientUC, notificationUC, mailer, jwtHistoryRepo, cfg.app.frontendUrl)

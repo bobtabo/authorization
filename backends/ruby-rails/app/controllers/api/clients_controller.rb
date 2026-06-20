@@ -125,7 +125,7 @@ class Api::ClientsController < Api::BaseController
 
   # クライアントを更新します。
   def update
-    result = Client::UpdateClientContract.new.call(params.to_unsafe_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email, :status))
+    result = Client::UpdateClientContract.new.call(params.to_unsafe_h.slice(:name, :post_code, :pref, :city, :address, :building, :tel, :email, :status, :version))
     return render json: { errors: result.errors.to_h }, status: :unprocessable_entity unless result.success?
 
     executor_id = staff_id_from_cookie
@@ -143,6 +143,7 @@ class Api::ClientsController < Api::BaseController
           email:       params[:email],
           status:      params[:status]&.to_i,
           executor_id: executor_id,
+          version:     params[:version]&.to_i,
         )
       )
     end

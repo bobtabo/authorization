@@ -119,6 +119,7 @@ class Interactor(private val repo: Repository) {
      */
     suspend fun update(dto: UpdateDto): DetailVo {
         var c = repo.findById(dto.id) ?: error("client_not_found")
+        if (c.version != dto.version) throw AppException.conflict("optimistic_lock")
         dto.name?.let     { v -> c = c.copy(name     = v) }
         dto.postCode?.let { v -> c = c.copy(postCode = v) }
         dto.pref?.let     { v -> c = c.copy(pref     = v) }

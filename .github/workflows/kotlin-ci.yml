@@ -4,8 +4,8 @@ name: Kotlin CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'backends/kotlin-ktor/**'
   workflow_dispatch:

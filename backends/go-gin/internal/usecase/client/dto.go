@@ -26,6 +26,7 @@ type UpdateDto struct {
 	Email      *string
 	Status     *int
 	ExecutorID uint
+	Version    int
 }
 
 // ListConditionDto はクライアント検索条件のユースケース入力です。

@@ -191,6 +191,7 @@ class UpdateBody(BaseModel):
     tel: Optional[str] = Field(default=None, pattern=r"^\d{10,11}$")
     email: Optional[str] = Field(default=None, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
     status: Optional[int] = None
+    version: Optional[int] = None
 
 
 @router.put("/clients/{client_id}/update")

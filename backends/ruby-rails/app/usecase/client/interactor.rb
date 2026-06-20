@@ -86,6 +86,8 @@ module UseCase
 
       def update(dto)
         entity = @repo.find_by_id(dto.id)
+        raise Domain::ConflictError if dto.version && entity.version != dto.version
+
         now    = Time.current
 
         updated         = entity.dup

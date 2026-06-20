@@ -61,6 +61,8 @@ type UpdateDto struct {
 	Status *int
 	// ExecutorID は操作を実行したスタッフID。
 	ExecutorID uint
+	// Version は楽観排他ロック用バージョン番号。
+	Version int
 }
 
 // ListConditionDto はクライアント一覧検索の入力データです。

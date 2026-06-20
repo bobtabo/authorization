@@ -27,7 +27,7 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
       setUrl(data.url);
       setDisplayUrl(data.display_url);
     } catch {
-      setError("招待URLの取得に失敗しました");
+      setError("APIが未接続・エラー時のため、モックの招待URLを表示しています");
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export function InvitationUrlModal({ open, onClose }: Props): React.JSX.Element 
       setUrl(data.url);
       setDisplayUrl(data.display_url);
     } catch {
-      setError("招待URLの再発行に失敗しました");
+      setError("APIが未接続・エラー時のため、モックの招待URLを表示しています");
     } finally {
       setReissuing(false);
     }

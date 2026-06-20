@@ -14,7 +14,7 @@ module UseCase
 
     # クライアント更新時に渡す DTO です。
     UpdateDto = Struct.new(
-      :id, :name, :post_code, :pref, :city, :address, :building, :tel, :email, :status, :executor_id,
+      :id, :name, :post_code, :pref, :city, :address, :building, :tel, :email, :status, :executor_id, :version,
       keyword_init: true
     )
 

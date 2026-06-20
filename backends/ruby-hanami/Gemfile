@@ -9,8 +9,8 @@ gem "rom-sql"
 gem "mysql2"
 gem "redis"
 gem "dotenv"
+gem "aws-sdk-ses"
 gem "dry-validation"
-gem "mail"
 gem "jwt"
 
 group :test do

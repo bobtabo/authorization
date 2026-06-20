@@ -39,6 +39,7 @@ data class UpdateDto(
     val email:      String?  = null,
     val status:     Int?     = null,
     val executorId: Long     = 0,
+    val version:    Int      = 0,
 )
 
 /**

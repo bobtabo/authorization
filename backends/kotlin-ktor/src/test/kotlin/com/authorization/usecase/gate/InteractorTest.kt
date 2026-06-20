@@ -1,6 +1,7 @@
 package com.authorization.usecase.gate
 
 import com.authorization.config.AppConfig
+import com.authorization.config.AwsConfig
 import com.authorization.config.Config
 import com.authorization.config.DbConfig
 import com.authorization.config.JwtConfig
@@ -53,6 +54,7 @@ class InteractorTest {
             host = "localhost", port = "1025", username = "", password = "",
             fromAddress = "no-reply@example.com", appName = "Test", appEnv = "test",
         ),
+        aws   = AwsConfig(region = "", endpoint = "", accessKey = "", secretKey = ""),
     )
 
     private fun mockClientRepo(

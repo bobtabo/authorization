@@ -207,25 +207,30 @@ class ClientHandler(
             email     = updateBody.email,
             status    = updateBody.status,
             executorId = executorId,
+            version   = body["version"]?.jsonPrimitive?.intOrNull ?: 0,
         )
-        val c = newSuspendedTransaction { clientUC.update(dto) }
-        call.respond(buildJsonObject {
-            put("id",         c.id)
-            put("name",       c.name)
-            put("identifier", c.identifier)
-            put("post_code",  c.postCode)
-            put("pref",       c.pref)
-            put("city",       c.city)
-            put("address",    c.address)
-            put("building",   c.building)
-            put("tel",        c.tel)
-            put("email",      c.email)
-            put("status",     c.status)
-            put("start_at",   c.startAt.fmtOrNull())
-            put("stop_at",    c.stopAt.fmtOrNull())
-            put("created_at", c.createdAt.fmt())
-            put("updated_at", c.updatedAt.fmt())
-        })
+        try {
+            val c = newSuspendedTransaction { clientUC.update(dto) }
+            call.respond(buildJsonObject {
+                put("id",         c.id)
+                put("name",       c.name)
+                put("identifier", c.identifier)
+                put("post_code",  c.postCode)
+                put("pref",       c.pref)
+                put("city",       c.city)
+                put("address",    c.address)
+                put("building",   c.building)
+                put("tel",        c.tel)
+                put("email",      c.email)
+                put("status",     c.status)
+                put("start_at",   c.startAt.fmtOrNull())
+                put("stop_at",    c.stopAt.fmtOrNull())
+                put("created_at", c.createdAt.fmt())
+                put("updated_at", c.updatedAt.fmt())
+            })
+        } catch (e: AppException) {
+            call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
+        }
     }
 
     /**

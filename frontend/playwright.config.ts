@@ -20,39 +20,42 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:3001",
     trace: "on-first-retry",
   },
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      // 撮影用: 本物の Chrome + Retina + ライトモード（PHP バックエンドのみ）
-      // 実行: npx playwright test --project=screenshot
-      name: "screenshot",
-      grep: /\[PHP\]/,
-      outputDir: path.join(os.homedir(), "Downloads", "playwright-screenshots"),
-      use: {
-        ...devices["Desktop Chrome"],
-        channel: "chrome",
-        colorScheme: "light",
-        deviceScaleFactor: 2,
-        viewport: { width: 1280, height: 800 },
-        screenshot: { mode: "on", fullPage: true },
-      },
-    },
-    // ── 実バックエンド E2E（バックエンド起動＋ seed.sql 適用が前提）──────────
-    // 実行例: npx playwright test --project=real-go-gin
-    { name: "real-php",       grep: /\[PHP\]/,              use: { ...devices["Desktop Chrome"] } },
-    { name: "real-go-gin",    grep: /\[Go \(Gin\)\]/,       use: { ...devices["Desktop Chrome"] } },
-    { name: "real-go-beego",  grep: /\[Go \(Beego\)\]/,    use: { ...devices["Desktop Chrome"] } },
-    { name: "real-go-echo",   grep: /\[Go \(Echo\)\]/,     use: { ...devices["Desktop Chrome"] } },
-    { name: "real-kotlin",    grep: /\[Kotlin\]/,           use: { ...devices["Desktop Chrome"] } },
-    { name: "real-python",    grep: /\[Python\]/,           use: { ...devices["Desktop Chrome"] } },
-    { name: "real-rb-hanami", grep: /\[Ruby \(Hanami\)\]/, use: { ...devices["Desktop Chrome"] } },
-    { name: "real-rb-rails",  grep: /\[Ruby \(Rails\)\]/,  use: { ...devices["Desktop Chrome"] } },
-    { name: "real-rust",      grep: /\[Rust\]/,             use: { ...devices["Desktop Chrome"] } },
-    { name: "real-ts",        grep: /\[TypeScript\]/,       use: { ...devices["Desktop Chrome"] } },
-  ],
+  projects: (process.env.CI
+    // CI では chromium のみ（screenshot / real-* は LocalStack + Lambda が必要なためローカル実行のみ）
+    ? [
+        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+      ]
+    : [
+        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        {
+          // 撮影用: 本物の Chrome + Retina + ライトモード（PHP バックエンドのみ）
+          // 実行: npx playwright test --project=screenshot
+          name: "screenshot",
+          grep: /\[PHP\]/,
+          outputDir: path.join(os.homedir(), "Downloads", "playwright-screenshots"),
+          use: {
+            ...devices["Desktop Chrome"],
+            channel: "chrome",
+            colorScheme: "light" as const,
+            deviceScaleFactor: 2,
+            viewport: { width: 1280, height: 800 },
+            screenshot: { mode: "on" as const, fullPage: true },
+          },
+        },
+        // ── 実バックエンド E2E（バックエンド起動＋ seed.sql 適用が前提）──────────
+        // 実行例: npx playwright test --project=real-go-gin
+        { name: "real-php",       grep: /\[PHP\]/,              use: { ...devices["Desktop Chrome"] } },
+        { name: "real-go-gin",    grep: /\[Go \(Gin\)\]/,       use: { ...devices["Desktop Chrome"] } },
+        { name: "real-go-beego",  grep: /\[Go \(Beego\)\]/,     use: { ...devices["Desktop Chrome"] } },
+        { name: "real-go-echo",   grep: /\[Go \(Echo\)\]/,      use: { ...devices["Desktop Chrome"] } },
+        { name: "real-kotlin",    grep: /\[Kotlin\]/,            use: { ...devices["Desktop Chrome"] } },
+        { name: "real-python",    grep: /\[Python\]/,            use: { ...devices["Desktop Chrome"] } },
+        { name: "real-rb-hanami", grep: /\[Ruby \(Hanami\)\]/,  use: { ...devices["Desktop Chrome"] } },
+        { name: "real-rb-rails",  grep: /\[Ruby \(Rails\)\]/,   use: { ...devices["Desktop Chrome"] } },
+        { name: "real-rust",      grep: /\[Rust\]/,              use: { ...devices["Desktop Chrome"] } },
+        { name: "real-ts",        grep: /\[TypeScript\]/,        use: { ...devices["Desktop Chrome"] } },
+      ]
+  ),
   webServer: {
     // dev サーバーと共存できるよう、E2E 専用に build → start する。
     // NEXT_PUBLIC_E2E=1 はビルド時にインライン化されるため build にも渡す。

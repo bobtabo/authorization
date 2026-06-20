@@ -23,5 +23,5 @@ func init() {
 func main() {
 	deps := adapter.NewDeps()
 	h := handler.New(deps)
-	lambda.Start(h.HandleAPIGatewayV2)
+	lambda.Start(h.Handle)
 }

@@ -21,6 +21,7 @@ class UpdateClientContract < Dry::Validation::Contract
     optional(:tel).maybe(:string)
     optional(:email).maybe(:string)
     optional(:status).maybe(:integer)
+    required(:version).filled(:integer)
   end
 
   rule(:name)      { key.failure("は255文字以内で入力してください") if value && value.length > 255 }

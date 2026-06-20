@@ -76,7 +76,7 @@ describe("Clients", () => {
           "Content-Type": "application/json",
           Cookie: `staff_id=${staff.id}`,
         },
-        body: JSON.stringify({ name: "更新後クライアント名" }),
+        body: JSON.stringify({ name: "更新後クライアント名", version: 1 }),
       });
       expect(res.status).toBe(200);
       const body = await res.json() as Record<string, unknown>;

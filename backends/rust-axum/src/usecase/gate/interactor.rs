@@ -135,7 +135,7 @@ mod tests {
         },
         gate::value_objects::{CacheRepository, DomainError as CacheDomainError},
     };
-    use crate::config::{AppConfig, DbConfig, JwtConfig, MailConfig, OAuthConfig, RedisConfig};
+    use crate::config::{AppConfig, AwsConfig, DbConfig, JwtConfig, MailConfig, OAuthConfig, RedisConfig};
 
     struct MockClientRepo {
         by_access_token:  Mutex<Option<Option<Client>>>,
@@ -200,6 +200,10 @@ mod tests {
                 username: "".to_string(), password: "".to_string(),
                 from_address: "no-reply@example.com".to_string(),
                 app_name: "Test".to_string(), app_env: "test".to_string(),
+            },
+            aws: AwsConfig {
+                region: "ap-northeast-1".to_string(), endpoint: "".to_string(),
+                access_key: "".to_string(), secret_key: "".to_string(),
             },
         })
     }

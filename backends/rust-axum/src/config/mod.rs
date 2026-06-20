@@ -13,6 +13,7 @@ pub struct Config {
     pub oauth: OAuthConfig,
     pub jwt:   JwtConfig,
     pub mail:  MailConfig,
+    pub aws:   AwsConfig,
 }
 
 #[derive(Clone)]
@@ -65,6 +66,14 @@ pub struct MailConfig {
     pub from_address: String,
     pub app_name:     String,
     pub app_env:      String,
+}
+
+#[derive(Clone)]
+pub struct AwsConfig {
+    pub region:     String,
+    pub endpoint:   String,
+    pub access_key: String,
+    pub secret_key: String,
 }
 
 impl Config {
@@ -123,6 +132,12 @@ impl Config {
                 from_address: get_env("MAIL_FROM_ADDRESS", "no-reply@example.com"),
                 app_name:     get_env("APP_NAME", "Authorization Gateway"),
                 app_env:      get_env("APP_ENV", "local"),
+            },
+            aws: AwsConfig {
+                region:     get_env("AWS_REGION", "ap-northeast-1"),
+                endpoint:   get_env("AWS_ENDPOINT_URL", ""),
+                access_key: get_env("AWS_ACCESS_KEY_ID", ""),
+                secret_key: get_env("AWS_SECRET_ACCESS_KEY", ""),
             },
         }
     }

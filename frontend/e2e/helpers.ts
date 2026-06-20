@@ -48,8 +48,14 @@ export async function stubRoute(
   }
 }
 
-/** クライアント一覧のモックデータ */
-export const mockClients = [
+export const mockPager = {
+  count: 2, limit: 10, next: false, previous: false,
+  page: 1, nextPage: 1, previousPage: 1, pageCount: 1,
+  first: true, last: true, firstRecordCount: 1, lastRecordCount: 2,
+  startPage: 1, endPage: 1,
+};
+
+const mockClientRows = [
   {
     id: 1,
     name: "株式会社アルファテック",
@@ -70,20 +76,26 @@ export const mockClients = [
   },
 ];
 
+/** クライアント一覧のモックデータ */
+export const mockClients = { data: mockClientRows, pager: mockPager };
+
 /** 論理削除済みクライアントを含むモックデータ */
-export const mockClientsWithDeleted = [
-  ...mockClients,
-  {
-    id: 3,
-    name: "ガンマシステム株式会社",
-    status: 4,
-    start_at: "2026-01-03 09:00:00",
-    stop_at: "2026-12-31 18:00:00",
-    created_at: "2026-01-03 09:00:00",
-    updated_at: "2026-01-03 09:00:00",
-    deleted_at: "2027-01-01 00:00:00",
-  },
-];
+export const mockClientsWithDeleted = {
+  data: [
+    ...mockClientRows,
+    {
+      id: 3,
+      name: "ガンマシステム株式会社",
+      status: 4,
+      start_at: "2026-01-03 09:00:00",
+      stop_at: "2026-12-31 18:00:00",
+      created_at: "2026-01-03 09:00:00",
+      updated_at: "2026-01-03 09:00:00",
+      deleted_at: "2027-01-01 00:00:00",
+    },
+  ],
+  pager: { ...mockPager, count: 3, lastRecordCount: 3 },
+};
 
 /** 論理削除済みクライアントの詳細モックデータ */
 export const mockSoftDeletedClientDetail = {
@@ -145,7 +157,7 @@ export const BACKENDS = [
 
 /** スタッフ一覧のモックデータ */
 export const mockStaffs = {
-  items: [
+  data: [
     {
       id: 1,
       name: "田中 太郎",
@@ -165,4 +177,5 @@ export const mockStaffs = {
       updated_at: "2026-01-02 09:00:00",
     },
   ],
+  pager: mockPager,
 };

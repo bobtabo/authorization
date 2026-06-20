@@ -1,0 +1,30 @@
+networks:
+  authorization:
+    external: true
+
+# ============================================================
+# LocalStack Pro モード（将来対応）
+# ============================================================
+# LocalStack Pro ライセンスが必要です。
+# 利用する場合は LOCALSTACK_AUTH_TOKEN を環境変数に設定してください。
+#
+# 参考: https://docs.localstack.cloud/getting-started/auth-token/
+# ============================================================
+
+services:
+  localstack:
+    image: localstack/localstack-pro:latest
+    container_name: ${LOCALSTACK_CONTAINER}
+    ports:
+      - "${LOCALSTACK_PORT}:4566"
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}
+      - SERVICES=apigateway,lambda,iam,ses,ssm
+      - LAMBDA_DOCKER_NETWORK=authorization
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/localstack:/var/lib/localstack
+    networks:
+      - authorization

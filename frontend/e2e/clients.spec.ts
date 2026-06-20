@@ -1,4 +1,4 @@
-import { test, expect, stubRoute, mockCommon, mockClients, mockClientDetail, mockClientsWithDeleted, mockSoftDeletedClientDetail, BACKENDS } from "./helpers";
+import { test, expect, stubRoute, mockCommon, mockClients, mockClientDetail, mockClientsWithDeleted, mockSoftDeletedClientDetail, mockPager, BACKENDS } from "./helpers";
 
 for (const backend of BACKENDS) {
   const API = backend.apiPrefix;
@@ -16,7 +16,16 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("一覧", () => {
       test.beforeEach(async ({ page }) => {
-        await stubRoute(page, `${API}/clients*`, mockClients, false);
+        await page.route(`${API}/clients*`, (route, request) => {
+          const url = new URL(request.url());
+          const keyword = url.searchParams.get("keyword") ?? "";
+          const filtered = keyword
+            ? mockClients.data.filter((r) => r.name.includes(keyword))
+            : mockClients.data;
+          route.fulfill({
+            json: { data: filtered, pager: { ...mockClients.pager, count: filtered.length } },
+          });
+        });
         await page.goto("/clients");
       });
 
@@ -98,6 +107,7 @@ for (const backend of BACKENDS) {
     test.describe("詳細", () => {
       test.beforeEach(async ({ page }) => {
         await stubRoute(page, `${API}/clients/1`, mockClientDetail, false);
+        await stubRoute(page, `${API}/clients/1/jwt-histories*`, { data: [], pager: { ...mockPager, count: 0 } }, false);
         await page.goto("/clients/show?id=1");
       });
 
@@ -126,6 +136,7 @@ for (const backend of BACKENDS) {
 
       test("論理削除済みクライアントの詳細が表示される", async ({ page }) => {
         await stubRoute(page, `${API}/clients/3`, mockSoftDeletedClientDetail, false);
+        await stubRoute(page, `${API}/clients/3/jwt-histories*`, { data: [], pager: { ...mockPager, count: 0 } }, false);
         await page.goto("/clients/show?id=3");
         await expect(page.getByText("ガンマシステム株式会社")).toBeVisible();
       });

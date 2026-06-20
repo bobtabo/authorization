@@ -36,6 +36,7 @@ class ClientUpdateDto:
     tel: Optional[str] = None
     email: Optional[str] = None
     status: Optional[int] = None
+    version: Optional[int] = None
 
 
 @dataclass

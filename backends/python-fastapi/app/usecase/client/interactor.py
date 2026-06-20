@@ -16,7 +16,7 @@ from app.domain.client.entity import Client
 from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
 from app.domain.client.value_objects import ClientListItem, ClientDetailVo, ClientStoreResultVo, ClientQrVo, ClientInfoVo, ClientStartVo
-from app.exceptions import internal, not_found
+from app.exceptions import conflict, internal, not_found
 from app.usecase.client.dto import ClientStoreDto, ClientUpdateDto, ClientIdentifierDto
 
 
@@ -237,6 +237,8 @@ class ClientInteractor:
         client = self.repository.find_client_by_id(dto.client_id)
         if client is None:
             raise not_found("client_not_found")
+        if dto.version is not None and dto.version != client.version:
+            raise conflict("optimistic_lock")
 
         if dto.name is not None:
             client.name = dto.name

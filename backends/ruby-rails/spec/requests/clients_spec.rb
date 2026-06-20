@@ -63,7 +63,7 @@ RSpec.describe "Clients", type: :request do
       staff  = create_staff
       client = create_client
       put "/api/clients/#{client.id}/update",
-          params: { name: "更新後クライアント名" }.to_json,
+          params: { name: "更新後クライアント名", version: 1 }.to_json,
           headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{staff.id}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
