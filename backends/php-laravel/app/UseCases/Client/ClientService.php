@@ -284,10 +284,13 @@ class ClientService extends AbstractService
         $condition = SimpleMapper::map($dto, ClientCondition::class);
 
         $entity = $this->repository->findById($condition);
+        if ($dto->version !== null && $entity->version !== $dto->version) {
+            throw new AppException(409, 'optimistic_lock');
+        }
         // identifier は登録時に自動生成するため更新不可
         // status は遷移ロジックで個別に制御するため assign から除外
         // accessToken は不変のため assign から除外
-        $entity->assign($dto->attributes(), [], ['identifier', 'status', 'accessToken']);
+        $entity->assign($dto->attributes(), [], ['identifier', 'status', 'accessToken', 'version']);
 
         // ステータス遷移に応じた利用開始・停止日時を自動設定
         if ($dto->status !== null) {

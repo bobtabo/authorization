@@ -198,6 +198,7 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 			Email:      body.Email,
 			Status:     body.Status,
 			ExecutorID: executorID,
+			Version:    body.Version,
 		})
 		return e
 	}); txErr != nil {

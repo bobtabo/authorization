@@ -16,7 +16,16 @@ for (const backend of BACKENDS) {
     // -----------------------------------------------------------------------
     test.describe("一覧", () => {
       test.beforeEach(async ({ page }) => {
-        await stubRoute(page, `${API}/clients*`, mockClients, false);
+        await page.route(`${API}/clients*`, (route, request) => {
+          const url = new URL(request.url());
+          const keyword = url.searchParams.get("keyword") ?? "";
+          const filtered = keyword
+            ? mockClients.data.filter((r) => r.name.includes(keyword))
+            : mockClients.data;
+          route.fulfill({
+            json: { data: filtered, pager: { ...mockClients.pager, count: filtered.length } },
+          });
+        });
         await page.goto("/clients");
       });
 

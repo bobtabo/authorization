@@ -143,6 +143,7 @@ class Api::ClientsController < Api::BaseController
           email:       params[:email],
           status:      params[:status]&.to_i,
           executor_id: executor_id,
+          version:     params[:version]&.to_i,
         )
       )
     end

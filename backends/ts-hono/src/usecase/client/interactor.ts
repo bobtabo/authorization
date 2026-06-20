@@ -138,6 +138,9 @@ export class ClientInteractor {
   async updateClientData(id: number, data: ClientUpdateInput): Promise<ClientDetailVo> {
     const client = await this.repo.findById(id);
     if (!client) throw notFound("client_not_found");
+    if (data.version !== undefined && data.version !== client.version) {
+      throw conflict("optimistic_lock");
+    }
 
     const patch: Record<string, unknown> = { ...data };
     if (data.status !== undefined && data.status !== client.status) {

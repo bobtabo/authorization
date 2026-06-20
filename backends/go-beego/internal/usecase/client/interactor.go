@@ -135,6 +135,9 @@ func (uc *Interactor) Update(dto UpdateDto) (*domclient.DetailVo, error) {
 	if err != nil || c == nil {
 		return nil, apperror.NotFound("client_not_found")
 	}
+	if c.Version != dto.Version {
+		return nil, apperror.Conflict("optimistic_lock")
+	}
 
 	if dto.Name != nil {
 		c.Name = *dto.Name

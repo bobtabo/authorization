@@ -6,7 +6,7 @@ import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check } f
 import { Pager } from "@/components/pager";
 import { ConsoleHeader } from "@/components/console-header";
 import { ConsoleFooter } from "@/components/console-footer";
-import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory, type Pager } from "@/src/api/clients";
+import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory, type Pager as PagerData } from "@/src/api/clients";
 import { formatTimestamp } from "@/lib/format-datetime";
 import { extractApiError } from "@/lib/api-error";
 
@@ -118,7 +118,7 @@ export default function ClientShowPage(): React.JSX.Element {
   const [stopping, setStopping] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [jwtData, setJwtData] = useState<JwtHistory[]>([]);
-  const [jwtPager, setJwtPager] = useState<Pager | null>(null);
+  const [jwtPager, setJwtPager] = useState<PagerData | null>(null);
   const [activeTab, setActiveTab] = useState<"info" | "history">("info");
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize, setHistoryPageSize] = useState(10);

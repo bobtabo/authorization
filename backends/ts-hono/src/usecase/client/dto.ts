@@ -28,4 +28,5 @@ export interface ClientUpdateInput {
   tel?: string;
   email?: string;
   status?: number;
+  version?: number;
 }

@@ -46,6 +46,7 @@ const updateClientSchema = z.object({
   tel:       z.string().regex(/^\d{10,11}$/).optional(),
   email:     z.string().email().max(255).optional(),
   status:    z.number().int().optional(),
+  version:   z.number().int().optional(),
 });
 
 const app = new Hono();
@@ -162,6 +163,7 @@ app.put("/clients/:id/update", async (c) => {
       tel: body.tel,
       email: body.email,
       status: body.status,
+      version: body.version,
     });
   });
   return c.json(mapDetail(result));

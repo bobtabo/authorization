@@ -47,6 +47,7 @@ class UpdateClientRequest extends AppRequest
             'tel' => ['sometimes', 'string', 'regex:/^\d{10,11}$/'],
             'email' => ['sometimes', 'string', 'email', 'max:255'],
             'status' => ['sometimes', 'integer'],
+            'version' => ['sometimes', 'integer'],
         ];
     }
 }

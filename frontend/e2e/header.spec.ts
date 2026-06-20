@@ -76,6 +76,10 @@ test.describe("ヘッダー / バックエンド切り替え", () => {
 
   test("切り替え後にログインページが表示される", async ({ page }) => {
     await mockLogout(page, PHP_API);
+    // go-gin の auth/me を 401 にして確実に /login へリダイレクトさせる
+    await page.route("**/function/go-gin/api/auth/me", (route) =>
+      route.fulfill({ status: 401, json: {} }),
+    );
 
     await page.getByLabel("Backend:").selectOption("go-gin");
     await expect(page.getByText("Googleで続行")).toBeVisible();

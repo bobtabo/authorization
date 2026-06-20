@@ -6,7 +6,16 @@ for (const backend of BACKENDS) {
   test.describe(`スタッフ [${backend.label}]`, () => {
     test.beforeEach(async ({ page, isReal }) => {
       await mockCommon(page, API, isReal);
-      await stubRoute(page, `${API}/staffs*`, mockStaffs, false);
+      await page.route(`${API}/staffs*`, (route, request) => {
+        const url = new URL(request.url());
+        const keyword = url.searchParams.get("keyword") ?? "";
+        const filtered = keyword
+          ? mockStaffs.data.filter((r) => r.name.includes(keyword) || r.email.includes(keyword))
+          : mockStaffs.data;
+        route.fulfill({
+          json: { data: filtered, pager: { ...mockStaffs.pager, count: filtered.length } },
+        });
+      });
       await page.addInitScript((runtime) => {
         localStorage.setItem("backend-runtime", runtime);
       }, backend.value);
@@ -47,7 +56,7 @@ for (const backend of BACKENDS) {
       await stubRoute(
         page,
         `${API}/staffs/2/updateRole`,
-        { ...mockStaffs.items[1], role: 1 },
+        { ...mockStaffs.data[1], role: 1 },
         isReal,
       );
 

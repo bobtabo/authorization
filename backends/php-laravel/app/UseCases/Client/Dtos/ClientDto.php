@@ -48,4 +48,5 @@ class ClientDto extends PagerDto
     public ?string $email = null;
     public ?string $accessToken = null;
     public ?ClientStatus $status = null;
+    public ?int $version = null;
 }
