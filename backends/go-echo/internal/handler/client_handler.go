@@ -152,7 +152,7 @@ func (h *ClientHandler) Update(c echo.Context) error {
 			ID: id, Name: body.Name, PostCode: body.PostCode, Pref: body.Pref,
 			City: body.City, Address: body.Address, Building: body.Building,
 			Tel: body.Tel, Email: body.Email, Status: body.Status, ExecutorID: executorID,
-			Version: body.Version,
+			Version: *body.Version,
 		})
 		return e
 	}); txErr != nil {

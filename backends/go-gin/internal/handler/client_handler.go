@@ -214,7 +214,7 @@ func (h *ClientHandler) Update(c *gin.Context) {
 			Email:      body.Email,
 			Status:     body.Status,
 			ExecutorID: executorID,
-			Version:    body.Version,
+			Version:    *body.Version,
 		})
 		return e
 	}); txErr != nil {

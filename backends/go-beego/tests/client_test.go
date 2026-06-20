@@ -120,7 +120,7 @@ func TestClient_Update(t *testing.T) {
 		c := createClient(t, nil)
 		newName := "更新後クライアント名"
 		w := do(http.MethodPut, fmt.Sprintf("/api/clients/%d/update", c.ID),
-			map[string]string{"name": newName})
+			map[string]interface{}{"name": newName, "version": c.Version})
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -131,7 +131,7 @@ func TestClient_Update(t *testing.T) {
 	})
 
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
-		w := do(http.MethodPut, "/api/clients/99999/update", map[string]string{"name": "test"})
+		w := do(http.MethodPut, "/api/clients/99999/update", map[string]interface{}{"name": "test", "version": 0})
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
 		}
