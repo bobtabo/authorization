@@ -33,7 +33,7 @@ test.describe("通知 / URLリンク遷移", () => {
         },
       }),
     );
-    await page.route(`${PHP_NOTIF_API}/notifications/*`, (route) =>
+    await page.route(`${PHP_NOTIF_API}/notifications/1`, (route) =>
       route.fulfill({ status: 200, json: {} }),
     );
     await page.route(`${PHP_NOTIF_API}/clients/1/jwt-histories*`, (route) =>
