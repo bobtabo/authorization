@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mockCommon, mockLogout, mockClients, mockClientDetail, BACKENDS } from "./helpers";
+import { mockCommon, mockLogout, mockClients, mockClientDetail, mockPager, BACKENDS } from "./helpers";
 
 const PHP_API = "**/function/php/api";
 
@@ -33,6 +33,9 @@ test.describe("通知 / URLリンク遷移", () => {
         },
       }),
     );
+    await page.route(`${PHP_NOTIF_API}/clients/1/jwt-histories*`, (route) =>
+      route.fulfill({ json: { data: [], pager: { ...mockPager, count: 0 } } }),
+    );
     await page.route(`${PHP_NOTIF_API}/clients/1`, (route) =>
       route.fulfill({ json: mockClientDetail }),
     );
@@ -54,10 +57,22 @@ test.describe("通知 / URLリンク遷移", () => {
 // バックエンドランタイム切り替え
 // ---------------------------------------------------------------------------
 test.describe("ヘッダー / バックエンド切り替え", () => {
+  const GO_GIN_API = "**/function/go-gin/api";
+
   test.beforeEach(async ({ page }) => {
     await mockCommon(page, PHP_API);
     await page.route(`${PHP_API}/clients*`, (route) =>
       route.fulfill({ json: mockClients }),
+    );
+    // go-gin の API をスタブ（バックエンド切り替え後の reload で 502 → /error に飛ぶのを防ぐ）
+    await page.route(`${GO_GIN_API}/auth/me`, (route) =>
+      route.fulfill({ status: 401, json: {} }),
+    );
+    await page.route(`${GO_GIN_API}/notifications/counts`, (route) =>
+      route.fulfill({ json: { unread: 0, total: 0 } }),
+    );
+    await page.route(`${GO_GIN_API}/notifications*`, (route) =>
+      route.fulfill({ json: { items: [], next_cursor: null } }),
     );
     await page.goto("/clients");
   });
