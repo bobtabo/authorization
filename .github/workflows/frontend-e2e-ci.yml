@@ -5,8 +5,8 @@ name: Frontend E2E CI
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - 'feature/issue-*'
     paths:
       - 'frontend/**'
   workflow_dispatch:
