@@ -40,7 +40,7 @@ type UpdateClientBody struct {
 	Tel      *string `json:"tel"       validate:"omitempty,tel"`
 	Email    *string `json:"email"     validate:"omitempty,email,max=255"`
 	Status   *int    `json:"status"`
-	Version  int     `json:"version"`
+	Version  int     `json:"version"  validate:"required"`
 }
 
 func validateStruct(s interface{}) error {

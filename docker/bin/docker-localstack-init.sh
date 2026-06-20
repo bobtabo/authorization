@@ -48,9 +48,9 @@ while [ ${ELAPSED} -lt ${MAX_WAIT} ]; do
 done
 
 if [ ${ELAPSED} -ge ${MAX_WAIT} ]; then
-    echo "⚠️  LocalStack の起動がタイムアウトしました（${MAX_WAIT}秒）"
+    echo "❌ LocalStack の起動がタイムアウトしました（${MAX_WAIT}秒）"
     echo "   手動で起動を確認し、cd terraform/local && make apply を実行してください"
-    exit 0
+    exit 1
 fi
 
 # ── 2. Lambda zip ビルド ──
@@ -71,9 +71,9 @@ cd "${PROJECT_ROOT}/terraform/local"
 if command -v tflocal &>/dev/null; then
     make apply
 else
-    echo "⚠️  tflocal コマンドが見つかりません"
+    echo "❌ tflocal コマンドが見つかりません"
     echo "   pip install terraform-local でインストールしてください"
-    exit 0
+    exit 1
 fi
 
 echo ""

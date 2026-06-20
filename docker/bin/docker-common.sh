@@ -10,7 +10,7 @@
 
 ARG="${1}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "${SCRIPT_DIR}/../local/common"
+cd "${SCRIPT_DIR}/../local/common" || { echo "❌ ディレクトリへの移動に失敗しました: ${SCRIPT_DIR}/../local/common" >&2; exit 1; }
 
 # .env から BACKEND_MODE を読み込む
 if [ -f ./.env ]; then
@@ -27,9 +27,13 @@ case "${BACKEND_MODE}" in
     emulator)
         compose_cmd+=(-f docker-compose.emulator.yml)
         ;;
-    *)
-        # デフォルト: localstack
+    localstack)
         compose_cmd+=(-f docker-compose.localstack.yml)
+        ;;
+    *)
+        echo "❌ 不明な BACKEND_MODE: ${BACKEND_MODE}" >&2
+        echo "   使用可能な値: localstack | localstack-pro | emulator" >&2
+        exit 1
         ;;
 esac
 

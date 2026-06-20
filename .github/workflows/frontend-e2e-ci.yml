@@ -37,4 +37,4 @@ jobs:
         env:
           CI: true
           NEXT_PUBLIC_API_URL: /function/php/api
-          NEXT_PUBLIC_POSTCODE_API_KEY: AZtWlP7Bfo7rs0aegxzxC4VKFuBvKi
+          NEXT_PUBLIC_POSTCODE_API_KEY: ${{ secrets.NEXT_PUBLIC_POSTCODE_API_KEY }}

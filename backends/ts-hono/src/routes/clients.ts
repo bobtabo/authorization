@@ -46,7 +46,7 @@ const updateClientSchema = z.object({
   tel:       z.string().regex(/^\d{10,11}$/).optional(),
   email:     z.string().email().max(255).optional(),
   status:    z.number().int().optional(),
-  version:   z.number().int().optional(),
+  version:   z.number().int(),
 });
 
 const app = new Hono();
