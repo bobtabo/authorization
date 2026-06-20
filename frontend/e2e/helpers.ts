@@ -48,7 +48,7 @@ export async function stubRoute(
   }
 }
 
-const mockPager = {
+export const mockPager = {
   count: 2, limit: 10, next: false, previous: false,
   page: 1, nextPage: 1, previousPage: 1, pageCount: 1,
   first: true, last: true, firstRecordCount: 1, lastRecordCount: 2,
