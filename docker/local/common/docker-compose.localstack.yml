@@ -4,7 +4,7 @@ networks:
 
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:3.8.1
     container_name: ${LOCALSTACK_CONTAINER}
     ports:
       - "${LOCALSTACK_PORT}:4566"
