@@ -5,17 +5,18 @@
 
 ARG="${1}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_NAME="auth-go-gin"
 cd "${SCRIPT_DIR}/../local/app-go-gin"
 
 if [ "${ARG}" = "up" ]; then
     if [ ! -f .env ]; then
         cp .env.example .env
     fi
-    docker-compose -p auth-go-gin -f docker-compose.yml up -d --build
+    docker-compose -p "${PROJECT_NAME}" -f docker-compose.yml up -d --build
 elif [ "${ARG}" = "down" ]; then
-    docker-compose -p auth-go-gin -f docker-compose.yml down --rmi all --volumes
+    docker-compose -p "${PROJECT_NAME}" -f docker-compose.yml down --rmi all --volumes
 elif [ "${ARG}" = "exec" ]; then
-    docker-compose -p auth-go-gin -f docker-compose.yml exec --user 1000 go sh
+    docker-compose -p "${PROJECT_NAME}" -f docker-compose.yml exec --user 1000 go sh
 else
     echo "使い方: $0 {up|down|exec}"
     exit 1

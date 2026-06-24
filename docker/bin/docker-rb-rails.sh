@@ -5,17 +5,18 @@
 
 ARG="${1}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_NAME="auth-rb-rails"
 cd "${SCRIPT_DIR}/../local/app-rb-rails"
 
 if [ "${ARG}" = "up" ]; then
     if [ ! -f .env ]; then
         cp .env.example .env
     fi
-    docker-compose -p auth-rb-rails -f docker-compose.yml up -d --build
+    docker-compose -p "${PROJECT_NAME}" -f docker-compose.yml up -d --build
 elif [ "${ARG}" = "down" ]; then
-    docker-compose -p auth-rb-rails -f docker-compose.yml down --rmi all --volumes
+    docker-compose -p "${PROJECT_NAME}" -f docker-compose.yml down --rmi all --volumes
 elif [ "${ARG}" = "exec" ]; then
-    docker-compose -p auth-rb-rails -f docker-compose.yml exec --user 1000 rb-rails bash
+    docker-compose -p "${PROJECT_NAME}" -f docker-compose.yml exec --user 1000 rb-rails bash
 else
     echo "使い方: $0 {up|down|exec}"
     exit 1
