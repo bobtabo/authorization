@@ -25,16 +25,16 @@
 | パス                                                                   | 内容                                                                 |
 |----------------------------------------------------------------------|--------------------------------------------------------------------|
 | [`develop/`](./develop/)                                             | AWSの開発環境用を想定                                                       |
-| [`local/app-go-gin/`](local/app-go-gin/)     | Go（Gin）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                  |
-| [`local/app-go-echo/`](local/app-go-echo/)   | Go（Echo）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
-| [`local/app-go-beego/`](local/app-go-beego/) | Go（Beego）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                |
-| [`local/app-kotlin/`](local/app-kotlin/)     | Kotlin（Ktor）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
-| [`local/app-php/`](local/app-php/)           | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                    |
-| [`local/app-python/`](local/app-python/)     | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
-| [`local/app-rb-hanami/`](local/app-rb-hanami/) | Ruby（Hanami）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。           |
-| [`local/app-rb-rails/`](local/app-rb-rails/)   | Ruby（Rails）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。            |
-| [`local/app-rust/`](local/app-rust/)         | Rust（Axum）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
-| [`local/app-ts/`](local/app-ts/)             | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
+| [`local/auth-go-gin/`](local/auth-go-gin/)     | Go（Gin）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                  |
+| [`local/auth-go-echo/`](local/auth-go-echo/)   | Go（Echo）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
+| [`local/auth-go-beego/`](local/auth-go-beego/) | Go（Beego）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                |
+| [`local/auth-kotlin/`](local/auth-kotlin/)     | Kotlin（Ktor）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
+| [`local/auth-php/`](local/auth-php/)           | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                    |
+| [`local/auth-python/`](local/auth-python/)     | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
+| [`local/auth-rb-hanami/`](local/auth-rb-hanami/) | Ruby（Hanami）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。           |
+| [`local/auth-rb-rails/`](local/auth-rb-rails/)   | Ruby（Rails）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。            |
+| [`local/auth-rust/`](local/auth-rust/)         | Rust（Axum）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
+| [`local/auth-ts/`](local/auth-ts/)             | TypeScript 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/common/`](local/common/)             | 複数バックエンドで共有する共通インフラ。                                              |
 | [`production/`](./production/)                                       | AWSの本番環境用を想定                                                       |
 | [`staging/`](./staging/)                                             | AWSの検証環境用を想定                                                       |
