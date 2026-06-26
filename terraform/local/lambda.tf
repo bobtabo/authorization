@@ -33,7 +33,7 @@ resource "aws_lambda_function" "http_function" {
   function_name = "authorization-http"
   role          = aws_iam_role.lambda_exec.arn
   handler       = "bootstrap"
-  runtime       = "provided.al2023"
+  runtime       = "provided.al2"
   architectures = ["x86_64"]
   timeout       = 10
   memory_size   = 128

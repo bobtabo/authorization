@@ -4,7 +4,7 @@ networks:
 
 services:
   localstack:
-    image: localstack/localstack:3.8.1
+    image: localstack/localstack:2.3.2
     container_name: ${LOCALSTACK_CONTAINER}
     ports:
       - "${LOCALSTACK_PORT}:4566"
@@ -14,12 +14,24 @@ services:
       - LAMBDA_DOCKER_NETWORK=authorization
       - DOCKER_HOST=unix:///var/run/docker.sock
       - DEBUG=0
-      - SMTP_HOST=${MAILPIT_CONTAINER}:1025
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data/localstack:/var/lib/localstack
     networks:
       - authorization
+
+  ses-relay:
+    image: python:3.11-slim
+    container_name: ${SES_RELAY_CONTAINER:-auth-ses-relay}
+    command: python3 /relay.py
+    volumes:
+      - ./ses-relay.py:/relay.py:ro
+    depends_on:
+      - localstack
+      - mailpit
+    networks:
+      - authorization
+    restart: on-failure
 
   mailpit:
     image: axllent/mailpit:latest
