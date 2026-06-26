@@ -44,6 +44,16 @@ resource "aws_lambda_function" "http_function" {
   environment {
     variables = {
       INSECURE_SKIP_TLS_VERIFY = "true"
+      BACKEND_PHP_URL          = "http://auth-php_nginx"
+      BACKEND_GO_GIN_URL       = "http://auth-go-gin_nginx"
+      BACKEND_GO_BEEGO_URL     = "http://auth-go-beego_nginx"
+      BACKEND_GO_ECHO_URL      = "http://auth-go-echo_nginx"
+      BACKEND_KOTLIN_URL       = "http://auth-kotlin_nginx"
+      BACKEND_PYTHON_URL       = "http://auth-python_nginx"
+      BACKEND_RB_HANAMI_URL    = "http://auth-rb-hanami_nginx"
+      BACKEND_RB_RAILS_URL     = "http://auth-rb-rails_nginx"
+      BACKEND_RUST_URL         = "http://auth-rust_nginx"
+      BACKEND_TS_URL           = "http://auth-ts_nginx"
     }
   }
 }
