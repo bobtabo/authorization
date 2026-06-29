@@ -15,26 +15,22 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-// backendURL はパスプレフィックスからバックエンドのベース URL を返す。
-// 環境変数で上書き可能（本番デプロイ時など）。
-var backendURL = map[string]string{
-	"/function/php":       getenv("BACKEND_PHP_URL",       "https://apis.authorization-php.dev"),
-	"/function/go-gin":    getenv("BACKEND_GO_GIN_URL",    "https://apis.authorization-go-gin.dev"),
-	"/function/go-beego":  getenv("BACKEND_GO_BEEGO_URL",  "https://apis.authorization-go-beego.dev"),
-	"/function/go-echo":   getenv("BACKEND_GO_ECHO_URL",   "https://apis.authorization-go-echo.dev"),
-	"/function/kotlin":    getenv("BACKEND_KOTLIN_URL",    "https://apis.authorization-kotlin.dev"),
-	"/function/python":    getenv("BACKEND_PYTHON_URL",    "https://apis.authorization-python.dev"),
-	"/function/rb-hanami": getenv("BACKEND_RB_HANAMI_URL", "https://apis.authorization-rb-hanami.dev"),
-	"/function/rb-rails":  getenv("BACKEND_RB_RAILS_URL",  "https://apis.authorization-rb-rails.dev"),
-	"/function/rust":      getenv("BACKEND_RUST_URL",      "https://apis.authorization-rust.dev"),
-	"/function/ts":        getenv("BACKEND_TS_URL",        "https://apis.authorization-ts.dev"),
-}
+// albURL は ALB（ローカルでは nginx-proxy）のベース URL。
+// 環境変数 ALB_URL で上書き可能。未設定時は hostMap の仮想ホスト名から URL を組み立てる。
+var albURL = os.Getenv("ALB_URL")
 
-func getenv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
+// hostMap はパスプレフィックスから nginx-proxy が振り分けに使う Host ヘッダー値を返す。
+var hostMap = map[string]string{
+	"/function/php":       "apis.authorization-php.dev",
+	"/function/go-gin":    "apis.authorization-go-gin.dev",
+	"/function/go-beego":  "apis.authorization-go-beego.dev",
+	"/function/go-echo":   "apis.authorization-go-echo.dev",
+	"/function/kotlin":    "apis.authorization-kotlin.dev",
+	"/function/python":    "apis.authorization-python.dev",
+	"/function/rb-hanami": "apis.authorization-rb-hanami.dev",
+	"/function/rb-rails":  "apis.authorization-rb-rails.dev",
+	"/function/rust":      "apis.authorization-rust.dev",
+	"/function/ts":        "apis.authorization-ts.dev",
 }
 
 // Handler は REST API (v1) 用の Lambda ハンドラ。外部依存は adapter 経由で注入する。
@@ -62,15 +58,19 @@ func (h *Handler) Handle(
 		"request_id", req.RequestContext.RequestID,
 	)
 
-	// パスプレフィックスからバックエンド URL とバックエンド側パスを決定する
-	base, backendPath := resolveBackend(req.Path)
-	if base == "" {
+	// パスプレフィックスからバックエンド側パスと Host ヘッダーを決定する
+	host, backendPath := resolveBackend(req.Path)
+	if host == "" {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 404,
 			Headers:    map[string]string{},
 		}, nil
 	}
 
+	base := albURL
+	if base == "" {
+		base = "https://" + host
+	}
 	targetURL := base + backendPath
 	if len(req.MultiValueQueryStringParameters) > 0 {
 		vals := url.Values{}
@@ -91,6 +91,7 @@ func (h *Handler) Handle(
 			Headers:    map[string]string{},
 		}, err
 	}
+	httpReq.Host = host
 
 	// バックエンドへ転送する
 	resp, err := h.deps.HTTPClient().Do(httpReq)
@@ -130,18 +131,18 @@ func (h *Handler) Handle(
 	}, nil
 }
 
-// resolveBackend はパスを見てバックエンドのベース URL と転送先パスを返す。
+// resolveBackend はパスを見て Host ヘッダー値と転送先パスを返す。
 // 一致するプレフィックスがなければ空文字列を返す。
 // /function/go が /function/go-beego に誤マッチしないよう、
 // プレフィックスの直後が "/" または末尾であることを確認する。
-func resolveBackend(rawPath string) (base, path string) {
-	for prefix, u := range backendURL {
+func resolveBackend(rawPath string) (host, path string) {
+	for prefix, h := range hostMap {
 		if rawPath == prefix || strings.HasPrefix(rawPath, prefix+"/") {
 			p := strings.TrimPrefix(rawPath, prefix)
 			if p == "" {
 				p = "/"
 			}
-			return u, p
+			return h, p
 		}
 	}
 	return "", ""
