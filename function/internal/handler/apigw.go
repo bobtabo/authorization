@@ -16,8 +16,8 @@ import (
 )
 
 // albURL は ALB（ローカルでは nginx-proxy）のベース URL。
-// 環境変数 ALB_URL で上書き可能。
-var albURL = getenv("ALB_URL", "https://auth-proxy")
+// 環境変数 ALB_URL で上書き可能。未設定時は hostMap の仮想ホスト名から URL を組み立てる。
+var albURL = os.Getenv("ALB_URL")
 
 // hostMap はパスプレフィックスから nginx-proxy が振り分けに使う Host ヘッダー値を返す。
 var hostMap = map[string]string{
@@ -31,13 +31,6 @@ var hostMap = map[string]string{
 	"/function/rb-rails":  "apis.authorization-rb-rails.dev",
 	"/function/rust":      "apis.authorization-rust.dev",
 	"/function/ts":        "apis.authorization-ts.dev",
-}
-
-func getenv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
 }
 
 // Handler は REST API (v1) 用の Lambda ハンドラ。外部依存は adapter 経由で注入する。
@@ -74,7 +67,11 @@ func (h *Handler) Handle(
 		}, nil
 	}
 
-	targetURL := albURL + backendPath
+	base := albURL
+	if base == "" {
+		base = "https://" + host
+	}
+	targetURL := base + backendPath
 	if len(req.MultiValueQueryStringParameters) > 0 {
 		vals := url.Values{}
 		for k, vs := range req.MultiValueQueryStringParameters {
