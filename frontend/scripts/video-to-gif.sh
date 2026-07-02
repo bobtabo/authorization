@@ -8,7 +8,7 @@
 #   - ffmpeg がインストール済みであること
 #
 # オプション:
-#   fps=10, 幅=1280px 固定、無限ループ
+#   fps=10、無限ループ（元動画の解像度を維持）
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ if [ ! -f "$INPUT" ]; then
 fi
 
 ffmpeg -i "$INPUT" \
-  -vf "fps=10,scale=1280:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
+  -vf "fps=10,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
   -loop 0 "$OUTPUT"
 
 echo "GIF generated: $OUTPUT"
