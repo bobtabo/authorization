@@ -127,9 +127,30 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
 
   // 登録成功のモック
   const newClientId = 10;
+  const clientIdentifier = "demo-client-abc123";
   await page.route(`${API}/clients/store`, (route) =>
     route.fulfill({ json: { id: newClientId } }),
   );
+
+  // クライアント詳細モック（ステップ4 の QR 遷移で identifier を利用）
+  const clientDetailMock = {
+    id: newClientId,
+    name: "株式会社デモテスト",
+    identifier: clientIdentifier,
+    post_code: "1500001",
+    pref: "東京都",
+    city: "渋谷区",
+    address: "神南1-2-3",
+    building: "",
+    tel: "0312345678",
+    email: "demo@example.com",
+    status: 1,
+    start_at: "2026-07-01 09:00:00",
+    stop_at: null,
+    created_at: "2026-07-01 09:00:00",
+    updated_at: "2026-07-01 09:00:00",
+    version: 1,
+  };
 
   // 登録後の一覧表示用モック（新規クライアントを含む）
   const registeredClients = {
@@ -189,19 +210,45 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 4. QR ページ表示
+  //    実運用ではクライアント登録時に送信されるメール（MailPit で確認）の
+  //    URL から遷移するが、デモでは詳細画面で identifier を確認後 QR へ遷移
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // QR コード API のモック
-  const clientIdentifier = "demo-client-identifier-001";
-  await page.route(`${API}/clients/${clientIdentifier}/qr`, (route) =>
+  // クライアント詳細・JWT 履歴のモック
+  await page.route(`${API}/clients/${newClientId}`, (route) =>
+    route.fulfill({ json: clientDetailMock }),
+  );
+  await page.route(`${API}/clients/${newClientId}/jwt-histories*`, (route) =>
     route.fulfill({
       json: {
-        identifier: clientIdentifier,
-        deeplink_url: "authgateway://connect?id=demo-client-identifier-001",
+        data: [],
+        pager: {
+          count: 0, limit: 10, next: false, previous: false,
+          page: 1, nextPage: 1, previousPage: 1, pageCount: 0,
+          first: true, last: true, firstRecordCount: 0, lastRecordCount: 0,
+          startPage: 1, endPage: 1,
+        },
       },
     }),
   );
 
-  // MailPit で確認する代わりに、直接 QR ページへ遷移
+  // 一覧から詳細画面へ遷移（登録したクライアントをクリック）
+  await page.getByText("株式会社デモテスト").click();
+  await expect(page.getByText("クライアント詳細")).toBeVisible();
+  await expect(page.getByText(clientIdentifier)).toBeVisible();
+  await humanDelay(1500);
+
+  // QR コード API のモック
+  await page.route(`${API}/clients/${clientIdentifier}/qr`, (route) =>
+    route.fulfill({
+      json: {
+        identifier: clientIdentifier,
+        deeplink_url: `authgateway://connect?id=${clientIdentifier}`,
+      },
+    }),
+  );
+
+  // 詳細画面の identifier を確認後、QR ページへ遷移
+  // （実運用ではメール内リンクからアクセスする）
   await page.goto(`/clients/${clientIdentifier}/qr`);
   await expect(page.getByText("スマホアプリ連携")).toBeVisible();
   await expect(page.getByText("スマホアプリでQRコードを読み取ってください")).toBeVisible();

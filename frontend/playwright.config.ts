@@ -11,7 +11,6 @@ import path from "path";
  */
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: "e2e/demo/**",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -24,10 +23,10 @@ export default defineConfig({
   projects: (process.env.CI
     // CI では chromium のみ（screenshot / real-* は LocalStack + Lambda が必要なためローカル実行のみ）
     ? [
-        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        { name: "chromium", testIgnore: "**/demo/**", use: { ...devices["Desktop Chrome"] } },
       ]
     : [
-        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        { name: "chromium", testIgnore: "**/demo/**", use: { ...devices["Desktop Chrome"] } },
         {
           // 撮影用: 本物の Chrome + Retina + ライトモード（PHP バックエンドのみ）
           // 実行: npx playwright test --project=screenshot
@@ -59,7 +58,8 @@ export default defineConfig({
           // デモ録画用: 操作を人間らしく見せるため動画を有効化
           // 実行: npx playwright test --project=demo
           name: "demo",
-          testMatch: "e2e/demo/**/*.spec.ts",
+          testDir: "./e2e/demo",
+          testMatch: "**/*.spec.ts",
           use: {
             ...devices["Desktop Chrome"],
             video: "on",
