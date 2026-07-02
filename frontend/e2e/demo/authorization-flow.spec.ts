@@ -220,5 +220,6 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
   await expect(
     page.getByText("スマホアプリでQRコードを読み取ってください"),
   ).toBeVisible();
+  await expect(page.locator("svg").first()).toBeVisible({ timeout: 10000 });
   await humanDelay(2000);
 });
