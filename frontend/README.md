@@ -134,9 +134,25 @@ npm run test:e2e:ui
 
 Playwright でデモ用シナリオを録画し、GIF に変換できます。
 
+### 前提
+
+- バックエンドコンテナ（PHP + MailPit）が起動済みであること
+- seed データが投入済みであること（`php artisan migrate --seed`）
+
+```bash
+# 1. コンテナ起動
+bin/docker-common.sh up
+bin/docker-php-laravel.sh up
+
+# 2. フロントエンド dev サーバー起動（E2E 用ポート 3001）
+cd frontend
+NEXT_PUBLIC_E2E=1 npm run dev -- --port 3001
+```
+
 ### 1. デモ動画の録画
 
 ```bash
+cd frontend
 npx playwright test --project=demo
 ```
 

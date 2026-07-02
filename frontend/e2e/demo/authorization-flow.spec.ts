@@ -131,60 +131,15 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
   await humanDelay(1500);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 3. クライアント登録
+  // 3. クライアント登録（実バックエンド）
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 郵便番号 API のモック
+  // clients モックを解除して実バックエンドで登録する（メール送信のため）
+  await page.unroute(`${API}/clients*`);
+
+  // 郵便番号 API のモック（外部 API のため維持）
   await page.route("https://apis.postcode-jp.com/**", (route) =>
     route.fulfill({ json: [{ pref: "東京都", city: "渋谷区", town: "" }] }),
   );
-
-  // 登録成功のモック
-  const newClientId = 10;
-  const clientIdentifier = "demo-client-abc123";
-  await page.route(`${API}/clients/store`, (route) =>
-    route.fulfill({ json: { id: newClientId } }),
-  );
-
-  // クライアント詳細モック（ステップ4 の QR 遷移で identifier を利用）
-  const clientDetailMock = {
-    id: newClientId,
-    name: "株式会社デモテスト",
-    identifier: clientIdentifier,
-    post_code: "1500001",
-    pref: "東京都",
-    city: "渋谷区",
-    address: "神南1-2-3",
-    building: "",
-    tel: "0312345678",
-    email: "demo@example.com",
-    status: 1,
-    start_at: "2026-07-01 09:00:00",
-    stop_at: null,
-    created_at: "2026-07-01 09:00:00",
-    updated_at: "2026-07-01 09:00:00",
-    version: 1,
-  };
-
-  // 登録後の一覧表示用モック（新規クライアントを含む）
-  const registeredClients = {
-    data: [
-      {
-        id: newClientId,
-        name: "株式会社デモテスト",
-        status: 1,
-        start_at: "2026-07-01 09:00:00",
-        stop_at: null,
-        created_at: "2026-07-01 09:00:00",
-        updated_at: "2026-07-01 09:00:00",
-      },
-    ],
-    pager: {
-      count: 1, limit: 10, next: false, previous: false,
-      page: 1, nextPage: 1, previousPage: 1, pageCount: 1,
-      first: true, last: true, firstRecordCount: 1, lastRecordCount: 1,
-      startPage: 1, endPage: 1,
-    },
-  };
 
   // 新規登録ページへ遷移
   await page.getByText("新規登録").click();
@@ -206,11 +161,6 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
   await page.getByPlaceholder("contact@example.com").fill("demo@example.com");
   await humanDelay(800);
 
-  // 一覧を更新するためにモックを差し替え
-  await page.route(`${API}/clients*`, (route) =>
-    route.fulfill({ json: registeredClients }),
-  );
-
   // 登録ボタン → 確認ダイアログ → 登録実行
   await page.getByRole("button", { name: "登録" }).click();
   await humanDelay(500);
@@ -222,48 +172,53 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
   await humanDelay(1500);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 4. QR ページ表示
-  //    実運用ではクライアント登録時に送信されるメール（MailPit で確認）の
-  //    URL から遷移するが、デモでは詳細画面で identifier を確認後 QR へ遷移
+  // 4. MailPit でメールを確認 → QR ページ表示
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // クライアント詳細・JWT 履歴のモック
-  await page.route(`${API}/clients/${newClientId}`, (route) =>
-    route.fulfill({ json: clientDetailMock }),
-  );
-  await page.route(`${API}/clients/${newClientId}/jwt-histories*`, (route) =>
-    route.fulfill({
-      json: {
-        data: [],
-        pager: {
-          count: 0, limit: 10, next: false, previous: false,
-          page: 1, nextPage: 1, previousPage: 1, pageCount: 0,
-          first: true, last: true, firstRecordCount: 0, lastRecordCount: 0,
-          startPage: 1, endPage: 1,
-        },
-      },
-    }),
-  );
+  const MAILPIT = "http://localhost:8025";
 
-  // 一覧から詳細画面へ遷移（登録したクライアントをクリック）
-  await page.getByText("株式会社デモテスト").click();
-  await expect(page.getByText("クライアント詳細")).toBeVisible();
-  await expect(page.getByText(clientIdentifier)).toBeVisible();
-  await humanDelay(1500);
+  // MailPit API でメール到着を待機し、activate URL を取得
+  let qrPath = "";
+  for (let i = 0; i < 30; i++) {
+    const res = await page.request.get(`${MAILPIT}/api/v1/messages`);
+    const json = (await res.json()) as {
+      messages: Array<{ ID: string; Subject: string }>;
+    };
+    const mail = json.messages?.find((m) =>
+      m.Subject.includes("ご利用開始"),
+    );
+    if (mail) {
+      const msgRes = await page.request.get(
+        `${MAILPIT}/api/v1/message/${mail.ID}`,
+      );
+      const msg = (await msgRes.json()) as { HTML: string };
+      const match = msg.HTML?.match(
+        /href="([^"]*\/clients\/[^"]*\/qr)"/,
+      );
+      if (match) {
+        qrPath = new URL(match[1]).pathname;
+        break;
+      }
+    }
+    await humanDelay(1000);
+  }
+  expect(qrPath).toBeTruthy();
 
-  // QR コード API のモック
-  await page.route(`${API}/clients/${clientIdentifier}/qr`, (route) =>
-    route.fulfill({
-      json: {
-        identifier: clientIdentifier,
-        deeplink_url: `authgateway://connect?id=${clientIdentifier}`,
-      },
-    }),
-  );
+  // MailPit 画面に遷移してメールを確認
+  await page.goto(MAILPIT);
+  await expect(
+    page.getByText("ご利用開始のご案内").first(),
+  ).toBeVisible({ timeout: 5000 });
+  await humanDelay(1000);
+  await page.getByText("ご利用開始のご案内").first().click();
+  await humanDelay(2000);
 
-  // 詳細画面の identifier を確認後、QR ページへ遷移
-  // （実運用ではメール内リンクからアクセスする）
-  await page.goto(`/clients/${clientIdentifier}/qr`);
-  await expect(page.getByText("スマホアプリ連携")).toBeVisible();
-  await expect(page.getByText("スマホアプリでQRコードを読み取ってください")).toBeVisible();
+  // メール内の activate URL から QR ページへ遷移
+  await page.goto(qrPath);
+  await expect(page.getByText("スマホアプリ連携")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(
+    page.getByText("スマホアプリでQRコードを読み取ってください"),
+  ).toBeVisible();
   await humanDelay(2000);
 });
