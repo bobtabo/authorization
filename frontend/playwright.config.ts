@@ -11,6 +11,7 @@ import path from "path";
  */
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "e2e/demo/**",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -54,6 +55,17 @@ export default defineConfig({
         { name: "real-rb-rails",  grep: /\[Ruby \(Rails\)\]/,   use: { ...devices["Desktop Chrome"] } },
         { name: "real-rust",      grep: /\[Rust\]/,              use: { ...devices["Desktop Chrome"] } },
         { name: "real-ts",        grep: /\[TypeScript\]/,        use: { ...devices["Desktop Chrome"] } },
+        {
+          // デモ録画用: 操作を人間らしく見せるため動画を有効化
+          // 実行: npx playwright test --project=demo
+          name: "demo",
+          testMatch: "e2e/demo/**/*.spec.ts",
+          use: {
+            ...devices["Desktop Chrome"],
+            video: "on",
+            viewport: { width: 1280, height: 800 },
+          },
+        },
       ]
   ),
   webServer: {

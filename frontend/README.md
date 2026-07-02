@@ -66,6 +66,8 @@ frontend/
 ├── src/
 │   └── api/                # axios API クライアント
 ├── e2e/                    # Playwright E2E テスト
+│   └── demo/               # デモ録画用シナリオ
+├── scripts/                # ユーティリティスクリプト
 ├── next.config.ts          # Next.js 設定（API Gateway プロキシ）
 └── tailwind.config.ts      # Tailwind CSS 設定
 ```
@@ -125,6 +127,32 @@ npm run test:e2e
 # UI モードで実行
 npm run test:e2e:ui
 ```
+
+---
+
+## :movie_camera: デモ動画（GIF）の生成
+
+Playwright でデモ用シナリオを録画し、GIF に変換できます。
+
+### 1. デモ動画の録画
+
+```bash
+npx playwright test --project=demo
+```
+
+録画ファイルは `test-results/` 配下に `.webm` 形式で保存されます。
+
+### 2. GIF 変換
+
+```bash
+# ffmpeg が必要です
+bash scripts/video-to-gif.sh test-results/<テスト名>/video.webm docs/demo.gif
+```
+
+> [!NOTE]
+>
+> デモシナリオは CI では実行されません。ローカル環境でのみ実行してください。
+> GIF は README または Notion に埋め込み可能なサイズ（5MB 以下）に収めてください。
 
 ---
 
