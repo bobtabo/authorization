@@ -102,24 +102,16 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
     route.fulfill({ json: { found: true, token: invitationToken } }),
   );
 
-  // auth/me を未認証に切り替え、ログイン画面へ遷移させる
-  await page.route(`${API}/auth/me`, (route) =>
-    route.fulfill({ status: 401, json: { message: "Unauthenticated." } }),
-  );
+  // ユーザーキャッシュをクリアしてログイン画面に遷移させる
   await page.evaluate(() => {
-    localStorage.removeItem("user-cache");
+    localStorage.removeItem("cachedUser");
   });
 
   await page.goto(`/invitation/${invitationToken}`);
   await expect(page).toHaveURL(/\/login\?token=/, { timeout: 10000 });
   await humanDelay(1000);
 
-  // Google SSO でログイン後、auth/me をログイン済みに戻す
-  await page.route(`${API}/auth/me`, (route) =>
-    route.fulfill({
-      json: { staff_id: 1, name: "デモ管理者", avatar: null, role: 1 },
-    }),
-  );
+  // Google SSO でログイン（E2E モードでモック遷移）
   await page.getByText("Googleで続行").click();
   await expect(page).toHaveURL("/clients", { timeout: 10000 });
   await expect(page.getByText("クライアント一覧")).toBeVisible();
