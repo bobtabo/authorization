@@ -40,13 +40,24 @@ export const apiClient = axios.create({
 
 const PUBLIC_PATHS = ["/login", "/invitation", "/register", "/error"];
 
+/** クライアント担当者向けの QR ページ（スタッフログイン不要） */
+const PUBLIC_PATH_PATTERNS = [/^\/clients\/[^/]+\/qr\/?$/];
+
+/** スタッフ未ログインでもアクセスできるページかどうかを判定します */
+export function isPublicPath(pathname: string): boolean {
+  return (
+    PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
+    PUBLIC_PATH_PATTERNS.some((p) => p.test(pathname))
+  );
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
     if (
       typeof window !== "undefined" &&
       axios.isAxiosError(error) &&
-      !PUBLIC_PATHS.some((p) => window.location.pathname.startsWith(p))
+      !isPublicPath(window.location.pathname)
     ) {
       const status = error.response?.status;
       if (status === 401) {

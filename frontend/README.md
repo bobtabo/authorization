@@ -66,6 +66,8 @@ frontend/
 ├── src/
 │   └── api/                # axios API クライアント
 ├── e2e/                    # Playwright E2E テスト
+│   └── demo/               # デモ録画用シナリオ
+├── scripts/                # ユーティリティスクリプト
 ├── next.config.ts          # Next.js 設定（API Gateway プロキシ）
 └── tailwind.config.ts      # Tailwind CSS 設定
 ```
@@ -125,6 +127,58 @@ npm run test:e2e
 # UI モードで実行
 npm run test:e2e:ui
 ```
+
+---
+
+## :movie_camera: デモ動画（GIF）の生成
+
+Playwright でデモ用シナリオを録画し、GIF に変換できます。
+
+### 前提
+
+- バックエンドコンテナ（PHP + MailPit）が起動済みであること
+- seed データが投入済みであること（`php artisan migrate --seed`）
+- ffmpeg がインストール済みであること（GIF 変換に使用）
+
+```bash
+# macOS（Homebrew）
+brew install ffmpeg
+```
+
+```bash
+# 1. コンテナ起動
+bin/docker-common.sh up
+bin/docker-php-laravel.sh up
+
+# 2. フロントエンド dev サーバー起動（E2E 用ポート 3001）
+cd frontend
+NEXT_PUBLIC_E2E=1 npm run dev -- --port 3001
+```
+
+### 1. デモ動画の録画
+
+```bash
+cd frontend
+npx playwright test --project=demo
+```
+
+録画ファイルは `test-results/` 配下に `.webm` 形式で保存されます。
+フォルダ名はテストファイル名・テスト名・プロジェクト名から自動生成されます
+（例: `test-results/authorization-flow-認可フロー全体のデモ録画-demo/video.webm`）。
+
+### 2. GIF 変換
+
+```bash
+# ffmpeg が必要です
+bash scripts/video-to-gif.sh test-results/authorization-flow-認可フロー全体のデモ録画-demo/video.webm demo.gif
+```
+
+`demo.gif` はリポジトリルートの README から `./frontend/demo.gif` として参照されています。
+
+> [!NOTE]
+>
+> デモシナリオは CI では実行されません。ローカル環境でのみ実行してください。
+> GIF は README または Notion に埋め込み可能なサイズ（5MB 以下）に収めてください。
 
 ---
 
