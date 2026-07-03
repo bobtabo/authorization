@@ -138,6 +138,12 @@ Playwright でデモ用シナリオを録画し、GIF に変換できます。
 
 - バックエンドコンテナ（PHP + MailPit）が起動済みであること
 - seed データが投入済みであること（`php artisan migrate --seed`）
+- ffmpeg がインストール済みであること（GIF 変換に使用）
+
+```bash
+# macOS（Homebrew）
+brew install ffmpeg
+```
 
 ```bash
 # 1. コンテナ起動
@@ -157,13 +163,17 @@ npx playwright test --project=demo
 ```
 
 録画ファイルは `test-results/` 配下に `.webm` 形式で保存されます。
+フォルダ名はテストファイル名・テスト名・プロジェクト名から自動生成されます
+（例: `test-results/authorization-flow-認可フロー全体のデモ録画-demo/video.webm`）。
 
 ### 2. GIF 変換
 
 ```bash
 # ffmpeg が必要です
-bash scripts/video-to-gif.sh test-results/<テスト名>/video.webm docs/demo.gif
+bash scripts/video-to-gif.sh test-results/authorization-flow-認可フロー全体のデモ録画-demo/video.webm demo.gif
 ```
+
+`demo.gif` はリポジトリルートの README から `./frontend/demo.gif` として参照されています。
 
 > [!NOTE]
 >
