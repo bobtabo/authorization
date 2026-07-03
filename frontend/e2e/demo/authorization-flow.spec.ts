@@ -13,6 +13,7 @@ import { test, expect } from "@playwright/test";
  */
 
 const API = "**/function/php/api";
+const MAILPIT = "http://localhost:8025";
 
 /** 人間らしい操作に見せるための待機 */
 async function humanDelay(ms = 800): Promise<void> {
@@ -20,6 +21,9 @@ async function humanDelay(ms = 800): Promise<void> {
 }
 
 test("認可フロー全体のデモ録画", async ({ page }) => {
+  // 録画中にどのメールを開いたか分かりやすくするため、過去メールを一掃しておく
+  await page.request.delete(`${MAILPIT}/api/v1/messages`);
+
   // ── 共通モック（auth/me, notifications）──────────────────────────
   await page.route(`${API}/auth/me`, (route) =>
     route.fulfill({
@@ -174,8 +178,6 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // 4. MailPit でメールを確認 → QR ページ表示
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  const MAILPIT = "http://localhost:8025";
-
   // MailPit API でメール到着を待機し、activate URL を取得
   let qrPath = "";
   for (let i = 0; i < 30; i++) {
@@ -220,6 +222,12 @@ test("認可フロー全体のデモ録画", async ({ page }) => {
   await expect(
     page.getByText("スマホアプリでQRコードを読み取ってください"),
   ).toBeVisible();
-  await expect(page.locator("svg").first()).toBeVisible({ timeout: 10000 });
+  // ヘッダーのロゴアイコンも svg のため、"svg" だけでは常にマッチしてしまい
+  // QR コード自体の描画完了を待てない。読み込み中表示が消えるのを待ってから
+  // main 内の svg（QRコード本体）を確認する。
+  await expect(page.getByText("読み込み中...")).not.toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.locator("main svg")).toBeVisible({ timeout: 10000 });
   await humanDelay(2000);
 });
