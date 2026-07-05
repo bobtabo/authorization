@@ -288,6 +288,40 @@ class Example extends AppTransactionModel
 - フロントエンドの `frontend/e2e/demo/` はデモ GIF 録画専用のシナリオで、CI では実行しない
   （`frontend/e2e/` の通常の E2E テストとは分離されている）
 
+### テスト記述方法（backends/php-laravel/tests）
+
+- Feature テストは `Tests\TestCase`（`tests/TestCase.php`）を継承し、`DatabaseMigrations` トレイトを使う
+
+  ```php
+  namespace Tests\Feature;
+
+  use Illuminate\Foundation\Testing\DatabaseMigrations;
+  use Tests\TestCase;
+
+  class ExampleControllerTest extends TestCase
+  {
+      use DatabaseMigrations;
+
+      public function testIndex(): void
+      {
+          $params = $this->getRequestParams('Example/index.json');
+          $response = $this->get('/api/examples', $params);
+          $data = $this->getResponseData('Example/index.json');
+          $response
+              ->assertStatus(200)
+              ->assertJson($data);
+      }
+  }
+  ```
+
+- リクエスト/レスポンスは PHP に直書きせず、JSON フィクスチャに分離する
+  - リクエスト: `tests/Feature/Requests/<Domain>/<method>.json` → `$this->getRequestParams('<Domain>/<method>.json')`
+  - レスポンス: `tests/Feature/Responses/<Domain>/<method>.json` → `$this->getResponseData('<Domain>/<method>.json')`
+  - 両メソッドとも第2引数 `$mergeData`（連想配列）でフィクスチャの値を個別に上書きできる
+- テストメソッド名は `testXxx`（対象 Controller のメソッド名に対応させる）。1 Controller = 1 テストクラス
+- スタッフ認証状態を再現する場合は `withStaffCookie(int $staffId)` を使う（`staff_id` は暗号化されないクッキーのため `withUnencryptedCookies` 経由で設定される）
+- private/protected メソッドを直接検証したい場合は `reflectionMethod` / `reflectionProperty` / `executeMethod` を使う（新しく public にしない）
+
 ## :robot: AI コーディングエージェントへの振る舞い方針
 
 - **明示的な指示があるまで、コミット・push・PR 作成・Issue クローズを行わない**
