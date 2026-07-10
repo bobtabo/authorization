@@ -60,6 +60,7 @@ export default defineConfig({
           name: "demo",
           testDir: "./e2e/demo",
           testMatch: "**/*.spec.ts",
+          timeout: 120_000,
           use: {
             ...devices["Desktop Chrome"],
             video: "on",
