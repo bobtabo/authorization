@@ -112,7 +112,7 @@
 
 1. 「OAuth Apps」→「New OAuth App」で作成
 2. Homepage URL: `http://localhost:3000`
-3. Authorization callback URL: `http://localhost:3000/auth/github/callback`（バックエンドによらず共通）
+3. Authorization callback URL: `http://localhost:3000/auth/github/callback` （バックエンドによらず共通）
 4. 発行された Client ID / Client Secret を、各バックエンドの `.env` の `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` に設定する
 
 ### 1. リポジトリのクローン
