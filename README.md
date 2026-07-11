@@ -7,6 +7,7 @@
 
 ## :clipboard: 目次
 
+- [デモ](#デモ)
 - [システム構造](#システム構造)
 - [プロジェクト構成](#プロジェクト構成)
 - [開発環境構築手順](#開発環境構築手順)
@@ -19,6 +20,14 @@
   - [6. バックエンドの初期設定](#6-バックエンドの初期設定)
   - [7. 初回ログイン](#7-初回ログイン)
 - [クイックスタート](#クイックスタート)
+
+---
+
+## :clapper: デモ
+
+<p align="center">
+  <img src="./frontend/demo.gif" alt="認可フロー全体のデモ" width="800">
+</p>
 
 ---
 
@@ -80,6 +89,31 @@
 - GitHub OAuth App のクライアント ID / シークレットを取得済みであること（<a href="https://github.com/settings/developers">GitHub Developer Settings</a>）
 - [ngrok](https://ngrok.com/) がインストール済みであること（モバイル / ShowCase CI 連携時に必要）
 - ngrok の固定ドメインを取得済みであること（同上、<a href="https://dashboard.ngrok.com/">ngrok ダッシュボード</a>から取得）
+
+#### Google Cloud Console
+
+1. OAuth 同意画面: User Type は `External`、公開ステータスは `Testing` でよい（テストユーザーに自分のアカウントを追加）。スコープはデフォルト（`email` / `profile`）のままで問題ない
+2. 「認証情報」→「認証情報を作成」→「OAuth クライアント ID」、アプリケーションの種類は `ウェブ アプリケーション`
+3. 承認済みの JavaScript 生成元: `http://localhost:3000`
+4. 承認済みのリダイレクト URI: バックエンドごとにコールバック先が分かれているため、動作確認したいバックエンドの分だけ登録する
+   - `http://localhost:3000/function/go-gin/auth/google/callback`
+   - `http://localhost:3000/function/go-echo/auth/google/callback`
+   - `http://localhost:3000/function/go-beego/auth/google/callback`
+   - `http://localhost:3000/function/php/auth/google/callback`
+   - `http://localhost:3000/function/python/auth/google/callback`
+   - `http://localhost:3000/function/ts/auth/google/callback`
+   - `http://localhost:3000/function/rust/auth/google/callback`
+   - `http://localhost:3000/function/kotlin/auth/google/callback`
+   - `http://localhost:3000/function/rails/auth/google/callback`
+   - `http://localhost:3000/function/hanami/auth/google/callback`
+5. 発行された クライアント ID / クライアントシークレット を、各バックエンドの `.env` の `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` に設定する
+
+#### GitHub Developer Settings
+
+1. 「OAuth Apps」→「New OAuth App」で作成
+2. Homepage URL: `http://localhost:3000`
+3. Authorization callback URL: `http://localhost:3000/auth/github/callback` （バックエンドによらず共通）
+4. 発行された Client ID / Client Secret を、各バックエンドの `.env` の `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` に設定する
 
 ### 1. リポジトリのクローン
 

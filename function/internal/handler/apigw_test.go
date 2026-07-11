@@ -38,6 +38,7 @@ func TestHandler_Proxy(t *testing.T) {
 	// t.Cleanup を使い、全サブテスト完了後に閉じる（defer だとサブテスト並列実行中に閉じてしまう）
 	mock := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Backend-Path", r.URL.Path)
+		w.Header().Set("X-Backend-Host", r.Host)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"ok":true}`))
 	}))
@@ -51,6 +52,7 @@ func TestHandler_Proxy(t *testing.T) {
 		method      string
 		wantStatus  int
 		wantBackend string // X-Backend-Path ヘッダーで確認
+		wantHost    string // X-Backend-Host ヘッダーで確認
 	}{
 		{
 			name:        "PHP バックエンドへ転送",
@@ -58,6 +60,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-php.dev",
 		},
 		{
 			name:        "Go (Gin) バックエンドへ転送",
@@ -65,6 +68,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/health",
+			wantHost:    "apis.authorization-go-gin.dev",
 		},
 		{
 			name:        "Go (Beego) バックエンドへ転送",
@@ -72,6 +76,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-go-beego.dev",
 		},
 		{
 			name:        "Go (Echo) バックエンドへ転送",
@@ -79,6 +84,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-go-echo.dev",
 		},
 		{
 			// /function/go が /function/go-beego に誤マッチしないことを確認する
@@ -87,6 +93,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/auth/google/redirect",
+			wantHost:    "apis.authorization-go-beego.dev",
 		},
 		{
 			name:        "Kotlin バックエンドへ転送",
@@ -94,6 +101,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-kotlin.dev",
 		},
 		{
 			name:        "Python バックエンドへ転送",
@@ -101,6 +109,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-python.dev",
 		},
 		{
 			name:        "Ruby Hanami バックエンドへ転送",
@@ -108,6 +117,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-rb-hanami.dev",
 		},
 		{
 			name:        "Ruby Rails バックエンドへ転送",
@@ -115,6 +125,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-rb-rails.dev",
 		},
 		{
 			name:        "Rust バックエンドへ転送",
@@ -122,6 +133,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-rust.dev",
 		},
 		{
 			name:        "TypeScript バックエンドへ転送",
@@ -129,6 +141,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-ts.dev",
 		},
 		{
 			name:        "プレフィックスのみのパス",
@@ -136,6 +149,7 @@ func TestHandler_Proxy(t *testing.T) {
 			method:      "GET",
 			wantStatus:  200,
 			wantBackend: "/",
+			wantHost:    "apis.authorization-php.dev",
 		},
 	}
 
@@ -156,6 +170,9 @@ func TestHandler_Proxy(t *testing.T) {
 			}
 			if got := resp.Headers["X-Backend-Path"]; got != tt.wantBackend {
 				t.Fatalf("X-Backend-Path = %q, want %q", got, tt.wantBackend)
+			}
+			if got := resp.Headers["X-Backend-Host"]; got != tt.wantHost {
+				t.Fatalf("X-Backend-Host = %q, want %q", got, tt.wantHost)
 			}
 		})
 	}

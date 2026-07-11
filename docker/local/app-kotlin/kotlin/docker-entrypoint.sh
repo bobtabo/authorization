@@ -5,8 +5,8 @@ set -e
 chown -R gradle:gradle /home/gradle/.gradle 2>/dev/null || true
 
 for dir in build .gradle .kotlin; do
-    mkdir -p "/var/www/app-kotlin/$dir"
-    chown gradle:gradle "/var/www/app-kotlin/$dir"
+    mkdir -p "/var/www/auth-kotlin/$dir"
+    chown gradle:gradle "/var/www/auth-kotlin/$dir"
 done
 
 # gradle ユーザーに降格してコマンドを実行

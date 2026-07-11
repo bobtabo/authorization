@@ -23,10 +23,10 @@ export default defineConfig({
   projects: (process.env.CI
     // CI では chromium のみ（screenshot / real-* は LocalStack + Lambda が必要なためローカル実行のみ）
     ? [
-        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        { name: "chromium", testIgnore: "**/demo/**", use: { ...devices["Desktop Chrome"] } },
       ]
     : [
-        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        { name: "chromium", testIgnore: "**/demo/**", use: { ...devices["Desktop Chrome"] } },
         {
           // 撮影用: 本物の Chrome + Retina + ライトモード（PHP バックエンドのみ）
           // 実行: npx playwright test --project=screenshot
@@ -54,6 +54,19 @@ export default defineConfig({
         { name: "real-rb-rails",  grep: /\[Ruby \(Rails\)\]/,   use: { ...devices["Desktop Chrome"] } },
         { name: "real-rust",      grep: /\[Rust\]/,              use: { ...devices["Desktop Chrome"] } },
         { name: "real-ts",        grep: /\[TypeScript\]/,        use: { ...devices["Desktop Chrome"] } },
+        {
+          // デモ録画用: 操作を人間らしく見せるため動画を有効化
+          // 実行: npx playwright test --project=demo
+          name: "demo",
+          testDir: "./e2e/demo",
+          testMatch: "**/*.spec.ts",
+          timeout: 120_000,
+          use: {
+            ...devices["Desktop Chrome"],
+            video: "on",
+            viewport: { width: 1280, height: 800 },
+          },
+        },
       ]
   ),
   webServer: {

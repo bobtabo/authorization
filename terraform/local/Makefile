@@ -12,7 +12,8 @@ plan: init
 	tflocal plan
 
 # リソース作成・更新（完了後に .env.local を自動生成）
-apply: init check-localstack
+# LocalStack は再起動でステートがリセットされるため、毎回 clean してから apply する
+apply: clean init check-localstack
 	tflocal apply -auto-approve
 	@$(MAKE) setup-env
 
