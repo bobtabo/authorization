@@ -364,16 +364,20 @@ Hooks の仕組みは https://docs.claude.com/en/docs/claude-code/hooks を参�
 
 ### PreToolUse（実行前チェック）
 
-- **危険な git 操作のガード**（matcher: `Bash`）: `git push --force` / `reset --hard` / `git branch -D` / `git clean -f` を
-  検出したら確認を求める（`permissionDecision: ask`）。
+- **危険な git 操作のガード**（matcher: `Bash`）: `git push --force`（`--force-with-lease` 含む）/ `reset --hard` /
+  `git branch -D` / `git clean -f`（`--force` 含む）を検出したら確認を求める（`permissionDecision: ask`）。
+- **フェイルクローズ**: すべての `Bash` / `Edit|Write|MultiEdit` ガードは冒頭で `jq` の有無を確認し、`jq` が無い場合は
+  解析を行わず一律 `ask` を返す（未導入環境で危険操作がノーチェックで通るのを防ぐ）。
 - **Docker 停止コマンドのガード**（matcher: `Bash`）: `docker compose down/stop` や `docker stop` を直接叩こうとしたら
   `docker/bin/docker-<backend>.sh down` の利用を促して確認を求める（`ask`）。
 - **`.env` 系ファイルへの直接編集をブロック**（matcher: `Edit|Write|MultiEdit`）: `.env` / `.env.local` / `.env.*.local` /
   `*.env` への編集を拒否する（`deny`）。テンプレートである `.env.example` / `.env.testing` は編集可能。
 - **コミット前の機密情報混入チェック**（matcher: `Bash`）: `git commit` 実行前に差分をスキャンし、
   `api[_-]?key` / `secret` / `password` / `token` の代入や秘密鍵ヘッダ・AWS アクセスキー ID らしき文字列を検出したら
-  拒否する（`deny`）。通常はステージ済み差分（`git diff --cached`）を見るが、`git commit -a`/`--all` の場合は追跡済み
-  ファイルの未ステージ変更もコミット対象になるため `git diff HEAD` を対象にする。将来的に `gitleaks` 等の専用ツール導入も検討。
+  拒否する（`deny`）。キーは `token:` のような裸の代入だけでなく `"token": "..."` / `'token': '...'` のような
+  クォート付き（JSON/YAML/辞書リテラル）も検出する。通常はステージ済み差分（`git diff --cached`）を見るが、
+  `git commit -a`/`--all` の場合は追跡済みファイルの未ステージ変更もコミット対象になるため `git diff HEAD` を対象にする。
+  将来的に `gitleaks` 等の専用ツール導入も検討。
 
 ### Stop（応答完了時）
 
