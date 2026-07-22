@@ -26,6 +26,13 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    settings: {
+      // tsconfig の paths（@/*）を解決し、import/order で internal として正しく分類させる
+      "import/resolver": {
+        typescript: true,
+        node: true,
+      },
+    },
     rules: {
       // Prettier は導入せず、eslint --fix で未使用 import の削除と import の並び替えを行う
       "@typescript-eslint/no-unused-vars": "off",

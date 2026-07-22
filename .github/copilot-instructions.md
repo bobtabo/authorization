@@ -350,9 +350,10 @@ Hooks の仕組みは https://docs.claude.com/en/docs/claude-code/hooks を参�
    - `backends/go-*/*.go`・`function/*.go` → `goimports -w`（gofmt 相当の整形 + 未使用 import 削除・並び替えを 1 コマンドで実行。別途 `gofmt` は不要）
    - `backends/python-fastapi/*.py` → `ruff format` → `ruff check --fix --select I,F401` → `ruff format`（**フォーマット → import 整理 → 再フォーマットの順。逆順にしない**）
    - `backends/rust-axum/*.rs` → `cargo fmt` → `cargo fix --allow-dirty --allow-staged` → `cargo fmt`（同上の順序。クレート全体を対象に実行する）
+     - 注意: `cargo fix` はコンパイラが提案する修正を無制限に適用するため、他言語（未使用 import・並び替えに限定）より自動変更の範囲が広い。編集のたびに意図しない変更が入る可能性があるので、フォーマット後は差分を確認すること。
    - `backends/kotlin-ktor/*.{kt,kts}` → `gradle ktlintFormat`（整形と import 順序を 1 コマンドで処理。モジュール全体が対象。`build.gradle.kts` で `ktlintCheck` 系は `check`/`build` から外してあるため CI の `gradle build` は汚さない）
    - `backends/ruby-{rails,hanami}/*.rb` → `bundle exec rubocop -a`（Ruby に import 最適化の概念は無いため整形のみ）
-   - `frontend/*.{ts,tsx}` → `eslint --fix`（**Prettier は導入しない**。`unused-imports` プラグインで未使用 import 削除、`import/order` で並び替えを行う）
+   - `frontend/*.{ts,tsx}` → `eslint --fix`（**Prettier は導入しない**。`unused-imports` プラグインで未使用 import 削除、`import/order` で並び替えを行う。`eslint-import-resolver-typescript` により `tsconfig` の `@/*` パスエイリアスを internal として解決する）
    - 注: `backends/ts-hono` はフォーマッタ未設定のため対象外。
 2. **静的解析（Lint）チェック**。フォーマット後に警告があれば **stderr に出して通知するだけ（ブロックしない）**。
    - 対象は軽量で 1 ファイル単位に絞れるもののみ: `ruff check`（Python）/ `rubocop`（Ruby）/ `eslint`（frontend）。
@@ -369,9 +370,10 @@ Hooks の仕組みは https://docs.claude.com/en/docs/claude-code/hooks を参�
   `docker/bin/docker-<backend>.sh down` の利用を促して確認を求める（`ask`）。
 - **`.env` 系ファイルへの直接編集をブロック**（matcher: `Edit|Write|MultiEdit`）: `.env` / `.env.local` / `.env.*.local` /
   `*.env` への編集を拒否する（`deny`）。テンプレートである `.env.example` / `.env.testing` は編集可能。
-- **コミット前の機密情報混入チェック**（matcher: `Bash`）: `git commit` 実行前にステージ済み差分をスキャンし、
+- **コミット前の機密情報混入チェック**（matcher: `Bash`）: `git commit` 実行前に差分をスキャンし、
   `api[_-]?key` / `secret` / `password` / `token` の代入や秘密鍵ヘッダ・AWS アクセスキー ID らしき文字列を検出したら
-  拒否する（`deny`）。将来的に `gitleaks` 等の専用ツール導入も検討。
+  拒否する（`deny`）。通常はステージ済み差分（`git diff --cached`）を見るが、`git commit -a`/`--all` の場合は追跡済み
+  ファイルの未ステージ変更もコミット対象になるため `git diff HEAD` を対象にする。将来的に `gitleaks` 等の専用ツール導入も検討。
 
 ### Stop（応答完了時）
 
@@ -381,7 +383,7 @@ Hooks の仕組みは https://docs.claude.com/en/docs/claude-code/hooks を参�
 
 - 依存ファイルに追加済み: `ruff`（`backends/python-fastapi/requirements.txt`）、`rubocop`（`backends/ruby-rails/Gemfile` /
   `backends/ruby-hanami/Gemfile` の `:development` グループ）、ktlint Gradle プラグイン（`backends/kotlin-ktor/build.gradle.kts`）、
-  `eslint-plugin-unused-imports` / `eslint-plugin-import`（`frontend/package.json`）。
+  `eslint-plugin-unused-imports` / `eslint-plugin-import` / `eslint-import-resolver-typescript`（`frontend/package.json`）。
 - ホスト側に別途必要: `goimports`（`go install golang.org/x/tools/cmd/goimports@latest`。`$(go env GOPATH)/bin` を
   PATH に通しておくこと）、`jq`、および `pint` 用に php-laravel の `composer install`（`vendor/bin/pint` が生成される）。
 - `cargo` / `rustfmt`（rustup）と `gradle` はホストに導入済みである前提（README のビルド手順どおり）。
