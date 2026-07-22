@@ -1,0 +1,57 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty')\nif printf '%s' \"$cmd\" | grep -Eq '(git[[:space:]]+push[[:space:]].*(--force|-f([[:space:]]|$)))|(reset[[:space:]]+--hard)|(git[[:space:]]+branch[[:space:]]+-D)|(git[[:space:]]+clean[[:space:]]+-[[:alnum:]]*f)'; then\n  cat <<'JSON'\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"危険な git 操作（push --force / reset --hard / branch -D / clean -f）を検出しました。取り消せない可能性があります。本当に実行してよいか確認してください。\"}}\nJSON\nfi\nexit 0\n"
+          },
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty')\nif printf '%s' \"$cmd\" | grep -Eq '(docker[[:space:]]+compose[[:space:]].*(down|stop))|(docker-compose[[:space:]].*(down|stop))|(docker[[:space:]]+stop([[:space:]]|$))'; then\n  cat <<'JSON'\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"コンテナ停止は docker compose を直接叩かず docker/bin/docker-<backend>.sh down を使ってください（例: ./docker/bin/docker-php.sh down）。それでも直接実行しますか？\"}}\nJSON\nfi\nexit 0\n"
+          },
+          {
+            "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // empty')\nprintf '%s' \"$cmd\" | grep -Eq '\\bgit\\b.*\\bcommit\\b' || exit 0\nd=\"$CLAUDE_PROJECT_DIR\"\nadded=$(cd \"$d\" && git diff --cached -U0 2>/dev/null | grep -E '^\\+' | grep -Ev '^\\+\\+\\+')\nif printf '%s' \"$added\" | grep -Eiq '(api[_-]?key|secret|passwd|password|token)[[:space:]]*[:=]|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}'; then\n  cat <<'JSON'\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"ステージ済みの変更に機密情報らしき文字列（APIキー / シークレット / パスワード / 秘密鍵など）が含まれています。コミット前に内容を確認し、機密情報を除外してください。誤検知の場合はステージ内容を見直してから手動でコミットしてください。将来的には gitleaks 等の専用ツール導入も検討します。\"}}\nJSON\n  exit 0\nfi\nexit 0\n"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // empty')\n[ -z \"$file\" ] && exit 0\nbase=$(basename \"$file\")\ncase \"$base\" in\n  .env|.env.local|.env.*.local|*.env)\n    cat <<'JSON'\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\".env 系の機密ファイルへの直接編集はブロックしています。テンプレートは .env.example / .env.testing を編集し、実値は各自のローカル環境で手動設定してください。\"}}\nJSON\n    exit 0\n    ;;\nesac\nexit 0\n"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // empty')\n[ -z \"$file\" ] && exit 0\nd=\"$CLAUDE_PROJECT_DIR\"\nrel=\"${file#\"$d\"/}\"\n# コードフォーマット + import 整理を自動実行（PostToolUse: Edit/Write/MultiEdit 直後）。\n# すべてホスト側で直接実行する（docker は経由しない）。\n# Go/Kotlin は 1 コマンドで整形と import 整理を両方行い、PHP/Python/Rust は\n# 「フォーマット → import 整理 → 再フォーマット」の順で実行する（逆順にしないこと）。\ncase \"$rel\" in\n  backends/php-laravel/*.php)\n    [ -x \"$d/backends/php-laravel/vendor/bin/pint\" ] && \"$d/backends/php-laravel/vendor/bin/pint\" \"$file\"\n    ;;\n  backends/go-echo/*.go|backends/go-beego/*.go|backends/go-gin/*.go|function/*.go)\n    command -v goimports >/dev/null 2>&1 && goimports -w \"$file\"\n    ;;\n  backends/python-fastapi/*.py)\n    if command -v ruff >/dev/null 2>&1; then\n      ruff format \"$file\"\n      ruff check --fix --select I,F401 \"$file\"\n      ruff format \"$file\"\n    fi\n    ;;\n  backends/rust-axum/*.rs)\n    command -v cargo >/dev/null 2>&1 && ( cd \"$d/backends/rust-axum\" && cargo fmt && cargo fix --allow-dirty --allow-staged && cargo fmt )\n    ;;\n  backends/kotlin-ktor/*.kt|backends/kotlin-ktor/*.kts)\n    command -v gradle >/dev/null 2>&1 && ( cd \"$d/backends/kotlin-ktor\" && gradle -q ktlintFormat )\n    ;;\n  backends/ruby-rails/*.rb)\n    command -v bundle >/dev/null 2>&1 && ( cd \"$d/backends/ruby-rails\" && bundle exec rubocop -a \"$file\" )\n    ;;\n  backends/ruby-hanami/*.rb)\n    command -v bundle >/dev/null 2>&1 && ( cd \"$d/backends/ruby-hanami\" && bundle exec rubocop -a \"$file\" )\n    ;;\n  frontend/*.ts|frontend/*.tsx)\n    command -v npx >/dev/null 2>&1 && ( cd \"$d/frontend\" && npx --no-install eslint --fix \"$file\" )\n    ;;\nesac\nexit 0\n"
+          },
+          {
+            "type": "command",
+            "command": "file=$(jq -r '.tool_input.file_path // empty')\n[ -z \"$file\" ] && exit 0\nd=\"$CLAUDE_PROJECT_DIR\"\nrel=\"${file#\"$d\"/}\"\n# フォーマット後の静的解析（Lint）。警告は stderr に出して通知するだけでブロックしない。\n# 変更ファイル単位でのみ実行する（Stop 時のフルプロジェクト解析は実行時間が長くなるため採用しない）。\n# コンパイル系の重いツール（golangci-lint / clippy / phpstan / detekt）は 1 ファイル編集ごとに\n# 実行すると待ち時間が大きいため、この per-edit フックには載せず CI / 手動実行に委ねる。\n# 詳細な判断理由は .github/copilot-instructions.md を参照。\ncase \"$rel\" in\n  backends/python-fastapi/*.py)\n    command -v ruff >/dev/null 2>&1 && ruff check \"$file\" >&2\n    ;;\n  backends/ruby-rails/*.rb)\n    command -v bundle >/dev/null 2>&1 && ( cd \"$d/backends/ruby-rails\" && bundle exec rubocop \"$file\" >&2 )\n    ;;\n  backends/ruby-hanami/*.rb)\n    command -v bundle >/dev/null 2>&1 && ( cd \"$d/backends/ruby-hanami\" && bundle exec rubocop \"$file\" >&2 )\n    ;;\n  frontend/*.ts|frontend/*.tsx)\n    command -v npx >/dev/null 2>&1 && ( cd \"$d/frontend\" && npx --no-install eslint \"$file\" >&2 )\n    ;;\nesac\nexit 0\n"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v notify-send >/dev/null 2>&1; then\n  notify-send \"Claude Code\" \"タスクが完了しました\" >/dev/null 2>&1 || true\nelif command -v osascript >/dev/null 2>&1; then\n  osascript -e 'display notification \"タスクが完了しました\" with title \"Claude Code\"' >/dev/null 2>&1 || true\nfi\nexit 0\n"
+          }
+        ]
+      }
+    ]
+  }
+}

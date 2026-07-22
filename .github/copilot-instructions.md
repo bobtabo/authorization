@@ -331,3 +331,57 @@ class Example extends AppTransactionModel
   `bin/docker-xxx-down.sh` 相当のスクリプトで実行してもらう（`docker stop` を直接叩かない）
 - ローカル環境での動作確認は本番同様に Lambda（Port: 9000）経由で行う。直接バックエンドを叩いてバイパスしない
 - 破壊的操作（`git reset --hard` / force push / ファイル削除など）は、明示的な許可なく実行しない
+
+## :hook: Claude Code Hooks（`.claude/settings.json`）
+
+このリポジトリは Claude Code の Hooks 設定 `.claude/settings.json` を Git 管理し、チーム全体で
+共有している（`.gitignore` は `.claude/*` を無視しつつ `!.claude/settings.json` だけ追跡対象にしている。
+`.claude/settings.local.json` と `.claude/worktrees/` は引き続き無視される）。設定済みの Hooks は以下のとおり。
+Hooks の仕組みは https://docs.claude.com/en/docs/claude-code/hooks を参照。
+
+- **フォーマッタ/Lint はすべてホスト側で直接実行する**（`docker exec` は使わない）。Hooks からは
+  `$CLAUDE_PROJECT_DIR` からの相対パスで各コマンドを直接叩く。各ツールがホストに無い場合は
+  `command -v` ガードで自動的にスキップされる（下記「必要なツール」を参照）。
+
+### PostToolUse（Edit / Write / MultiEdit 直後）
+
+1. **コードフォーマット + import 整理の自動化**。編集ファイルのパスで対象バックエンドを判定して実行する。
+   - `backends/php-laravel/*.php` → `vendor/bin/pint`（1 コマンドで整形と import 整理を実行）
+   - `backends/go-*/*.go`・`function/*.go` → `goimports -w`（gofmt 相当の整形 + 未使用 import 削除・並び替えを 1 コマンドで実行。別途 `gofmt` は不要）
+   - `backends/python-fastapi/*.py` → `ruff format` → `ruff check --fix --select I,F401` → `ruff format`（**フォーマット → import 整理 → 再フォーマットの順。逆順にしない**）
+   - `backends/rust-axum/*.rs` → `cargo fmt` → `cargo fix --allow-dirty --allow-staged` → `cargo fmt`（同上の順序。クレート全体を対象に実行する）
+   - `backends/kotlin-ktor/*.{kt,kts}` → `gradle ktlintFormat`（整形と import 順序を 1 コマンドで処理。モジュール全体が対象。`build.gradle.kts` で `ktlintCheck` 系は `check`/`build` から外してあるため CI の `gradle build` は汚さない）
+   - `backends/ruby-{rails,hanami}/*.rb` → `bundle exec rubocop -a`（Ruby に import 最適化の概念は無いため整形のみ）
+   - `frontend/*.{ts,tsx}` → `eslint --fix`（**Prettier は導入しない**。`unused-imports` プラグインで未使用 import 削除、`import/order` で並び替えを行う）
+   - 注: `backends/ts-hono` はフォーマッタ未設定のため対象外。
+2. **静的解析（Lint）チェック**。フォーマット後に警告があれば **stderr に出して通知するだけ（ブロックしない）**。
+   - 対象は軽量で 1 ファイル単位に絞れるもののみ: `ruff check`（Python）/ `rubocop`（Ruby）/ `eslint`（frontend）。
+   - **設計判断（実行時間について）**: Stop フックで毎回フルプロジェクト解析を行うと重くなるため採用していない。
+     また `golangci-lint` / `clippy` / `phpstan` / `detekt` などコンパイルを伴う重いツールは、1 ファイル編集ごとに
+     実行すると待ち時間が大きいため per-edit フックには載せていない。これらの本格的な静的解析は CI もしくは
+     手動実行に委ねる方針。将来 per-edit で有効化する場合は変更ファイル/パッケージのみに絞ること。
+
+### PreToolUse（実行前チェック）
+
+- **危険な git 操作のガード**（matcher: `Bash`）: `git push --force` / `reset --hard` / `git branch -D` / `git clean -f` を
+  検出したら確認を求める（`permissionDecision: ask`）。
+- **Docker 停止コマンドのガード**（matcher: `Bash`）: `docker compose down/stop` や `docker stop` を直接叩こうとしたら
+  `docker/bin/docker-<backend>.sh down` の利用を促して確認を求める（`ask`）。
+- **`.env` 系ファイルへの直接編集をブロック**（matcher: `Edit|Write|MultiEdit`）: `.env` / `.env.local` / `.env.*.local` /
+  `*.env` への編集を拒否する（`deny`）。テンプレートである `.env.example` / `.env.testing` は編集可能。
+- **コミット前の機密情報混入チェック**（matcher: `Bash`）: `git commit` 実行前にステージ済み差分をスキャンし、
+  `api[_-]?key` / `secret` / `password` / `token` の代入や秘密鍵ヘッダ・AWS アクセスキー ID らしき文字列を検出したら
+  拒否する（`deny`）。将来的に `gitleaks` 等の専用ツール導入も検討。
+
+### Stop（応答完了時）
+
+- **タスク完了通知**: `notify-send`（Linux）または `osascript`（macOS）でデスクトップ通知を出す。どちらも無い環境では何もしない。
+
+### Hooks が前提とするツール / 依存関係
+
+- 依存ファイルに追加済み: `ruff`（`backends/python-fastapi/requirements.txt`）、`rubocop`（`backends/ruby-rails/Gemfile` /
+  `backends/ruby-hanami/Gemfile` の `:development` グループ）、ktlint Gradle プラグイン（`backends/kotlin-ktor/build.gradle.kts`）、
+  `eslint-plugin-unused-imports` / `eslint-plugin-import`（`frontend/package.json`）。
+- ホスト側に別途必要: `goimports`（`go install golang.org/x/tools/cmd/goimports@latest`。`$(go env GOPATH)/bin` を
+  PATH に通しておくこと）、`jq`、および `pint` 用に php-laravel の `composer install`（`vendor/bin/pint` が生成される）。
+- `cargo` / `rustfmt`（rustup）と `gradle` はホストに導入済みである前提（README のビルド手順どおり）。
