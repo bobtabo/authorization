@@ -20,6 +20,8 @@
   - [6. バックエンドの初期設定](#6-バックエンドの初期設定)
   - [7. 初回ログイン](#7-初回ログイン)
 - [クイックスタート](#クイックスタート)
+- [Claude Code Hooks](#gear-claude-code-hooks)
+- [関連リポジトリ](#books-関連リポジトリ)
 
 ---
 
@@ -202,3 +204,26 @@ http://localhost:3000/invitation/8f13761980983d1d9e3950d11b42016f
 ```bash
 cd docs/api-spec && docker compose up -d
 ```
+
+---
+
+## :gear: Claude Code Hooks
+
+このリポジトリでは `.claude/settings.json` により、Claude Code での編集・コマンド実行時に以下を自動化しています。詳細は [`.github/copilot-instructions.md`](./.github/copilot-instructions.md#hook-claude-code-hooksclaudesettingsjson) を参照してください。
+
+- 編集後の自動フォーマット・import 整理（バックエンド/フロントエンド別、ツール未導入時は自動スキップ）
+- 変更ファイル単位の軽量 Lint 通知（stderr 出力のみで処理はブロックしない）
+- 危険な git 操作（`push --force` / `reset --hard` / `branch -D` / `clean -f`）と Docker 停止コマンドの実行前確認
+- `.env` 等の機密ファイルへの直接編集をブロック
+- `git commit` 前のステージ差分（`-a`/`--all` 時は未ステージ分も含む）に対する機密情報混入チェック（ブロック）
+- タスク完了時のデスクトップ通知
+
+---
+
+## :books: 関連リポジトリ
+
+| リポジトリ | 説明 |
+|:---|:---|
+| bobtabo/authorization | 本リポジトリ：認可サーバー（OAuth2/OIDC）・管理画面 |
+| [bobtabo/authorization-mobile](https://github.com/bobtabo/authorization-mobile) | クライアント操作用モバイルアプリ（Flutter） |
+| [bobtabo/authorization-showcase](https://github.com/bobtabo/authorization-showcase) | 認可サーバー API を複数の言語・フレームワークで利用するショーケース |
