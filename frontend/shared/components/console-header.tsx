@@ -1,8 +1,5 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -13,18 +10,22 @@ import {
   Link2,
   ExternalLink,
 } from "lucide-react";
-import { InvitationUrlModal } from "@/components/invitation-url-modal";
-import { UserAvatar } from "@/components/user-avatar";
-import { useUser } from "@/lib/user-context";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+
+import { getAuthLogout } from "@/shared/api/auth";
+import { RUNTIME_STORAGE_KEY } from "@/shared/api/client";
 import {
   getNotificationCounts,
   getNotifications,
   readAllNotifications,
   readNotification,
-} from "@/src/api/notifications";
-import { getAuthLogout } from "@/src/api/auth";
-import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
-import { USER_CACHE_KEY } from "@/lib/user-context";
+} from "@/shared/api/notifications";
+import { InvitationUrlModal } from "@/shared/components/invitation-url-modal";
+import { UserAvatar } from "@/shared/components/user-avatar";
+import { useUser } from "@/shared/lib/user-context";
+import { USER_CACHE_KEY } from "@/shared/lib/user-context";
 
 const TONE_MAP: Record<number, "info" | "warn" | "ok"> = { 1: "info", 2: "warn", 3: "ok" };
 
@@ -100,7 +101,7 @@ export function ConsoleHeader(): React.JSX.Element {
   // ページ遷移ごとに件数をリフレッシュ
   useEffect(() => {
     fetchCounts();
-  }, [fetchCounts, pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchCounts, pathname]);   
 
   // 通知パネルを開いたときに一覧を取得
   useEffect(() => {

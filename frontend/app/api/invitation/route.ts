@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
+
+import { NextResponse } from "next/server";
 
 /**
  * モック: 本番では DB の app_settings.invitation_token を読み書きする想定。

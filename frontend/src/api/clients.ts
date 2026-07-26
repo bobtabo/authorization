@@ -1,4 +1,5 @@
-import { apiDelete, apiGet, apiPost, apiPut } from "./http";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/shared/api/http";
+import type { Pager } from "@/shared/api/types";
 
 export type ClientsQuery = {
   keyword?: string;
@@ -61,23 +62,6 @@ export type JwtHistory = {
   member_id: string;
   issue_at: string;
   jwt: string;
-};
-
-export type Pager = {
-  count: number;
-  limit: number;
-  next: boolean;
-  previous: boolean;
-  page: number;
-  nextPage: number;
-  previousPage: number;
-  pageCount: number;
-  first: boolean;
-  last: boolean;
-  firstRecordCount: number;
-  lastRecordCount: number;
-  startPage: number;
-  endPage: number;
 };
 
 export type JwtHistoriesQuery = {

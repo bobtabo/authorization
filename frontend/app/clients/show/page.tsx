@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check } from "lucide-react";
-import { Pager } from "@/components/pager";
-import { ConsoleHeader } from "@/components/console-header";
-import { ConsoleFooter } from "@/components/console-footer";
-import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory, type Pager as PagerData } from "@/src/api/clients";
-import { formatTimestamp } from "@/lib/format-datetime";
-import { extractApiError } from "@/lib/api-error";
+import React, { useState, useEffect } from "react";
+
+import type { Pager as PagerData } from "@/shared/api/types";
+import { ConsoleFooter } from "@/shared/components/console-footer";
+import { ConsoleHeader } from "@/shared/components/console-header";
+import { Pager } from "@/shared/components/pager";
+import { extractApiError } from "@/shared/lib/api-error";
+import { formatTimestamp } from "@/shared/lib/format-datetime";
+import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory } from "@/src/api/clients";
 
 type ClientStatus = "準備中" | "利用中" | "停止中" | "アーカイブ";
 

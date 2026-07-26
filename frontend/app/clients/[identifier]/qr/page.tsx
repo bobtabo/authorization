@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { ShieldCheck, Loader2, AlertCircle } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import React, { useEffect, useState } from "react";
+
 import { getClientQr, type ClientQr } from "@/src/api/clients";
 
 type Props = {

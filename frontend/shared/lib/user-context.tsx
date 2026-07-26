@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { getAuthMe } from "@/src/api/auth";
-import { isPublicPath } from "@/src/api/client";
+
+import { getAuthMe } from "@/shared/api/auth";
+import { isPublicPath } from "@/shared/api/client";
 
 interface User {
   staff_id: number;

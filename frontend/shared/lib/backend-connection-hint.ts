@@ -1,4 +1,4 @@
-import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+import { RUNTIME_STORAGE_KEY } from "@/shared/api/client";
 
 /**
  * ログイン画面などで「どの API ベースに向いているか」を表示用テキストにまとめる。

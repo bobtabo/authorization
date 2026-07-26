@@ -1,8 +1,9 @@
 "use client";
 
-import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ErrorPage } from "@/components/error-page";
+import React, { Suspense } from "react";
+
+import { ErrorPage } from "@/shared/components/error-page";
 
 function ErrorRoutePageContent(): React.JSX.Element {
   const params = useSearchParams();

@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -10,13 +9,15 @@ import {
   Users,
   Eraser,
 } from "lucide-react";
-import { ConsoleHeader } from "@/components/console-header";
-import { UserAvatar } from "@/components/user-avatar";
-import { Pager } from "@/components/pager";
+import React, { useState, useEffect } from "react";
+
+import { getAuthMe } from "@/shared/api/auth";
+import type { Pager as PagerData } from "@/shared/api/types";
+import { ConsoleFooter } from "@/shared/components/console-footer";
+import { ConsoleHeader } from "@/shared/components/console-header";
+import { Pager } from "@/shared/components/pager";
+import { UserAvatar } from "@/shared/components/user-avatar";
 import { getStaffs, updateStaffRole, deleteStaff, restoreStaff } from "@/src/api/staff";
-import type { Pager as PagerData } from "@/src/api/clients";
-import { getAuthMe } from "@/src/api/auth";
-import { ConsoleFooter } from "@/components/console-footer";
 
 type StaffActive = "有効" | "無効";
 type StaffRole = "管理者" | "メンバー";

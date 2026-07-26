@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
-import type { Pager as PagerData } from "@/src/api/clients";
+import React from "react";
+
+import type { Pager as PagerData } from "@/shared/api/types";
 
 type Props = {
   pager: PagerData;

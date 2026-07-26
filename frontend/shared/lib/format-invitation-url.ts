@@ -16,7 +16,7 @@ export function formatInvitationUrlForDisplay(
   }
 
   const base = fullUrl.slice(0, idx + INVITATION_SEGMENT.length);
-  let after = fullUrl.slice(idx + INVITATION_SEGMENT.length);
+  const after = fullUrl.slice(idx + INVITATION_SEGMENT.length);
   const qOrHash = after.search(/[?#]/);
   const suffix = qOrHash === -1 ? "" : after.slice(qOrHash);
   const token = qOrHash === -1 ? after : after.slice(0, qOrHash);

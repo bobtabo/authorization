@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchPostcodeJp, type PostcodeJpRow } from "@/lib/postcode-jp";
+
+import { fetchPostcodeJp, type PostcodeJpRow } from "@/shared/lib/postcode-jp";
 
 const DEBOUNCE_MS = 400;
 
