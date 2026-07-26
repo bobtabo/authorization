@@ -12,7 +12,7 @@ export async function fetchPostcodeJp(
   postal7: string,
   apiKey: string,
 ): Promise<PostcodeJpRow[]> {
-  const url = `${POSTCODE_JP_BASE}/${encodeURIComponent(postal7)}?apiKey=${encodeURIComponent(apiKey)}&pref,city,town`;
+  const url = `${POSTCODE_JP_BASE}/${encodeURIComponent(postal7)}?apiKey=${encodeURIComponent(apiKey)}&fields=pref,city,town`;
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`PostcodeJP HTTP ${res.status}`);
