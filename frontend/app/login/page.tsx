@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
-import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
-import { USER_CACHE_KEY } from "@/lib/user-context";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+
+import { RUNTIME_STORAGE_KEY } from "@/shared/api/client";
+import { getBackendConnectionDetail } from "@/shared/lib/backend-connection-hint";
+import { USER_CACHE_KEY } from "@/shared/lib/user-context";
 
 const RUNTIME_LABEL: Record<string, string> = {
   "go-gin":     "Go (Gin)",

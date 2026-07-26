@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck } from "lucide-react";
+import React, { useState } from "react";
 
 export default function LoginPage(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");

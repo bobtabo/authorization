@@ -1,5 +1,5 @@
-import { apiDelete, apiGet, apiPatch } from "./http";
-import type { Pager } from "./clients";
+import { apiDelete, apiGet, apiPatch } from "@/shared/api/http";
+import type { Pager } from "@/shared/api/types";
 
 export type StaffsQuery = {
   keyword?: string;

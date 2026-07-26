@@ -1,5 +1,6 @@
-import type { NextConfig } from "next";
 import path from "path";
+
+import type { NextConfig } from "next";
 
 /**
  * リポジトリ直下に別の lockfile があると Turbopack が誤ったルートを採用し、

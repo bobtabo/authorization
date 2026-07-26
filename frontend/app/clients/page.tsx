@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -17,11 +16,14 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
-import { ConsoleHeader } from "@/components/console-header";
-import { ConsoleFooter } from "@/components/console-footer";
-import { Pager } from "@/components/pager";
-import { getClients, type Pager as PagerData } from "@/src/api/clients";
-import { formatTimestamp } from "@/lib/format-datetime";
+import React, { useState, useEffect } from "react";
+
+import type { Pager as PagerData } from "@/shared/api/types";
+import { ConsoleFooter } from "@/shared/components/console-footer";
+import { ConsoleHeader } from "@/shared/components/console-header";
+import { Pager } from "@/shared/components/pager";
+import { formatTimestamp } from "@/shared/lib/format-datetime";
+import { getClients } from "@/src/api/clients";
 
 // =========================
 // Types

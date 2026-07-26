@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { apiGet } from "@/src/api/http";
-import { USER_CACHE_KEY } from "@/lib/user-context";
+import { useEffect } from "react";
+
+import { apiGet } from "@/shared/api/http";
+import { USER_CACHE_KEY } from "@/shared/lib/user-context";
 
 export default function InvitationPage(): React.JSX.Element {
   const { token: tokenParam } = useParams<{ token: string }>();

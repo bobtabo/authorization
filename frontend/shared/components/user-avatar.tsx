@@ -1,5 +1,6 @@
 import React from "react";
-import { getInitials } from "@/lib/session-user";
+
+import { getInitials } from "@/shared/lib/session-user";
 
 /**
  * ヘッダー・スタッフ一覧で同じ見た目のアバターを使う

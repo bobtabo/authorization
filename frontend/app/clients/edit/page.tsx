@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, Save, X } from "lucide-react";
-import { ConsoleHeader } from "@/components/console-header";
-import { ConsoleFooter } from "@/components/console-footer";
-import { usePostcodeJpLookup } from "@/hooks/use-postcode-jp-lookup";
-import { formatCityWard } from "@/lib/postcode-jp";
+import React, { useEffect, useRef, useState } from "react";
+
+import { ConsoleFooter } from "@/shared/components/console-footer";
+import { ConsoleHeader } from "@/shared/components/console-header";
+import { usePostcodeJpLookup } from "@/shared/hooks/use-postcode-jp-lookup";
+import { extractApiError } from "@/shared/lib/api-error";
+import { formatCityWard } from "@/shared/lib/postcode-jp";
 import { getClient, updateClient } from "@/src/api/clients";
-import { extractApiError } from "@/lib/api-error";
 
 export default function ClientEditPage(): React.JSX.Element {
   const [clientId, setClientId] = useState<number | null>(null);

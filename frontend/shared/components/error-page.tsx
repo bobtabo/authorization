@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { AlertTriangle, ArrowLeft, ShieldCheck } from "lucide-react";
-import { getBackendConnectionDetail } from "@/lib/backend-connection-hint";
-import { RUNTIME_STORAGE_KEY } from "@/src/api/client";
+import Link from "next/link";
+import React, { useEffect, useState } from "react";
+
+import { RUNTIME_STORAGE_KEY } from "@/shared/api/client";
+import { getBackendConnectionDetail } from "@/shared/lib/backend-connection-hint";
 
 const ERROR_TITLE: Record<number | "default", string> = {
   400: "リクエストが不正です",

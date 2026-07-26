@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClipboardCopy, X, Loader2 } from "lucide-react";
-import { getInvitation, issueInvitation } from "@/src/api";
+import React, { useCallback, useEffect, useState } from "react";
+
+import { getInvitation, issueInvitation } from "@/shared/api/invitation";
 
 type Props = {
   open: boolean;
