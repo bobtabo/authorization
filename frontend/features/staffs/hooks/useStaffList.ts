@@ -38,6 +38,7 @@ export function useStaffList() {
         const me = res as Record<string, unknown>;
         setMyStaffId(me.staff_id as number);
       })
+      .catch(() => setMyStaffId(null))
       .finally(() => setAuthLoading(false));
   }, []);
 
@@ -53,6 +54,7 @@ export function useStaffList() {
   // データ取得
   useEffect(() => {
     setLoading(true);
+    let ignore = false;
     getStaffs({
       keyword: query || undefined,
       roles: selectedRoleFilters.length > 0 ? selectedRoleFilters.map((r) => ROLE_VALUE[r]) : undefined,
@@ -62,6 +64,7 @@ export function useStaffList() {
       sort: sortKey,
       sort_type: sortOrder,
     }).then((res) => {
+      if (ignore) return;
       setRows(res.data.map((r) => ({
         id: r.id,
         name: r.name,
@@ -73,7 +76,8 @@ export function useStaffList() {
         version: r.version ?? 1,
       })));
       setPager(res.pager);
-    }).finally(() => setLoading(false));
+    }).finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
   }, [query, sortKey, sortOrder, currentPage, pageSize, selectedActiveFilters, selectedRoleFilters]);
 
   const setRowActive = (id: number, active: StaffActive) => {
