@@ -5,6 +5,7 @@
 skinparam shadowing true
 skinparam roundcorner 12
 skinparam BoxPadding 8
+skinparam linetype ortho
 skinparam nodesep 36
 skinparam ranksep 48
 top to bottom direction
