@@ -4,7 +4,6 @@
 ' 主フローは上→下。各層内は左→右（Auth→Client→Staff）で視線は左上→右下に近い
 skinparam shadowing true
 skinparam roundcorner 12
-skinparam Padding 10
 skinparam BoxPadding 8
 skinparam nodesep 36
 skinparam ranksep 48
