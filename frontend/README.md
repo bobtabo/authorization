@@ -68,11 +68,9 @@ frontend/
 │   ├── register/           # 新規登録（招待制の案内）
 │   ├── api/                # Route Handler（サーバー側処理）
 │   └── layout.tsx          # 共通レイアウト
-├── features/               # 機能単位のロジックとUI
-│   ├── auth/               # ログイン・新規登録・招待受諾
-│   ├── clients/            # クライアント管理
-│   └── staffs/             # スタッフ管理
-│       ├── api.ts          # この機能専用の API 呼び出し
+├── features/               # 機能単位のロジックとUI（auth / clients / staffs）
+│   └── <name>/             # auth・clients・staffs はいずれも同じ内部構成
+│       ├── api.ts          # この機能専用の API 呼び出し（auth は shared/api のみ使用のため無し）
 │       ├── types.ts        # この機能専用の型・定数
 │       ├── hooks/          # カスタムフック（状態管理・副作用）
 │       └── components/     # UI コンポーネント（JSX）
