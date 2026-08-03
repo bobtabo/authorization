@@ -1,7 +1,7 @@
 import React from "react";
 
-import { RegisterForm } from "@/features/auth/components/RegisterForm";
+import { RegisterPage } from "@/features/auth/components/RegisterPage";
 
 export default function Page(): React.JSX.Element {
-  return <RegisterForm />;
+  return <RegisterPage />;
 }
