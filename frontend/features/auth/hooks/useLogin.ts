@@ -21,7 +21,6 @@ export function useLogin() {
       router.replace("/clients");
       return;
     }
-    localStorage.removeItem(USER_CACHE_KEY);
     const stored = localStorage.getItem(RUNTIME_STORAGE_KEY) ?? "php";
     setRuntime(stored);
     setConnectionDetail(getBackendConnectionDetail());

@@ -17,11 +17,11 @@ export function useInvitationRedirect(): void {
 
     async function go() {
       if (localStorage.getItem(USER_CACHE_KEY)) {
-        router.replace("/clients");
+        if (!cancelled) router.replace("/clients");
         return;
       }
       try {
-        await apiGet(`/auth/invitation/${token}`);
+        await apiGet(`/auth/invitation/${encodeURIComponent(token)}`);
         if (!cancelled) router.replace(`/login?token=${encodeURIComponent(token)}`);
       } catch {
         if (!cancelled) router.replace("/error?code=400");
