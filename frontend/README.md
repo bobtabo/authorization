@@ -34,12 +34,15 @@ API 仕様は [`docs/api-spec/openapi.yml`](../docs/api-spec/openapi.yml) を参
     │
     ▼
 Next.js App Router（app/）
-    │  ページルーティング
+    │  ページルーティング（薄いラッパーのみ）
     ▼
-Page / Component（app/ / components/）
+Component（features/<name>/components/ / shared/components/）
     │  UI レンダリング
     ▼
-API クライアント（src/api/）
+Custom Hook（features/<name>/hooks/）
+    │  状態管理・副作用
+    ▼
+API クライアント（features/<name>/api.ts / shared/api/）
     │  axios による HTTP リクエスト
     ▼
 Next.js Rewrites（/function/*）
@@ -52,18 +55,31 @@ Next.js Rewrites（/function/*）
 
 ## :file_folder: ディレクトリ構成
 
+**Feature-Based Architecture ＋ Custom Hooks** 構成です。
+`app/` は薄いルーティングのみで、ロジックと UI は `features/<name>/` に集約しています。
+
 ```
 frontend/
-├── app/                    # ページコンポーネント（App Router）
+├── app/                    # ルーティング（App Router）。features/ を import して返すだけ
 │   ├── clients/            # クライアント管理
 │   ├── staffs/             # スタッフ管理
-│   ├── invitation/         # 招待
+│   ├── invitation/         # 招待受諾
 │   ├── login/              # ログイン
+│   ├── register/           # 新規登録（招待制の案内）
+│   ├── api/                # Route Handler（サーバー側処理）
 │   └── layout.tsx          # 共通レイアウト
-├── components/             # 共通 UI コンポーネント
-├── hooks/                  # カスタムフック
-├── lib/                    # ユーティリティ
-├── src/
+├── features/               # 機能単位のロジックとUI
+│   ├── auth/               # ログイン・新規登録・招待受諾
+│   ├── clients/            # クライアント管理
+│   └── staffs/             # スタッフ管理
+│       ├── api.ts          # この機能専用の API 呼び出し
+│       ├── types.ts        # この機能専用の型・定数
+│       ├── hooks/          # カスタムフック（状態管理・副作用）
+│       └── components/     # UI コンポーネント（JSX）
+├── shared/                 # 機能横断の部品
+│   ├── components/         # 共通 UI コンポーネント
+│   ├── hooks/              # 汎用フック
+│   ├── lib/                # ユーティリティ・Context
 │   └── api/                # axios API クライアント
 ├── e2e/                    # Playwright E2E テスト
 │   └── demo/               # デモ録画用シナリオ
@@ -71,6 +87,9 @@ frontend/
 ├── next.config.ts          # Next.js 設定（API Gateway プロキシ）
 └── tailwind.config.ts      # Tailwind CSS 設定
 ```
+
+構成ルール（`features/` 間の直接 import 禁止、新規ページ追加手順など）は
+[`AGENTS.md`](./AGENTS.md) を参照してください。
 
 ---
 
