@@ -12,6 +12,14 @@ test.describe("認証", () => {
     await expect(page.getByText("Authorization Gateway", { exact: true })).toBeVisible();
     await expect(page.getByText("Googleで続行")).toBeVisible();
   });
+
+  test("新規登録ページは招待制の案内とログインへのリンクを表示する", async ({ page }) => {
+    await page.goto("/register");
+
+    await expect(page.getByRole("heading")).toContainText("新規登録");
+    await expect(page.getByText("新規登録は招待制です")).toBeVisible();
+    await expect(page.getByRole("link", { name: "ログイン" })).toHaveAttribute("href", "/login");
+  });
 });
 
 for (const backend of BACKENDS) {

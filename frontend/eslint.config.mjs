@@ -61,6 +61,18 @@ export default defineConfig([
           alphabetize: { order: "asc", caseInsensitive: true },
         },
       ],
+      // Next.js の `layout.tsx`/`page.tsx` は慣習的にコンポーネントと定数（`metadata` 等）を
+      // 同居させる。React Context ファイルも Provider と定数・hook を同居させるのが一般的なため、
+      // 定数エクスポートは Fast Refresh 対象外として許容する。
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+    },
+  },
+  {
+    // tailwind.config.ts はプラグイン読み込みに CommonJS の require を使うのが標準的な書き方のため、
+    // このファイルに限り no-require-imports を無効化する。
+    files: ["tailwind.config.ts"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
   {
@@ -68,6 +80,11 @@ export default defineConfig([
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       globals: globals.node,
+    },
+    rules: {
+      // Playwright の fixture 定義（`test.extend`）は `({}, use, testInfo) => {...}` のように
+      // 未使用の第1引数を空分割代入で受けるのが標準的な書き方のため無効化する。
+      "no-empty-pattern": "off",
     },
   },
 ]);

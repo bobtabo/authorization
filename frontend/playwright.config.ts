@@ -1,6 +1,7 @@
-import { defineConfig, devices } from "@playwright/test";
 import os from "os";
 import path from "path";
+
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * E2E は専用ポートで起動し、手元の `npm run dev`（3000）と干渉しないようにする。
