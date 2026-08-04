@@ -4,6 +4,7 @@ import type { Pager as PagerData } from "@/shared/api/types";
 
 import { getClients } from "../api";
 import {
+  getStatusStyle,
   STATUS_MAP,
   STATUS_VALUE,
   type ClientRow,
@@ -116,15 +117,6 @@ export function useClientList() {
     setStartedFromDate("");
     setStartedToDate("");
     setCurrentPage(1);
-  };
-
-  const getStatusStyle = (status: ClientStatus) => {
-    switch (status) {
-      case "利用中":   return "bg-emerald-100 text-emerald-800 border border-emerald-200";
-      case "アーカイブ": return "bg-slate-100 text-slate-600 border border-slate-200";
-      case "停止中":   return "bg-rose-100 text-rose-700 border border-rose-200";
-      case "準備中":   return "bg-amber-100 text-amber-700 border border-amber-200";
-    }
   };
 
   return {

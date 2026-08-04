@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, ArrowLeft, Trash2, Play, Square, History, Copy, Check, AlertCircle } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { ConsoleFooter } from "@/shared/components/console-footer";
@@ -28,17 +28,20 @@ function DetailRow({
 }
 
 function JwtCell({ jwt }: { jwt: string }) {
-  const [copied, setCopied] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (copyStatus === "idle") return;
+    const t = setTimeout(() => setCopyStatus("idle"), 2000);
+    return () => clearTimeout(t);
+  }, [copyStatus]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(jwt).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopyStatus("copied");
     }).catch(() => {
-      setCopyFailed(true);
-      setTimeout(() => setCopyFailed(false), 2000);
+      setCopyStatus("failed");
     });
   };
 
@@ -68,11 +71,11 @@ function JwtCell({ jwt }: { jwt: string }) {
         type="button"
         onClick={handleCopy}
         className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-        title={copyFailed ? "コピーに失敗しました" : "JWTをコピー"}
+        title={copyStatus === "failed" ? "コピーに失敗しました" : "JWTをコピー"}
       >
-        {copyFailed ? (
+        {copyStatus === "failed" ? (
           <AlertCircle size={14} className="text-red-500" />
-        ) : copied ? (
+        ) : copyStatus === "copied" ? (
           <Check size={14} className="text-emerald-500" />
         ) : (
           <Copy size={14} />

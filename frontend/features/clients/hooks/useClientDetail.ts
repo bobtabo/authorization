@@ -5,22 +5,7 @@ import { extractApiError } from "@/shared/lib/api-error";
 import { formatTimestamp } from "@/shared/lib/format-datetime";
 
 import { getClient, updateClient, deleteClient, getJwtHistories, type JwtHistory } from "../api";
-import { STATUS_MAP, type ClientDetail } from "../types";
-
-function getStatusStyle(status: string) {
-  switch (status) {
-    case "利用中":
-      return "bg-emerald-100 text-emerald-800 border border-emerald-200";
-    case "アーカイブ":
-      return "bg-slate-100 text-slate-600 border border-slate-200";
-    case "停止中":
-      return "bg-rose-100 text-rose-700 border border-rose-200";
-    case "準備中":
-      return "bg-amber-100 text-amber-700 border border-amber-200";
-    default:
-      return "bg-gray-100 text-gray-700 border border-gray-200";
-  }
-}
+import { getStatusStyle, STATUS_MAP, type ClientDetail } from "../types";
 
 export function useClientDetail() {
   const [clientId, setClientId] = useState<number | null>(null);
@@ -70,10 +55,7 @@ export function useClientDetail() {
     loadDetail(id).catch((err: unknown) => {
       setLoadError(extractApiError(err, "クライアント情報の取得に失敗しました。"));
     });
-    getJwtHistories(id, { page: 1, limit: 10 }).then((res) => {
-      setJwtData(res.data);
-      setJwtPager(res.pager);
-    }).catch(() => {});
+    // JWT履歴は clientId の変化を見ている下のeffectが初回分も取得するため、ここでは取得しない
   }, []);
 
   useEffect(() => {

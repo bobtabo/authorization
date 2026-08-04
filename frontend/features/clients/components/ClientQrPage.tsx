@@ -58,7 +58,7 @@ export function ClientQrPage({ params }: Props): React.JSX.Element {
                       value={data.deeplink_url}
                       size={220}
                       level="M"
-                      includeMargin={false}
+                      marginSize={0}
                     />
                   </div>
                   <p className="text-xs text-gray-400 text-center">

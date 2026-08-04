@@ -27,6 +27,15 @@ export interface ClientRow {
 export type SortKey = "name" | "status" | "created_at";
 export type SortOrder = "asc" | "desc";
 
+export function getStatusStyle(status: ClientStatus): string {
+  switch (status) {
+    case "利用中":   return "bg-emerald-100 text-emerald-800 border border-emerald-200";
+    case "アーカイブ": return "bg-slate-100 text-slate-600 border border-slate-200";
+    case "停止中":   return "bg-rose-100 text-rose-700 border border-rose-200";
+    case "準備中":   return "bg-amber-100 text-amber-700 border border-amber-200";
+  }
+}
+
 export type ClientDetail = {
   clientName: string;
   identifier: string;
