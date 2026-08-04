@@ -130,7 +130,8 @@ cloud "Backend API\n(nginx-proxy 経由・複数ランタイム)" as backendApi 
 [Auth Hook] -down-> [Shared API / HTTP Client]
 note right of [Auth Hook]
   features/auth は専用の Repository(api.ts) を持たない。
-  shared/api/auth.ts を直接呼ぶ（#143参照）。
+  shared/api/auth.ts を直接呼ぶ（セッション管理・ヘッダー等アプリ全体から
+  使う横断的関心事のため、featureに閉じない設計）。
 end note
 
 [Client Api] -down-> [Shared API / HTTP Client]
