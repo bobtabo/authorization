@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
   ArrowUpDown,
@@ -32,11 +32,11 @@ function RoleSegmentSwitch({
 }: { role: StaffRole; onChange: (r: StaffRole) => void; ariaLabel: string; disabled?: boolean }): React.JSX.Element {
   return (
     <div className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`} role="group" aria-label={ariaLabel}>
-      <button type="button" disabled={disabled} onClick={() => onChange("メンバー")}
+      <button type="button" disabled={disabled} aria-pressed={role === "メンバー"} onClick={() => onChange("メンバー")}
         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${role === "メンバー" ? `${getRoleBadgeClass("メンバー")} shadow-sm` : segmentInactive}`}>
         メンバー
       </button>
-      <button type="button" disabled={disabled} onClick={() => onChange("管理者")}
+      <button type="button" disabled={disabled} aria-pressed={role === "管理者"} onClick={() => onChange("管理者")}
         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${role === "管理者" ? `${getRoleBadgeClass("管理者")} shadow-sm` : segmentInactive}`}>
         管理者
       </button>
@@ -49,11 +49,11 @@ function ActiveSegmentSwitch({
 }: { active: StaffActive; onChange: (a: StaffActive) => void; ariaLabel: string; disabled?: boolean }): React.JSX.Element {
   return (
     <div className={`inline-flex shrink-0 rounded-full border border-gray-200 bg-gray-50/90 p-0.5 shadow-sm ${disabled ? "opacity-40 cursor-not-allowed" : ""}`} role="group" aria-label={ariaLabel}>
-      <button type="button" disabled={disabled} onClick={() => onChange("無効")}
+      <button type="button" disabled={disabled} aria-pressed={active === "無効"} onClick={() => onChange("無効")}
         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${active === "無効" ? `${getActiveBadgeClass("無効")} shadow-sm` : segmentInactive}`}>
         無効
       </button>
-      <button type="button" disabled={disabled} onClick={() => onChange("有効")}
+      <button type="button" disabled={disabled} aria-pressed={active === "有効"} onClick={() => onChange("有効")}
         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold leading-tight transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 disabled:pointer-events-none ${active === "有効" ? `${getActiveBadgeClass("有効")} shadow-sm` : segmentInactive}`}>
         有効
       </button>
@@ -66,6 +66,8 @@ export function StaffListPage(): React.JSX.Element {
     rows,
     pager,
     loading,
+    error,
+    mutationError,
     myStaffId,
     authLoading,
     queryInput,
@@ -180,6 +182,12 @@ export function StaffListPage(): React.JSX.Element {
             </div>
           </div>
 
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+              {error}
+            </div>
+          )}
+
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-20">
@@ -191,19 +199,39 @@ export function StaffListPage(): React.JSX.Element {
                   <table className="w-full text-sm text-left">
                     <thead className="bg-indigo-50 text-indigo-700 uppercase tracking-wide text-xs border-b border-indigo-100">
                       <tr>
-                        <th onClick={() => handleSort("name")} className="px-6 py-3 font-medium cursor-pointer select-none">
-                          <div className="flex items-center gap-1">名前{getSortIcon("name")}</div>
+                        <th
+                          aria-sort={sortKey === "name" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 font-medium select-none"
+                        >
+                          <button type="button" onClick={() => handleSort("name")} className="flex items-center gap-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded">
+                            名前{getSortIcon("name")}
+                          </button>
                         </th>
                         <th className="px-6 py-3 font-medium">メールアドレス</th>
-                        <th onClick={() => handleSort("role")} className="px-6 py-3 font-medium cursor-pointer select-none">
-                          <div className="flex items-center gap-1">権限{getSortIcon("role")}</div>
+                        <th
+                          aria-sort={sortKey === "role" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 font-medium select-none"
+                        >
+                          <button type="button" onClick={() => handleSort("role")} className="flex items-center gap-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded">
+                            権限{getSortIcon("role")}
+                          </button>
                         </th>
-                        <th onClick={() => handleSort("created_at")} className="px-6 py-3 font-medium cursor-pointer select-none">
-                          <div className="flex items-center gap-1">登録日時{getSortIcon("created_at")}</div>
+                        <th
+                          aria-sort={sortKey === "created_at" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 font-medium select-none"
+                        >
+                          <button type="button" onClick={() => handleSort("created_at")} className="flex items-center gap-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded">
+                            登録日時{getSortIcon("created_at")}
+                          </button>
                         </th>
                         <th className="px-6 py-3 font-medium">更新日時</th>
-                        <th onClick={() => handleSort("status")} className="px-6 py-3 text-right font-medium cursor-pointer select-none normal-case">
-                          <div className="flex items-center justify-end gap-1">状態{getSortIcon("status")}</div>
+                        <th
+                          aria-sort={sortKey === "status" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 text-right font-medium select-none normal-case"
+                        >
+                          <button type="button" onClick={() => handleSort("status")} className="flex items-center justify-end gap-1 w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded">
+                            状態{getSortIcon("status")}
+                          </button>
                         </th>
                       </tr>
                     </thead>
@@ -258,6 +286,19 @@ export function StaffListPage(): React.JSX.Element {
       </main>
 
       <ConsoleFooter />
+
+      <AnimatePresence>
+        {mutationError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 right-6 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm z-[60]"
+          >
+            {mutationError}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

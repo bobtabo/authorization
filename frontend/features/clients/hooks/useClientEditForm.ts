@@ -39,8 +39,12 @@ export function useClientEditForm() {
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id");
-    if (!id) return;
-    setClientId(Number(id));
+    const numericId = Number(id);
+    if (!id || !Number.isInteger(numericId) || numericId <= 0) {
+      setMessage("クライアントを特定できませんでした。");
+      return;
+    }
+    setClientId(numericId);
     getClient(id).then((res) => {
       const d = res as Record<string, unknown>;
       setClientName(d.name as string ?? "");
@@ -52,6 +56,8 @@ export function useClientEditForm() {
       setTel(d.tel as string ?? "");
       setEmail(d.email as string ?? "");
       setVersion((d.version as number) ?? 1);
+    }).catch((err: unknown) => {
+      setMessage(extractApiError(err, "クライアントの取得に失敗しました。"));
     });
   }, []);
 

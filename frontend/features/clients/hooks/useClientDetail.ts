@@ -25,6 +25,7 @@ function getStatusStyle(status: string) {
 export function useClientDetail() {
   const [clientId, setClientId] = useState<number | null>(null);
   const [detail, setDetail] = useState<ClientDetail | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [version, setVersion] = useState<number>(1);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -66,7 +67,9 @@ export function useClientDetail() {
     const id = new URLSearchParams(window.location.search).get("id");
     if (!id) return;
     setClientId(Number(id));
-    loadDetail(id);
+    loadDetail(id).catch((err: unknown) => {
+      setLoadError(extractApiError(err, "クライアント情報の取得に失敗しました。"));
+    });
     getJwtHistories(id, { page: 1, limit: 10 }).then((res) => {
       setJwtData(res.data);
       setJwtPager(res.pager);
@@ -145,6 +148,7 @@ export function useClientDetail() {
 
   return {
     detail,
+    loadError,
     deleteOpen,
     setDeleteOpen,
     deleting,

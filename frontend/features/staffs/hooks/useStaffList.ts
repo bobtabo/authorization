@@ -20,6 +20,8 @@ export function useStaffList() {
   const [rows, setRows] = useState<StaffRow[]>([]);
   const [pager, setPager] = useState<PagerData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [myStaffId, setMyStaffId] = useState<number | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
 
@@ -36,11 +38,17 @@ export function useStaffList() {
     getAuthMe()
       .then((res) => {
         const me = res as Record<string, unknown>;
-        setMyStaffId(me.staff_id as number);
+        setMyStaffId(typeof me?.staff_id === "number" ? me.staff_id : null);
       })
       .catch(() => setMyStaffId(null))
       .finally(() => setAuthLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!mutationError) return;
+    const t = setTimeout(() => setMutationError(null), 3000);
+    return () => clearTimeout(t);
+  }, [mutationError]);
 
   // キーワードをデバウンス
   useEffect(() => {
@@ -54,6 +62,7 @@ export function useStaffList() {
   // データ取得
   useEffect(() => {
     setLoading(true);
+    setError(null);
     let ignore = false;
     getStaffs({
       keyword: query || undefined,
@@ -76,6 +85,11 @@ export function useStaffList() {
         version: r.version ?? 1,
       })));
       setPager(res.pager);
+    }).catch(() => {
+      if (ignore) return;
+      setRows([]);
+      setPager(null);
+      setError("スタッフ一覧の取得に失敗しました。");
     }).finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
   }, [query, sortKey, sortOrder, currentPage, pageSize, selectedActiveFilters, selectedRoleFilters]);
@@ -86,8 +100,12 @@ export function useStaffList() {
     const version = found?.version ?? 1;
     setRows((s) => s.map((r) => (r.id === id ? { ...r, active } : r)));
     const apiCall = active === "無効" ? deleteStaff(id, { version }, myStaffId) : restoreStaff(id, myStaffId);
-    apiCall.catch(() => {
+    apiCall.then(() => {
+      // サーバーはバージョンを1つ進める。次回のインライン編集が古いversionで送られないよう反映しておく
+      setRows((s) => s.map((r) => (r.id === id ? { ...r, version: r.version + 1 } : r)));
+    }).catch(() => {
       if (prev !== undefined) setRows((s) => s.map((r) => (r.id === id ? { ...r, active: prev } : r)));
+      setMutationError("状態の更新に失敗しました。");
     });
   };
 
@@ -96,8 +114,11 @@ export function useStaffList() {
     const prev = found?.role;
     const version = found?.version ?? 1;
     setRows((s) => s.map((r) => (r.id === id ? { ...r, role } : r)));
-    updateStaffRole(id, { role: ROLE_VALUE[role], version }, myStaffId).catch(() => {
+    updateStaffRole(id, { role: ROLE_VALUE[role], version }, myStaffId).then(() => {
+      setRows((s) => s.map((r) => (r.id === id ? { ...r, version: r.version + 1 } : r)));
+    }).catch(() => {
       if (prev !== undefined) setRows((s) => s.map((r) => (r.id === id ? { ...r, role: prev } : r)));
+      setMutationError("権限の更新に失敗しました。");
     });
   };
 
@@ -140,6 +161,8 @@ export function useStaffList() {
     rows,
     pager,
     loading,
+    error,
+    mutationError,
     myStaffId,
     authLoading,
     queryInput,

@@ -31,6 +31,7 @@ export function ClientListPage(): React.JSX.Element {
     rows,
     pager,
     loading,
+    error,
     flashMessage,
     setFlashMessage,
     flashVisible,
@@ -173,6 +174,12 @@ export function ClientListPage(): React.JSX.Element {
             )}
           </div>
 
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+              {error}
+            </div>
+          )}
+
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center py-20">
@@ -185,33 +192,45 @@ export function ClientListPage(): React.JSX.Element {
                     <thead className="bg-indigo-50 text-indigo-700 uppercase tracking-wide text-xs border-b border-indigo-100">
                       <tr>
                         <th
-                          onClick={() => handleSort("name")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
+                          aria-sort={sortKey === "name" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 font-medium select-none"
                         >
-                          <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSort("name")}
+                            className="flex items-center gap-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
+                          >
                             会社名
                             {getSortIcon("name")}
-                          </div>
+                          </button>
                         </th>
                         <th
-                          onClick={() => handleSort("status")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
+                          aria-sort={sortKey === "status" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 font-medium select-none"
                         >
-                          <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSort("status")}
+                            className="flex items-center gap-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
+                          >
                             状態
                             {getSortIcon("status")}
-                          </div>
+                          </button>
                         </th>
                         <th className="px-6 py-3 font-medium">利用開始日時</th>
                         <th className="px-6 py-3 font-medium">利用停止日時</th>
                         <th
-                          onClick={() => handleSort("created_at")}
-                          className="px-6 py-3 font-medium cursor-pointer select-none"
+                          aria-sort={sortKey === "created_at" ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                          className="px-6 py-3 font-medium select-none"
                         >
-                          <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSort("created_at")}
+                            className="flex items-center gap-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 rounded"
+                          >
                             登録日時
                             {getSortIcon("created_at")}
-                          </div>
+                          </button>
                         </th>
                         <th className="px-6 py-3 font-medium">更新日時</th>
                         <th className="px-6 py-3 text-right font-medium">操作</th>

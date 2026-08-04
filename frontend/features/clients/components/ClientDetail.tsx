@@ -1,9 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, ArrowLeft, X, Trash2, Play, Square, History, Copy, Check } from "lucide-react";
+import { Building2, ArrowLeft, Trash2, Play, Square, History, Copy, Check, AlertCircle } from "lucide-react";
 import React, { useState } from "react";
 
+import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { ConsoleFooter } from "@/shared/components/console-footer";
 import { ConsoleHeader } from "@/shared/components/console-header";
 import { Pager } from "@/shared/components/pager";
@@ -28,12 +29,16 @@ function DetailRow({
 
 function JwtCell({ jwt }: { jwt: string }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(jwt).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      setCopyFailed(true);
+      setTimeout(() => setCopyFailed(false), 2000);
     });
   };
 
@@ -63,9 +68,15 @@ function JwtCell({ jwt }: { jwt: string }) {
         type="button"
         onClick={handleCopy}
         className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-        title="JWTをコピー"
+        title={copyFailed ? "コピーに失敗しました" : "JWTをコピー"}
       >
-        {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+        {copyFailed ? (
+          <AlertCircle size={14} className="text-red-500" />
+        ) : copied ? (
+          <Check size={14} className="text-emerald-500" />
+        ) : (
+          <Copy size={14} />
+        )}
       </button>
     </div>
   );
@@ -74,6 +85,7 @@ function JwtCell({ jwt }: { jwt: string }) {
 export function ClientDetail(): React.JSX.Element {
   const {
     detail,
+    loadError,
     deleteOpen,
     setDeleteOpen,
     deleting,
@@ -116,7 +128,11 @@ export function ClientDetail(): React.JSX.Element {
             </a>
           </div>
 
-          {!detail ? (
+          {loadError ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+              {loadError}
+            </div>
+          ) : !detail ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
             </div>
@@ -293,178 +309,106 @@ export function ClientDetail(): React.JSX.Element {
       <ConsoleFooter />
 
       {/* 削除確認 */}
-      <AnimatePresence>
-        {deleteOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => !deleting && setDeleteOpen(false)}
+      <ConfirmDialog
+        open={deleteOpen}
+        titleId="client-delete-confirm-title"
+        title="削除の確認"
+        onClose={() => setDeleteOpen(false)}
+        closeDisabled={deleting}
+      >
+        <p className="text-gray-600 mb-6">
+          「{detail?.clientName}」を削除してもよろしいですか？この操作は取り消せません。
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(false)}
+            disabled={deleting}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  削除の確認
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => !deleting && setDeleteOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <p className="text-gray-600 mb-6">
-                「{detail?.clientName}」を削除してもよろしいですか？この操作は取り消せません。
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setDeleteOpen(false)}
-                  disabled={deleting}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {deleting && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  削除する
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {deleting && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
+            削除する
+          </button>
+        </div>
+      </ConfirmDialog>
 
       {/* 利用開始確認 */}
-      <AnimatePresence>
-        {startOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => !starting && setStartOpen(false)}
+      <ConfirmDialog
+        open={startOpen}
+        titleId="client-start-confirm-title"
+        title="利用開始の確認"
+        onClose={() => setStartOpen(false)}
+        closeDisabled={starting}
+      >
+        <p className="text-gray-600 mb-6">
+          「{detail?.clientName}」の利用を開始してもよろしいですか？
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            type="button"
+            onClick={() => setStartOpen(false)}
+            disabled={starting}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  利用開始の確認
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => !starting && setStartOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <p className="text-gray-600 mb-6">
-                「{detail?.clientName}」の利用を開始してもよろしいですか？
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setStartOpen(false)}
-                  disabled={starting}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStart}
-                  disabled={starting}
-                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {starting && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  利用を開始する
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={starting}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {starting && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
+            利用を開始する
+          </button>
+        </div>
+      </ConfirmDialog>
 
       {/* 利用停止確認 */}
-      <AnimatePresence>
-        {stopOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => !stopping && setStopOpen(false)}
+      <ConfirmDialog
+        open={stopOpen}
+        titleId="client-stop-confirm-title"
+        title="利用停止の確認"
+        onClose={() => setStopOpen(false)}
+        closeDisabled={stopping}
+      >
+        <p className="text-gray-600 mb-6">
+          「{detail?.clientName}」の利用を停止してもよろしいですか？
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            type="button"
+            onClick={() => setStopOpen(false)}
+            disabled={stopping}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  利用停止の確認
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => !stopping && setStopOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <p className="text-gray-600 mb-6">
-                「{detail?.clientName}」の利用を停止してもよろしいですか？
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setStopOpen(false)}
-                  disabled={stopping}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStop}
-                  disabled={stopping}
-                  className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {stopping && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  利用を停止する
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={handleStop}
+            disabled={stopping}
+            className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {stopping && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
+            利用を停止する
+          </button>
+        </div>
+      </ConfirmDialog>
 
       <AnimatePresence>
         {toast && (

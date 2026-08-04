@@ -1,9 +1,10 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { Building2, ArrowLeft, Save, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Building2, ArrowLeft, Save } from "lucide-react";
 import React from "react";
 
+import { ConfirmDialog } from "@/shared/components/confirm-dialog";
 import { ConsoleFooter } from "@/shared/components/console-footer";
 import { ConsoleHeader } from "@/shared/components/console-header";
 import { formatCityWard } from "@/shared/lib/postcode-jp";
@@ -79,11 +80,12 @@ export function ClientCreateForm(): React.JSX.Element {
               )}
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="client-create-name" className="block text-sm font-medium text-gray-700">
                   クライアント名
                   <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <input
+                  id="client-create-name"
                   type="text"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value.slice(0, 255))}
@@ -96,7 +98,7 @@ export function ClientCreateForm(): React.JSX.Element {
 
               <div className="grid grid-cols-1 md:grid-cols-[minmax(0,10ch)_10em_minmax(0,1fr)] gap-4 md:items-end">
                 <div className="space-y-2 w-full max-w-[10ch] md:max-w-[10ch]">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="client-create-postal-code" className="block text-sm font-medium text-gray-700">
                     郵便番号
                     <span className="text-red-500 ml-0.5">*</span>
                     {postcodeLoading && (
@@ -106,6 +108,7 @@ export function ClientCreateForm(): React.JSX.Element {
                     )}
                   </label>
                   <input
+                    id="client-create-postal-code"
                     type="text"
                     inputMode="numeric"
                     autoComplete="postal-code"
@@ -119,10 +122,11 @@ export function ClientCreateForm(): React.JSX.Element {
                 </div>
 
                 <div className="space-y-2 w-full min-w-0">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="client-create-prefecture" className="block text-sm font-medium text-gray-700">
                     都道府県
                   </label>
                   <input
+                    id="client-create-prefecture"
                     type="text"
                     readOnly
                     value={prefecture}
@@ -133,7 +137,7 @@ export function ClientCreateForm(): React.JSX.Element {
                 </div>
 
                 <div className="space-y-2 min-w-0 w-full">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="client-create-city" className="block text-sm font-medium text-gray-700">
                     市区町村
                     <span className="text-red-500 ml-0.5">*</span>
                     {postcodeRows.length > 1 && (
@@ -144,6 +148,7 @@ export function ClientCreateForm(): React.JSX.Element {
                   </label>
                   {postcodeRows.length > 1 ? (
                     <select
+                      id="client-create-city"
                       value={cityChoiceIndex}
                       onChange={(e) => {
                         const i = Number(e.target.value);
@@ -165,6 +170,7 @@ export function ClientCreateForm(): React.JSX.Element {
                     </select>
                   ) : (
                     <input
+                      id="client-create-city"
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value.slice(0, 255))}
@@ -184,11 +190,12 @@ export function ClientCreateForm(): React.JSX.Element {
               )}
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="client-create-street" className="block text-sm font-medium text-gray-700">
                   丁目・番地
                   <span className="text-red-500 ml-0.5">*</span>
                 </label>
                 <input
+                  id="client-create-street"
                   type="text"
                   value={street}
                   onChange={(e) => setStreet(e.target.value.slice(0, 255))}
@@ -200,10 +207,11 @@ export function ClientCreateForm(): React.JSX.Element {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="client-create-building" className="block text-sm font-medium text-gray-700">
                   ビル名
                 </label>
                 <input
+                  id="client-create-building"
                   type="text"
                   value={building}
                   onChange={(e) => setBuilding(e.target.value.slice(0, 255))}
@@ -215,11 +223,12 @@ export function ClientCreateForm(): React.JSX.Element {
 
               <div className="grid grid-cols-1 md:grid-cols-[4fr_6fr] gap-4">
                 <div className="space-y-2 min-w-0">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="client-create-tel" className="block text-sm font-medium text-gray-700">
                     電話番号
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
+                    id="client-create-tel"
                     type="text"
                     inputMode="numeric"
                     autoComplete="tel"
@@ -233,11 +242,12 @@ export function ClientCreateForm(): React.JSX.Element {
                 </div>
 
                 <div className="space-y-2 min-w-0">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="client-create-email" className="block text-sm font-medium text-gray-700">
                     メールアドレス
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
                   <input
+                    id="client-create-email"
                     type="email"
                     autoComplete="email"
                     value={email}
@@ -274,64 +284,39 @@ export function ClientCreateForm(): React.JSX.Element {
       <ConsoleFooter />
 
       {/* 登録確認モーダル（一覧の削除確認と同系） */}
-      <AnimatePresence>
-        {confirmOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => !saving && setConfirmOpen(false)}
+      <ConfirmDialog
+        open={confirmOpen}
+        titleId="client-create-confirm-title"
+        title="登録の確認"
+        onClose={() => setConfirmOpen(false)}
+        closeDisabled={saving}
+      >
+        <p className="text-gray-600 mb-6">
+          「{clientName}」を登録してもよろしいですか？
+        </p>
+
+        <div className="flex gap-3 justify-end">
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(false)}
+            disabled={saving}
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:pointer-events-none"
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  登録の確認
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => !saving && setConfirmOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <p className="text-gray-600 mb-6">
-                「{clientName}」を登録してもよろしいですか？
-              </p>
-
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setConfirmOpen(false)}
-                  disabled={saving}
-                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  キャンセル
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmRegister}
-                  disabled={saving}
-                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {saving && (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  登録する
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmRegister}
+            disabled={saving}
+            className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving && (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
+            登録する
+          </button>
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

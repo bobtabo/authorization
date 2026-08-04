@@ -16,6 +16,7 @@ export function useClientList() {
   const [rows, setRows] = useState<ClientRow[]>([]);
   const [pager, setPager] = useState<PagerData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [flashVisible, setFlashVisible] = useState<boolean>(false);
 
@@ -56,7 +57,9 @@ export function useClientList() {
 
   // データ取得
   useEffect(() => {
+    let ignore = false;
     setLoading(true);
+    setError(null);
     getClients({
       keyword: query || undefined,
       start_from: startedFromDate || undefined,
@@ -67,6 +70,7 @@ export function useClientList() {
       sort: sortKey,
       sort_type: sortOrder,
     }).then((res) => {
+      if (ignore) return;
       setRows(res.data.map((r) => ({
         id: r.id,
         companyName: r.name,
@@ -77,7 +81,13 @@ export function useClientList() {
         updatedAt: r.updated_at,
       })));
       setPager(res.pager);
-    }).finally(() => setLoading(false));
+    }).catch(() => {
+      if (ignore) return;
+      setRows([]);
+      setPager(null);
+      setError("クライアント一覧の取得に失敗しました。");
+    }).finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
   }, [query, sortKey, sortOrder, currentPage, pageSize, selectedStatuses, startedFromDate, startedToDate]);
 
   const handleSort = (key: SortKey) => {
@@ -121,6 +131,7 @@ export function useClientList() {
     rows,
     pager,
     loading,
+    error,
     flashMessage,
     setFlashMessage,
     flashVisible,

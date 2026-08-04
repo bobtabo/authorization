@@ -8,12 +8,24 @@ export function useClientQr(params: Promise<{ identifier: string }>) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    params.then(({ identifier }) => {
-      getClientQr(identifier)
-        .then(setData)
-        .catch(() => setError("QRコードの取得に失敗しました。担当者にお問い合わせください。"))
-        .finally(() => setLoading(false));
-    });
+    let ignore = false;
+    const failureMessage = "QRコードの取得に失敗しました。担当者にお問い合わせください。";
+
+    params
+      .then(({ identifier }) => getClientQr(identifier))
+      .then((result) => {
+        if (!ignore) setData(result);
+      })
+      .catch(() => {
+        if (!ignore) setError(failureMessage);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [params]);
 
   return { data, error, loading };
