@@ -183,7 +183,7 @@ export function StaffListPage(): React.JSX.Element {
           </div>
 
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+            <div role="alert" aria-atomic="true" className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
               {error}
             </div>
           )}
@@ -254,14 +254,14 @@ export function StaffListPage(): React.JSX.Element {
                             <td className="px-6 py-4 text-gray-600 break-all max-w-[14rem]">{row.email}</td>
                             <td className="px-6 py-4">
                               <div className="flex min-h-[1.75rem] items-center">
-                                <RoleSegmentSwitch role={row.role} onChange={(r) => setRowRole(row.id, r)} ariaLabel={`${row.name}の権限`} disabled={authLoading || row.id === myStaffId} />
+                                <RoleSegmentSwitch role={row.role} onChange={(r) => setRowRole(row.id, r)} ariaLabel={`${row.name}の権限`} disabled={authLoading || myStaffId == null || row.id === myStaffId} />
                               </div>
                             </td>
                             <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{row.createdAt}</td>
                             <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{row.updatedAt}</td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex min-h-[1.75rem] items-center justify-end">
-                                <ActiveSegmentSwitch active={row.active} onChange={(a) => setRowActive(row.id, a)} ariaLabel={`${row.name}の状態`} disabled={authLoading || row.id === myStaffId} />
+                                <ActiveSegmentSwitch active={row.active} onChange={(a) => setRowActive(row.id, a)} ariaLabel={`${row.name}の状態`} disabled={authLoading || myStaffId == null || row.id === myStaffId} />
                               </div>
                             </td>
                           </motion.tr>
@@ -290,6 +290,8 @@ export function StaffListPage(): React.JSX.Element {
       <AnimatePresence>
         {mutationError && (
           <motion.div
+            role="alert"
+            aria-atomic="true"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}

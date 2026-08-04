@@ -33,6 +33,7 @@ export function useStaffList() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [selectedActiveFilters, setSelectedActiveFilters] = useState<StaffActive[]>([]);
   const [selectedRoleFilters, setSelectedRoleFilters] = useState<StaffRole[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     getAuthMe()
@@ -92,7 +93,7 @@ export function useStaffList() {
       setError("スタッフ一覧の取得に失敗しました。");
     }).finally(() => { if (!ignore) setLoading(false); });
     return () => { ignore = true; };
-  }, [query, sortKey, sortOrder, currentPage, pageSize, selectedActiveFilters, selectedRoleFilters]);
+  }, [query, sortKey, sortOrder, currentPage, pageSize, selectedActiveFilters, selectedRoleFilters, refreshKey]);
 
   const setRowActive = (id: number, active: StaffActive) => {
     const found = rows.find((r) => r.id === id);
@@ -101,8 +102,8 @@ export function useStaffList() {
     setRows((s) => s.map((r) => (r.id === id ? { ...r, active } : r)));
     const apiCall = active === "無効" ? deleteStaff(id, { version }, myStaffId) : restoreStaff(id, myStaffId);
     apiCall.then(() => {
-      // サーバーはバージョンを1つ進める。次回のインライン編集が古いversionで送られないよう反映しておく
-      setRows((s) => s.map((r) => (r.id === id ? { ...r, version: r.version + 1 } : r)));
+      // 現在のフィルタに合わなくなった行を一覧から外すため再取得する（versionはその際に最新化される）
+      setRefreshKey((v) => v + 1);
     }).catch(() => {
       if (prev !== undefined) setRows((s) => s.map((r) => (r.id === id ? { ...r, active: prev } : r)));
       setMutationError("状態の更新に失敗しました。");
@@ -115,7 +116,7 @@ export function useStaffList() {
     const version = found?.version ?? 1;
     setRows((s) => s.map((r) => (r.id === id ? { ...r, role } : r)));
     updateStaffRole(id, { role: ROLE_VALUE[role], version }, myStaffId).then(() => {
-      setRows((s) => s.map((r) => (r.id === id ? { ...r, version: r.version + 1 } : r)));
+      setRefreshKey((v) => v + 1);
     }).catch(() => {
       if (prev !== undefined) setRows((s) => s.map((r) => (r.id === id ? { ...r, role: prev } : r)));
       setMutationError("権限の更新に失敗しました。");

@@ -1,15 +1,13 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import React, { Suspense } from "react";
 
 import { ErrorPage } from "@/shared/components/error-page";
 
+import { useErrorStatusCode } from "../hooks/useErrorStatusCode";
+
 function ErrorRoutePageContent(): React.JSX.Element {
-  const params = useSearchParams();
-  const raw = params.get("code");
-  const code = raw ? Number.parseInt(raw, 10) : Number.NaN;
-  const statusCode = Number.isFinite(code) && code >= 400 && code < 600 ? code : 500;
+  const statusCode = useErrorStatusCode();
 
   return <ErrorPage statusCode={statusCode} />;
 }
