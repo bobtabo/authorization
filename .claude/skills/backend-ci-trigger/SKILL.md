@@ -41,6 +41,10 @@ pushでは**自動実行されない**。
 - go-gin のワークフローは `go-gin-ci.yml` ではなく **`go-ci.yml`**、kotlin-ktor は
   **`kotlin-ci.yml`** のように、ファイル名はディレクトリ名と一致しない。必ず上表を引く。
 - `gh workflow run` にはワークフロー表示名ではなく上表のファイル名を使う（曖昧さがない）。
+- `gh workflow run` が `HTTP 403: Resource not accessible by integration` になる場合、使っている
+  トークンに `actions: write` が無い。この場合は手動発火を諦め、GitHub UI
+  （Actions → 対象ワークフロー → Run workflow → 対象ブランチ）での実行をユーザーに依頼するか、
+  PRの `docs-ci.yml` の結果とマージ後の自動発火で確認する。
 - `workflow_dispatch` はワークフローファイルがdefaultブランチ（`main`）に存在する場合のみ
   使える。新規追加したワークフローは `main` に入るまで手動発火できないため、その場合は
   「CI未実行（develop→main反映後に確認）」と明示してユーザーに報告する。
