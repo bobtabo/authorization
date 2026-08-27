@@ -13,6 +13,17 @@ allowed-tools: Bash(git:*), Bash(gh:*), Bash(rg:*)
 手順化したもの。目的は「移動・リファクタで挙動が変わっていないこと」と
 「指摘が今回のリグレッションか既存バグかを取り違えないこと」を機械的に担保すること。
 
+## 依存Skill
+
+本Skillは以下を参照する。いずれもIssue #166 / #169 で同時期に追加されるため、
+それらが `develop` にマージされる前は参照先が存在しない場合がある。その場合は
+`.github/copilot-instructions.md`（規約・PR運用）と `.github/workflows/` を直接見る。
+
+| 参照先Skill | 追加Issue | 参照している内容 |
+|---|---|---|
+| git-branch-strategy | #166 | CI待ち・指摘の抽出と返信操作 |
+| backend-ci-trigger | #169 | `feature/issue-*` でのCI発火とCI結果確認 |
+
 ## 0. 前提: 差分を把握する
 
 ```bash
@@ -84,10 +95,15 @@ git diff "origin/develop:$OLD" "HEAD:$NEW" || true
 ```bash
 set -euo pipefail
 FILE=frontend/features/clients/hooks/useClientForm.ts   # 指摘されたファイル
-LINE_PATTERN="指摘対象の式やシンボル"                    # 指摘箇所を特定できる文字列
+SNIPPET='array_filter($items)'   # 指摘されたコード片（そのまま貼る。正規表現にしない）
 
-# このPRで当該行が変わったか
-git diff origin/develop...HEAD -- "$FILE" | rg -n "$LINE_PATTERN" || echo "このPRの差分には無い"
+# このPRで当該行が変わったか。
+# rg -F で固定文字列として扱い（コード片の () . $ 等をメタ文字として解釈させない）、
+# 追加/削除行（^[+-]）だけを対象にする（未変更のコンテキスト行に当たると誤判定するため。
+# diffヘッダの +++/--- は除外する）
+git diff origin/develop...HEAD -- "$FILE" \
+  | rg '^[+-]' | rg -v '^(\+\+\+|---)' \
+  | rg -F -n "$SNIPPET" || echo "このPRの差分には無い（既存コードの可能性）"
 # 移動元も含めて履歴を追う（--follow でリネームを越える）
 git log --oneline --follow -5 -- "$FILE"
 ```
