@@ -4,7 +4,8 @@ description: >-
   frontend/ に新しいページや機能を追加・修正する際に使う。Feature-Based Architecture
   ＋ Custom Hooks 構成に沿って api.ts → types.ts → hooks/ → components/ →
   app/<route>/page.tsx の順に実装し、lint / build / E2E で確認する手順を定める。
-allowed-tools: Bash(npm:*), Bash(npx:*), Bash(env:*), Bash(git:*), Bash(rg:*), Bash(awk:*)
+allowed-tools: Bash(npm:*), Bash(npx:*), Bash(env:*), Bash(git:*), Bash(rg:*), Bash(awk:*),
+  Bash(docker/bin/docker-*.sh:*)
 ---
 
 # frontend-add-feature-page
