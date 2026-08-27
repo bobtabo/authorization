@@ -5,7 +5,7 @@ description: >-
   hotfix/*）でブランチを切る・PRを作る・PR後のCI待ちとCodeRabbit指摘対応を行う際に使う。
   「ブランチを切って」「PRを出して」「レビュー指摘に対応して」等の指示で使う。
   Issue/コミット/PRの文面の書き方は issue-and-pr-workflow Skillを参照。
-allowed-tools: Bash(git:*), Bash(gh:*)
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(jq:*), Bash(awk:*)
 ---
 
 # git-branch-strategy
@@ -14,6 +14,20 @@ bobtabo/authorization のブランチライフサイクルとマージ順序、P
 統一する手順書。命名規則・コミットメッセージ・PR本文の書式は
 issue-and-pr-workflow Skillが正。本Skillは「どのブランチからどこへ、どの順で流すか」と
 「PRを出したあと何を繰り返すか」を定める。
+
+## 依存Skill（マージ順）
+
+本Skillは以下を参照する。いずれも #162〜#169 で同時期に追加されるため、
+それらが `develop` にマージされる前は参照先が存在しない場合がある（段階的導入）。
+
+| 参照先Skill | 追加Issue / PR | 参照している内容 | 未マージ時の代替 |
+|---|---|---|---|
+| issue-and-pr-workflow | #162 / PR #170 | Issue・コミット・PRの書式 | `.github/copilot-instructions.md` |
+| pr-review-checklist | #165 / PR #173 | 指摘の切り分け基準 | `.github/copilot-instructions.md` |
+| backend-ci-trigger | #169 / PR #177 | CIの手動発火とログ確認 | `.github/workflows/*.yml` を直接読む |
+
+参照を全て解消した状態で入れたい場合は、#170 / #173 / #177 を本SkillのPR（#174）より
+先にマージする。
 
 ## ブランチライフサイクル
 
@@ -26,20 +40,30 @@ issue-and-pr-workflow Skillが正。本Skillは「どのブランチからどこ
 | `main` | - | - | リリース済みの状態 |
 
 - `develop` / `main` への直接pushは禁止。必ずPR経由。
-- Issue番号を含まないブランチ名は作らない。
+- **`feature/` / `fix/` / `hotfix/` ブランチはIssue番号を含まない名前を作らない**
+  （`feature/add-skill` などは不可。Issueがないなら先にIssueを作る）。
+  `release/<version>` はリリース単位のブランチなのでIssue番号を含まない（例外）。
 - 作業前に必ず派生元を最新化する（下記手順1）。
 
 ## マージ順序のルール
+
+下記 2 / 3 は「`main` を含む流れの全体像」であり、**エージェントが自動実行してよい
+手順ではない**。`main` へのマージとその後の戻し作業は、ユーザーに提案し、
+明示的な指示を得てから実行する（ルール4を優先する）。
 
 1. `feature/issue-<N>` → `develop`（PR）。複数のfeatureがある場合は依存関係の下位から順に
    マージし、後続ブランチは `develop` を取り込んでから進める。
 2. リリース時は `release/<version>` を `develop` から切って `main` へPR。
    `main` へマージしたら **`main` の内容を `develop` にも戻す**（リリース中に `main` 側で
    入った修正を `develop` が失わないようにする）。
+   → エージェントはこの手順を**提案するまで**。PR作成・マージは指示待ち。
 3. `hotfix/issue-<N>` は `main` から切り、`main` へマージした後、必ず `develop` にも取り込む。
    `develop` への取り込みを忘れると次のリリースで修正が消える。
-4. **`develop` → `main` のマージ、および `main` へのマージはこのSkillの対象外**。
+   → `main` からのブランチ作成と修正・pushまではエージェントが行ってよい。
+   **`main` へのマージと `develop` への取り込みは、必要だと伝えた上でユーザーの指示を待つ**。
+4. **`develop` → `main` のマージ、および `main` へのマージをエージェントが実行しない**。
    リリース判断はユーザーが行うため、明示的な指示を待つ（自動では実行しない）。
+   このルールは 2 / 3 の記述より強い。迷ったら実行せずに確認する。
 
 ## 1. featureブランチ作成
 
@@ -89,13 +113,19 @@ PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq 
 SHA=$(gh api "repos/${REPO}/pulls/${PR}" --jq .head.sha)
 
 for i in $(seq 1 40); do
-  RESULT=$(gh api "repos/${REPO}/commits/${SHA}/check-runs" --paginate \
-    --jq '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"') \
+  # name ごとに started_at が最新の1件だけを見る。
+  # 「Re-run failed jobs」では同じSHAに古い試行の failure が残るため、
+  # 全件をそのまま見ると再実行が成功しても stale な失敗を拾ってしまう。
+  RESULT=$(gh api "repos/${REPO}/commits/${SHA}/check-runs?per_page=100" --paginate --slurp \
+    | jq -r '[.[].check_runs[]] | group_by(.name) | map(max_by(.started_at))
+             | .[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"') \
     || { echo "check-runs の取得に失敗しました" >&2; exit 1; }
-  if printf '%s\n' "$RESULT" | grep -qE '\t(failure|timed_out|cancelled|action_required)$'; then
+  # タブ区切りの判定は awk で行う（GNU grep の正規表現では `\t` がタブにならない）。
+  if printf '%s\n' "$RESULT" \
+    | awk -F'\t' '$3 ~ /^(failure|timed_out|cancelled|action_required)$/ {f=1} END {exit !f}'; then
     echo "CIが失敗しました:"; printf '%s\n' "$RESULT"; exit 1
   fi
-  if [ -n "$RESULT" ] && ! printf '%s\n' "$RESULT" | grep -qv '\tcompleted\t'; then
+  if [ -n "$RESULT" ] && printf '%s\n' "$RESULT" | awk -F'\t' '$2 != "completed" {exit 1}'; then
     echo "全チェック完了:"; printf '%s\n' "$RESULT"; break
   fi
   echo "[$i] 実行中"; printf '%s\n' "$RESULT"
@@ -103,6 +133,9 @@ for i in $(seq 1 40); do
   sleep 15
 done
 ```
+
+`--slurp` は `gh api --jq` と併用できないので、パイプで `jq` に渡す（ページをまとめて
+から name ごとに集約するため、ページ境界で同名の試行が分かれても正しく最新を取れる）。
 
 `conclusion` が `skipped` / `neutral` / `success` は許容（`skipped` は path フィルタで
 対象外だった場合に出る）。`failure` / `timed_out` / `cancelled` / `action_required` は失敗として扱う。
