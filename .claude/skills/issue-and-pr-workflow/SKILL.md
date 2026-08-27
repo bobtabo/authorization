@@ -37,7 +37,8 @@ bobtabo/authorization における Issue → ブランチ → コミット → P
 
 ```bash
 set -euo pipefail
-gh issue view 162 --repo bobtabo/authorization --json title,body -q '.title, .body'
+NUM=162   # 必須: 参考にしたい既存Issue番号に置き換える
+gh issue view "$NUM" --repo bobtabo/authorization --json title,body -q '.title, .body'
 ```
 
 ## 2. ブランチ
@@ -54,15 +55,20 @@ gh issue view 162 --repo bobtabo/authorization --json title,body -q '.title, .bo
 - 形式: `<type>(#<Issue番号>): <日本語の概要>`
   - 例: `feat(#162): issue-and-pr-workflow SKILL.md を追加`
   - 複数Issueにまたがる場合は `fix(#86/#87/#88): ...` のように併記する
-- `type` はIssueのタイプ規約と同じ（`feat` / `fix` / `docs` / `refactor` / `chore`）
+- `type` はIssueのタイプ規約と同じ（`feat` / `fix` / `docs` / `refactor` / `chore` / `design`）
 - 1コミット1目的。機能修正・テスト修正・ドキュメント更新は別コミットに分ける
 - push後は該当PRに修正内容のコメントを残す（まとめて後から報告しない）
 
 ```bash
 set -euo pipefail
+# 必須入力: 3つとも対象の値に置き換えてから実行する
+NUM=162                # 対象Issue番号
+TYPE=feat              # feat|fix|docs|refactor|chore|design
+SUMMARY="対応内容を日本語で書く"
+
 git status --short                          # 変更ファイルを確認する
 git add path/to/changed_file another/file    # 変更したファイルを列挙する（git add -A / . は使わない）
-git commit -m "feat(#162): issue-and-pr-workflow SKILL.md を追加"
+git commit -m "${TYPE}(#${NUM}): ${SUMMARY}"
 ```
 
 `git commit` は `.claude/settings.json` のPreToolUseフックで差分の機密情報スキャンを
@@ -72,7 +78,8 @@ git commit -m "feat(#162): issue-and-pr-workflow SKILL.md を追加"
 
 ## 4. PR
 
-- base: `develop` / head: `feature/issue-<番号>`（`main` への直接PRは作らない）
+- base: `develop` / head: 作業ブランチ（`feature/issue-<番号>` または `fix/issue-<番号>`。
+  `main` への直接PRは作らない）
 - タイトル: コミットメッセージと同形式 `<type>(#<番号>): <日本語の概要>`
 - 本文は次の4ブロック:
 
@@ -97,11 +104,16 @@ git commit -m "feat(#162): issue-and-pr-workflow SKILL.md を追加"
 
 ```bash
 set -euo pipefail
-NUM=162
-TYPE=feat
-SUMMARY="issue-and-pr-workflow Skillを作成する"
+# 必須入力: 4つとも対象の値に置き換えてから実行する（例の値のまま実行しない）
+NUM=162                # 対象Issue番号
+TYPE=feat              # feat|fix|docs|refactor|chore|design
+SUMMARY="対応内容を日本語で書く"
+BRANCH="feature/issue-${NUM}"   # バグ修正主体なら "fix/issue-${NUM}"。実際の作業ブランチ名に合わせる
 
-git push -u origin "feature/issue-${NUM}"
+# 実行前ガード: 現在のブランチと BRANCH が一致しているか確認する
+[ "$(git rev-parse --abbrev-ref HEAD)" = "$BRANCH" ] || { echo "BRANCH が現在のブランチと違います" >&2; exit 1; }
+
+git push -u origin "$BRANCH"
 BODY_FILE=$(mktemp)
 cat > "$BODY_FILE" <<'EOF'
 ## Summary
@@ -114,7 +126,7 @@ cat > "$BODY_FILE" <<'EOF'
 
 EOF
 printf '\nCloses #%s\n' "$NUM" >> "$BODY_FILE"
-gh pr create --repo bobtabo/authorization --base develop --head "feature/issue-${NUM}" \
+gh pr create --repo bobtabo/authorization --base develop --head "$BRANCH" \
   --title "${TYPE}(#${NUM}): ${SUMMARY}" --body-file "$BODY_FILE"
 ```
 
@@ -136,7 +148,7 @@ PR作成後のCI待ち・CodeRabbit指摘対応は git-branch-strategy Skill「�
 
 ```bash
 set -euo pipefail
-NUM=162
+NUM=162   # 必須: 他のIssueを誤って編集しないよう、必ず先に対象Issue番号へ置き換える
 BODY_FILE=$(mktemp)
 
 # 1. 本文のチェックリストを更新（取得 → 編集 → 反映）
@@ -148,15 +160,16 @@ gh issue edit "$NUM" --repo bobtabo/authorization --body-file "$BODY_FILE"
 
 ```bash
 set -euo pipefail
-NUM=162
+NUM=162   # 必須: 対象Issue番号
+PR=170    # 必須: マージ済みPR番号
 COMMENT_FILE=$(mktemp)
 cat > "$COMMENT_FILE" <<'EOF'
 ## 対応内容
 
 - （実施内容を箇条書き）
 
-マージ済みPR: https://github.com/bobtabo/authorization/pull/<PR番号>
 EOF
+printf '\nマージ済みPR: https://github.com/bobtabo/authorization/pull/%s\n' "$PR" >> "$COMMENT_FILE"
 gh issue comment "$NUM" --repo bobtabo/authorization --body-file "$COMMENT_FILE"
 gh issue close "$NUM" --repo bobtabo/authorization
 ```
