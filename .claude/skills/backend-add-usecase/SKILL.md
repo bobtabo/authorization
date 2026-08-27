@@ -14,7 +14,10 @@ allowed-tools: Bash(docker:*), Bash(git:*), Bash(rg:*)
 
 - 対象バックエンドが確定していること。言語名だけ指示された場合（例「Goで」）は
   backend-dispatch Skillで確定させる。GoはGin/Echo/Beego、RubyはRails/Hanamiの3/2択。
-- APIの正は `docs/api-spec/openapi.yml`。エンドポイントの追加・変更はここを必ず更新する。
+- **APIエンドポイントを伴うユースケース**の正は `docs/api-spec/openapi.yml`。
+  エンドポイントの追加・変更はここを必ず更新する。
+  APIを持たないドメイン処理（バッチ、内部イベント処理等）はOpenAPIを更新しない。
+  その場合の契約は「UseCaseの引数Dtoと戻り値VO」とテストで表し、影響範囲をPR本文に書く。
 - 10バックエンドは同一仕様を実装する。**1バックエンドだけ挙動を変える変更は原則しない**。
   1本だけ直す指示なら、他9本にも同じ修正が必要かをユーザーに確認する。
 - ソースの編集はホスト側で行い、ビルド・テスト・CLIはコンテナ内で実行する（docker-ops Skill）。
@@ -50,7 +53,13 @@ DB/ORM への依存が `Domain` や `UseCase` に漏れていたらその時点�
 | `ts-hono` | `src/` | `routes/` | `usecase/` | `domain/<domain>/{entity.ts,repository.ts,valueObjects.ts}` | `infrastructure/` |
 
 どのバックエンドにも `support/`（php-laravel は `app/Support/`）と `config/`、`middleware/` がある。
-共通処理を個別クラスに直接書かず、`support/` に基底クラス・ヘルパを作ってから使う。
+共通処理を個別クラスに直接書かず、`support/` の基底クラス・ヘルパを継承して使う。
+
+> **`support/` の新設・変更は先にユーザーに一声かける。** `support/`（特に `app/Support/`）は
+> 複数バックエンド共通の基盤で、過去に変更で他機能を壊した経緯がある
+> （`.github/copilot-instructions.md`「PHP (Laravel) 固有の規約」）。
+> 既存の基底クラスを継承して使うだけなら確認不要だが、`support/` 配下への
+> ファイル追加・既存ファイルの変更は着手前に必ず確認を取る。
 
 **言語別スケルトンの調べ方（新規ファイルを書く前に必ず実施）**: 同じドメイン層の
 既存ファイルを読み、命名・シグネチャ・エラーハンドリングをそのまま踏襲する。
@@ -58,9 +67,12 @@ DB/ORM への依存が `Domain` や `UseCase` に漏れていたらその時点�
 ```bash
 set -euo pipefail
 BACKEND=go-gin        # 対象バックエンドに置き換える
-ls -R "backends/${BACKEND}" | head -60
+# head は上流を SIGPIPE で落とし pipefail で手順が止まるので sed を使う
+ls -R "backends/${BACKEND}" | sed -n '1,60p'
 # 参考にする既存ユースケース（notification は比較的小さく読みやすい）
-rg -l notification "backends/${BACKEND}" --glob '!vendor' --glob '!node_modules' | head -20
+# rg はヒットなしで exit 1 になるので明示的に抜ける
+rg -l notification "backends/${BACKEND}" --glob '!vendor' --glob '!node_modules' \
+  | sed -n '1,20p' || echo "notification の参照は見つからない（他のドメインを探す）"
 ```
 
 php-laravel は各クラスが継承すべき基底クラスが `.github/copilot-instructions.md`
@@ -71,28 +83,30 @@ php-laravel は各クラスが継承すべき基底クラスが `.github/copilot
 
 ## 3. レイヤー間インターフェースの規約
 
-- **UseCase（Service / Interactor）**: 引数は **Dto** に統一、戻り値は **ValueObject** または
-  **void**。Repository の変数名は `repository`（複数ある場合は Repository 名のキャメルケース）。
-- **Repository（インターフェース）**: 引数は **Entity**、検索系のみ **Condition**。戻り値は
-  **Entity** / **Entityのコレクション** / **void** / **bool**（削除系のみ） / **int**（件数のみ）。
-- **Presentation（Controller / Handler / Router / Action）**: Service の変数名は `service`
-  （複数ある場合は Service 名のキャメルケース）。リクエストの検証はここで行い、
-  ビジネスロジックを持たない。
-- 配列・コレクションの変数名は複数形、または `list` / `○○List`。
-- 一覧・ページングは単票用と別のDto/Response（php-laravel なら `PagerDto` / `PagerResponse`）を使う。
+規約の正は `.github/copilot-instructions.md`「DDD + クリーンアーキテクチャ
+（php-laravel）」の「レイヤー間インターフェースのルール」。**引数・戻り値の許容型や
+トランザクションの方針は必ずそちらを読む**（ここに転記すると二重管理になるため書かない）。
 
-### トランザクション
+本Skillで与える差分は次の2点だけ。
 
-- **登録・更新・削除は1件でも必ずトランザクション内で実行する**。
-- トランザクションの境界は Presentation 層（Controller / Handler）に置き、
-  トランザクションの外でDB更新を実行しない。
-- 楽観ロック（`version` カラム等）を持つテーブルは、更新時に必ずバージョンを条件に含める。
-  既存の同種ユースケースの実装をそのまま踏襲する（独自方式を発明しない）。
+- 同規約は **php-laravel 限定でなく10バックエンド共通**として適用する。言語固有の設定名は
+  読み替える（Service → Interactor / UseCase、Controller → Handler / Router / Action、
+  `$repository` → `repository`）。
+- 一覧・ページングは単票用と別のDto/Response（php-laravel なら `PagerDto` / `PagerResponse`、
+  他言語は同等の既存実装）を使う。
+
+読むところ（規約の実体）:
+
+```bash
+rg -n "レイヤー間インターフェースのルール" -A 12 .github/copilot-instructions.md
+```
 
 ## 4. 追加手順
 
-1. `docs/api-spec/openapi.yml` でエンドポイント・リクエスト/レスポンスを確定する
-   （既存エンドポイントの変更なら現在の定義を読む）。
+1. APIエンドポイントを伴う場合は `docs/api-spec/openapi.yml` でエンドポイント・
+   リクエスト/レスポンスを確定する（既存エンドポイントの変更なら現在の定義を読む）。
+   APIを持たないドメイン処理ならこの手順は飛ばし、代わりに引数Dto・戻り値VOと
+   呼び出し元（バッチ・イベント等）を先に決める。
 2. Domain: Entity / ValueObject / （検索系なら）Condition / Repository インターフェースを追加。
 3. Infrastructure: Repository 実装（+ 必要ならモデル）を追加。ORM 依存はここに閉じる。
 4. Application: Dto と UseCase（Service / Interactor）を追加。引数Dto・戻り値VOを守る。
@@ -142,5 +156,7 @@ bin/docker-php.sh exec      # 対象バックエンドのスクリプトに置�
   （`.env` の実値はコミットしない）。
 - Repository 実装がインターフェースを `implements` していない（基底クラス継承だけ）は
   よくあるミス。php-laravel では特に注意。
+- **`support/` への追加・変更を確認なしでやる**。共通基盤なので他機能を壊す。
+  既存基底クラスの継承使用は可だが、変更・新設は先に一声かける（第2節参照）。
 - 10バックエンド共通仕様の変更（OpenAPI変更、共通スキーマ変更）は、1本だけ直して
   終わらせない。範囲が曖昧ならユーザーに確認する。
