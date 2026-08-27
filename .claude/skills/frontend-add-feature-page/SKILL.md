@@ -4,7 +4,7 @@ description: >-
   frontend/ に新しいページや機能を追加・修正する際に使う。Feature-Based Architecture
   ＋ Custom Hooks 構成に沿って api.ts → types.ts → hooks/ → components/ →
   app/<route>/page.tsx の順に実装し、lint / build / E2E で確認する手順を定める。
-allowed-tools: Bash(npm:*), Bash(npx:*), Bash(git:*), Bash(rg:*)
+allowed-tools: Bash(npm:*), Bash(npx:*), Bash(env:*), Bash(git:*), Bash(rg:*), Bash(awk:*)
 ---
 
 # frontend-add-feature-page
@@ -79,20 +79,18 @@ export default function Page(): React.JSX.Element {
 ## 3. 確認（コード変更時は必須）
 
 lint / build はホスト側で実行する（フロントエンドはコンテナ不要）。
+`cd` や環境変数の前置きで始まる形にしない（`allowed-tools` の先頭一致に外れて
+毎回手動承認になるため）。`npm --prefix frontend` と `env` を使ったワンライナーで実行する:
 
 ```bash
-set -euo pipefail
-cd frontend
-npm run lint
-NEXT_PUBLIC_API_URL=/function/php/api npm run build
+npm --prefix frontend run lint
+env NEXT_PUBLIC_API_URL=/function/php/api npm --prefix frontend run build
 ```
 
 E2E（モック版、CIと同じ範囲）:
 
 ```bash
-set -euo pipefail
-cd frontend
-CI=true NEXT_PUBLIC_API_URL=/function/php/api npm run test:e2e
+env CI=true NEXT_PUBLIC_API_URL=/function/php/api npm --prefix frontend run test:e2e
 ```
 
 - E2Eは専用ポート `127.0.0.1:3001` で起動するので `npm run dev`（3000）と併走できる。
@@ -102,7 +100,17 @@ CI=true NEXT_PUBLIC_API_URL=/function/php/api npm run test:e2e
 - ブラウザが見つからない場合は
   `env -u PLAYWRIGHT_BROWSERS_PATH npx playwright install chromium` の後に再実行。
 - 実バックエンドE2E（`--project=real-go-gin` など）は LocalStack + Lambda 起動と
-  `e2e/seed.sql` 適用が前提。CIでは実行されない（docker-ops Skill参照）。
+  `e2e/seed.sql` 適用が前提。CIでは実行されない。起動手順は docker-ops Skill
+  （Issue #168 / PR #176）。**同時期に追加されるSkillなので、それが `develop` に
+  マージされる前は参照先が存在しない場合がある**。その場合の暂定手順:
+
+  ```bash
+  docker/bin/docker-common.sh up      # 共通インフラ（MySQL / Redis / LocalStack）
+  docker/bin/docker-go-gin.sh up      # 対象バックエンド
+  ```
+
+  （初回は `docker/bin/docker-common.sh env` で証明書と `.env` を配置する。
+  停止・破棄は必ずラッパーの `down` を使い、実行前にユーザーに一声かける）
 - `frontend/e2e/demo/` はデモGIF録画専用。CIでは実行しないし、通常の確認でも実行しない。
 - 新規ページを追加したら、E2Eテスト（`frontend/e2e/<name>.spec.ts`）も追加する。
   既存specの `helpers.ts` のログインヘルパを流用する。
@@ -114,15 +122,17 @@ CI=true NEXT_PUBLIC_API_URL=/function/php/api npm run test:e2e
   この違反は `git diff` で `@/features/` の import を検索すると見つかる:
 
   ```bash
-  set -euo pipefail
-  cd frontend
   # 「自分以外のfeatureをimportしている行」だけを出す（rgは後方参照非対応なのでawkで判定）
-  rg -n --no-heading 'from "@/features/' features \
+  rg -n --no-heading 'from "@/features/' frontend/features \
     | awk -F: '{ split($1, p, "/"); match($0, /@\/features\/[^\/"]+/);
                  t = substr($0, RSTART + 11, RLENGTH - 11);
-                 if (t != p[2]) print }' \
+                 if (t != p[3]) print }' \
     || true
   ```
+
+  この検出は現時点で lint ルールになっていない（`frontend/eslint.config.mjs` に
+  `no-restricted-imports` 等の強制がない）ため、**`npm run lint` / CI では止まらない**。
+  featureを追加・変更したときは上のコマンドを自分で実行する（lintルール化は別Issue）。
 
 - **未使用import・未使用変数**: `eslint-plugin-unused-imports` で lint エラーになる。
 - **`NEXT_PUBLIC_API_URL`**: `docker-localstack-init.sh` が `frontend/.env.local` を生成する。
