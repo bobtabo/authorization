@@ -4,7 +4,8 @@ description: >-
   feature/issue-* ブランチではバックエンドCIが自動実行されないため、変更内容から
   対象ワークフローを判断して手動発火・結果確認する際に使う。「CIを回して」
   「CIの結果を確認して」等の指示で使う。
-allowed-tools: Bash(gh:*), Bash(git:*)
+allowed-tools: Bash(gh:*), Bash(git:*), Bash(sort:*), Bash(comm:*), Bash(grep:*), Bash(printf:*),
+  Bash(seq:*), Bash(sleep:*), Bash(echo:*)
 ---
 
 # backend-ci-trigger
@@ -129,8 +130,9 @@ PRのチェック状況をまとめて見たい場合:
 set -euo pipefail
 REPO=bobtabo/authorization
 BRANCH=feature/issue-169   # 対象ブランチに置き換える
-SHA=$(gh api "repos/${REPO}/commits/${BRANCH}" --jq '.sha')
-gh api "repos/${REPO}/commits/${SHA}/check-runs" \
+
+# check-runs の ref にはブランチ名をそのまま渡せる（SHA解決の往復は不要）
+gh api "repos/${REPO}/commits/${BRANCH}/check-runs" \
   --jq '.check_runs[] | "\(.name): \(.status) \(.conclusion // "")"'
 ```
 
