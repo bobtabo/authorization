@@ -5,7 +5,8 @@ description: >-
   hotfix/*）でブランチを切る・PRを作る・PR後のCI待ちとCodeRabbit指摘対応を行う際に使う。
   「ブランチを切って」「PRを出して」「レビュー指摘に対応して」等の指示で使う。
   Issue/コミット/PRの文面の書き方は issue-and-pr-workflow Skillを参照。
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(jq:*), Bash(awk:*)
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(jq:*), Bash(awk:*), Bash(sort:*), Bash(comm:*),
+  Bash(tail:*), Bash(printf:*), Bash(sleep:*), Bash(seq:*)
 ---
 
 # git-branch-strategy
