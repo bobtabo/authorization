@@ -4,7 +4,9 @@ description: >-
   docker/bin/docker-*.sh でコンテナを起動・停止・操作する際、またはコンテナが
   起動しない・APIが応答しない等のトラブル対応をする際に使う。
   「コンテナを起動して」「環境を立ち上げて」「コンテナに入って」等の指示で使う。
-allowed-tools: Bash(docker:*), Bash(cd:*), Bash(find:*), Bash(chmod:*)
+allowed-tools: Bash(bin/docker-*.sh:*), Bash(./bin/docker-*.sh:*), Bash(docker/bin/docker-*.sh:*),
+  Bash(./docker/bin/docker-*.sh:*), Bash(docker:*), Bash(cd:*), Bash(find:*), Bash(mkdir:*),
+  Bash(printf:*), Bash(chmod:*)
 ---
 
 # docker-ops
@@ -17,6 +19,13 @@ allowed-tools: Bash(docker:*), Bash(cd:*), Bash(find:*), Bash(chmod:*)
 一方、起動済みコンテナへの `exec`（非対話の単発コマンド実行）はフックのブロック対象外で、
 `docker compose -p <プロジェクト名> -f docker/local/<dir>/docker-compose.yml exec -T ...` を
 直接使ってよい（backend-dispatch Skill参照）。
+
+## 依存Skill
+
+バックエンド名とディレクトリ・スクリプトの対応表は backend-dispatch Skill（Issue #167 /
+PR #175）にある。同時期に追加されるSkillのため、`develop` にマージされる前は参照先が
+存在しない場合がある。その場合は `docker/bin/` のスクリプト名と `docker/local/app-*` の
+ディレクトリ名を直接見れば対応が分かる（`docker-<略称>.sh` ↔ `local/app-<略称>`）。
 
 ## 初回のみ
 
