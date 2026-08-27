@@ -102,7 +102,7 @@ env CI=true NEXT_PUBLIC_API_URL=/function/php/api npm --prefix frontend run test
 - 実バックエンドE2E（`--project=real-go-gin` など）は LocalStack + Lambda 起動と
   `e2e/seed.sql` 適用が前提。CIでは実行されない。起動手順は docker-ops Skill
   （Issue #168 / PR #176）。**同時期に追加されるSkillなので、それが `develop` に
-  マージされる前は参照先が存在しない場合がある**。その場合の暂定手順:
+  マージされる前は参照先が存在しない場合がある**。その場合の暫定手順:
 
   ```bash
   docker/bin/docker-common.sh up      # 共通インフラ（MySQL / Redis / LocalStack）
