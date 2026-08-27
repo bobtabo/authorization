@@ -5,7 +5,7 @@ description: >-
   ドメイン処理）を追加・変更する際に使う。DDD + クリーンアーキテクチャの層構成、
   Dto/Entity/ValueObject/Condition/Repository の規約、トランザクションの扱い、
   テストの流し方を定める。どのバックエンドを触るかの判断は backend-dispatch Skillを参照。
-allowed-tools: Bash(docker:*), Bash(git:*), Bash(rg:*)
+allowed-tools: Bash(docker:*), Bash(git:*), Bash(rg:*), Bash(cd:*), Bash(ls:*), Bash(sed:*)
 ---
 
 # backend-add-usecase
