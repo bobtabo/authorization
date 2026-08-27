@@ -5,7 +5,7 @@ description: >-
   backends/ 配下のディレクトリと docker/bin/docker-*.sh のラッパースクリプトへ
   振り分ける際に使う。Go（gin/echo/beego）やRuby（rails/hanami）のように
   同一言語で複数フレームワークがある指示の解決にも使う。
-allowed-tools: Bash(docker:*), Bash(git:*), Bash(ls:*)
+allowed-tools: Bash(docker:*), Bash(docker/bin/docker-*.sh:*), Bash(cd:*), Bash(git:*), Bash(ls:*)
 ---
 
 # backend-dispatch
@@ -15,24 +15,39 @@ allowed-tools: Bash(docker:*), Bash(git:*), Bash(ls:*)
 どのバックエンドを指しているかを機械的に確定させ、実行は必ず
 `docker/bin/docker-*.sh` 経由のコンテナ内で行う。
 
+## 依存Skill（マージ順）
+
+本Skillは以下を参照する。いずれも #162〜#169 で同時期に追加されるため、
+それらが `develop` にマージされる前は参照先が存在しない場合がある（段階的導入）。
+
+| 参照先Skill | 追加Issue / PR | 参照している内容 | 未マージ時の代替 |
+|---|---|---|---|
+| docker-ops | #168 / PR #176 | 起動・停止・一括Docker操作 | `docker/bin/docker-*.sh` を `-h` なしで読む |
+| frontend-add-feature-page | #164 / PR #172 | フロントエンドの機能追加 | `frontend/AGENTS.md` |
+| backend-ci-trigger | #169 / PR #177 | CIの手動発火とログ確認 | `.github/workflows/*.yml` を直接読む |
+
+参照を全て解消した状態で入れたい場合は、#176 / #172 / #177 を本SkillのPR（#175）より
+先にマージする。本Skill単体（対応表と曖昧な指示の解消）は参照先なしでも成立する。
+
 ## 対応表
 
-| 呼ばれ方の例 | ソースディレクトリ | Docker操作スクリプト | composeプロジェクト名 | execのサービス名 | シェル |
-|---|---|---|---|---|---|
-| Go, Gin | `backends/go-gin/` | `docker/bin/docker-go-gin.sh` | `auth-go-gin` | `go` | `sh` |
-| Go, Echo | `backends/go-echo/` | `docker/bin/docker-go-echo.sh` | `auth-go-echo` | `go` | `sh` |
-| Go, Beego | `backends/go-beego/` | `docker/bin/docker-go-beego.sh` | `auth-go-beego` | `go` | `sh` |
-| Kotlin, Ktor | `backends/kotlin-ktor/` | `docker/bin/docker-kotlin.sh` | `auth-kotlin` | `kotlin` | `bash` |
-| PHP, Laravel | `backends/php-laravel/` | `docker/bin/docker-php.sh` | `auth-php` | `php` | `bash` |
-| Python, FastAPI | `backends/python-fastapi/` | `docker/bin/docker-python.sh` | `auth-python` | `python` | `bash` |
-| Ruby, Hanami | `backends/ruby-hanami/` | `docker/bin/docker-rb-hanami.sh` | `auth-rb-hanami` | `rb-hanami` | `bash` |
-| Ruby, Rails | `backends/ruby-rails/` | `docker/bin/docker-rb-rails.sh` | `auth-rb-rails` | `rb-rails` | `bash` |
-| Rust, Axum | `backends/rust-axum/` | `docker/bin/docker-rust.sh` | `auth-rust` | `rust` | `bash` |
-| TypeScript, Hono | `backends/ts-hono/` | `docker/bin/docker-ts.sh` | `auth-ts` | `ts` | `sh` |
+| 呼ばれ方の例 | ソースディレクトリ | Docker操作スクリプト | composeディレクトリ | composeプロジェクト名 | execのサービス名 | シェル |
+|---|---|---|---|---|---|---|
+| Go, Gin | `backends/go-gin/` | `docker/bin/docker-go-gin.sh` | `docker/local/app-go-gin/` | `auth-go-gin` | `go` | `sh` |
+| Go, Echo | `backends/go-echo/` | `docker/bin/docker-go-echo.sh` | `docker/local/app-go-echo/` | `auth-go-echo` | `go` | `sh` |
+| Go, Beego | `backends/go-beego/` | `docker/bin/docker-go-beego.sh` | `docker/local/app-go-beego/` | `auth-go-beego` | `go` | `sh` |
+| Kotlin, Ktor | `backends/kotlin-ktor/` | `docker/bin/docker-kotlin.sh` | `docker/local/app-kotlin/` | `auth-kotlin` | `kotlin` | `bash` |
+| PHP, Laravel | `backends/php-laravel/` | `docker/bin/docker-php.sh` | `docker/local/app-php/` | `auth-php` | `php` | `bash` |
+| Python, FastAPI | `backends/python-fastapi/` | `docker/bin/docker-python.sh` | `docker/local/app-python/` | `auth-python` | `python` | `bash` |
+| Ruby, Hanami | `backends/ruby-hanami/` | `docker/bin/docker-rb-hanami.sh` | `docker/local/app-rb-hanami/` | `auth-rb-hanami` | `rb-hanami` | `bash` |
+| Ruby, Rails | `backends/ruby-rails/` | `docker/bin/docker-rb-rails.sh` | `docker/local/app-rb-rails/` | `auth-rb-rails` | `rb-rails` | `bash` |
+| Rust, Axum | `backends/rust-axum/` | `docker/bin/docker-rust.sh` | `docker/local/app-rust/` | `auth-rust` | `rust` | `bash` |
+| TypeScript, Hono | `backends/ts-hono/` | `docker/bin/docker-ts.sh` | `docker/local/app-ts/` | `auth-ts` | `ts` | `sh` |
 
 スクリプト名はディレクトリ名と一致しない（`ruby-rails` → `docker-rb-rails.sh`、
-`kotlin-ktor` → `docker-kotlin.sh` 等）。ディレクトリ名から機械的に組み立てず、
-必ず上表を引く。
+`kotlin-ktor` → `docker-kotlin.sh` 等）。composeディレクトリ（`docker/local/app-*`）も
+composeプロジェクト名（`auth-*`）と接頭辞が違う。**いずれも名前から機械的に導出せず、
+必ず上表を引く**。
 
 ## 曖昧な指示の解決
 
@@ -72,7 +87,7 @@ allowed-tools: Bash(docker:*), Bash(git:*), Bash(ls:*)
   ```bash
   set -euo pipefail
   PROJECT=auth-go-gin        # 対応表の「composeプロジェクト名」
-  DIR=app-go-gin             # docker/local/ 配下のディレクトリ（プロジェクト名から auth- を除いた名前）
+  DIR=app-go-gin             # 対応表の「composeディレクトリ」（app-* であり auth-* ではない）
   SERVICE=go                 # 対応表の「execのサービス名」
   CMD=(go test ./...)        # 実行したいコマンド（配列で書く）
 
