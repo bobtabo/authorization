@@ -6,7 +6,7 @@ description: >-
   「コンテナを起動して」「環境を立ち上げて」「コンテナに入って」等の指示で使う。
 allowed-tools: Bash(bin/docker-*.sh:*), Bash(./bin/docker-*.sh:*), Bash(docker/bin/docker-*.sh:*),
   Bash(./docker/bin/docker-*.sh:*), Bash(docker:*), Bash(cd:*), Bash(find:*), Bash(mkdir:*),
-  Bash(printf:*), Bash(chmod:*)
+  Bash(printf:*), Bash(chmod:*), Bash(make:*)
 ---
 
 # docker-ops
