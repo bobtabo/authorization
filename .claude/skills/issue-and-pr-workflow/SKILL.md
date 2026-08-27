@@ -5,7 +5,7 @@ description: >-
   作業する際に使う。「Issueを作って」「コミットして」「PRを出して」「Issueを
   クローズして」等の指示、およびクローズ前のチェックリスト更新で使う。
   ブランチライフサイクル・マージ順序・PR後のレビュー監視は git-branch-strategy Skillを参照。
-allowed-tools: Bash(git:*), Bash(gh:*)
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(mktemp:*), Bash(cat:*), Bash(printf:*), Bash(rm:*)
 ---
 
 # issue-and-pr-workflow
@@ -15,6 +15,30 @@ bobtabo/authorization における Issue → ブランチ → コミット → P
 `.github/copilot-instructions.md` の「ブランチ運用 / Issue 運用 / コミットメッセージ規約」で、
 本Skillはそれを実行手順に落としたもの。両者が食い違う場合は
 `.github/copilot-instructions.md` を優先し、本Skillを修正する。
+
+## 依存Skill（マージ順）
+
+ブランチの作成手順・マージ順序・PR後のCI待ちとCodeRabbit対応は git-branch-strategy Skill
+（Issue #166 / PR #174）に委譲している。同時期に追加されるSkillなので、それが `develop` に
+マージされる前は参照先が存在しない。**参照切れを避けるなら PR #174 を本PR（#170）より
+先にマージする**。未マージの間の最小限の代替手順は下記。
+
+```bash
+set -euo pipefail
+NUM=162   # 必須: 対象Issue番号に置き換える
+
+# ブランチ作成（派生元は develop。hotfix のみ main）
+git checkout develop
+git pull --ff-only origin develop
+git checkout -b "feature/issue-${NUM}"
+
+# PR作成後のCI確認（ブランチ名を ref にそのまま渡せる）
+gh api "repos/bobtabo/authorization/commits/feature/issue-${NUM}/check-runs" \
+  --jq '.check_runs[] | "\(.name): \(.status) \(.conclusion // "")"'
+```
+
+CodeRabbitの未返信指摘の抽出・切り分け基準まで含む完全な手順は #174 / #173 にあるため、
+未マージの間は `.github/copilot-instructions.md` と `.github/workflows/` を直接見る。
 
 ## 大前提（勝手にやらないこと）
 
@@ -48,7 +72,8 @@ gh issue view "$NUM" --repo bobtabo/authorization --json title,body -q '.title, 
 - Issue番号を含まないブランチ名（`feature/add-skill` 等）は作らない。
   Issueが無い場合は先にIssueを作る。
 
-作成手順・マージ順序は git-branch-strategy Skillを参照。
+作成手順・マージ順序は git-branch-strategy Skillを参照（未マージ時は上記「依存Skill」の
+代替手順を使う）。
 
 ## 3. コミットメッセージ
 
@@ -134,7 +159,8 @@ gh pr create --repo bobtabo/authorization --base develop --head "$BRANCH" \
 （`--body "$(cat <<EOF ...)"` はMarkdown中のバッククォートやドル記号がシェルに
 解釈されて壊れやすい）。
 
-PR作成後のCI待ち・CodeRabbit指摘対応は git-branch-strategy Skill「レビュー監視・対応」を参照。
+PR作成後のCI待ち・CodeRabbit指摘対応は git-branch-strategy Skill「レビュー監視・対応」を参照
+（未マージ時は上記「依存Skill」の代替手順を使う）。
 
 ## 5. Issueクローズ
 
