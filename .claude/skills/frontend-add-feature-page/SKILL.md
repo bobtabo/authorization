@@ -4,7 +4,7 @@ description: >-
   frontend/ に新しいページや機能を追加・修正する際に使う。Feature-Based Architecture
   ＋ Custom Hooks 構成に沿って api.ts → types.ts → hooks/ → components/ →
   app/<route>/page.tsx の順に実装し、lint / build / E2E で確認する手順を定める。
-allowed-tools: Bash(npm:*), Bash(npx:*), Bash(env:*), Bash(git:*), Bash(rg:*), Bash(awk:*),
+allowed-tools: Bash(npm:*), Bash(env:*), Bash(git:*), Bash(rg:*), Bash(awk:*),
   Bash(docker/bin/docker-*.sh:*)
 ---
 
@@ -20,7 +20,7 @@ App Router 周り（`page.tsx` / `layout.tsx` / Route Handler / `params` の扱�
 
 ## 1. 構成と責務
 
-```
+```text
 frontend/
 ├── app/<route>/page.tsx        # 薄いラッパー。features/ のコンポーネントを返すだけ
 ├── features/<name>/
@@ -99,7 +99,9 @@ env CI=true NEXT_PUBLIC_API_URL=/function/php/api npm --prefix frontend run test
 - 郵便番号検索のテストは `NEXT_PUBLIC_POSTCODE_API_KEY` が無いと失敗する（既知の制約）。
   この失敗のみであれば新規変更の問題ではないが、報告時に明示する。
 - ブラウザが見つからない場合は
-  `env -u PLAYWRIGHT_BROWSERS_PATH npx playwright install chromium` の後に再実行。
+  `env -u PLAYWRIGHT_BROWSERS_PATH npm --prefix frontend exec -- playwright install chromium`
+  の後に再実行（`frontend/package-lock.json` の `@playwright/test` を使う。ルートで `npx` を
+  使うと lockfile 外の別バージョンを取得しうる）。
 - 実バックエンドE2E（`--project=real-go-gin` など）は LocalStack + Lambda 起動と
   `e2e/seed.sql` 適用が前提。CIでは実行されない。起動手順は docker-ops Skill
   （Issue #168 / PR #176）。**同時期に追加されるSkillなので、それが `develop` に
