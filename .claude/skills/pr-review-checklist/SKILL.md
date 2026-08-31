@@ -4,7 +4,8 @@ description: >-
   PRのレビュー（自分のPRの自己点検、CodeRabbit指摘の切り分け、他人のPRのレビュー）を
   行う際に使う。「PRをレビューして」「CodeRabbitの指摘を見て」「移行漏れがないか
   確認して」等の指示で使う。CI待ちや指摘への返信操作は git-branch-strategy Skillを参照。
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(rg:*)
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(rg:*), Bash(mktemp:*), Bash(cat:*), Bash(rm:*),
+  Bash(echo:*)
 ---
 
 # pr-review-checklist
@@ -34,16 +35,31 @@ PR=160   # レビュー対象のPR番号に置き換える
 gh api "repos/$REPO/pulls/$PR" \
   --jq '"\(.title)\n\(.base.ref) <- \(.head.ref)  +\(.additions)/-\(.deletions)"'
 gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename'
+
+# 以降の差分コマンドが「今チェックアウトしているブランチ」を見てしまわないよう、
+# 対象PRのheadと比較元を専用refに固定する（別ブランチからレビューしても結果が変わらない）
+BASE=$(gh api "repos/$REPO/pulls/$PR" --jq '.base.ref')
+git fetch origin "pull/${PR}/head:refs/pr/${PR}" "$BASE"
+REV="refs/pr/${PR}"        # レビュー対象の内容
+BASE_REV="origin/${BASE}"  # 比較元
 ```
 
-自分のブランチを自己点検する場合:
+`refs/pr/<番号>` は読み取り専用の確認用ref。**そのPRを自分で修正する場合はこのrefで作業せず、
+`head.ref` の実ブランチをcheckoutする**（`git fetch origin <head.ref> && git checkout <head.ref>`）。
+
+自分のブランチを自己点検する場合は、同じ変数を自分のHEADに向ける:
 
 ```bash
 set -euo pipefail
-git fetch origin develop
-git diff --stat origin/develop...HEAD
-git diff --name-status origin/develop...HEAD
+BASE=develop
+git fetch origin "$BASE"
+REV=HEAD
+BASE_REV="origin/${BASE}"
+git diff --stat "$BASE_REV...$REV"
+git diff --name-status "$BASE_REV...$REV"
 ```
+
+以降のコマンドはこの `REV` / `BASE_REV` を使う。
 
 レビュー観点は「差分の行」だけでなく「Issueの受け入れ基準を満たしているか」も含める。
 Issue本文（`gh issue view <番号>`）を必ず読んでから差分を見る。
@@ -55,20 +71,34 @@ Issue本文（`gh issue view <番号>`）を必ず読んでから差分を見る
 
 ```bash
 set -euo pipefail
-git fetch origin develop
-# リネーム検出（-M）と類似度しきい値を下げて移動を拾う。R100 は内容完全一致の移動
-git diff -M --find-copies-harder --name-status -l0 origin/develop...HEAD
+# -M 単体はGit既定の類似度50%どまりで、50%未満の移動は D + A に分かれて R 行にならない。
+# しきい値を明示して下げる（20%）。R100 は内容完全一致の移動
+git diff -M20% --find-copies-harder --name-status -l0 "$BASE_REV...$REV"
 ```
 
-- `R100` の行は内容完全一致の移動 → レビュー不要。
+- `R100` の行は内容が完全一致の移動 → **中身の差分レビューは不要**。ただし内容一致は
+  「パス参照が壊れていないこと」を保証しない。旧パスへの参照が残っていないかを別途確認する:
+
+  ```bash
+  set -euo pipefail
+  OLD=frontend/components/staff-list.tsx        # 移動元パス
+  # 旧パス（拡張子なしのimport指定も拾う）への参照が残っていないか。
+  # import・相対import・ルーティング定義・テスト/設定ファイルのパス指定が対象
+  rg -n -F "${OLD%.*}" --glob '!node_modules' \
+    || echo "旧パス参照なし"
+  ```
+
+  加えて `export` の公開名が変わっていないか、ルーティングが規約でパス解決される仕組み
+  （Next.js の `app/` 等）に影響していないかを確認する。
 - `R<100`（例: `R087`）の行は移動しつつ中身が変わっている → **1ファイルずつ中身を確認する**。
 
 ```bash
 set -euo pipefail
 OLD=frontend/components/staff-list.tsx        # 移動元パス
 NEW=frontend/features/staffs/components/StaffListPage.tsx   # 移動先パス
-# blob 同士を直接比較する（移動元 revision:path と移動先 revision:path）
-git diff "origin/develop:$OLD" "HEAD:$NEW" || true
+# blob 同士を直接比較する（移動元 revision:path と移動先 revision:path）。
+# パスやリビジョンの打ち間違いを空差分として黙らせないため `|| true` は付けない
+git diff "$BASE_REV:$OLD" "$REV:$NEW"
 ```
 
 確認するポイント:
@@ -95,15 +125,33 @@ git diff "origin/develop:$OLD" "HEAD:$NEW" || true
 ```bash
 set -euo pipefail
 FILE=frontend/features/clients/hooks/useClientForm.ts   # 指摘されたファイル
-SNIPPET='array_filter($items)'   # 指摘されたコード片（そのまま貼る。正規表現にしない）
+
+# 指摘されたコード片はシェルの変数代入に貼らない（' を含むと引用が壊れてそのまま実行されうる）。
+# クォートしたヒアドキュメントでファイルに落とし、rg にはデータとして渡す
+SNIPPET_FILE=$(mktemp)
+cat > "$SNIPPET_FILE" <<'EOF'
+array_filter($items)
+EOF
 
 # このPRで当該行が変わったか。
-# rg -F で固定文字列として扱い（コード片の () . $ 等をメタ文字として解釈させない）、
+# rg -F -f で固定文字列として扱い（コード片の () . $ 等をメタ文字として解釈させない）、
 # 追加/削除行（^[+-]）だけを対象にする（未変更のコンテキスト行に当たると誤判定するため。
-# diffヘッダの +++/--- は除外する）
-git diff origin/develop...HEAD -- "$FILE" \
-  | rg '^[+-]' | rg -v '^(\+\+\+|---)' \
-  | rg -F -n "$SNIPPET" || echo "このPRの差分には無い（既存コードの可能性）"
+# diffヘッダの +++/--- は除外する）。
+# rg の「不一致(1)」と「エラー(2以上)」を区別する（打ち間違いを『差分に無い』と誤読しないため）。
+# git diff はパイプに直結せず先にファイルへ出す（pipefail は最右のrgの 1 を返すので、
+# リビジョン・パスの打ち間違いをパイプ内に混ぜると『不一致』に埋もれる）
+DIFF_FILE=$(mktemp)
+git diff "$BASE_REV...$REV" -- "$FILE" > "$DIFF_FILE"   # 失敗すれば set -e でここで止まる
+set +e
+rg '^[+-]' "$DIFF_FILE" | rg -v '^(\+\+\+|---)' | rg -F -n -f "$SNIPPET_FILE"
+STATUS=$?
+set -e
+rm -f "$SNIPPET_FILE" "$DIFF_FILE"
+case "$STATUS" in
+  0) echo "このPRの差分に含まれる（今回のリグレッション候補）" ;;
+  1) echo "このPRの差分には無い（既存コードの可能性）" ;;
+  *) echo "検索が失敗した（FILE / REV / BASE_REV の指定を確認する）" >&2; exit "$STATUS" ;;
+esac
 # 移動元も含めて履歴を追う（--follow でリネームを越える）
 git log --oneline --follow -5 -- "$FILE"
 ```
@@ -138,7 +186,7 @@ git log --oneline --follow -5 -- "$FILE"
 
 ```bash
 set -euo pipefail
-git diff --name-only origin/develop...HEAD > /tmp/changed.txt
+git diff --name-only "$BASE_REV...$REV" > /tmp/changed.txt
 rg -q '^backends/' /tmp/changed.txt && echo "backend.puml / openapi.yml の整合を確認する"
 rg -q '^frontend/' /tmp/changed.txt && echo "frontend.puml / AGENTS.md の整合を確認する"
 rg -q '^docs/api-spec/' /tmp/changed.txt && echo "OpenAPI変更あり: 全10バックエンドへの波及を確認する"
