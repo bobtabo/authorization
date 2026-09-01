@@ -6,7 +6,7 @@ description: >-
   「ブランチを切って」「PRを出して」「レビュー指摘に対応して」等の指示で使う。
   Issue/コミット/PRの文面の書き方は issue-and-pr-workflow Skillを参照。
 allowed-tools: Bash(git:*), Bash(gh:*), Bash(jq:*), Bash(awk:*), Bash(sort:*), Bash(comm:*),
-  Bash(tail:*), Bash(printf:*), Bash(sleep:*), Bash(seq:*)
+  Bash(printf:*), Bash(sleep:*), Bash(seq:*), Bash(echo:*)
 ---
 
 # git-branch-strategy
@@ -122,8 +122,11 @@ for i in $(seq 1 40); do
              | .[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"') \
     || { echo "check-runs の取得に失敗しました" >&2; exit 1; }
   # タブ区切りの判定は awk で行う（GNU grep の正規表現では `\t` がタブにならない）。
+  # 許容する conclusion は success / neutral / skipped のみ。それ以外（failure /
+  # timed_out / cancelled / action_required / stale など）は失敗として扱う（許可リスト方式。
+  # 失敗値を列挙する方式では `stale` のような新しい値を成功と誤判定する）。
   if printf '%s\n' "$RESULT" \
-    | awk -F'\t' '$3 ~ /^(failure|timed_out|cancelled|action_required)$/ {f=1} END {exit !f}'; then
+    | awk -F'\t' '$2 == "completed" && $3 !~ /^(success|neutral|skipped)$/ {f=1} END {exit !f}'; then
     echo "CIが失敗しました:"; printf '%s\n' "$RESULT"; exit 1
   fi
   if [ -n "$RESULT" ] && printf '%s\n' "$RESULT" | awk -F'\t' '$2 != "completed" {exit 1}'; then
@@ -138,8 +141,9 @@ done
 `--slurp` は `gh api --jq` と併用できないので、パイプで `jq` に渡す（ページをまとめて
 から name ごとに集約するため、ページ境界で同名の試行が分かれても正しく最新を取れる）。
 
-`conclusion` が `skipped` / `neutral` / `success` は許容（`skipped` は path フィルタで
-対象外だった場合に出る）。`failure` / `timed_out` / `cancelled` / `action_required` は失敗として扱う。
+`conclusion` が `success` / `neutral` / `skipped` の場合のみ許容（`skipped` は path フィルタで
+対象外だった場合に出る）。それ以外（`failure` / `timed_out` / `cancelled` /
+`action_required` / `stale` など）は失敗として扱う。
 
 失敗したCIのログ確認は backend-ci-trigger Skill を参照。
 
@@ -162,9 +166,20 @@ REPLIED=$(gh api "repos/${REPO}/pulls/${PR}/comments" --paginate \
   --jq '.[] | select(.in_reply_to_id != null and .user.login!="coderabbitai[bot]") | .in_reply_to_id' | sort -u)
 comm -23 <(printf '%s\n' "$TOP") <(printf '%s\n' "$REPLIED")
 
-# PR全体宛のレビューサマリ（actionable comments の件数を確認する）
+# レビューサマリ（"Actionable comments posted: N"）は pulls/<PR>/reviews の body に入る。
+# 直近数件に絞らず全件を本文で分類する（古いサマリに未対応の指摘が残っていても
+# 見落とさないため。一覧に出たN件の内訳は上の未返信IDと突き合わせる）。
+gh api "repos/${REPO}/pulls/${PR}/reviews" --paginate \
+  --jq '.[] | select(.user.login=="coderabbitai[bot]")
+        | select(.body | test("Actionable comments posted: [1-9]"))
+        | "ACTIONABLE \(.submitted_at) \(.html_url)"'
+
+# 「Review rate limited」「Review limit reached」のサマリはレビューが実行されていない印。
+# 指摘0件と混同しない（リセット後に再トリガーする）。
 gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-  --jq '.[] | select(.user.login=="coderabbitai[bot]") | "\(.created_at) \(.html_url)"' | tail -5
+  --jq '.[] | select(.user.login=="coderabbitai[bot]")
+        | select(.body | test("rate limited|Review limit reached"))
+        | "NOT_REVIEWED \(.created_at) \(.html_url)"'
 ```
 
 API応答は `gh` の `--jq` で直接フィルタする（応答をシェル変数に入れて `echo | jq` に
@@ -217,11 +232,53 @@ PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq 
 gh pr comment "$PR" --repo "$REPO" --body "@coderabbitai review"
 ```
 
-再トリガー後、3.1のCI待ちと3.2の未返信抽出を繰り返す。収束（完了）の判定は次の**両方**:
+再トリガー後、3.1のCI待ちと3.2の未返信抽出を繰り返す。収束（完了）の判定は次の**すべて**:
 
-- 3.2の未返信コメントが0件（＝新規 actionable comment が0件）
-- `gh api repos/bobtabo/authorization/pulls/<PR番号> --jq '"\(.mergeable) \(.mergeable_state)"'` が
-  `true clean`（GraphQL の `mergeable: MERGEABLE` / `mergeStateStatus: CLEAN` と同等）
+- 再トリガーしたコメントより後に CodeRabbit のレビュー（インライン指摘 or サマリ）が
+  投稿されている。**投稿前に判定しない**（既存の指摘が全部返信済みなだけで「収束」に
+  見えてしまう）。「rate limited」サマリだけが返っている場合はレビュー未実行なので、
+  リセット後に再トリガーする
+- 3.2の未返信コメントが0件、かつ `ACTIONABLE` のサマリが残っていない
+- `mergeable` / `mergeable_state` が `true clean`
+
+レビュー投稿待ちとマージ可能性の確認（`mergeable` は計算中だと `null` を返すため、
+確定するまで上限付きで再取得する）:
+
+```bash
+set -euo pipefail
+REPO=bobtabo/authorization
+BRANCH=feature/issue-166
+PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number')
+SINCE=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+  --jq '[.[] | select(.body | test("@coderabbitai review")) | .created_at] | last')
+
+# 1) 再トリガー後の新しいレビュー（サマリ or インライン指摘）を待つ。
+# `gh api --jq` は `--arg` を取れないので、時刻比較は `jq -s --arg` にパイプして行う。
+for i in $(seq 1 40); do
+  NEW=$( { gh api "repos/${REPO}/pulls/${PR}/reviews" --paginate --jq '.[] | {u: .user.login, t: .submitted_at}'
+           gh api "repos/${REPO}/pulls/${PR}/comments" --paginate --jq '.[] | {u: .user.login, t: .created_at}'
+         } | jq -s --arg since "$SINCE" \
+               '[.[] | select(.u=="coderabbitai[bot]" and .t > $since)] | length')
+  [ "$NEW" -gt 0 ] && { echo "新しいレビューあり（$NEW 件）"; break; }
+  if [ "$i" -eq 40 ]; then echo "CodeRabbitのレビューが投稿されませんでした" >&2; exit 1; fi
+  sleep 30
+done
+
+# 2) mergeable が確定するまで再取得する（null は計算中。1回だけ見て判定しない）
+STATE=""
+for _ in $(seq 1 10); do
+  STATE=$(gh api "repos/${REPO}/pulls/${PR}" --jq '"\(.mergeable) \(.mergeable_state)"')
+  case "$STATE" in "null "*) STATE=""; sleep 5; continue ;; esac
+  break
+done
+[ -n "$STATE" ] || { echo "mergeable が確定しませんでした" >&2; exit 1; }
+case "$STATE" in
+  "true clean") echo "マージ可能: $STATE" ;;
+  *) echo "マージ不可: $STATE" >&2; exit 1 ;;
+esac
+```
+
+（`mergeable: MERGEABLE` / `mergeStateStatus: CLEAN` はGraphQLでの同等表現）
 
 目安として5ラウンド前後で収束しない場合は無限にループさせず打ち切り、未解決点を添えて
 ユーザーに判断を仰ぐ。収束したら最終状態（CI結果・対応した指摘の要約・PRリンク）を報告する。
