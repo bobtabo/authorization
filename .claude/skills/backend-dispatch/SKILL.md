@@ -5,7 +5,7 @@ description: >-
   backends/ 配下のディレクトリと docker/bin/docker-*.sh のラッパースクリプトへ
   振り分ける際に使う。Go（gin/echo/beego）やRuby（rails/hanami）のように
   同一言語で複数フレームワークがある指示の解決にも使う。
-allowed-tools: Bash(docker:*), Bash(docker/bin/docker-*.sh:*), Bash(cd:*), Bash(git:*), Bash(ls:*)
+allowed-tools: Bash(docker compose:*), Bash(docker/bin/docker-*.sh:*), Bash(cd:*)
 ---
 
 # backend-dispatch
