@@ -135,8 +135,9 @@ docker/bin/docker-common.sh start
   （例: `dlv@latest` が Go >= 1.25 要求、イメージは Go 1.24）。Dockerfileでバージョンを
   固定するかベースイメージを上げる。既存の不具合なので勝手に直さず報告する。
 - **`down` 後に `data/` / `logs/` が残る**
-  → コンテナがroot権限で作ったファイルは `rm` できず `Permission denied` になる。
-  gitignore対象なので放置して問題ない（消すなら管理者権限が必要）。
+  → `docker-common.sh down` は使い捨ての `alpine` コンテナで root として中身を削除するため、
+  通常は残らない。残った場合は `docker run --rm alpine` が実行できているか（イメージ取得の
+  ネットワーク等）を確認する。gitignore対象なので放置しても動作には影響しない。
 - **状態確認**
 
   ```bash

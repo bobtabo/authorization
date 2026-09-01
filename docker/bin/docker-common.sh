@@ -47,8 +47,15 @@ if [ "${ARG}" = "up" ]; then
 elif [ "${ARG}" = "down" ]; then
     "${compose_cmd[@]}" down --rmi all --volumes
     docker network rm authorization 2>/dev/null || true
-    rm -fdR data
-    rm -fdR logs
+    # data/ logs/ にはコンテナ内プロセス（root 等）が書き込んだファイルが残るため、
+    # ホストの rm では Permission denied になりうる。使い捨てコンテナで root として削除する。
+    for dir in data logs; do
+        if [ -d "${dir}" ]; then
+            docker run --rm -v "$(pwd)/${dir}:/target" alpine \
+                sh -c 'find /target -mindepth 1 -delete'
+            rmdir "${dir}" 2>/dev/null || rm -fdR "${dir}"
+        fi
+    done
 elif [ "${ARG}" = "start" ]; then
     "${compose_cmd[@]}" start
 elif [ "${ARG}" = "stop" ]; then
