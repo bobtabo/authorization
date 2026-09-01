@@ -5,8 +5,8 @@ description: >-
   起動しない・APIが応答しない等のトラブル対応をする際に使う。
   「コンテナを起動して」「環境を立ち上げて」「コンテナに入って」等の指示で使う。
 allowed-tools: Bash(bin/docker-*.sh:*), Bash(./bin/docker-*.sh:*), Bash(docker/bin/docker-*.sh:*),
-  Bash(./docker/bin/docker-*.sh:*), Bash(docker:*), Bash(cd:*), Bash(find:*), Bash(mkdir:*),
-  Bash(printf:*), Bash(chmod:*), Bash(make:*)
+  Bash(./docker/bin/docker-*.sh:*), Bash(docker compose:*), Bash(docker ps:*), Bash(cd:*),
+  Bash(find:*), Bash(make:*)
 ---
 
 # docker-ops
@@ -114,7 +114,8 @@ docker/bin/docker-common.sh start
 
 - **`docker-compose: command not found`**
   → ラッパースクリプトは Compose v1 の `docker-compose` を呼ぶ。Compose v2 だけの環境では
-  シムを用意する（PATHの通ったディレクトリに置く）。
+  シムを用意する（PATHの通ったディレクトリに置く）。ファイル作成を伴うため
+  `allowed-tools` では事前承認せず、実行時にユーザーの承認を得る。
 
   ```bash
   mkdir -p ~/.local/bin
@@ -150,7 +151,7 @@ docker/bin/docker-common.sh start
 - **LocalStack のリソースが無い / API Gateway ID が変わった**
   → `docker/bin/docker-common.sh up` を再実行して初期化を通す。手動なら
   `cd terraform/local && make apply`、`frontend/.env.local` だけ作り直すなら
-  `make setup-env`。
+  `cd terraform/local && make setup-env`（`setup-env` は `terraform/local/Makefile` にしかない）。
 - **`.env` が古い / 壊れている**: バックエンド側は `docker/local/app-<x>/.env`。
   削除して `docker/bin/docker-<x>.sh up` を再実行すれば `.env.example` から再生成される
   （設定していた OAuth クライアントID等は再設定が必要）。
