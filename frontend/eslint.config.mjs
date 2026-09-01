@@ -1,3 +1,7 @@
+import { readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -6,6 +10,13 @@ import unusedImports from "eslint-plugin-unused-imports";
 import importPlugin from "eslint-plugin-import";
 import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
+
+// features/ 直下のディレクトリ一覧（feature 追加時に設定を触らなくても自動で対象になる）
+const featureNames = readdirSync(join(rootDir, "features"), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
 
 export default defineConfig([
   globalIgnores(["dist", ".next", "test-results", "playwright-report"]),
@@ -65,6 +76,33 @@ export default defineConfig([
       // 同居させる。React Context ファイルも Provider と定数・hook を同居させるのが一般的なため、
       // 定数エクスポートは Fast Refresh 対象外として許容する。
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+    },
+  },
+  {
+    // feature 間の直接 import 禁止（frontend/AGENTS.md）。
+    // 各 feature は自分自身と shared/ のみ参照でき、他 feature を import するとエラーになる。
+    // 解決後のパスで判定するため `@/features/x` と `../../x` のどちらの書き方でも検出される。
+    files: ["features/**/*.{ts,tsx}"],
+    plugins: { import: importPlugin },
+    settings: {
+      "import/resolver": {
+        typescript: true,
+        node: true,
+      },
+    },
+    rules: {
+      "import/no-restricted-paths": [
+        "error",
+        {
+          basePath: join(rootDir, "features"),
+          zones: featureNames.map((name) => ({
+            target: `./${name}`,
+            from: ".",
+            except: [`./${name}`],
+            message: `feature 間の直接 import は禁止です。共有したいものは shared/ に移動してください（features/${name} からは自分自身と @/shared/** のみ参照できます）。`,
+          })),
+        },
+      ],
     },
   },
   {
