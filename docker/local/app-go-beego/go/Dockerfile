@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
       net-tools
 
 # Delve（デバッガー）のインストール
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.26.3
 
 # Air（ホットリロード）のインストール
 RUN go install github.com/air-verse/air@v1.61.7
