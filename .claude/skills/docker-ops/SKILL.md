@@ -61,7 +61,7 @@ bin/docker-go-gin.sh up      # go-gin だけ起動（他は docker-go-echo.sh / 
 - 1つのバックエンドだけ触る作業では `docker-backends.sh up` を使わず個別起動にする
   （10コンテナのビルドは時間とリソースを消費する）。
 - 各 `docker-<x>.sh up` は `docker/local/app-<x>/.env` が無ければ `.env.example` から
-  自動生成した上で `docker-compose -p auth-<x> up -d --build` を実行する。
+  自動生成した上で `docker compose -p auth-<x> up -d --build` を実行する。
 - `docker-backends.sh` が受け付ける引数は `up` / `down` のみ（`exec` / `start` / `stop` は
   個別スクリプトを使う）。
 
@@ -112,17 +112,10 @@ docker/bin/docker-common.sh start
 
 ## トラブルシュート
 
-- **`docker-compose: command not found`**
-  → ラッパースクリプトは Compose v1 の `docker-compose` を呼ぶ。Compose v2 だけの環境では
-  シムを用意する（PATHの通ったディレクトリに置く）。ファイル作成を伴うため
-  `allowed-tools` では事前承認せず、実行時にユーザーの承認を得る。
-
-  ```bash
-  mkdir -p ~/.local/bin
-  printf '#!/bin/sh\nexec docker compose "$@"\n' > ~/.local/bin/docker-compose
-  chmod 755 ~/.local/bin/docker-compose
-  ```
-
+- **`docker: 'compose' is not a docker command`**
+  → ラッパースクリプトは全て Compose v2 の `docker compose` を呼ぶ。Compose v2 プラグイン
+  （`docker-compose-plugin`）をインストールする。Compose v1（`docker-compose`）は
+  2023年7月にサポート終了しているため対応しない。
 - **バックエンドコンテナが起動しない / ネットワークが無いと言われる**
   → `common` が起動しておらず `authorization` ネットワークが無い。
   `docker/bin/docker-common.sh up` を先に実行する（ビルドは先に走り、コンテナ作成の
