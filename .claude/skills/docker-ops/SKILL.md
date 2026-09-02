@@ -131,9 +131,9 @@ docker/bin/docker-common.sh start
   → 初期化はホスト側の `go`（Lambda zipビルド）と `tflocal` を使う。コンテナは起動済みなので、
   ツールを入れてから `cd function && make zip && cd ../terraform/local && make apply` で続行する。
 - **イメージビルドが `go install ...@latest` で失敗する**
-  → ツールの最新版がイメージのGoより新しいバージョンを要求している場合に起きる
-  （例: `dlv@latest` が Go >= 1.25 要求、イメージは Go 1.24）。Dockerfileでバージョンを
-  固定するかベースイメージを上げる。既存の不具合なので勝手に直さず報告する。
+  → ツールの最新版がイメージのGoより新しいバージョンを要求している場合に起きる。
+  Dockerfileではツールのバージョンを固定する方針（`dlv@v1.26.3` / `air@v1.61.7`）なので、
+  固定バージョンを見直すかベースイメージを上げる。勝手に直さず報告する。
 - **`down` 後に `data/` / `logs/` が残る**
   → コンテナがroot権限で作ったファイルは `rm` できず `Permission denied` になる。
   gitignore対象なので放置して問題ない（消すなら管理者権限が必要）。
