@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,9 +14,12 @@ import { defineConfig, globalIgnores } from "eslint/config";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 
 // features/ 直下のディレクトリ一覧（feature 追加時に設定を触らなくても自動で対象になる）
-const featureNames = readdirSync(join(rootDir, "features"), { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name);
+const featuresDir = join(rootDir, "features");
+const featureNames = existsSync(featuresDir)
+  ? readdirSync(featuresDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+  : [];
 
 export default defineConfig([
   globalIgnores(["dist", ".next", "test-results", "playwright-report"]),
@@ -83,18 +86,11 @@ export default defineConfig([
     // 各 feature は自分自身と shared/ のみ参照でき、他 feature を import するとエラーになる。
     // 解決後のパスで判定するため `@/features/x` と `../../x` のどちらの書き方でも検出される。
     files: ["features/**/*.{ts,tsx}"],
-    plugins: { import: importPlugin },
-    settings: {
-      "import/resolver": {
-        typescript: true,
-        node: true,
-      },
-    },
     rules: {
       "import/no-restricted-paths": [
         "error",
         {
-          basePath: join(rootDir, "features"),
+          basePath: featuresDir,
           zones: featureNames.map((name) => ({
             target: `./${name}`,
             from: ".",
