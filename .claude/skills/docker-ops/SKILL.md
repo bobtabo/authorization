@@ -135,9 +135,10 @@ docker/bin/docker-common.sh start
   （例: `dlv@latest` が Go >= 1.25 要求、イメージは Go 1.24）。Dockerfileでバージョンを
   固定するかベースイメージを上げる。既存の不具合なので勝手に直さず報告する。
 - **`down` 後に `data/` / `logs/` が残る**
-  → `docker-common.sh down` は使い捨ての `alpine` コンテナで root として中身を削除するため、
-  通常は残らない。残った場合は `docker run --rm alpine` が実行できているか（イメージ取得の
-  ネットワーク等）を確認する。gitignore対象なので放置しても動作には影響しない。
+  → `docker-common.sh down` は使い捨ての `alpine:3.21` コンテナで root として中身を削除するため、
+  通常は残らない。コンテナ起動に失敗した場合（イメージ取得のネットワーク等）はホスト側の `rm` に
+  フォールバックし、それでも消せなければ `❌` とともに `sudo rm -rf ...` の手順を表示して
+  終了コード 1 になる。gitignore対象なので放置しても動作には影響しない。
 - **状態確認**
 
   ```bash
