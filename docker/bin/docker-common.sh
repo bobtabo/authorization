@@ -38,11 +38,15 @@ case "${BACKEND_MODE}" in
 esac
 
 if [ "${ARG}" = "up" ]; then
+    # LocalStack モード時は初期化に使うホスト側ツールをコンテナ起動前に確認する
+    if [ "${BACKEND_MODE}" != "emulator" ]; then
+        "${SCRIPT_DIR}/docker-localstack-init.sh" check || exit 1
+    fi
     docker network create --driver bridge authorization 2>/dev/null || true
     "${compose_cmd[@]}" up -d --build
     # LocalStack モード時のみ初期化スクリプトを実行
     if [ "${BACKEND_MODE}" != "emulator" ]; then
-        "${SCRIPT_DIR}/docker-localstack-init.sh"
+        "${SCRIPT_DIR}/docker-localstack-init.sh" --skip-check
     fi
 elif [ "${ARG}" = "down" ]; then
     "${compose_cmd[@]}" down --rmi all --volumes

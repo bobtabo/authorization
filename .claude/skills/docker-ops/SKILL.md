@@ -120,9 +120,12 @@ docker/bin/docker-common.sh start
   → `common` が起動しておらず `authorization` ネットワークが無い。
   `docker/bin/docker-common.sh up` を先に実行する（ビルドは先に走り、コンテナ作成の
   段階で external network エラーになるため、失敗まで時間がかかる）。
-- **LocalStack初期化が `go: not found` / `tflocal コマンドが見つかりません` で止まる**
-  → 初期化はホスト側の `go`（Lambda zipビルド）と `tflocal` を使う。コンテナは起動済みなので、
-  ツールを入れてから `cd function && make zip && cd ../terraform/local && make apply` で続行する。
+- **`docker-common.sh up` が `LocalStack 初期化に必要なコマンドが見つかりません` で止まる**
+  → 初期化はホスト側の `go` / `make` / `zip`（Lambda zipビルド）と `terraform` / `tflocal` /
+  `curl`（ヘルスチェック）を使う。
+  コンテナ起動前に `docker-localstack-init.sh check` で一括確認しており、不足分と導入方法が
+  一覧で表示される。ツールを入れてから `docker-common.sh up` を再実行する（コンテナが起動済みなら
+  `cd function && make zip && cd ../terraform/local && make apply` でも続行できる）。
 - **イメージビルドが `go install ...@latest` で失敗する**
   → ツールの最新版がイメージのGoより新しいバージョンを要求している場合に起きる。
   Dockerfileではツールのバージョンを固定する方針（`dlv@v1.26.3` / `air@v1.61.7`）なので、
