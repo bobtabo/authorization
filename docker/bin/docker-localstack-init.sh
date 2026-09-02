@@ -58,7 +58,10 @@ if [ "${1:-}" = "check" ]; then
     exit $?
 fi
 
-check_required_tools
+# docker-common.sh up はコンテナ起動前に check を済ませているので再チェックしない
+if [ "${1:-}" != "--skip-check" ]; then
+    check_required_tools
+fi
 
 # .env からコンテナ名を読み込む
 ENV_FILE="${SCRIPT_DIR}/../local/common/.env"
@@ -103,6 +106,10 @@ fi
 echo ""
 echo "📦 Lambda 関数をビルド中..."
 cd "${PROJECT_ROOT}/function"
+if [ ! -f Makefile ]; then
+    echo "❌ ${PROJECT_ROOT}/function/Makefile が見つかりません。リポジトリのチェックアウトを確認してください"
+    exit 1
+fi
 make zip
 echo "✅ function.zip 生成完了"
 

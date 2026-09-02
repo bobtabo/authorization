@@ -46,7 +46,7 @@ if [ "${ARG}" = "up" ]; then
     "${compose_cmd[@]}" up -d --build
     # LocalStack モード時のみ初期化スクリプトを実行
     if [ "${BACKEND_MODE}" != "emulator" ]; then
-        "${SCRIPT_DIR}/docker-localstack-init.sh"
+        "${SCRIPT_DIR}/docker-localstack-init.sh" --skip-check
     fi
 elif [ "${ARG}" = "down" ]; then
     "${compose_cmd[@]}" down --rmi all --volumes
