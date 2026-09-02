@@ -1,0 +1,68 @@
+@startuml
+' Notionページ貼り付け用の開発フロー図（CIレンダリング・README参照は不要）
+' Issue作成 → 実装 → レビュー → マージ → クローズ、を主体ごとのレーンで表現
+skinparam shadowing true
+skinparam roundcorner 12
+skinparam defaultFontColor #1E293B
+skinparam ArrowColor #475569
+skinparam ArrowThickness 1.3
+
+skinparam activity {
+    BackgroundColor #F1F5F9
+    BorderColor #475569
+    FontColor #1E293B
+    DiamondBackgroundColor #FDE68A
+    DiamondBorderColor #D97706
+    DiamondFontColor #78350F
+    StartColor #475569
+    EndColor #475569
+    ArrowColor #475569
+    ArrowFontColor #1E293B
+}
+
+skinparam swimlane {
+    BorderColor #64748B
+    TitleBackgroundColor #E2E8F0
+    TitleFontColor #0F172A
+    TitleFontStyle bold
+    TitleFontSize 14
+}
+
+|<img:assets/claude-logo.png{scale=0.06}> Claude Code|
+start
+:GitHub Issueを作成;
+
+|<img:assets/devin-logo.png{scale=0.06}> Devin|
+:develop から\n**feature/issue-<番号>** を作成;
+
+repeat
+    :Issueに従って実装;
+    :develop へマージPRを作成し監視;
+
+    |<img:assets/coderabbit-logo.jpg{scale=0.06}> CodeRabbit|
+    :自動レビュー;
+
+    |<img:assets/claude-logo.png{scale=0.06}> Claude Code|
+    :レビュー;
+
+    if (AIレビュー通過?) then (いいえ)
+        |<img:assets/devin-logo.png{scale=0.06}> Devin|
+        :指摘に対応;
+    else (はい)
+        |👤 人|
+        :最終レビュー;
+        if (マージしてOK?) then (はい)
+            :develop へマージ;
+            break
+        else (いいえ)
+            |<img:assets/devin-logo.png{scale=0.06}> Devin|
+            :指摘に対応;
+        endif
+    endif
+repeat while (マージ未了) is (継続)
+
+|<img:assets/devin-logo.png{scale=0.06}> Devin|
+:対応内容を Issue に書いてクローズ;
+stop
+
+@enduml
