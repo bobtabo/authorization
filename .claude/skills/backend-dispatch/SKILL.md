@@ -100,7 +100,7 @@ composeプロジェクト名（`auth-*`）と接頭辞が違う。**いずれも
 
   `-T` は必須（付けないとTTY割り当てを試みて非対話環境で失敗しうる）。
   `--user 1000` とサービス名は `docker/bin/docker-*.sh` の `exec` 分岐と揃える
-  （スクリプト側は v1 の `docker-compose` を使っているが、手元では v2 の `docker compose` でもよい）。
+  （スクリプト側も Compose v2 の `docker compose` を使っている。v1 の `docker-compose` は非対応）。
 - **APIの動作確認**は本番と同じ経路で行う。フロントエンドの Next.js は
   `/function/:path*` を `LAMBDA_PROXY_TARGET`（LocalStack API Gateway または
   エミュレータ）へ rewrite するので、dev サーバー経由なら
