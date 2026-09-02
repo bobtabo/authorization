@@ -128,7 +128,8 @@ docker/bin/docker-common.sh start
   `docker/bin/docker-common.sh up` を先に実行する（ビルドは先に走り、コンテナ作成の
   段階で external network エラーになるため、失敗まで時間がかかる）。
 - **`docker-common.sh up` が `LocalStack 初期化に必要なコマンドが見つかりません` で止まる**
-  → 初期化はホスト側の `go` / `make` / `zip`（Lambda zipビルド）と `terraform` / `tflocal` を使う。
+  → 初期化はホスト側の `go` / `make` / `zip`（Lambda zipビルド）と `terraform` / `tflocal` /
+  `curl`（ヘルスチェック）を使う。
   コンテナ起動前に `docker-localstack-init.sh check` で一括確認しており、不足分と導入方法が
   一覧で表示される。ツールを入れてから `docker-common.sh up` を再実行する（コンテナが起動済みなら
   `cd function && make zip && cd ../terraform/local && make apply` でも続行できる）。

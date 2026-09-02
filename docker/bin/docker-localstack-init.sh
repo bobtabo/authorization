@@ -31,6 +31,7 @@ check_required_tools() {
         "zip|Lambda デプロイ用 function.zip の生成|apt install zip（macOS は標準で利用可）"
         "terraform|LocalStack へのリソース作成（tflocal が内部で呼ぶ）|https://developer.hashicorp.com/terraform/install"
         "tflocal|LocalStack 向け Terraform ラッパー|pip install terraform-local"
+        "curl|LocalStack のヘルスチェック（下記手順1）|apt install curl（macOS は標準で利用可）"
     )
     local entry name purpose howto
     for entry in "${tools[@]}"; do
