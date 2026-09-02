@@ -43,7 +43,7 @@
 
 ## :white_check_mark: 前提
 
-- Docker Engine および Docker Compose（`docker compose` または `docker-compose`）が使えること
+- Docker Engine および Docker Compose v2（`docker compose` サブコマンド）が使えること。v1 の `docker-compose` は非対応
 - ポート **443**（プロキシ）、**3306**（MySQL）、**6379**（Redis）などがローカルで空いていること（`.env` で変更可）
 
 ## :whale: 共通コンテナ操作
