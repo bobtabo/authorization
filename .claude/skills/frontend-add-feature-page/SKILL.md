@@ -122,20 +122,10 @@ env CI=true NEXT_PUBLIC_API_URL=/function/php/api npm --prefix frontend run test
 
 - **`app/` にロジックが漏れる**: `page.tsx` に `useState` や fetch を書いてしまうのが最多の逸脱。
 - **feature間import**: 既存featureの型を使いたくなったら `shared/` に上げる。
-  この違反は `git diff` で `@/features/` の import を検索すると見つかる:
-
-  ```bash
-  # 「自分以外のfeatureをimportしている行」だけを出す（rgは後方参照非対応なのでawkで判定）
-  rg -n --no-heading 'from "@/features/' frontend/features \
-    | awk -F: '{ split($1, p, "/"); match($0, /@\/features\/[^\/"]+/);
-                 t = substr($0, RSTART + 11, RLENGTH - 11);
-                 if (t != p[3]) print }' \
-    || true
-  ```
-
-  この検出は現時点で lint ルールになっていない（`frontend/eslint.config.mjs` に
-  `no-restricted-imports` 等の強制がない）ため、**`npm run lint` / CI では止まらない**。
-  featureを追加・変更したときは上のコマンドを自分で実行する（lintルール化は別Issue）。
+  この違反は `frontend/eslint.config.mjs` の `import/no-restricted-paths`（features/ 直下の
+  ディレクトリを自動列挙）で **`npm run lint` / CI がエラーにする**。解決後のパスで判定
+  するため `@/features/x` でも `../x` でも検出される。新しい feature ディレクトリを作った場合も
+  設定の変更は不要。
 
 - **未使用import・未使用変数**: `eslint-plugin-unused-imports` で lint エラーになる。
 - **`NEXT_PUBLIC_API_URL`**: `docker-localstack-init.sh` が `frontend/.env.local` を生成する。
