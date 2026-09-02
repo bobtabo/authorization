@@ -4,4 +4,6 @@
 /generated/prisma
 .aider*
 .env
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/skills/

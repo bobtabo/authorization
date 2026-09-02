@@ -13,6 +13,7 @@ plugins {
     kotlin("jvm") version "2.3.20"
     id("io.ktor.plugin") version "3.4.2"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.3.20"
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
 }
 
 group = "com.authorization"
@@ -52,3 +53,9 @@ dependencies {
 tasks.test {
     environment("ENV_FILE", System.getenv("ENV_FILE") ?: ".env.testing.local")
 }
+
+// ktlint は Claude Code の PostToolUse フックから `./gradlew ktlintFormat` で
+// 明示的に実行する運用。check/build への自動組み込み（ktlintCheck 系）は無効化し、
+// CI の `gradle build` を汚さないようにする（Format 系タスクは有効なまま）。
+tasks.matching { it.name.contains("Ktlint", ignoreCase = true) && it.name.contains("Check", ignoreCase = true) }
+    .configureEach { enabled = false }
