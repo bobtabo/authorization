@@ -66,3 +66,6 @@ export default function Page(): React.JSX.Element {
 - `features/a` から `features/b` を import してはいけない
 - 型や API を共有したい場合は `shared/`（`shared/api/types.ts` など）に上げてから両方から参照する
 - UI を共有したい場合も `shared/components/` に移動する
+- このルールは `eslint.config.mjs` の `import/no-restricted-paths` で強制されており、
+  違反すると `npm run lint` / CI がエラーになる（`features/` 直下のディレクトリを自動列挙
+  するため、feature を追加しても設定変更は不要）
