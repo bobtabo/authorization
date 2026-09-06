@@ -25,6 +25,7 @@ services:
           - apis.authorization-go-gin.dev
           - apis.authorization-go-beego.dev
           - apis.authorization-go-echo.dev
+          - apis.authorization-csharp.dev
           - apis.authorization-kotlin.dev
           - apis.authorization-python.dev
           - apis.authorization-rb-hanami.dev

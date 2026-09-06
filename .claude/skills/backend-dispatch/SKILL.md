@@ -11,7 +11,7 @@ allowed-tools: Bash(docker compose:*), Bash(docker/bin/docker-*.sh:*), Bash(cd:*
 # backend-dispatch
 
 このリポジトリは同一の OpenAPI 仕様（`docs/api-spec/openapi.yml`）に沿った認可サーバーAPIを
-10言語・フレームワークで実装している（マイクロサービス分割ではない）。
+11言語・フレームワークで実装している（マイクロサービス分割ではない）。
 どのバックエンドを指しているかを機械的に確定させ、実行は必ず
 `docker/bin/docker-*.sh` 経由のコンテナ内で行う。
 
@@ -36,6 +36,7 @@ allowed-tools: Bash(docker compose:*), Bash(docker/bin/docker-*.sh:*), Bash(cd:*
 | Go, Gin | `backends/go-gin/` | `docker/bin/docker-go-gin.sh` | `docker/local/app-go-gin/` | `auth-go-gin` | `go` | `sh` |
 | Go, Echo | `backends/go-echo/` | `docker/bin/docker-go-echo.sh` | `docker/local/app-go-echo/` | `auth-go-echo` | `go` | `sh` |
 | Go, Beego | `backends/go-beego/` | `docker/bin/docker-go-beego.sh` | `docker/local/app-go-beego/` | `auth-go-beego` | `go` | `sh` |
+| C#, ASP.NET Core | `backends/csharp-aspnet/` | `docker/bin/docker-csharp.sh` | `docker/local/app-csharp/` | `auth-csharp` | `csharp` | `bash` |
 | Kotlin, Ktor | `backends/kotlin-ktor/` | `docker/bin/docker-kotlin.sh` | `docker/local/app-kotlin/` | `auth-kotlin` | `kotlin` | `bash` |
 | PHP, Laravel | `backends/php-laravel/` | `docker/bin/docker-php.sh` | `docker/local/app-php/` | `auth-php` | `php` | `bash` |
 | Python, FastAPI | `backends/python-fastapi/` | `docker/bin/docker-python.sh` | `docker/local/app-python/` | `auth-python` | `python` | `bash` |
@@ -55,8 +56,8 @@ composeプロジェクト名（`auth-*`）と接頭辞が違う。**いずれも
   推測で決めずユーザーに確認する。
 - 「Rubyで直して」→ `ruby-rails` / `ruby-hanami` のどちらか確認する。
 - フレームワーク名だけの指示（「Ginで」「Hanamiで」）は一意に決まるので確認不要。
-- 「PHPで」「Pythonで」「Rustで」「Kotlinで」「TypeScriptで」は各1実装のみなので一意。
-- 「全バックエンドで」「10言語すべてで」→ 上表の10ディレクトリすべてに同じ変更を展開する。
+- 「PHPで」「Pythonで」「Rustで」「Kotlinで」「TypeScriptで」「C#で」は各1実装のみなので一意。
+- 「全バックエンドで」「11言語すべてで」→ 上表の11ディレクトリすべてに同じ変更を展開する。
   一括Docker操作は `docker/bin/docker-backends.sh {up|down}`（docker-ops Skill参照）。
 - マイグレーションは PHP（Laravel）に一本化されている。「マイグレーションを追加して」は
   フレームワーク指定が無くても `backends/php-laravel/` が対象（他バックエンドは
