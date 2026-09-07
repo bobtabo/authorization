@@ -57,11 +57,17 @@ public sealed class ClientHandler(
         var limit  = Math.Max(1, QueryInt(req, "limit") ?? 10);
         var page   = Math.Max(1, QueryInt(req, "page") ?? 1);
         var offset = limit * (page - 1);
+        var statuses = req.Query["statuses"].Concat(req.Query["statuses[]"])
+            .SelectMany(v => (v ?? "").Split(','))
+            .Select(s => int.TryParse(s.Trim(), out var r) ? r : (int?)null)
+            .OfType<int>()
+            .ToList();
 
         var dto = new ClientListConditionDto(
             Keyword:   Query(req, "keyword"),
             StartFrom: Query(req, "start_from"),
             StartTo:   Query(req, "start_to"),
+            Statuses:  statuses,
             Offset:    offset,
             Limit:     limit,
             Sort:      Query(req, "sort"),
