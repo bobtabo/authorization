@@ -30,6 +30,7 @@ const ERROR_MESSAGE: Record<number | "default", string> = {
 };
 
 const RUNTIME_LABEL: Record<string, string> = {
+  csharp:   "C#",
   go:       "Go",
   kotlin:   "Kotlin",
   php:      "PHP",

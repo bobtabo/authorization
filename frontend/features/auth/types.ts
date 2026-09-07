@@ -1,4 +1,5 @@
 export const RUNTIME_LABEL: Record<string, string | undefined> = {
+  csharp:       "C#",
   "go-gin":     "Go (Gin)",
   "go-beego":   "Go (Beego)",
   "go-echo":    "Go (Echo)",
