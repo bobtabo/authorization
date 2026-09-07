@@ -128,6 +128,14 @@ func TestHandler_Proxy(t *testing.T) {
 			wantHost:    "apis.authorization-rb-rails.dev",
 		},
 		{
+			name:        "C# バックエンドへ転送",
+			path:        "/function/csharp/api/clients",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-csharp.dev",
+		},
+		{
 			name:        "Rust バックエンドへ転送",
 			path:        "/function/rust/api/clients",
 			method:      "GET",
