@@ -31,6 +31,9 @@ namespace Authorization.Api;
 public static class AppModule
 {
     /// <summary>設定・インフラ・ユースケース・ハンドラーを DI コンテナへ登録します。</summary>
+    /// <param name="services">DIコンテナのサービスコレクション</param>
+    /// <param name="cfg">アプリケーション設定</param>
+    /// <returns>登録済みのサービスコレクション</returns>
     public static IServiceCollection AddAppServices(this IServiceCollection services, AppConfig cfg)
     {
         services.AddSingleton(cfg);
@@ -80,6 +83,8 @@ public static class AppModule
     }
 
     /// <summary>AppException を {"error": message} 形式の JSON に変換する例外ハンドラーを登録します。</summary>
+    /// <param name="app">アプリケーションビルダー</param>
+    /// <returns>ミドルウェア登録済みのアプリケーションビルダー</returns>
     public static IApplicationBuilder UseAppExceptionHandler(this IApplicationBuilder app) =>
         app.Use(async (ctx, next) =>
         {
@@ -103,6 +108,8 @@ public static class AppModule
         });
 
     /// <summary>API ルートを登録します。</summary>
+    /// <param name="app">エンドポイントルートビルダー</param>
+    /// <returns>ルート登録済みのエンドポイントルートビルダー</returns>
     public static IEndpointRouteBuilder MapAppRoutes(this IEndpointRouteBuilder app)
     {
         // OAuth（ブラウザリダイレクトのため /api 外）
