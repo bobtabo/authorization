@@ -15,6 +15,7 @@ namespace Authorization.Api.Infrastructure.Persistence;
 /// <summary>EF Core による招待リポジトリです。</summary>
 public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : IInvitationRepository
 {
+    /// <inheritdoc/>
     public async Task<InvitationVo?> GetCurrentByRoleAsync(int role, CancellationToken ct = default)
     {
         var m = await db.Invitations.AsNoTracking()
@@ -24,6 +25,7 @@ public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : I
         return m is null ? null : BuildVo(m.Token, m.Role, app.FrontendUrl);
     }
 
+    /// <inheritdoc/>
     public async Task<InvitationVo> IssueAsync(int role, CancellationToken ct = default)
     {
         var now   = DateTime.Now;
@@ -43,6 +45,7 @@ public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : I
         return BuildVo(token, role, app.FrontendUrl);
     }
 
+    /// <inheritdoc/>
     public async Task<InvitationVo?> FindByTokenAsync(string token, CancellationToken ct = default)
     {
         var m = await db.Invitations.AsNoTracking()
@@ -51,6 +54,10 @@ public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : I
     }
 
     /// <summary>招待 URL と表示用 URL を組み立てます。</summary>
+    /// <param name="token">招待トークン</param>
+    /// <param name="role">ロール種別（1=管理者、2=メンバー）</param>
+    /// <param name="frontendUrl">フロントエンドのベースURL</param>
+    /// <returns>招待</returns>
     public static InvitationVo BuildVo(string token, int role, string frontendUrl)
     {
         var url = $"{frontendUrl}/invitation/{token}";
@@ -58,6 +65,8 @@ public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : I
     }
 
     /// <summary>トークン部分を省略した表示用 URL を返します。</summary>
+    /// <param name="url">招待URL</param>
+    /// <returns>トークン部分を省略した表示用URL</returns>
     public static string BuildDisplayUrl(string url)
     {
         const string seg = "/invitation/";

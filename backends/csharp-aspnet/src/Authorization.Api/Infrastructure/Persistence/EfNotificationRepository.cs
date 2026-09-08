@@ -16,6 +16,8 @@ namespace Authorization.Api.Infrastructure.Persistence;
 /// <summary>EF Core による通知リポジトリです。</summary>
 public sealed class EfNotificationRepository(AppDbContext db) : INotificationRepository
 {
+    /// <inheritdoc/>
+    /// <exception cref="AppException">cursorが不正な場合（400）</exception>
     public async Task<NotificationPage> ListPageAsync(long staffId, string? cursor, int limit, CancellationToken ct = default)
     {
         var q = db.Notifications.AsNoTracking().Where(n => n.StaffId == staffId && n.DeletedAt == null);
@@ -38,6 +40,7 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
         return new NotificationPage(items, next);
     }
 
+    /// <inheritdoc/>
     public async Task<NotificationCountsVo> CountsAsync(long staffId, CancellationToken ct = default)
     {
         var baseQ  = db.Notifications.AsNoTracking().Where(n => n.StaffId == staffId && n.DeletedAt == null);
@@ -46,6 +49,7 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
         return new NotificationCountsVo(unread, total);
     }
 
+    /// <inheritdoc/>
     public async Task<long> BulkMarkReadAsync(long staffId, IReadOnlyList<long> ids, bool all, CancellationToken ct = default)
     {
         var now = DateTime.Now;
@@ -60,6 +64,7 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
             .SetProperty(n => n.UpdatedAt, now), ct);
     }
 
+    /// <inheritdoc/>
     public async Task StoreAsync(long staffId, int messageType, string title, string message, long createdBy, string? url, CancellationToken ct = default)
     {
         var now = DateTime.Now;
@@ -82,6 +87,7 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
         db.Entry(m).State = EntityState.Detached;
     }
 
+    /// <inheritdoc/>
     public async Task<bool> MarkReadAsync(long id, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
@@ -91,11 +97,17 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
         return rows > 0;
     }
 
+    /// <summary>DBモデルをドメインエンティティに変換します。</summary>
+    /// <param name="m">DBモデル</param>
+    /// <returns>ドメインエンティティ</returns>
     private static NotificationEntity ToEntity(NotificationModel m) => new(
         m.Id, m.StaffId, m.MessageType, m.Title, m.Message, m.Url, m.Read,
         m.CreatedAt, m.CreatedBy, m.UpdatedAt, m.UpdatedBy, m.DeletedAt, m.Version);
 
     /// <summary>created_at（UTC 秒扱いのエポック）と id を base64 でエンコードします。</summary>
+    /// <param name="dt">作成日時</param>
+    /// <param name="id">通知ID</param>
+    /// <returns>base64エンコードされたcursor文字列</returns>
     public static string EncodeCursor(DateTime dt, long id)
     {
         var epoch = new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc)).ToUnixTimeSeconds();
@@ -103,6 +115,8 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
     }
 
     /// <summary>cursor を (created_at, id) に復号します。不正な場合は null。</summary>
+    /// <param name="cursor">base64エンコードされたcursor文字列</param>
+    /// <returns>(作成日時, 通知ID)のタプル、不正な場合はnull</returns>
     public static (DateTime, long)? DecodeCursor(string cursor)
     {
         try
