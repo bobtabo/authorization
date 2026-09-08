@@ -32,6 +32,7 @@ public sealed record Pager(
     /// <param name="limit">取得件数</param>
     /// <param name="offset">オフセット</param>
     /// <param name="recordCount">現在ページの件数</param>
+    /// <returns>ページャー情報</returns>
     public static Pager Build(int count, int limit, int offset, int recordCount)
     {
         var effectiveLimit = limit <= 0 ? 10 : limit;
@@ -61,6 +62,7 @@ public sealed record Pager(
     }
 
     /// <summary>JSON レスポンス用のオブジェクトへ変換します（キーは camelCase）。</summary>
+    /// <returns>JSON化用の辞書</returns>
     public Dictionary<string, object> ToJson() => new()
     {
         ["count"]            = Count,

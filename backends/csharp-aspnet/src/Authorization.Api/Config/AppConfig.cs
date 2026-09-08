@@ -22,6 +22,7 @@ public sealed record AppSettings(
 public sealed record DbSettings(string Host, int Port, string Database, string User, string Password)
 {
     /// <summary>MySqlConnector 用の接続文字列を返します。</summary>
+    /// <returns>接続文字列</returns>
     public string ConnectionString =>
         $"Server={Host};Port={Port};Database={Database};User={User};Password={Password};" +
         "SslMode=None;AllowPublicKeyRetrieval=true;CharSet=utf8mb4;";

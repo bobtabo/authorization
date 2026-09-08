@@ -15,12 +15,17 @@ namespace Authorization.Api.Infrastructure.Mail;
 public interface IMailer
 {
     /// <summary>クライアント登録完了（ご利用開始のご案内）メールを送信します。送信失敗はログのみで握りつぶします。</summary>
+    /// <param name="to">宛先メールアドレス</param>
+    /// <param name="clientName">クライアント名</param>
+    /// <param name="activateUrl">利用開始URL</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     Task SendActivationAsync(string to, string clientName, string activateUrl, CancellationToken ct = default);
 }
 
 /// <summary>Amazon SES によるメール送信です。</summary>
 public sealed class SesMailer(MailSettings mail, AwsSettings aws, ILogger<SesMailer> logger) : IMailer
 {
+    /// <inheritdoc/>
     public async Task SendActivationAsync(string to, string clientName, string activateUrl, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(to)) return;
@@ -49,6 +54,8 @@ public sealed class SesMailer(MailSettings mail, AwsSettings aws, ILogger<SesMai
         }
     }
 
+    /// <summary>設定に基づきSESクライアントを構築します。</summary>
+    /// <returns>SESクライアント</returns>
     private AmazonSimpleEmailServiceClient BuildSesClient()
     {
         var config = new AmazonSimpleEmailServiceConfig { RegionEndpoint = RegionEndpoint.GetBySystemName(aws.Region) };
@@ -60,6 +67,9 @@ public sealed class SesMailer(MailSettings mail, AwsSettings aws, ILogger<SesMai
     }
 
     /// <summary>環境ラベルを件名の先頭に付与します。</summary>
+    /// <param name="subject">元の件名</param>
+    /// <param name="appEnv">環境名（local/testing/develop/staging等）</param>
+    /// <returns>環境ラベル付きの件名（本番相当の環境ではラベル無し）</returns>
     public static string MailSubject(string subject, string appEnv)
     {
         var label = appEnv switch
@@ -74,6 +84,10 @@ public sealed class SesMailer(MailSettings mail, AwsSettings aws, ILogger<SesMai
     }
 
     /// <summary>ご利用開始メールの HTML 本文を組み立てます。</summary>
+    /// <param name="name">クライアント名</param>
+    /// <param name="activateUrl">利用開始URL</param>
+    /// <param name="appName">アプリ名</param>
+    /// <returns>HTML本文</returns>
     public static string BuildActivationHtml(string name, string activateUrl, string appName) =>
         ActivationTemplate
             .Replace("{{NAME}}", name)

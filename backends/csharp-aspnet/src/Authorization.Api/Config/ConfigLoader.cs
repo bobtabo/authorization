@@ -15,6 +15,7 @@ public static class ConfigLoader
     /// </summary>
     /// <param name="baseDir">.env を探索するディレクトリ（省略時はカレントディレクトリ）</param>
     /// <param name="envFile">読み込む .env ファイル名（省略時は APP_ENV に応じて自動判定）</param>
+    /// <returns>読み込んだ設定</returns>
     public static AppConfig Load(string? baseDir = null, string? envFile = null)
     {
         var file = envFile ?? ResolveEnvFile();
@@ -95,6 +96,8 @@ public static class ConfigLoader
         );
     }
 
+    /// <summary>APP_ENV に応じて読み込む .env ファイル名を判定します。</summary>
+    /// <returns>.env ファイル名</returns>
     private static string ResolveEnvFile()
     {
         var env = Environment.GetEnvironmentVariable("APP_ENV");
@@ -105,6 +108,9 @@ public static class ConfigLoader
     /// start から親方向へ辿り、.env（または .env.local）が存在する最初のディレクトリを返します。
     /// 見つからない場合は start を返します。
     /// </summary>
+    /// <param name="start">探索開始ディレクトリ</param>
+    /// <param name="file">探す.envファイル名</param>
+    /// <returns>.env（または.env.local）が見つかったディレクトリ、無ければstart</returns>
     private static string FindEnvDir(string start, string file)
     {
         for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
@@ -124,6 +130,8 @@ public static class DotEnv
     /// <summary>
     /// KEY=VALUE 形式の行を解析します。# から始まる行は無視し、引用符は取り除きます。
     /// </summary>
+    /// <param name="lines">.envファイルの各行</param>
+    /// <returns>キーと値のペアの列</returns>
     public static IEnumerable<KeyValuePair<string, string>> Parse(IEnumerable<string> lines)
     {
         foreach (var raw in lines)

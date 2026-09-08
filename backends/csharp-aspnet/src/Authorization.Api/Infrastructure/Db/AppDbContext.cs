@@ -17,6 +17,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<JwtHistoryModel>   JwtHistories  => Set<JwtHistoryModel>();
     public DbSet<NotificationModel> Notifications => Set<NotificationModel>();
 
+    /// <summary>一意インデックス（identifier/access_token/email/token）を設定します。</summary>
+    /// <param name="modelBuilder">EF Coreのモデルビルダー</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ClientModel>().HasIndex(c => c.Identifier).IsUnique();
