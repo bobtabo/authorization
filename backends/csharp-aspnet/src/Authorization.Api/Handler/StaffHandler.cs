@@ -13,6 +13,10 @@ namespace Authorization.Api.Handler;
 /// <summary>スタッフハンドラーです。</summary>
 public sealed class StaffHandler(StaffInteractor staffUC)
 {
+    /// <summary>スタッフ一覧を返します。</summary>
+    /// <param name="req">HTTPリクエスト（keyword/roles/limit/page/sort/sort_typeを使用）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>一覧データとページャー情報のJSON</returns>
     public async Task<IResult> IndexAsync(HttpRequest req, CancellationToken ct)
     {
         var roles = req.Query["roles"]
@@ -54,6 +58,12 @@ public sealed class StaffHandler(StaffInteractor staffUC)
         });
     }
 
+    /// <summary>スタッフの権限を更新します。</summary>
+    /// <param name="id">スタッフID（文字列）</param>
+    /// <param name="req">HTTPリクエストボディ（role）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>更新したスタッフIDのJSON。IDが不正な場合は400、roleが未指定の場合は400</returns>
+    /// <exception cref="AppException">ロール値が不正な場合（400）、存在しない場合（404）</exception>
     public async Task<IResult> UpdateRoleAsync(string id, HttpRequest req, CancellationToken ct)
     {
         if (!long.TryParse(id, out var staffId)) return InvalidId();
@@ -65,6 +75,11 @@ public sealed class StaffHandler(StaffInteractor staffUC)
         return Results.Json(new Dictionary<string, object?> { ["id"] = staffId });
     }
 
+    /// <summary>スタッフの論理削除を取り消します。</summary>
+    /// <param name="id">スタッフID（文字列）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>復元したスタッフIDのJSON。IDが不正な場合は400</returns>
+    /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<IResult> RestoreAsync(string id, CancellationToken ct)
     {
         if (!long.TryParse(id, out var staffId)) return InvalidId();
@@ -72,6 +87,12 @@ public sealed class StaffHandler(StaffInteractor staffUC)
         return Results.Json(new Dictionary<string, object?> { ["id"] = staffId });
     }
 
+    /// <summary>スタッフを論理削除します。</summary>
+    /// <param name="id">スタッフID（文字列）</param>
+    /// <param name="req">HTTPリクエスト（操作者IDをクッキーから取得）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>削除したスタッフIDのJSON。IDが不正な場合は400</returns>
+    /// <exception cref="AppException">存在しない場合（404）、バージョン不一致（409）</exception>
     public async Task<IResult> DestroyAsync(string id, HttpRequest req, CancellationToken ct)
     {
         if (!long.TryParse(id, out var staffId)) return InvalidId();

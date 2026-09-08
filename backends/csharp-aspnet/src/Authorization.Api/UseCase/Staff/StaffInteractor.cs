@@ -18,6 +18,9 @@ public sealed record StaffDestroyDto(long Id, long ExecutorId);
 public sealed class StaffInteractor(IStaffRepository repo)
 {
     /// <summary>条件に一致するスタッフ一覧と総件数を返します。</summary>
+    /// <param name="cond">検索条件（キーワード・ロール・ページング・並び順）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>一覧アイテムと、ページングを無視した総件数</returns>
     public async Task<(List<StaffListItem> Items, int Count)> FindByConditionWithCountAsync(
         StaffCondition cond, CancellationToken ct = default)
     {
@@ -29,6 +32,8 @@ public sealed class StaffInteractor(IStaffRepository repo)
     }
 
     /// <summary>権限を更新します。</summary>
+    /// <param name="dto">更新対象ID・新しいロール・操作者ID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     /// <exception cref="AppException">ロール値が不正な場合（400）、存在しない場合（404）</exception>
     public async Task UpdateRoleAsync(StaffUpdateRoleDto dto, CancellationToken ct = default)
     {
@@ -39,6 +44,8 @@ public sealed class StaffInteractor(IStaffRepository repo)
     }
 
     /// <summary>論理削除を取り消します。</summary>
+    /// <param name="id">スタッフID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task RestoreAsync(long id, CancellationToken ct = default)
     {
@@ -46,6 +53,8 @@ public sealed class StaffInteractor(IStaffRepository repo)
     }
 
     /// <summary>論理削除します。</summary>
+    /// <param name="dto">削除対象ID・操作者ID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     /// <exception cref="AppException">存在しない場合（404）、バージョン不一致（409）</exception>
     public async Task DestroyAsync(StaffDestroyDto dto, CancellationToken ct = default)
     {

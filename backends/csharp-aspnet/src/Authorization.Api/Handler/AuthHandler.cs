@@ -21,15 +21,37 @@ public sealed record OAuthUserInfo(string Id, string Name, string Email, string?
 /// <summary>OAuth プロバイダーとの HTTP 通信です。</summary>
 public interface IOAuthClient
 {
+    /// <summary>Google の認可コードをアクセストークンに交換します。</summary>
+    /// <param name="code">認可コード</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>アクセストークン</returns>
     Task<string> ExchangeGoogleCodeAsync(string code, CancellationToken ct);
+
+    /// <summary>Google のアクセストークンでユーザー情報を取得します。</summary>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>ユーザー情報</returns>
     Task<OAuthUserInfo> FetchGoogleUserInfoAsync(string accessToken, CancellationToken ct);
+
+    /// <summary>GitHub の認可コードをアクセストークンに交換します。</summary>
+    /// <param name="code">認可コード</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>アクセストークン</returns>
     Task<string> ExchangeGithubCodeAsync(string code, CancellationToken ct);
+
+    /// <summary>GitHub のアクセストークンでユーザー情報を取得します（メールアドレス非公開の場合は別APIで補完）。</summary>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>ユーザー情報</returns>
     Task<OAuthUserInfo> FetchGithubUserInfoAsync(string accessToken, CancellationToken ct);
 }
 
 /// <summary>HttpClient による OAuth クライアントです。</summary>
 public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAuthClient
 {
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    /// <exception cref="InvalidOperationException">レスポンスにaccess_tokenが含まれない場合</exception>
     public async Task<string> ExchangeGoogleCodeAsync(string code, CancellationToken ct)
     {
         using var res = await http.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(
@@ -46,6 +68,8 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
             ? t.GetString()! : throw new InvalidOperationException("no access_token");
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
     public async Task<OAuthUserInfo> FetchGoogleUserInfoAsync(string accessToken, CancellationToken ct)
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
@@ -59,6 +83,9 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
             picture.Length == 0 ? null : picture);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    /// <exception cref="InvalidOperationException">レスポンスにaccess_tokenが含まれない場合</exception>
     public async Task<string> ExchangeGithubCodeAsync(string code, CancellationToken ct)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, "https://github.com/login/oauth/access_token")
@@ -78,6 +105,8 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
             ? t.GetString()! : throw new InvalidOperationException("no access_token");
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
     public async Task<OAuthUserInfo> FetchGithubUserInfoAsync(string accessToken, CancellationToken ct)
     {
         using var userDoc = await GetGithubJsonAsync("https://api.github.com/user", accessToken, ct);
@@ -107,6 +136,12 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
         return new OAuthUserInfo(id, name, email, avatar.Length == 0 ? null : avatar);
     }
 
+    /// <summary>GitHub API を Bearer 認証で GET し、JSON をパースします。</summary>
+    /// <param name="url">GitHub APIのURL</param>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>パース済みJSONドキュメント</returns>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
     private async Task<JsonDocument> GetGithubJsonAsync(string url, string accessToken, CancellationToken ct)
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
@@ -118,6 +153,10 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
         return JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
     }
 
+    /// <summary>JSON要素から文字列/数値プロパティを取り出します（無い場合は空文字）。</summary>
+    /// <param name="el">JSON要素</param>
+    /// <param name="key">プロパティ名</param>
+    /// <returns>プロパティの文字列表現。存在しない場合や文字列/数値以外の場合は空文字</returns>
     private static string Prop(JsonElement el, string key)
     {
         if (!el.TryGetProperty(key, out var v)) return "";
@@ -138,8 +177,14 @@ public sealed class AuthHandler(
     AppConfig cfg,
     ILogger<AuthHandler> logger)
 {
+    /// <summary>フロントエンドのエラーページURLを組み立てます。</summary>
+    /// <param name="code">エラーコード（表示用）</param>
+    /// <returns>エラーページURL</returns>
     private string ErrorUrl(int code) => $"{cfg.App.FrontendUrl}/error?code={code}";
 
+    /// <summary>Google OAuth の認可画面へリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（招待トークンをtokenクエリから取得）</param>
+    /// <returns>Google認可画面へのリダイレクト</returns>
     public IResult GoogleRedirect(HttpRequest req)
     {
         var token = Query(req, "token");
@@ -152,6 +197,10 @@ public sealed class AuthHandler(
         return Results.Redirect(url);
     }
 
+    /// <summary>Google OAuth のコールバックを処理し、ログインしてクッキーを付与しリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（code/stateクエリを使用）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クッキー付与済みのフロントエンドへのリダイレクト、失敗時はエラーページへのリダイレクト</returns>
     public async Task<IResult> GoogleCallbackAsync(HttpRequest req, CancellationToken ct)
     {
         var code = Query(req, "code");
@@ -175,6 +224,9 @@ public sealed class AuthHandler(
         return await LoginAndRedirectAsync(new LoginDto(StaffProvider.Google, info.Id, info.Name, info.Email, info.Avatar, invitationToken), ct);
     }
 
+    /// <summary>GitHub OAuth の認可画面へリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（招待トークンをtokenクエリから取得）</param>
+    /// <returns>GitHub認可画面へのリダイレクト</returns>
     public IResult GithubRedirect(HttpRequest req)
     {
         var token = Query(req, "token");
@@ -189,6 +241,10 @@ public sealed class AuthHandler(
         return Results.Redirect(url);
     }
 
+    /// <summary>GitHub OAuth のコールバックを処理し、ログインしてクッキーを付与しリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（code/stateクエリを使用。stateは`runtime|招待トークン`形式）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クッキー付与済みのフロントエンドへのリダイレクト、失敗時はエラーページへのリダイレクト</returns>
     public async Task<IResult> GithubCallbackAsync(HttpRequest req, CancellationToken ct)
     {
         var code = Query(req, "code");
@@ -212,6 +268,10 @@ public sealed class AuthHandler(
         return await LoginAndRedirectAsync(new LoginDto(StaffProvider.Github, info.Id, info.Name, info.Email, info.Avatar, invitationToken), ct);
     }
 
+    /// <summary>ログインを実行し、成功時はクッキーを付与してクライアント一覧へ、失敗時はエラーページへリダイレクトします。</summary>
+    /// <param name="dto">OAuthプロバイダー情報・招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>リダイレクト結果</returns>
     private async Task<IResult> LoginAndRedirectAsync(LoginDto dto, CancellationToken ct)
     {
         Domain.Staff.Staff staff;
@@ -233,6 +293,10 @@ public sealed class AuthHandler(
     }
 
     /// <summary>ログイン中スタッフのプロフィールを返します（/auth/me, /auth/login 共通）。</summary>
+    /// <param name="req">HTTPリクエスト（staff_idをクッキーから取得）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>プロフィールのJSON、未認証の場合は401</returns>
+    /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<IResult> ProfileAsync(HttpRequest req, CancellationToken ct)
     {
         var staffId = StaffId(req);
@@ -248,12 +312,20 @@ public sealed class AuthHandler(
         });
     }
 
+    /// <summary>staff_id クッキーを削除してログアウトします。</summary>
+    /// <param name="res">HTTPレスポンス（クッキー削除先）</param>
+    /// <returns>空レスポンス</returns>
     public IResult Logout(HttpResponse res)
     {
         res.Cookies.Append("staff_id", "", new CookieOptions { MaxAge = TimeSpan.Zero, Path = "/", HttpOnly = true });
         return Empty();
     }
 
+    /// <summary>招待トークンを確認します。</summary>
+    /// <param name="token">招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>招待情報のJSON</returns>
+    /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<IResult> InvitationAsync(string token, CancellationToken ct)
     {
         var v = await invitationUC.FindByTokenAsync(token, ct);
@@ -261,6 +333,8 @@ public sealed class AuthHandler(
     }
 
     /// <summary>招待レスポンス JSON を組み立てます。</summary>
+    /// <param name="v">招待</param>
+    /// <returns>JSON化用の辞書</returns>
     public static Dictionary<string, object?> InvitationJson(Domain.Invitation.InvitationVo v) => new()
     {
         ["found"]       = true,
@@ -272,6 +346,9 @@ public sealed class AuthHandler(
     /// <summary>staff_id クッキーを付与してリダイレクトする結果です。</summary>
     private sealed class CookieRedirectResult(long staffId, AppSettings app, string location) : IResult
     {
+        /// <summary>staff_id クッキーを付与してリダイレクトレスポンスを書き込みます。</summary>
+        /// <param name="ctx">HTTPコンテキスト</param>
+        /// <returns>完了済みタスク</returns>
         public Task ExecuteAsync(HttpContext ctx)
         {
             ctx.Response.Cookies.Append("staff_id", staffId.ToString(), new CookieOptions

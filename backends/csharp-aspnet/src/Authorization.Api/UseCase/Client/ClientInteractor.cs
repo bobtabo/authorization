@@ -15,6 +15,9 @@ namespace Authorization.Api.UseCase.Client;
 public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
 {
     /// <summary>条件に一致するクライアント一覧と総件数を返します。</summary>
+    /// <param name="dto">検索条件（キーワード・期間・状態・ページング・並び順）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>一覧アイテムと、ページングを無視した総件数</returns>
     public async Task<(List<ClientListItem> Items, int Count)> FindByConditionWithCountAsync(
         ClientListConditionDto dto, CancellationToken ct = default)
     {
@@ -37,6 +40,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     }
 
     /// <summary>クライアント詳細を取得します。</summary>
+    /// <param name="id">クライアントID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クライアント詳細</returns>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<ClientDetailVo> FindByIdAsync(long id, CancellationToken ct = default)
     {
@@ -48,6 +54,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     /// クライアントを登録します。RSA 4096bit 鍵ペア・アクセストークン・識別子を生成し、
     /// 状態は Inactive で保存します。
     /// </summary>
+    /// <param name="dto">登録内容（名称・住所・連絡先・登録者ID等）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>登録結果（ID・識別子・アクセストークン等）</returns>
     public async Task<ClientStoreResultVo> StoreAsync(ClientStoreDto dto, CancellationToken ct = default)
     {
         var (privPem, pubPem, fingerprint) = GenerateRsaKeys();
@@ -81,6 +90,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     /// クライアントを更新します（楽観排他ロック）。状態が Active になる場合は start_at を、
     /// Suspended になる場合は stop_at を設定します。
     /// </summary>
+    /// <param name="dto">更新内容（ID・バージョン・更新するフィールドのみ非null）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>更新後のクライアント詳細</returns>
     /// <exception cref="AppException">存在しない場合（404）、バージョン不一致（409）</exception>
     public async Task<ClientDetailVo> UpdateAsync(ClientUpdateDto dto, CancellationToken ct = default)
     {
@@ -114,6 +126,10 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     /// <summary>
     /// クライアントを論理削除します。状態を Closed に更新した後、deleted_at を設定します。
     /// </summary>
+    /// <param name="id">クライアントID</param>
+    /// <param name="executorId">操作を実行したスタッフID</param>
+    /// <param name="version">楽観排他ロック用バージョン番号（必須）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     /// <exception cref="AppException">バージョン未指定（400）、存在しない場合（404）、バージョン不一致（409）</exception>
     public async Task DestroyAsync(long id, long executorId, int? version, CancellationToken ct = default)
     {
@@ -130,6 +146,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     }
 
     /// <summary>QR コード用データを返します。</summary>
+    /// <param name="dto">クライアント識別子</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>識別子とQRコード用URL</returns>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<ClientQrVo> GetQrAsync(ClientQrDto dto, CancellationToken ct = default)
     {
@@ -138,6 +157,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     }
 
     /// <summary>スマホアプリ向けクライアント情報を返します。</summary>
+    /// <param name="dto">クライアント識別子</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>識別子・名称・状態</returns>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<ClientInfoVo> GetInfoAsync(ClientInfoDto dto, CancellationToken ct = default)
     {
@@ -146,6 +168,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     }
 
     /// <summary>利用開始します。Active 以外なら Active に遷移し、アクセストークンを返します。</summary>
+    /// <param name="dto">クライアント識別子</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>アクセストークン</returns>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<ClientStartVo> StartAsync(ClientStartDto dto, CancellationToken ct = default)
     {
@@ -166,6 +191,8 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     }
 
     /// <summary>利用停止します。Active の場合のみ Suspended に遷移します。</summary>
+    /// <param name="dto">クライアント識別子</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task StopAsync(ClientStopDto dto, CancellationToken ct = default)
     {
@@ -182,12 +209,15 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
         c.Status, c.StartAt, c.StopAt, c.CreatedAt, c.UpdatedAt, c.Version);
 
     /// <summary>暗号論的乱数から 16 進文字列を生成します。</summary>
+    /// <param name="byteCount">生成するランダムバイト数（16進文字列は2倍の長さになる）</param>
+    /// <returns>小文字16進文字列</returns>
     public static string GenerateHex(int byteCount) =>
         Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(byteCount));
 
     /// <summary>
     /// RSA 4096bit 鍵ペアを生成し、(PKCS#8 秘密鍵 PEM, SubjectPublicKeyInfo 公開鍵 PEM, SHA256 フィンガープリント) を返します。
     /// </summary>
+    /// <returns>PKCS#8秘密鍵PEM・SubjectPublicKeyInfo公開鍵PEM・SHA256フィンガープリントのタプル</returns>
     public static (string PrivatePem, string PublicPem, string Fingerprint) GenerateRsaKeys()
     {
         using var rsa = RSA.Create(4096);

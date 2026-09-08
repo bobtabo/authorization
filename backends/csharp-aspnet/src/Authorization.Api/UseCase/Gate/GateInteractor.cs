@@ -32,6 +32,9 @@ public sealed class GateInteractor(
     /// アクセストークンに対応するクライアントの秘密鍵で JWT を発行します。
     /// キャッシュ済みであればそれを返します。
     /// </summary>
+    /// <param name="dto">クライアントアクセストークンとメンバーID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>発行（またはキャッシュ済み）のJWT</returns>
     /// <exception cref="AppException">クライアントが存在しない場合（404）</exception>
     public async Task<GateIssueVo> IssueTokenAsync(GateIssueDto dto, CancellationToken ct = default)
     {
@@ -56,6 +59,9 @@ public sealed class GateInteractor(
     }
 
     /// <summary>クライアントの公開鍵で JWT を検証し、クレームを返します。</summary>
+    /// <param name="dto">クライアント識別子とJWT文字列</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>JWTのクレーム</returns>
     /// <exception cref="AppException">クライアントが存在しない場合（404）、検証失敗（401）</exception>
     public async Task<GateVerifyVo> VerifyAsync(GateVerifyDto dto, CancellationToken ct = default)
     {
@@ -65,6 +71,13 @@ public sealed class GateInteractor(
     }
 
     /// <summary>RS256 で署名した JWT を発行します。</summary>
+    /// <param name="memberId">メンバーID（sub クレームに設定）</param>
+    /// <param name="identifier">クライアント識別子（audience に設定）</param>
+    /// <param name="privateKeyPem">署名に使うRSA秘密鍵（PEM形式）</param>
+    /// <param name="fingerprint">鍵のSHA256フィンガープリント（kid ヘッダーに設定）</param>
+    /// <param name="issuer">発行者（issuer に設定）</param>
+    /// <param name="ttl">有効期間（秒）</param>
+    /// <returns>署名済みJWT文字列</returns>
     public static string IssueJwt(string memberId, string identifier, string privateKeyPem, string fingerprint, string issuer, long ttl)
     {
         var rsa = RSA.Create();
@@ -89,6 +102,11 @@ public sealed class GateInteractor(
     }
 
     /// <summary>JWT を検証し、クレームを辞書で返します。</summary>
+    /// <param name="identifier">期待するaudience（クライアント識別子）</param>
+    /// <param name="tokenStr">検証対象のJWT文字列</param>
+    /// <param name="publicKeyPem">検証に使うRSA公開鍵（PEM形式）</param>
+    /// <param name="issuer">期待するissuer</param>
+    /// <returns>JWTペイロードのクレーム</returns>
     /// <exception cref="AppException">検証失敗（401）</exception>
     public static IReadOnlyDictionary<string, object?> VerifyJwt(string identifier, string tokenStr, string publicKeyPem, string issuer)
     {

@@ -23,6 +23,9 @@ public sealed record LoginDto(
 public sealed class AuthInteractor(IStaffRepository staffRepo, IInvitationAuthRepository invitationAuthRepo)
 {
     /// <summary>スタッフを ID で取得します。</summary>
+    /// <param name="id">スタッフID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>スタッフ</returns>
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<Domain.Staff.Staff> FindUserAsync(long id, CancellationToken ct = default) =>
         await staffRepo.FindByIdAsync(id, ct) ?? throw AppException.NotFound("staff_not_found");
@@ -31,6 +34,9 @@ public sealed class AuthInteractor(IStaffRepository staffRepo, IInvitationAuthRe
     /// OAuth プロバイダー情報でログインします。既存スタッフは最終ログイン日時等を更新し、
     /// 未登録の場合は招待トークンの認可キャッシュを検証してスタッフを新規登録します。
     /// </summary>
+    /// <param name="dto">OAuthプロバイダー情報・招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>ログイン（または新規登録）したスタッフ</returns>
     /// <exception cref="AppException">招待が無い場合（403 invitation_required）</exception>
     public async Task<Domain.Staff.Staff> LoginAsync(LoginDto dto, CancellationToken ct = default)
     {
