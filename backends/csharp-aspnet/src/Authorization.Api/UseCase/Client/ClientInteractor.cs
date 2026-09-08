@@ -3,16 +3,16 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-using System.Globalization;
 using System.Security.Cryptography;
 using Authorization.Api.Domain.Client;
+using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Support;
 using ClientEntity = Authorization.Api.Domain.Client.Client;
 
 namespace Authorization.Api.UseCase.Client;
 
 /// <summary>クライアントユースケースです。</summary>
-public sealed class ClientInteractor(IClientRepository repo)
+public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
 {
     /// <summary>条件に一致するクライアント一覧と総件数を返します。</summary>
     public async Task<(List<ClientListItem> Items, int Count)> FindByConditionWithCountAsync(
@@ -21,8 +21,8 @@ public sealed class ClientInteractor(IClientRepository repo)
         var cond = new ClientCondition
         {
             Keyword   = dto.Keyword,
-            StartFrom = ParseDateTime(dto.StartFrom),
-            StartTo   = ParseDateTime(dto.StartTo),
+            StartFrom = DateFormat.ParseDate(dto.StartFrom),
+            StartTo   = DateFormat.ParseDate(dto.StartTo),
             Statuses  = dto.Statuses?.ToList() ?? [],
             Offset    = dto.Offset,
             Limit     = dto.Limit,
@@ -114,15 +114,19 @@ public sealed class ClientInteractor(IClientRepository repo)
     /// <summary>
     /// クライアントを論理削除します。状態を Closed に更新した後、deleted_at を設定します。
     /// </summary>
-    /// <exception cref="AppException">存在しない場合（404）、バージョン不一致（409）</exception>
+    /// <exception cref="AppException">バージョン未指定（400）、存在しない場合（404）、バージョン不一致（409）</exception>
     public async Task DestroyAsync(long id, long executorId, int? version, CancellationToken ct = default)
     {
-        var c = await repo.FindByIdAsync(id, ct) ?? throw AppException.NotFound("client_not_found");
-        if (version is int v && c.Version != v) throw AppException.Conflict();
+        if (version is not int v) throw AppException.BadRequest("version_required");
 
+        var c = await repo.FindByIdAsync(id, ct) ?? throw AppException.NotFound("client_not_found");
+        if (c.Version != v) throw AppException.Conflict();
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
         var now   = DateTime.Now;
         var saved = await repo.SaveAsync(c with { Status = ClientStatus.Closed, UpdatedAt = now, UpdatedBy = executorId }, ct);
         await repo.SoftDeleteAsync(id, executorId, saved.Version, ct);
+        await tx.CommitAsync(ct);
     }
 
     /// <summary>QR コード用データを返します。</summary>
@@ -176,13 +180,6 @@ public sealed class ClientInteractor(IClientRepository repo)
     private static ClientDetailVo ToDetail(ClientEntity c) => new(
         c.Id, c.Name, c.Identifier, c.PostCode, c.Pref, c.City, c.Address, c.Building, c.Tel, c.Email,
         c.Status, c.StartAt, c.StopAt, c.CreatedAt, c.UpdatedAt, c.Version);
-
-    private static DateTime? ParseDateTime(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return null;
-        var formats = new[] { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd" };
-        return DateTime.TryParseExact(s, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : null;
-    }
 
     /// <summary>暗号論的乱数から 16 進文字列を生成します。</summary>
     public static string GenerateHex(int byteCount) =>

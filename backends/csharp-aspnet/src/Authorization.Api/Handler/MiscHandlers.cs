@@ -53,6 +53,7 @@ public sealed class GateHandler(GateInteractor gateUC)
 
         var auth        = req.Headers.Authorization.ToString();
         var accessToken = auth.StartsWith("Bearer ", StringComparison.Ordinal) ? auth["Bearer ".Length..] : "";
+        if (string.IsNullOrEmpty(accessToken)) return Error(401, "client_not_found");
 
         var vo = await gateUC.IssueTokenAsync(new GateIssueDto(accessToken, member), ct);
         return Results.Json(new Dictionary<string, object?> { ["token"] = vo.Token });

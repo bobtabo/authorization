@@ -29,11 +29,21 @@ public sealed class StaffInteractor(IStaffRepository repo)
     }
 
     /// <summary>権限を更新します。</summary>
-    public Task<bool> UpdateRoleAsync(StaffUpdateRoleDto dto, CancellationToken ct = default) =>
-        repo.UpdateRoleAsync(dto.Id, dto.Role, dto.ExecutorId, ct);
+    /// <exception cref="AppException">ロール値が不正な場合（400）、存在しない場合（404）</exception>
+    public async Task UpdateRoleAsync(StaffUpdateRoleDto dto, CancellationToken ct = default)
+    {
+        if (!StaffRole.IsValid(dto.Role)) throw AppException.BadRequest("role_invalid");
+        _ = await repo.FindByIdAsync(dto.Id, ct) ?? throw AppException.NotFound("staff_not_found");
+        if (!await repo.UpdateRoleAsync(dto.Id, dto.Role, dto.ExecutorId, ct))
+            throw AppException.NotFound("staff_not_found");
+    }
 
     /// <summary>論理削除を取り消します。</summary>
-    public Task<bool> RestoreAsync(long id, CancellationToken ct = default) => repo.RestoreAsync(id, ct);
+    /// <exception cref="AppException">存在しない場合（404）</exception>
+    public async Task RestoreAsync(long id, CancellationToken ct = default)
+    {
+        if (!await repo.RestoreAsync(id, ct)) throw AppException.NotFound("staff_not_found");
+    }
 
     /// <summary>論理削除します。</summary>
     /// <exception cref="AppException">存在しない場合（404）、バージョン不一致（409）</exception>

@@ -41,7 +41,7 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
             "start_at"   => asc ? q.OrderBy(c => c.StartAt)   : q.OrderByDescending(c => c.StartAt),
             _            => asc ? q.OrderBy(c => c.CreatedAt) : q.OrderByDescending(c => c.CreatedAt),
         };
-        if (cond.Limit > 0) q = q.Skip(cond.Offset).Take(cond.Limit);
+        if (cond.Limit > 0) q = q.Skip(cond.Offset).Take(Math.Clamp(cond.Limit, 1, 500));
         return (await q.ToListAsync(ct)).Select(ToEntity).ToList();
     }
 
