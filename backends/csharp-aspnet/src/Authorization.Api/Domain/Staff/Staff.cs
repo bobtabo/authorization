@@ -12,9 +12,13 @@ public static class StaffRole
     public const int Member = 2;
 
     /// <summary>不正な値は Member に丸めます。</summary>
+    /// <param name="value">ロールコード</param>
+    /// <returns>ロールコード。Admin以外はMemberに丸める</returns>
     public static int From(int value) => value == Admin ? Admin : Member;
 
     /// <summary>有効な権限コードかどうか。</summary>
+    /// <param name="value">ロールコード</param>
+    /// <returns>Admin/Memberのいずれかであればtrue</returns>
     public static bool IsValid(int value) => value is Admin or Member;
 }
 
@@ -77,22 +81,65 @@ public sealed record StaffVo(long Id, string Name, string? Avatar, int Role);
 /// <summary>スタッフリポジトリです。</summary>
 public interface IStaffRepository
 {
+    /// <summary>条件に一致するスタッフの総件数を返します（ページング無視）。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>総件数</returns>
     Task<int> CountByConditionAsync(StaffCondition cond, CancellationToken ct = default);
+
+    /// <summary>条件に一致するスタッフ一覧を返します。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>スタッフ一覧（ページング適用済み）</returns>
     Task<List<Staff>> FindByConditionAsync(StaffCondition cond, CancellationToken ct = default);
+
+    /// <summary>IDでスタッフを取得します。</summary>
+    /// <param name="id">スタッフID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>スタッフ、存在しない場合はnull</returns>
     Task<Staff?> FindByIdAsync(long id, CancellationToken ct = default);
+
+    /// <summary>OAuthプロバイダー情報でスタッフを取得します。</summary>
+    /// <param name="provider">OAuthプロバイダーコード</param>
+    /// <param name="providerId">プロバイダー側のユーザーID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>スタッフ、存在しない場合はnull</returns>
     Task<Staff?> FindByProviderAsync(int provider, string providerId, CancellationToken ct = default);
+
+    /// <summary>論理削除されていない全スタッフを返します。</summary>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>有効なスタッフ一覧</returns>
     Task<List<Staff>> FindAllActiveAsync(CancellationToken ct = default);
 
     /// <summary>
     /// 保存します。Id が 0 なら新規登録、それ以外は楽観排他ロック付き更新です。
     /// </summary>
+    /// <param name="staff">保存するスタッフ</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>保存後のスタッフ（IDやバージョンが反映済み）</returns>
     /// <exception cref="Support.AppException">バージョン不一致（409）</exception>
     Task<Staff> SaveAsync(Staff staff, CancellationToken ct = default);
 
+    /// <summary>権限を更新します。</summary>
+    /// <param name="id">スタッフID</param>
+    /// <param name="role">新しい権限コード</param>
+    /// <param name="updatedBy">操作を実行したスタッフID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>更新できた場合は true</returns>
     Task<bool> UpdateRoleAsync(long id, int role, long updatedBy, CancellationToken ct = default);
 
+    /// <summary>論理削除します。</summary>
+    /// <param name="id">スタッフID</param>
+    /// <param name="deletedBy">削除を実行したスタッフID</param>
+    /// <param name="version">楽観排他ロック用バージョン番号</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>削除できた場合は true</returns>
     /// <exception cref="Support.AppException">バージョン不一致（409）</exception>
     Task<bool> SoftDeleteAsync(long id, long deletedBy, int version, CancellationToken ct = default);
 
+    /// <summary>論理削除を取り消します。</summary>
+    /// <param name="id">スタッフID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>復元できた場合は true</returns>
     Task<bool> RestoreAsync(long id, CancellationToken ct = default);
 }

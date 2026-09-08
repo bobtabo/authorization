@@ -102,19 +102,50 @@ public sealed record ClientStartVo(string AccessToken);
 /// <summary>クライアントリポジトリです。</summary>
 public interface IClientRepository
 {
+    /// <summary>条件に一致するクライアント一覧を返します。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クライアント一覧（ページング適用済み）</returns>
     Task<List<Client>> FindByConditionAsync(ClientCondition cond, CancellationToken ct = default);
+
+    /// <summary>条件に一致するクライアントの総件数を返します（ページング無視）。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>総件数</returns>
     Task<int> CountByConditionAsync(ClientCondition cond, CancellationToken ct = default);
+
+    /// <summary>IDでクライアントを取得します。</summary>
+    /// <param name="id">クライアントID</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クライアント、存在しない場合はnull</returns>
     Task<Client?> FindByIdAsync(long id, CancellationToken ct = default);
+
+    /// <summary>アクセストークンで有効なクライアントを取得します。</summary>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クライアント（状態がActiveかつ未削除のもの）、存在しない場合はnull</returns>
     Task<Client?> FindByAccessTokenAsync(string accessToken, CancellationToken ct = default);
+
+    /// <summary>識別子でクライアントを取得します。</summary>
+    /// <param name="identifier">クライアント識別子</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クライアント、存在しない場合はnull</returns>
     Task<Client?> FindByIdentifierAsync(string identifier, CancellationToken ct = default);
 
     /// <summary>
     /// 保存します。Id が 0 なら新規登録、それ以外は楽観排他ロック付き更新です。
     /// </summary>
+    /// <param name="client">保存するクライアント</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>保存後のクライアント（IDやバージョンが反映済み）</returns>
     /// <exception cref="Support.AppException">バージョン不一致（409）</exception>
     Task<Client> SaveAsync(Client client, CancellationToken ct = default);
 
     /// <summary>論理削除します。</summary>
+    /// <param name="id">クライアントID</param>
+    /// <param name="deletedBy">削除を実行したスタッフID</param>
+    /// <param name="version">楽観排他ロック用バージョン番号</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     /// <exception cref="Support.AppException">バージョン不一致（409）</exception>
     Task SoftDeleteAsync(long id, long deletedBy, int version, CancellationToken ct = default);
 }
@@ -142,7 +173,23 @@ public sealed record JwtHistoryCondition(
 /// <summary>JWT 履歴リポジトリです。</summary>
 public interface IJwtHistoryRepository
 {
+    /// <summary>条件に一致するJWT履歴の総件数を返します（ページング無視）。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>総件数</returns>
     Task<int> CountByConditionAsync(JwtHistoryCondition cond, CancellationToken ct = default);
+
+    /// <summary>条件に一致するJWT履歴一覧を返します。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>JWT履歴一覧（ページング適用済み）</returns>
     Task<List<JwtHistory>> FindByConditionAsync(JwtHistoryCondition cond, CancellationToken ct = default);
+
+    /// <summary>JWT発行履歴を1件保存します。</summary>
+    /// <param name="clientId">クライアントID</param>
+    /// <param name="memberId">メンバーID</param>
+    /// <param name="issueAt">発行日時</param>
+    /// <param name="jwt">発行したJWT文字列</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     Task SaveAsync(long clientId, string memberId, DateTime issueAt, string jwt, CancellationToken ct = default);
 }

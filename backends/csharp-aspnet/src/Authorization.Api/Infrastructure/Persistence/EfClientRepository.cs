@@ -15,6 +15,9 @@ namespace Authorization.Api.Infrastructure.Persistence;
 /// <summary>EF Core によるクライアントリポジトリです。</summary>
 public sealed class EfClientRepository(AppDbContext db) : IClientRepository
 {
+    /// <summary>検索条件（キーワード・期間・状態）をクエリに適用します（ページング・並び順は含まない）。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <returns>フィルタ適用済みのクエリ</returns>
     private IQueryable<ClientModel> ApplyFilters(ClientCondition cond)
     {
         var q = db.Clients.AsNoTracking().AsQueryable();
@@ -29,6 +32,7 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
         return q;
     }
 
+    /// <inheritdoc/>
     public async Task<List<ClientEntity>> FindByConditionAsync(ClientCondition cond, CancellationToken ct = default)
     {
         var q   = ApplyFilters(cond);
@@ -45,15 +49,18 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
         return (await q.ToListAsync(ct)).Select(ToEntity).ToList();
     }
 
+    /// <inheritdoc/>
     public Task<int> CountByConditionAsync(ClientCondition cond, CancellationToken ct = default) =>
         ApplyFilters(cond).CountAsync(ct);
 
+    /// <inheritdoc/>
     public async Task<ClientEntity?> FindByIdAsync(long id, CancellationToken ct = default)
     {
         var m = await db.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
         return m is null ? null : ToEntity(m);
     }
 
+    /// <inheritdoc/>
     public async Task<ClientEntity?> FindByAccessTokenAsync(string accessToken, CancellationToken ct = default)
     {
         var m = await db.Clients.AsNoTracking().FirstOrDefaultAsync(
@@ -61,12 +68,14 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
         return m is null ? null : ToEntity(m);
     }
 
+    /// <inheritdoc/>
     public async Task<ClientEntity?> FindByIdentifierAsync(string identifier, CancellationToken ct = default)
     {
         var m = await db.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Identifier == identifier, ct);
         return m is null ? null : ToEntity(m);
     }
 
+    /// <inheritdoc/>
     public async Task<ClientEntity> SaveAsync(ClientEntity c, CancellationToken ct = default)
     {
         if (c.Id == 0)
@@ -122,6 +131,7 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
         return c with { Version = c.Version + 1 };
     }
 
+    /// <inheritdoc/>
     public async Task SoftDeleteAsync(long id, long deletedBy, int version, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
@@ -135,6 +145,9 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
         if (rows == 0) throw AppException.Conflict();
     }
 
+    /// <summary>DBモデルをドメインエンティティに変換します。</summary>
+    /// <param name="m">DBモデル</param>
+    /// <returns>ドメインエンティティ</returns>
     private static ClientEntity ToEntity(ClientModel m) => new()
     {
         Id          = m.Id,
@@ -167,12 +180,17 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
 /// <summary>EF Core による JWT 履歴リポジトリです。</summary>
 public sealed class EfJwtHistoryRepository(AppDbContext db) : IJwtHistoryRepository
 {
+    /// <summary>指定クライアントの未削除JWT履歴クエリを組み立てます。</summary>
+    /// <param name="clientId">クライアントID</param>
+    /// <returns>クエリ</returns>
     private IQueryable<JwtHistoryModel> Base(long clientId) =>
         db.JwtHistories.AsNoTracking().Where(h => h.ClientId == clientId && h.DeletedAt == null);
 
+    /// <inheritdoc/>
     public Task<int> CountByConditionAsync(JwtHistoryCondition cond, CancellationToken ct = default) =>
         Base(cond.ClientId).CountAsync(ct);
 
+    /// <inheritdoc/>
     public async Task<List<JwtHistory>> FindByConditionAsync(JwtHistoryCondition cond, CancellationToken ct = default)
     {
         var q   = Base(cond.ClientId);
@@ -186,6 +204,7 @@ public sealed class EfJwtHistoryRepository(AppDbContext db) : IJwtHistoryReposit
             .ToList();
     }
 
+    /// <inheritdoc/>
     public async Task SaveAsync(long clientId, string memberId, DateTime issueAt, string jwt, CancellationToken ct = default)
     {
         var now = DateTime.Now;

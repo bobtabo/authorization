@@ -15,6 +15,9 @@ namespace Authorization.Api.Infrastructure.Persistence;
 /// <summary>EF Core によるスタッフリポジトリです。</summary>
 public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
 {
+    /// <summary>検索条件（キーワード・ロール）をクエリに適用します（ページング・並び順は含まない）。</summary>
+    /// <param name="cond">検索条件</param>
+    /// <returns>フィルタ適用済みのクエリ</returns>
     private IQueryable<StaffModel> ApplyFilters(StaffCondition cond)
     {
         var q = db.Staffs.AsNoTracking().AsQueryable();
@@ -27,9 +30,11 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return q;
     }
 
+    /// <inheritdoc/>
     public Task<int> CountByConditionAsync(StaffCondition cond, CancellationToken ct = default) =>
         ApplyFilters(cond).CountAsync(ct);
 
+    /// <inheritdoc/>
     public async Task<List<StaffEntity>> FindByConditionAsync(StaffCondition cond, CancellationToken ct = default)
     {
         var q    = ApplyFilters(cond);
@@ -45,12 +50,14 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return (await q.ToListAsync(ct)).Select(ToEntity).ToList();
     }
 
+    /// <inheritdoc/>
     public async Task<StaffEntity?> FindByIdAsync(long id, CancellationToken ct = default)
     {
         var m = await db.Staffs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
         return m is null ? null : ToEntity(m);
     }
 
+    /// <inheritdoc/>
     public async Task<StaffEntity?> FindByProviderAsync(int provider, string providerId, CancellationToken ct = default)
     {
         var m = await db.Staffs.AsNoTracking()
@@ -58,6 +65,7 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return m is null ? null : ToEntity(m);
     }
 
+    /// <inheritdoc/>
     public async Task<List<StaffEntity>> FindAllActiveAsync(CancellationToken ct = default) =>
         (await db.Staffs.AsNoTracking()
             .Where(s => s.DeletedAt == null)
@@ -65,6 +73,7 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
             .ToListAsync(ct))
         .Select(ToEntity).ToList();
 
+    /// <inheritdoc/>
     public async Task<StaffEntity> SaveAsync(StaffEntity s, CancellationToken ct = default)
     {
         if (s.Id == 0)
@@ -106,6 +115,7 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return s with { Version = s.Version + 1 };
     }
 
+    /// <inheritdoc/>
     public async Task<bool> UpdateRoleAsync(long id, int role, long updatedBy, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
@@ -116,6 +126,7 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return rows > 0;
     }
 
+    /// <inheritdoc/>
     public async Task<bool> SoftDeleteAsync(long id, long deletedBy, int version, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
@@ -128,6 +139,7 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return true;
     }
 
+    /// <inheritdoc/>
     public async Task<bool> RestoreAsync(long id, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
@@ -138,6 +150,9 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         return rows > 0;
     }
 
+    /// <summary>DBモデルをドメインエンティティに変換します。</summary>
+    /// <param name="m">DBモデル</param>
+    /// <returns>ドメインエンティティ</returns>
     private static StaffEntity ToEntity(StaffModel m) => new()
     {
         Id          = m.Id,
