@@ -48,7 +48,7 @@ bin/docker-common.sh env        # 証明書と .env を配置（local/common/.en
 ```bash
 cd docker
 bin/docker-common.sh up      # 1. 共通インフラ（nginx-proxy / MySQL / Redis / LocalStack）
-bin/docker-backends.sh up    # 2. 全10バックエンドを一括起動
+bin/docker-backends.sh up    # 2. 全11バックエンドを一括起動
 ```
 
 個別に起動する場合はバックエンドごとのスクリプトを使う（対応表は backend-dispatch Skill）:
