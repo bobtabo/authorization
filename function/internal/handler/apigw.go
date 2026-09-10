@@ -21,6 +21,7 @@ var albURL = os.Getenv("ALB_URL")
 
 // hostMap はパスプレフィックスから nginx-proxy が振り分けに使う Host ヘッダー値を返す。
 var hostMap = map[string]string{
+	"/function/csharp":    "apis.authorization-csharp.dev",
 	"/function/php":       "apis.authorization-php.dev",
 	"/function/go-gin":    "apis.authorization-go-gin.dev",
 	"/function/go-beego":  "apis.authorization-go-beego.dev",

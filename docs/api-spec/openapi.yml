@@ -19,6 +19,8 @@ servers:
     description: 開発環境
   - url: https://apis.authorization-php.dev/api
     description: ローカルPHP（Laravel）環境
+  - url: https://apis.authorization-csharp.dev/api
+    description: ローカルC#（ASP.NET Core）環境
   - url: https://apis.authorization-go-gin.dev/api
     description: ローカルGo（Gin）環境
   - url: https://apis.authorization-go-beego.dev/api
@@ -84,6 +86,8 @@ paths:
         description: 開発環境
       - url: https://apis.authorization-php.dev
         description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-csharp.dev
+        description: ローカルC#（ASP.NET Core）環境
       - url: https://apis.authorization-go-gin.dev
         description: ローカルGo（Gin）環境
       - url: https://apis.authorization-go-beego.dev
@@ -127,6 +131,8 @@ paths:
         description: 開発環境
       - url: https://apis.authorization-php.dev
         description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-csharp.dev
+        description: ローカルC#（ASP.NET Core）環境
       - url: https://apis.authorization-go-gin.dev
         description: ローカルGo（Gin）環境
       - url: https://apis.authorization-go-beego.dev
@@ -170,6 +176,8 @@ paths:
         description: 開発環境
       - url: https://apis.authorization-php.dev
         description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-csharp.dev
+        description: ローカルC#（ASP.NET Core）環境
       - url: https://apis.authorization-go-gin.dev
         description: ローカルGo（Gin）環境
       - url: https://apis.authorization-go-beego.dev
@@ -223,6 +231,8 @@ paths:
         description: 開発環境
       - url: https://apis.authorization-php.dev
         description: ローカルPHP（Laravel）環境
+      - url: https://apis.authorization-csharp.dev
+        description: ローカルC#（ASP.NET Core）環境
       - url: https://apis.authorization-go-gin.dev
         description: ローカルGo（Gin）環境
       - url: https://apis.authorization-go-beego.dev
