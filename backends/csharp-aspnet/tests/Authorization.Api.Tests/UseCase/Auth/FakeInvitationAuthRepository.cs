@@ -6,6 +6,7 @@ public sealed class FakeInvitationAuthRepository : IInvitationAuthRepository
 {
     private readonly Dictionary<string, int> roles = [];
     public readonly List<string> Removed = [];
+    public readonly Dictionary<string, long> Ttls = [];
 
     public FakeInvitationAuthRepository Add(string token, int role)
     {
@@ -16,6 +17,7 @@ public sealed class FakeInvitationAuthRepository : IInvitationAuthRepository
     public Task PutRoleAsync(string token, int role, long ttlSeconds, CancellationToken ct = default)
     {
         roles[token] = role;
+        Ttls[token] = ttlSeconds;
         return Task.CompletedTask;
     }
 

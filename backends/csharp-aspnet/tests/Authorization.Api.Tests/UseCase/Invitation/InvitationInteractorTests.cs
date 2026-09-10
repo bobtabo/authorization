@@ -64,5 +64,6 @@ public class InvitationInteractorTests
 
         Assert.Equal("tok-1", result.Token);
         Assert.Equal(StaffRole.Admin, await authRepo.GetRoleAsync("tok-1"));
+        Assert.Equal(600, authRepo.Ttls["tok-1"]);
     }
 }

@@ -1,5 +1,6 @@
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Infrastructure.Db;
+using Authorization.Api.Infrastructure.Persistence;
 using Authorization.Api.Support;
 using Authorization.Api.Tests.UseCase.Gate;
 using Authorization.Api.UseCase.Client;
@@ -202,13 +203,19 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task DestroyAsync_ValidRequest_ClosesAndSoftDeletes()
     {
-        var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Active, version: 1));
+        // トランザクション（BeginTransactionAsync）が実際のリポジトリ操作を
+        // 制御していることを検証するため、フェイクではなく AppDbContext に
+        // 紐づく本物の EfClientRepository を使う。
+        var repo = new EfClientRepository(db);
+        var seeded = await repo.SaveAsync(MakeClient(id: 0, status: ClientStatus.Active));
         var uc = new ClientInteractor(repo, db);
 
-        await uc.DestroyAsync(1, executorId: 9, version: 1);
+        await uc.DestroyAsync(seeded.Id, executorId: 9, version: seeded.Version);
 
-        var saved = await repo.FindByIdAsync(1);
+        var saved = await repo.FindByIdAsync(seeded.Id);
         Assert.Equal(ClientStatus.Closed, saved!.Status);
+        Assert.NotNull(saved.DeletedAt);
+        Assert.Equal(9, saved.DeletedBy);
     }
 
     // ── GetQrAsync / GetInfoAsync ──
