@@ -3,6 +3,8 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
+using MySqlConnector;
+
 namespace Authorization.Api.Config;
 
 /// <summary>アプリ全般の設定です。</summary>
@@ -21,11 +23,19 @@ public sealed record AppSettings(
 /// <summary>DB 接続設定です。</summary>
 public sealed record DbSettings(string Host, int Port, string Database, string User, string Password)
 {
-    /// <summary>MySqlConnector 用の接続文字列を返します。</summary>
+    /// <summary>MySqlConnector 用の接続文字列を返します。値は MySqlConnectionStringBuilder でエスケープします。</summary>
     /// <returns>接続文字列</returns>
-    public string ConnectionString =>
-        $"Server={Host};Port={Port};Database={Database};User={User};Password={Password};" +
-        "SslMode=None;AllowPublicKeyRetrieval=true;CharSet=utf8mb4;";
+    public string ConnectionString => new MySqlConnectionStringBuilder
+    {
+        Server                  = Host,
+        Port                    = (uint)Port,
+        Database                = Database,
+        UserID                  = User,
+        Password                = Password,
+        SslMode                 = MySqlSslMode.None,
+        AllowPublicKeyRetrieval = true,
+        CharacterSet            = "utf8mb4",
+    }.ConnectionString;
 }
 
 /// <summary>Redis 接続設定です。</summary>
