@@ -80,9 +80,13 @@ public sealed class GateInteractor(
     /// <returns>署名済みJWT文字列</returns>
     public static string IssueJwt(string memberId, string identifier, string privateKeyPem, string fingerprint, string issuer, long ttl)
     {
-        var rsa = RSA.Create();
+        using var rsa = RSA.Create();
         rsa.ImportFromPem(privateKeyPem);
-        var key = new RsaSecurityKey(rsa) { KeyId = fingerprint };
+        var key = new RsaSecurityKey(rsa)
+        {
+            KeyId = fingerprint,
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false },
+        };
         var now = DateTime.UtcNow;
 
         var token = new JwtSecurityToken(
@@ -110,7 +114,7 @@ public sealed class GateInteractor(
     /// <exception cref="AppException">検証失敗（401）</exception>
     public static IReadOnlyDictionary<string, object?> VerifyJwt(string identifier, string tokenStr, string publicKeyPem, string issuer)
     {
-        var rsa = RSA.Create();
+        using var rsa = RSA.Create();
         rsa.ImportFromPem(publicKeyPem);
 
         var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
@@ -122,7 +126,10 @@ public sealed class GateInteractor(
             ValidAudience            = identifier,
             ValidateLifetime         = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey         = new RsaSecurityKey(rsa),
+            IssuerSigningKey         = new RsaSecurityKey(rsa)
+            {
+                CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false },
+            },
             ValidAlgorithms          = [SecurityAlgorithms.RsaSha256],
             ClockSkew                = TimeSpan.Zero,
         };

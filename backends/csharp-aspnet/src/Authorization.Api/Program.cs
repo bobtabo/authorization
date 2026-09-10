@@ -11,7 +11,8 @@ var cfg = ConfigLoader.Load();
 
 CultureInfo.DefaultThreadCurrentCulture   = CultureInfo.InvariantCulture;
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-TimeZoneInfo.TryFindSystemTimeZoneById(cfg.App.Timezone, out var tz);
+if (!TimeZoneInfo.TryFindSystemTimeZoneById(cfg.App.Timezone, out var tz))
+    throw new InvalidOperationException($"unknown timezone: {cfg.App.Timezone}");
 Environment.SetEnvironmentVariable("TZ", cfg.App.Timezone);
 
 var builder = WebApplication.CreateBuilder(args);

@@ -24,9 +24,9 @@ public sealed class StaffHandler(StaffInteractor staffUC)
             .Select(s => int.TryParse(s.Trim(), out var r) ? r : (int?)null)
             .OfType<int>()
             .ToList();
-        var limit  = Math.Max(1, QueryInt(req, "limit") ?? 10);
-        var page   = Math.Max(1, QueryInt(req, "page") ?? 1);
-        var offset = limit * (page - 1);
+        var limit = Math.Max(1, QueryInt(req, "limit") ?? 10);
+        var page  = Math.Max(1, QueryInt(req, "page") ?? 1);
+        if (SafeOffset(limit, page) is not int offset) return Error(400, "page_out_of_range");
 
         var cond = new StaffCondition
         {

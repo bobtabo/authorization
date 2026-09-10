@@ -71,7 +71,8 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
     /// <inheritdoc/>
     public async Task<ClientEntity?> FindByIdentifierAsync(string identifier, CancellationToken ct = default)
     {
-        var m = await db.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.Identifier == identifier, ct);
+        var m = await db.Clients.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Identifier == identifier && c.DeletedAt == null, ct);
         return m is null ? null : ToEntity(m);
     }
 

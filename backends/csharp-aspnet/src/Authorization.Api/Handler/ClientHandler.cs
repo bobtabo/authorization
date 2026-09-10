@@ -76,9 +76,9 @@ public sealed class ClientHandler(
     /// <returns>一覧データとページャー情報のJSON</returns>
     public async Task<IResult> IndexAsync(HttpRequest req, CancellationToken ct)
     {
-        var limit  = Math.Max(1, QueryInt(req, "limit") ?? 10);
-        var page   = Math.Max(1, QueryInt(req, "page") ?? 1);
-        var offset = limit * (page - 1);
+        var limit = Math.Max(1, QueryInt(req, "limit") ?? 10);
+        var page  = Math.Max(1, QueryInt(req, "page") ?? 1);
+        if (SafeOffset(limit, page) is not int offset) return Error(400, "page_out_of_range");
         var statuses = req.Query["statuses"].Concat(req.Query["statuses[]"])
             .SelectMany(v => (v ?? "").Split(','))
             .Select(s => int.TryParse(s.Trim(), out var r) ? r : (int?)null)
@@ -187,14 +187,16 @@ public sealed class ClientHandler(
         var tel      = body.Str("tel");
         var email    = body.Str("email");
         var status   = body.Int("status");
+        var version  = body.Int("version");
 
         if (!ClientValidation.ValidateUpdate(name, postCode, pref, city, address, building, tel, email))
         {
             return Error(422, "validation_error");
         }
+        if (version is not int v) return Error(400, "version_required");
 
         var dto = new ClientUpdateDto(clientId, name, postCode, pref, city, address, building, tel, email, status,
-            executorId, body.Int("version") ?? 0);
+            executorId, v);
         var c = await clientUC.UpdateAsync(dto, ct);
         return Results.Json(DetailJson(c));
     }
@@ -274,9 +276,9 @@ public sealed class ClientHandler(
     public async Task<IResult> JwtHistoriesAsync(string id, HttpRequest req, CancellationToken ct)
     {
         if (!long.TryParse(id, out var clientId)) return InvalidId();
-        var limit  = Math.Max(1, QueryInt(req, "limit") ?? 10);
-        var page   = Math.Max(1, QueryInt(req, "page") ?? 1);
-        var offset = limit * (page - 1);
+        var limit = Math.Max(1, QueryInt(req, "limit") ?? 10);
+        var page  = Math.Max(1, QueryInt(req, "page") ?? 1);
+        if (SafeOffset(limit, page) is not int offset) return Error(400, "page_out_of_range");
 
         var cond = new JwtHistoryCondition(clientId, offset, limit,
             Query(req, "sort") ?? "issue_at", Query(req, "sort_type") ?? "desc");

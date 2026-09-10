@@ -31,6 +31,16 @@ public static class HttpHelpers
     public static int? QueryInt(HttpRequest req, string key) =>
         int.TryParse(Query(req, key), out var v) ? v : null;
 
+    /// <summary>limit と page からoffsetを計算します。int（32bit）の範囲を超える場合はnullを返します。</summary>
+    /// <param name="limit">1ページの件数</param>
+    /// <param name="page">ページ番号（1始まり）</param>
+    /// <returns>offset、int の範囲を超える場合はnull</returns>
+    public static int? SafeOffset(int limit, int page)
+    {
+        var offset = (long)limit * (page - 1);
+        return offset is >= int.MinValue and <= int.MaxValue ? (int)offset : null;
+    }
+
     /// <summary>{"error": message} を返します。</summary>
     /// <param name="status">HTTPステータスコード</param>
     /// <param name="message">エラーメッセージ</param>

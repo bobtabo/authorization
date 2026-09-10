@@ -53,7 +53,7 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
     /// <inheritdoc/>
     public async Task<StaffEntity?> FindByIdAsync(long id, CancellationToken ct = default)
     {
-        var m = await db.Staffs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
+        var m = await db.Staffs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id && s.DeletedAt == null, ct);
         return m is null ? null : ToEntity(m);
     }
 
