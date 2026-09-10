@@ -29,6 +29,7 @@ pushでは**自動実行されない**。
 | `go-ci.yml` | `backends/go-gin/**` | push（`feature/issue-*` 以外） |
 | `go-echo-ci.yml` | `backends/go-echo/**` | 同上 |
 | `go-beego-ci.yml` | `backends/go-beego/**` | 同上 |
+| `csharp-ci.yml` | `backends/csharp-aspnet/**` | 同上 |
 | `kotlin-ci.yml` | `backends/kotlin-ktor/**` | 同上 |
 | `php-ci.yml` | `backends/php-laravel/**` | 同上 |
 | `python-ci.yml` | `backends/python-fastapi/**` | 同上 |
@@ -63,7 +64,7 @@ git diff --name-only origin/develop...HEAD
 - `.claude/**`、`docs/**`、`README.md` のみの変更ならバックエンドCIの発火は不要
   （PRで `docs-ci.yml` が動く）。
 - `docker/**`・`function/**`・`terraform/**`・`.github/workflows/**` など特定バックエンドに
-  閉じない変更が含まれる場合は、影響範囲を推測で切り分けず、上表のバックエンド10本を
+  閉じない変更が含まれる場合は、影響範囲を推測で切り分けず、上表のバックエンド11本を
   すべて発火するフォールバックを取る。
 
 ## 手動発火と結果確認
