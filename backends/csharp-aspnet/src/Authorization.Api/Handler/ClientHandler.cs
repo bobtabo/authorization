@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Domain.Notification;
+using Authorization.Api.Http.Responses.Client;
 using Authorization.Api.Infrastructure.Mail;
 using Authorization.Api.Support;
 using Authorization.Api.UseCase.Client;
@@ -122,7 +123,7 @@ public sealed class ClientHandler(
     {
         if (!long.TryParse(id, out var clientId)) return InvalidId();
         var c = await clientUC.FindByIdAsync(clientId, ct);
-        return Results.Json(c, DateFormat.SnakeCaseMinuteJsonOptions);
+        return Results.Json(new ShowResponse(c).Attributes());
     }
 
     /// <summary>
@@ -198,7 +199,7 @@ public sealed class ClientHandler(
         var dto = new ClientUpdateDto(clientId, name, postCode, pref, city, address, building, tel, email, status,
             executorId, v);
         var c = await clientUC.UpdateAsync(dto, ct);
-        return Results.Json(c, DateFormat.SnakeCaseMinuteJsonOptions);
+        return Results.Json(new ShowResponse(c).Attributes());
     }
 
     /// <summary>QRコード用データを返します。</summary>
