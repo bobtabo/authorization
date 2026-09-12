@@ -36,7 +36,19 @@ services:
       - java_build:/var/www/${APP_NAME}/build
       - java_gradle:/var/www/${APP_NAME}/.gradle
     working_dir: /var/www/${APP_NAME}
-    command: gradle bootRun
+    environment:
+      - APP_NAME=${APP_NAME}
+    # backends/java-spring が未整備でもコンテナ機構自体を検証できるよう、
+    # build.gradle(.kts) が無い間はプロセスを終了させず待機する
+    command:
+      - sh
+      - -c
+      - |
+          if [ -f build.gradle ] || [ -f build.gradle.kts ]; then
+            exec gradle bootRun
+          else
+            exec tail -f /dev/null
+          fi
     networks:
       - authorization
 

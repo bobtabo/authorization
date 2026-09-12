@@ -19,6 +19,9 @@ RUN usermod -l ${DOCKER_USER} gradle \
       && usermod -aG wheel ${DOCKER_USER} \
       && echo ${DOCKER_USER}:${DOCKER_PASSWORD} | chpasswd \
       && echo "docker    ALL=(ALL)       ALL" >> /etc/sudoers
+# ARGはビルド時のみ有効なため、エントリーポイント（実行時）でも同じユーザー名を
+# 参照できるようENVとして引き継ぐ
+ENV DOCKER_USER=${DOCKER_USER}
 
 # ロケール・タイムゾーン
 ENV LANG="ja_JP.UTF-8" \

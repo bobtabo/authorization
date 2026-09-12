@@ -59,7 +59,7 @@ bin/docker-go-gin.sh up      # go-gin だけ起動（他は docker-go-echo.sh / 
 ```
 
 - 1つのバックエンドだけ触る作業では `docker-backends.sh up` を使わず個別起動にする
-  （10コンテナのビルドは時間とリソースを消費する）。
+  （12コンテナのビルドは時間とリソースを消費する）。
 - 各 `docker-<x>.sh up` は `docker/local/app-<x>/.env` が無ければ `.env.example` から
   自動生成した上で `docker compose -p auth-<x> up -d --build` を実行する。
 - `docker-backends.sh` が受け付ける引数は `up` / `down` のみ（`exec` / `start` / `stop` は
