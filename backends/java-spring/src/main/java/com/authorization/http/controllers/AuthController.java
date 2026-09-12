@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * 認証Controllerクラスです。
@@ -47,6 +48,8 @@ public class AuthController {
     private static final HttpClient HTTP =
             HttpClient.newBuilder().connectTimeout(OAUTH_HTTP_TIMEOUT).build();
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final String GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
+    private static final String GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
 
     private final AuthService authService;
     private final InvitationService invitationService;
@@ -113,11 +116,15 @@ public class AuthController {
     @GetMapping("/auth/google/redirect")
     public ResponseEntity<Void> googleRedirect(@RequestParam(required = false) String token) {
         String state = (token != null && !token.isEmpty()) ? token : "state";
-        String url = "https://accounts.google.com/o/oauth2/auth"
-                + "?client_id=" + cfg.oauth().googleClientId()
-                + "&redirect_uri=" + cfg.oauth().googleRedirectUrl()
-                + "&response_type=code&scope=email+profile&access_type=online"
-                + "&state=" + encode(state);
+        String url = UriComponentsBuilder.fromUriString(GOOGLE_AUTH_URL)
+                .queryParam("client_id", cfg.oauth().googleClientId())
+                .queryParam("redirect_uri", cfg.oauth().googleRedirectUrl())
+                .queryParam("response_type", "code")
+                .queryParam("scope", "email profile")
+                .queryParam("access_type", "online")
+                .queryParam("state", state)
+                .encode()
+                .toUriString();
         return redirect(url);
     }
 
@@ -166,13 +173,15 @@ public class AuthController {
     @GetMapping("/auth/github/redirect")
     public ResponseEntity<Void> githubRedirect(@RequestParam(required = false) String token) {
         String state = (token != null && !token.isEmpty())
-                ? encode(cfg.app().runtime() + "|" + token)
-                : encode(cfg.app().runtime());
-        String url = "https://github.com/login/oauth/authorize"
-                + "?client_id=" + cfg.oauth().githubClientId()
-                + "&redirect_uri=" + encode(cfg.oauth().githubRedirectUrl())
-                + "&scope=user:email"
-                + "&state=" + state;
+                ? cfg.app().runtime() + "|" + token
+                : cfg.app().runtime();
+        String url = UriComponentsBuilder.fromUriString(GITHUB_AUTHORIZE_URL)
+                .queryParam("client_id", cfg.oauth().githubClientId())
+                .queryParam("redirect_uri", cfg.oauth().githubRedirectUrl())
+                .queryParam("scope", "user:email")
+                .queryParam("state", state)
+                .encode()
+                .toUriString();
         return redirect(url);
     }
 

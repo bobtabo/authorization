@@ -15,6 +15,8 @@ import com.authorization.domain.client.valueobjects.ClientListVo;
 import com.authorization.domain.client.valueobjects.ClientQrVo;
 import com.authorization.domain.client.valueobjects.ClientStartVo;
 import com.authorization.domain.client.valueobjects.ClientStoreVo;
+import com.authorization.http.responses.client.ShowResponse;
+import com.authorization.http.responses.client.StoreResponse;
 import com.authorization.infrastructure.mail.Mailer;
 import com.authorization.support.exceptions.AppException;
 import com.authorization.support.http.responses.Pager;
@@ -141,7 +143,7 @@ public class ClientController {
         dto.setId(id);
 
         ClientDetailVo vo = clientService.show(dto);
-        return ResponseHelper.success(toDetailJson(vo));
+        return ResponseHelper.success(new ShowResponse(vo).attributes());
     }
 
     /**
@@ -197,7 +199,7 @@ public class ClientController {
         String activateUrl = cfg.app().frontendUrl() + "/clients/" + vo.getIdentifier() + "/qr";
         Thread.ofVirtual().start(() -> mailer.sendActivation(vo.getEmail(), vo.getName(), activateUrl));
 
-        return ResponseHelper.success(toStoreJson(vo), HttpStatus.CREATED.value());
+        return ResponseHelper.success(new StoreResponse(vo).attributes(), HttpStatus.CREATED.value());
     }
 
     /**
@@ -244,7 +246,7 @@ public class ClientController {
         dto.setExecutorId(executorId);
 
         ClientStoreVo vo = dsl.transactionResult(config -> clientService.update(dto));
-        return ResponseHelper.success(toStoreJson(vo));
+        return ResponseHelper.success(new StoreResponse(vo).attributes());
     }
 
     /**
@@ -402,58 +404,6 @@ public class ClientController {
         m.put("stop_at", c.getStopAt() != null ? c.getStopAt().format(FMT) : null);
         m.put("created_at", c.getCreatedAt().format(FMT));
         m.put("updated_at", c.getUpdatedAt().format(FMT));
-        return m;
-    }
-
-    /**
-     * クライアント詳細 ValueObject を JSON へ変換します。
-     *
-     * @param v クライアント詳細ValueObject
-     * @return レスポンス用マップ
-     */
-    private static Map<String, Object> toDetailJson(ClientDetailVo v) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", v.getId());
-        m.put("name", v.getName());
-        m.put("identifier", v.getIdentifier());
-        m.put("post_code", v.getPostCode());
-        m.put("pref", v.getPref());
-        m.put("city", v.getCity());
-        m.put("address", v.getAddress());
-        m.put("building", v.getBuilding());
-        m.put("tel", v.getTel());
-        m.put("email", v.getEmail());
-        m.put("status", v.getStatus());
-        m.put("start_at", v.getStartAt() != null ? v.getStartAt().format(FMT) : "");
-        m.put("stop_at", v.getStopAt() != null ? v.getStopAt().format(FMT) : "");
-        m.put("created_at", v.getCreatedAt() != null ? v.getCreatedAt().format(FMT) : "");
-        m.put("updated_at", v.getUpdatedAt() != null ? v.getUpdatedAt().format(FMT) : "");
-        return m;
-    }
-
-    /**
-     * クライアント登録・更新 ValueObject を JSON へ変換します。
-     *
-     * @param v クライアント登録・更新ValueObject
-     * @return レスポンス用マップ
-     */
-    private static Map<String, Object> toStoreJson(ClientStoreVo v) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", v.getId());
-        m.put("name", v.getName());
-        m.put("identifier", v.getIdentifier());
-        m.put("post_code", v.getPostCode());
-        m.put("pref", v.getPref());
-        m.put("city", v.getCity());
-        m.put("address", v.getAddress());
-        m.put("building", v.getBuilding());
-        m.put("tel", v.getTel());
-        m.put("email", v.getEmail());
-        m.put("status", v.getStatus());
-        m.put("start_at", v.getStartAt() != null ? v.getStartAt().format(FMT) : "");
-        m.put("stop_at", v.getStopAt() != null ? v.getStopAt().format(FMT) : "");
-        m.put("created_at", v.getCreatedAt() != null ? v.getCreatedAt().format(FMT) : "");
-        m.put("updated_at", v.getUpdatedAt() != null ? v.getUpdatedAt().format(FMT) : "");
         return m;
     }
 
