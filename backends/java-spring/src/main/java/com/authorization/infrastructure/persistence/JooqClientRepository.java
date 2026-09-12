@@ -116,21 +116,12 @@ public class JooqClientRepository implements ClientRepository {
             return entity;
         }
 
+        ClientsRecord updateRecord = dsl.newRecord(CLIENTS);
+        recordMapper.fillRecord(entity, updateRecord);
+        updateRecord.setVersion((long) (entity.getVersion() + 1));
+
         int rows = dsl.update(CLIENTS)
-                .set(CLIENTS.NAME, entity.getName())
-                .set(CLIENTS.POST_CODE, entity.getPostCode())
-                .set(CLIENTS.PREF, entity.getPref())
-                .set(CLIENTS.CITY, entity.getCity())
-                .set(CLIENTS.ADDRESS, entity.getAddress())
-                .set(CLIENTS.BUILDING, entity.getBuilding())
-                .set(CLIENTS.TEL, entity.getTel())
-                .set(CLIENTS.EMAIL, entity.getEmail())
-                .set(CLIENTS.STATUS, (long) entity.getStatus().value())
-                .set(CLIENTS.START_AT, entity.getStartAt())
-                .set(CLIENTS.STOP_AT, entity.getStopAt())
-                .set(CLIENTS.UPDATED_AT, entity.getUpdatedAt())
-                .set(CLIENTS.UPDATED_BY, entity.getUpdatedBy())
-                .set(CLIENTS.VERSION, (long) (entity.getVersion() + 1))
+                .set(updateRecord)
                 .where(CLIENTS.ID.eq(entity.getId()))
                 .and(CLIENTS.VERSION.eq((long) entity.getVersion()))
                 .execute();

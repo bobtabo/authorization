@@ -120,15 +120,12 @@ public class JooqStaffRepository implements StaffRepository {
             return entity;
         }
 
+        StaffsRecord updateRecord = dsl.newRecord(STAFFS);
+        recordMapper.fillRecord(entity, updateRecord);
+        updateRecord.setVersion((long) (entity.getVersion() + 1));
+
         int rows = dsl.update(STAFFS)
-                .set(STAFFS.NAME, entity.getName())
-                .set(STAFFS.EMAIL, entity.getEmail())
-                .set(STAFFS.AVATAR, entity.getAvatar())
-                .set(STAFFS.ROLE, (long) entity.getRole().value())
-                .set(STAFFS.LAST_LOGIN_AT, entity.getLastLoginAt())
-                .set(STAFFS.UPDATED_AT, entity.getUpdatedAt())
-                .set(STAFFS.UPDATED_BY, entity.getUpdatedBy())
-                .set(STAFFS.VERSION, (long) (entity.getVersion() + 1))
+                .set(updateRecord)
                 .where(STAFFS.ID.eq(entity.getId()))
                 .and(STAFFS.VERSION.eq((long) entity.getVersion()))
                 .execute();

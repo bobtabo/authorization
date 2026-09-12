@@ -9,10 +9,11 @@ import com.authorization.domain.invitation.entities.Invitation;
 import com.authorization.jooq.tables.records.InvitationsRecord;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 /**
  * 招待 Entity と jOOQ Record を相互変換する MapStruct マッパーです。招待は事前投入済みの行を
- * 更新するだけで新規作成しないため、fillRecord は用意していません。
+ * 更新するだけで新規作成しないため、fillRecord は更新用途のみです。
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
@@ -31,4 +32,13 @@ public interface InvitationRecordMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     Invitation toEntity(InvitationsRecord rec);
+
+    /**
+     * 招待Entityの値をjOOQレコードへ設定します（更新用）。
+     *
+     * @param entity 招待Entity
+     * @param record jOOQレコード（書き込み先）
+     */
+    @Mapping(target = "id", ignore = true)
+    void fillRecord(Invitation entity, @MappingTarget InvitationsRecord record);
 }

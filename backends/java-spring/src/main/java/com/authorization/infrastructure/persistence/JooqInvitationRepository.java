@@ -57,11 +57,12 @@ public class JooqInvitationRepository implements InvitationRepository {
      */
     @Override
     public Invitation persist(Invitation entity) {
+        InvitationsRecord updateRecord = dsl.newRecord(INVITATIONS);
+        recordMapper.fillRecord(entity, updateRecord);
+        updateRecord.setVersion((long) (entity.getVersion() + 1));
+
         int rows = dsl.update(INVITATIONS)
-                .set(INVITATIONS.TOKEN, entity.getToken())
-                .set(INVITATIONS.UPDATED_AT, entity.getUpdatedAt())
-                .set(INVITATIONS.UPDATED_BY, entity.getUpdatedBy())
-                .set(INVITATIONS.VERSION, (long) (entity.getVersion() + 1))
+                .set(updateRecord)
                 .where(INVITATIONS.ID.eq(entity.getId()))
                 .and(INVITATIONS.VERSION.eq((long) entity.getVersion()))
                 .execute();
