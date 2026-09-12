@@ -11,6 +11,7 @@ using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
 using Authorization.Api.UseCase.Auth;
 using Authorization.Api.UseCase.Invitation;
+using Microsoft.AspNetCore.WebUtilities;
 using static Authorization.Api.Handler.HttpHelpers;
 
 namespace Authorization.Api.Handler;
@@ -177,6 +178,9 @@ public sealed class AuthHandler(
     AppConfig cfg,
     ILogger<AuthHandler> logger)
 {
+    private const string GoogleAuthUrl = "https://accounts.google.com/o/oauth2/auth";
+    private const string GithubAuthorizeUrl = "https://github.com/login/oauth/authorize";
+
     /// <summary>フロントエンドのエラーページURLを組み立てます。</summary>
     /// <param name="code">エラーコード（表示用）</param>
     /// <returns>エラーページURL</returns>
@@ -189,11 +193,15 @@ public sealed class AuthHandler(
     {
         var token = Query(req, "token");
         var state = string.IsNullOrEmpty(token) ? "state" : token;
-        var url = "https://accounts.google.com/o/oauth2/auth" +
-                  $"?client_id={cfg.OAuth.GoogleClientId}" +
-                  $"&redirect_uri={cfg.OAuth.GoogleRedirectUrl}" +
-                  "&response_type=code&scope=email+profile&access_type=online" +
-                  $"&state={Uri.EscapeDataString(state)}";
+        var url = QueryHelpers.AddQueryString(GoogleAuthUrl, new Dictionary<string, string?>
+        {
+            ["client_id"] = cfg.OAuth.GoogleClientId,
+            ["redirect_uri"] = cfg.OAuth.GoogleRedirectUrl,
+            ["response_type"] = "code",
+            ["scope"] = "email profile",
+            ["access_type"] = "online",
+            ["state"] = state,
+        });
         return Results.Redirect(url);
     }
 
@@ -230,14 +238,14 @@ public sealed class AuthHandler(
     public IResult GithubRedirect(HttpRequest req)
     {
         var token = Query(req, "token");
-        var state = string.IsNullOrEmpty(token)
-            ? Uri.EscapeDataString(cfg.App.Runtime)
-            : Uri.EscapeDataString($"{cfg.App.Runtime}|{token}");
-        var url = "https://github.com/login/oauth/authorize" +
-                  $"?client_id={cfg.OAuth.GithubClientId}" +
-                  $"&redirect_uri={Uri.EscapeDataString(cfg.OAuth.GithubRedirectUrl)}" +
-                  "&scope=user:email" +
-                  $"&state={state}";
+        var state = string.IsNullOrEmpty(token) ? cfg.App.Runtime : $"{cfg.App.Runtime}|{token}";
+        var url = QueryHelpers.AddQueryString(GithubAuthorizeUrl, new Dictionary<string, string?>
+        {
+            ["client_id"] = cfg.OAuth.GithubClientId,
+            ["redirect_uri"] = cfg.OAuth.GithubRedirectUrl,
+            ["scope"] = "user:email",
+            ["state"] = state,
+        });
         return Results.Redirect(url);
     }
 

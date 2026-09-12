@@ -122,7 +122,7 @@ public sealed class ClientHandler(
     {
         if (!long.TryParse(id, out var clientId)) return InvalidId();
         var c = await clientUC.FindByIdAsync(clientId, ct);
-        return Results.Json(DetailJson(c));
+        return Results.Json(c, DateFormat.SnakeCaseMinuteJsonOptions);
     }
 
     /// <summary>
@@ -198,7 +198,7 @@ public sealed class ClientHandler(
         var dto = new ClientUpdateDto(clientId, name, postCode, pref, city, address, building, tel, email, status,
             executorId, v);
         var c = await clientUC.UpdateAsync(dto, ct);
-        return Results.Json(DetailJson(c));
+        return Results.Json(c, DateFormat.SnakeCaseMinuteJsonOptions);
     }
 
     /// <summary>QRコード用データを返します。</summary>
@@ -299,27 +299,4 @@ public sealed class ClientHandler(
             ["pager"] = Pager.Build(count, limit, offset, histories.Count).ToJson(),
         });
     }
-
-    /// <summary>クライアント詳細を JSON 用の辞書に変換します。</summary>
-    /// <param name="c">クライアント詳細</param>
-    /// <returns>JSON化用の辞書</returns>
-    private static Dictionary<string, object?> DetailJson(ClientDetailVo c) => new()
-    {
-        ["id"]         = c.Id,
-        ["name"]       = c.Name,
-        ["identifier"] = c.Identifier,
-        ["post_code"]  = c.PostCode,
-        ["pref"]       = c.Pref,
-        ["city"]       = c.City,
-        ["address"]    = c.Address,
-        ["building"]   = c.Building,
-        ["tel"]        = c.Tel,
-        ["email"]      = c.Email,
-        ["status"]     = c.Status,
-        ["start_at"]   = DateFormat.ToMinute(c.StartAt),
-        ["stop_at"]    = DateFormat.ToMinute(c.StopAt),
-        ["created_at"] = DateFormat.ToMinute(c.CreatedAt),
-        ["updated_at"] = DateFormat.ToMinute(c.UpdatedAt),
-        ["version"]    = c.Version,
-    };
 }

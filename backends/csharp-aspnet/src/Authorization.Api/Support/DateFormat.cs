@@ -4,6 +4,8 @@
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Authorization.Api.Support;
 
@@ -12,6 +14,17 @@ public static class DateFormat
 {
     private const string Minute = "yyyy-MM-dd HH:mm";
     private const string Second = "yyyy-MM-dd HH:mm:ss";
+
+    /// <summary>
+    /// VOをそのままJSON化するためのシリアライズ設定です。プロパティ名はsnake_caseに変換し、
+    /// DateTime/DateTime? は<see cref="ToMinute(DateTime)"/>形式の文字列にします。
+    /// クラスプロパティを1件ずつ辞書に並べ直す手書きコードを避けるために使います。
+    /// </summary>
+    public static readonly JsonSerializerOptions SnakeCaseMinuteJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        Converters = { new MinuteDateTimeConverter(), new MinuteNullableDateTimeConverter() },
+    };
 
     /// <summary>yyyy-MM-dd HH:mm 形式</summary>
     /// <param name="dt">日時</param>
@@ -38,5 +51,40 @@ public static class DateFormat
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : null;
+    }
+
+    /// <summary>DateTime を <see cref="ToMinute(DateTime)"/> 形式の文字列としてシリアライズします。</summary>
+    private sealed class MinuteDateTimeConverter : JsonConverter<DateTime>
+    {
+        /// <inheritdoc/>
+        /// <exception cref="NotSupportedException">レスポンス専用のため読み込みは未対応です</exception>
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => throw new NotSupportedException("SnakeCaseMinuteJsonOptions はレスポンス専用です。");
+
+        /// <inheritdoc/>
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+            => writer.WriteStringValue(ToMinute(value));
+    }
+
+    /// <summary>DateTime? を <see cref="ToMinute(DateTime?)"/> 形式の文字列としてシリアライズします。</summary>
+    private sealed class MinuteNullableDateTimeConverter : JsonConverter<DateTime?>
+    {
+        /// <inheritdoc/>
+        /// <exception cref="NotSupportedException">レスポンス専用のため読み込みは未対応です</exception>
+        public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => throw new NotSupportedException("SnakeCaseMinuteJsonOptions はレスポンス専用です。");
+
+        /// <inheritdoc/>
+        public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+        {
+            if (value.HasValue)
+            {
+                writer.WriteStringValue(ToMinute(value.Value));
+            }
+            else
+            {
+                writer.WriteNullValue();
+            }
+        }
     }
 }
