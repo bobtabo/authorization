@@ -22,11 +22,11 @@ public class AppExceptionHandler {
     /**
      * {@link AppException} を捕捉し、ステータスコードとメッセージを JSON へ変換します。
      *
-     * @param e アプリケーション例外
+     * @param exception アプリケーション例外
      * @return エラーレスポンス
      */
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<Map<String, Object>> handleAppException(AppException e) {
-        return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", e.getMessage()));
+    public ResponseEntity<Map<String, Object>> handleAppException(AppException exception) {
+        return ResponseEntity.status(exception.getStatusCode()).body(Map.of("message", exception.getMessage()));
     }
 }
