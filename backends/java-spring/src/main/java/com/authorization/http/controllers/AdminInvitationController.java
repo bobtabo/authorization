@@ -30,6 +30,11 @@ public class AdminInvitationController {
 
     private final InvitationService service;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param service 招待Service
+     */
     public AdminInvitationController(InvitationService service) {
         this.service = service;
     }

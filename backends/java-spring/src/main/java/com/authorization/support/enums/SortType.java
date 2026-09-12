@@ -17,10 +17,20 @@ public enum SortType {
 
     private final String value;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param value SQLソート句の値
+     */
     SortType(String value) {
         this.value = value;
     }
 
+    /**
+     * SQLソート句の値を返します。
+     *
+     * @return SQLソート句の値
+     */
     public String value() {
         return value;
     }

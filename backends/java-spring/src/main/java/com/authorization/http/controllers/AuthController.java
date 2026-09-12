@@ -52,6 +52,13 @@ public class AuthController {
     private final InvitationService invitationService;
     private final AppConfig cfg;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param authService 認証Service
+     * @param invitationService 招待Service
+     * @param cfg アプリケーション設定
+     */
     public AuthController(AuthService authService, InvitationService invitationService, AppConfig cfg) {
         this.authService = authService;
         this.invitationService = invitationService;
@@ -245,6 +252,12 @@ public class AuthController {
         return ResponseEntity.ok().header("Set-Cookie", cookie.toString()).body(body);
     }
 
+    /**
+     * staff_id クッキーを付与してクライアント一覧へリダイレクトします。
+     *
+     * @param staffId スタッフID
+     * @return リダイレクト応答
+     */
     private ResponseEntity<Void> redirectWithStaffCookie(long staffId) {
         boolean secure = "production".equals(cfg.app().env());
         int maxAge = (int) (cfg.app().staffCookieLifetime() * 60);
@@ -260,14 +273,32 @@ public class AuthController {
                 .build();
     }
 
+    /**
+     * フロントエンドのエラーページへリダイレクトします。
+     *
+     * @param code エラーコード（HTTPステータスコード相当）
+     * @return リダイレクト応答
+     */
     private ResponseEntity<Void> errorRedirect(int code) {
         return redirect(cfg.app().frontendUrl() + "/error?code=" + code);
     }
 
+    /**
+     * 指定URLへ302リダイレクトします。
+     *
+     * @param url リダイレクト先URL
+     * @return リダイレクト応答
+     */
     private static ResponseEntity<Void> redirect(String url) {
         return ResponseEntity.status(HttpStatus.FOUND).header("Location", url).build();
     }
 
+    /**
+     * スタッフ ValueObject を JSON へ変換します。
+     *
+     * @param vo スタッフValueObject
+     * @return レスポンス用マップ
+     */
     private static Map<String, Object> toJson(StaffVo vo) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", vo.getId());
@@ -279,6 +310,13 @@ public class AuthController {
         return m;
     }
 
+    /**
+     * Google OAuth の認可コードをアクセストークンに交換します。
+     *
+     * @param code 認可コード
+     * @return アクセストークン
+     * @throws Exception HTTP通信・JSON解析に失敗した場合
+     */
     private String exchangeGoogleCodeForToken(String code) throws Exception {
         String body = "code=" + encode(code)
                 + "&client_id=" + encode(cfg.oauth().googleClientId())
@@ -294,6 +332,13 @@ public class AuthController {
         return json.path("access_token").asText();
     }
 
+    /**
+     * Google のユーザー情報を取得します。
+     *
+     * @param accessToken Google アクセストークン
+     * @return ユーザー情報（id/name/email/picture）
+     * @throws Exception HTTP通信・JSON解析に失敗した場合
+     */
     private Map<String, String> fetchGoogleUserInfo(String accessToken) throws Exception {
         HttpRequest req = HttpRequest.newBuilder(URI.create("https://www.googleapis.com/oauth2/v2/userinfo"))
                 .timeout(OAUTH_HTTP_TIMEOUT)
@@ -309,6 +354,13 @@ public class AuthController {
         return m;
     }
 
+    /**
+     * GitHub OAuth の認可コードをアクセストークンに交換します。
+     *
+     * @param code 認可コード
+     * @return アクセストークン
+     * @throws Exception HTTP通信・JSON解析に失敗した場合
+     */
     private String exchangeGithubCodeForToken(String code) throws Exception {
         String body = "client_id=" + encode(cfg.oauth().githubClientId())
                 + "&client_secret=" + encode(cfg.oauth().githubClientSecret())
@@ -323,6 +375,14 @@ public class AuthController {
         return json.path("access_token").asText();
     }
 
+    /**
+     * GitHub のユーザー情報を取得します。email が非公開の場合は emails API から
+     * primary アドレスを取得します。
+     *
+     * @param accessToken GitHub アクセストークン
+     * @return ユーザー情報（id/name/email/avatar）
+     * @throws Exception HTTP通信・JSON解析に失敗した場合
+     */
     private Map<String, String> fetchGithubUserInfo(String accessToken) throws Exception {
         HttpRequest userReq = HttpRequest.newBuilder(URI.create("https://api.github.com/user"))
                 .timeout(OAUTH_HTTP_TIMEOUT)
@@ -364,10 +424,22 @@ public class AuthController {
         return m;
     }
 
+    /**
+     * 空文字列を null に変換します。
+     *
+     * @param s 対象文字列
+     * @return 空文字列でなければそのまま、空文字列またはnullならnull
+     */
     private static String blankToNull(String s) {
         return (s == null || s.isEmpty()) ? null : s;
     }
 
+    /**
+     * URLエンコードします（UTF-8）。
+     *
+     * @param s 対象文字列
+     * @return エンコード後の文字列
+     */
     private static String encode(String s) {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }

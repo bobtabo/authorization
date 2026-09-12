@@ -32,34 +32,26 @@ public class JooqStaffRepository implements StaffRepository {
 
     private final DSLContext dsl;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param dsl jOOQ DSLContext
+     */
     public JooqStaffRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
     /**
-     * 検索条件から絞り込みクエリを組み立てます。
-     *
-     * @param condition 検索条件
-     * @return 絞り込み済みクエリ
+     * {@inheritDoc}
      */
-    private SelectQuery<Record> applyFilters(StaffCondition condition) {
-        SelectQuery<Record> q = dsl.selectQuery();
-        q.addFrom(STAFFS);
-        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
-            String kw = "%" + condition.getKeyword() + "%";
-            q.addConditions(STAFFS.NAME.like(kw).or(STAFFS.EMAIL.like(kw)));
-        }
-        if (!condition.getRoles().isEmpty()) {
-            q.addConditions(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));
-        }
-        return q;
-    }
-
     @Override
     public int countByCondition(StaffCondition condition) {
         return dsl.fetchCount(applyFilters(condition));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Staff> findByCondition(StaffCondition condition) {
         SelectQuery<Record> q = applyFilters(condition);
@@ -80,6 +72,9 @@ public class JooqStaffRepository implements StaffRepository {
         return q.fetch().map(JooqStaffRepository::toEntity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Staff findById(StaffCondition condition) {
         Record rec = dsl.selectFrom(STAFFS)
@@ -89,6 +84,9 @@ public class JooqStaffRepository implements StaffRepository {
         return rec == null ? null : toEntity(rec);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Staff findByProvider(StaffCondition condition) {
         Record rec = dsl.selectFrom(STAFFS)
@@ -99,11 +97,17 @@ public class JooqStaffRepository implements StaffRepository {
         return rec == null ? null : toEntity(rec);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Staff> findAllActive() {
         return dsl.selectFrom(STAFFS).where(STAFFS.DELETED_AT.isNull()).fetch().map(JooqStaffRepository::toEntity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Staff persist(Staff entity) {
         if (entity.getId() == null) {
@@ -144,6 +148,9 @@ public class JooqStaffRepository implements StaffRepository {
         return entity;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean deleteById(Staff entity) {
         int rows = dsl.update(STAFFS)
@@ -157,6 +164,9 @@ public class JooqStaffRepository implements StaffRepository {
         return rows > 0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean restoreById(Staff entity) {
         int rows = dsl.update(STAFFS)
@@ -166,6 +176,25 @@ public class JooqStaffRepository implements StaffRepository {
                 .and(STAFFS.DELETED_AT.isNotNull())
                 .execute();
         return rows > 0;
+    }
+
+    /**
+     * 検索条件から絞り込みクエリを組み立てます。
+     *
+     * @param condition 検索条件
+     * @return 絞り込み済みクエリ
+     */
+    private SelectQuery<Record> applyFilters(StaffCondition condition) {
+        SelectQuery<Record> q = dsl.selectQuery();
+        q.addFrom(STAFFS);
+        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
+            String kw = "%" + condition.getKeyword() + "%";
+            q.addConditions(STAFFS.NAME.like(kw).or(STAFFS.EMAIL.like(kw)));
+        }
+        if (!condition.getRoles().isEmpty()) {
+            q.addConditions(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));
+        }
+        return q;
     }
 
     /**

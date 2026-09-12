@@ -22,6 +22,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DbConfig {
 
+    /**
+     * MySQL用の {@link DataSource} を組み立てます。
+     *
+     * @param cfg アプリケーション設定
+     * @return DataSource
+     */
     @Bean(destroyMethod = "close")
     public DataSource dataSource(AppConfig cfg) {
         AppConfig.Db db = cfg.db();
@@ -35,6 +41,12 @@ public class DbConfig {
         return new HikariDataSource(hikari);
     }
 
+    /**
+     * jOOQ用の {@link DSLContext} を組み立てます。
+     *
+     * @param dataSource DataSource
+     * @return DSLContext
+     */
     @Bean
     public DSLContext dslContext(DataSource dataSource) {
         return DSL.using(dataSource, SQLDialect.MYSQL);

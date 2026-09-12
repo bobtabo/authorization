@@ -17,9 +17,6 @@ import org.springframework.http.ResponseEntity;
  */
 public final class ResponseHelper {
 
-    private ResponseHelper() {
-    }
-
     /**
      * {@code {"message": "SUCCESS", ...data}} 形式で 200 応答を返します。
      *
@@ -53,5 +50,11 @@ public final class ResponseHelper {
      */
     public static ResponseEntity<Map<String, Object>> json(Map<String, Object> data) {
         return ResponseEntity.ok(data);
+    }
+
+    /**
+     * ユーティリティクラスのためインスタンス化を禁止します。
+     */
+    private ResponseHelper() {
     }
 }

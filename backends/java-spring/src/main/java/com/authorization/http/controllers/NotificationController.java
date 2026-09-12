@@ -39,21 +39,13 @@ public class NotificationController {
 
     private final NotificationService service;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param service 通知Service
+     */
     public NotificationController(NotificationService service) {
         this.service = service;
-    }
-
-    /**
-     * staff_id クッキーからスタッフIDを取得します。未認証の場合は例外を投げます。
-     *
-     * @param staffId staff_id クッキーの値
-     * @return スタッフID
-     */
-    private static long requireStaffId(long staffId) {
-        if (staffId == 0L) {
-            throw AppException.unauthorized("unauthenticated");
-        }
-        return staffId;
     }
 
     /**
@@ -144,6 +136,19 @@ public class NotificationController {
 
         NotificationSaveVo vo = service.read(dto);
         return ResponseHelper.success(Map.of("id", vo.getId()));
+    }
+
+    /**
+     * staff_id クッキーからスタッフIDを取得します。未認証の場合は例外を投げます。
+     *
+     * @param staffId staff_id クッキーの値
+     * @return スタッフID
+     */
+    private static long requireStaffId(long staffId) {
+        if (staffId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
+        return staffId;
     }
 
     /**

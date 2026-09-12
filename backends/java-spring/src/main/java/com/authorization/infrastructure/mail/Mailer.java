@@ -34,6 +34,11 @@ public class Mailer {
     private final AppConfig.Mail mailCfg;
     private final AppConfig.Aws awsCfg;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param cfg アプリケーション設定
+     */
     public Mailer(AppConfig cfg) {
         this.mailCfg = cfg.mail();
         this.awsCfg = cfg.aws();
@@ -70,6 +75,11 @@ public class Mailer {
         }
     }
 
+    /**
+     * SES クライアントを組み立てます。
+     *
+     * @return SESクライアント
+     */
     private SesClient buildSesClient() {
         var builder = SesClient.builder().region(Region.of(awsCfg.region()));
         if (awsCfg.endpoint() != null && !awsCfg.endpoint().isBlank()) {
@@ -82,6 +92,12 @@ public class Mailer {
         return builder.build();
     }
 
+    /**
+     * 環境名をプレフィックスとして付与した件名を返します。
+     *
+     * @param subject 元の件名
+     * @return 環境名プレフィックス付き件名
+     */
     private String mailSubject(String subject) {
         String label = switch (mailCfg.appEnv()) {
             case "local" -> "Local";
@@ -93,6 +109,14 @@ public class Mailer {
         return label.isEmpty() ? subject : "[" + label + "]" + subject;
     }
 
+    /**
+     * 利用開始案内メールのHTML本文を組み立てます。
+     *
+     * @param name クライアント名
+     * @param activateUrl アクティベートページURL
+     * @param appName アプリ名
+     * @return HTML本文
+     */
     private static String buildActivationHtml(String name, String activateUrl, String appName) {
         int year = Year.now().getValue();
         String safeUrl = isAbsoluteHttpUrl(activateUrl) ? escapeHtml(activateUrl) : "";

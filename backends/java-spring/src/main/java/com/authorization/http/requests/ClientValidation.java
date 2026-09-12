@@ -17,9 +17,6 @@ public final class ClientValidation {
     private static final Pattern TEL_PATTERN = Pattern.compile("\\d{10,11}");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
-    private ClientValidation() {
-    }
-
     /**
      * クライアント登録リクエストを検証します。すべて必須項目です。
      *
@@ -60,6 +57,12 @@ public final class ClientValidation {
                 && maxLenOrNull(city, 100) && maxLenOrNull(address, 255) && maxLenOrNull(building, 255)
                 && (tel == null || TEL_PATTERN.matcher(tel).matches())
                 && (email == null || (EMAIL_PATTERN.matcher(email).matches() && email.length() <= 255));
+    }
+
+    /**
+     * ユーティリティクラスのためインスタンス化を禁止します。
+     */
+    private ClientValidation() {
     }
 
     /**

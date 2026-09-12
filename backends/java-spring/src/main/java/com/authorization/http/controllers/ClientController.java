@@ -63,6 +63,16 @@ public class ClientController {
     private final AppConfig cfg;
     private final DSLContext dsl;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param clientService クライアントService
+     * @param notificationService 通知Service
+     * @param jwtHistoryService JWT履歴Service
+     * @param mailer メール送信クラス
+     * @param cfg アプリケーション設定
+     * @param dsl jOOQ DSLContext（トランザクション制御用）
+     */
     public ClientController(
             ClientService clientService,
             NotificationService notificationService,
@@ -365,6 +375,13 @@ public class ClientController {
         return ResponseHelper.success(Map.of());
     }
 
+    /**
+     * リクエストボディから文字列値を取得します。未設定の場合は空文字列を返します。
+     *
+     * @param body リクエストボディ
+     * @param key キー
+     * @return 値、未設定の場合は空文字列
+     */
     private static String str(Map<String, Object> body, String key) {
         Object v = body.get(key);
         return v != null ? v.toString() : "";

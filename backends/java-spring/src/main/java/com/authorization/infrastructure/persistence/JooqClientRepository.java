@@ -32,35 +32,18 @@ public class JooqClientRepository implements ClientRepository {
 
     private final DSLContext dsl;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param dsl jOOQ DSLContext
+     */
     public JooqClientRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
     /**
-     * 検索条件から絞り込みクエリを組み立てます（ページング・並び順は含まない）。
-     *
-     * @param condition 検索条件
-     * @return 絞り込み済みクエリ
+     * {@inheritDoc}
      */
-    private SelectQuery<Record> applyFilters(ClientCondition condition) {
-        SelectQuery<Record> q = dsl.selectQuery();
-        q.addFrom(CLIENTS);
-        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
-            String kw = "%" + condition.getKeyword() + "%";
-            q.addConditions(CLIENTS.NAME.like(kw).or(CLIENTS.EMAIL.like(kw)));
-        }
-        if (condition.getStartFrom() != null) {
-            q.addConditions(CLIENTS.START_AT.greaterOrEqual(condition.getStartFrom()));
-        }
-        if (condition.getStartTo() != null) {
-            q.addConditions(CLIENTS.START_AT.lessOrEqual(condition.getStartTo()));
-        }
-        if (!condition.getStatuses().isEmpty()) {
-            q.addConditions(CLIENTS.STATUS.in(condition.getStatuses().stream().map(Long::valueOf).toList()));
-        }
-        return q;
-    }
-
     @Override
     public List<Client> findByCondition(ClientCondition condition) {
         SelectQuery<Record> q = applyFilters(condition);
@@ -74,17 +57,26 @@ public class JooqClientRepository implements ClientRepository {
         return q.fetch().map(JooqClientRepository::toEntity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int countByCondition(ClientCondition condition) {
         return dsl.fetchCount(applyFilters(condition));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Client findById(ClientCondition condition) {
         Record rec = dsl.selectFrom(CLIENTS).where(CLIENTS.ID.eq(condition.getId())).fetchOne();
         return rec == null ? null : toEntity(rec);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Client findByAccessToken(ClientCondition condition) {
         Record rec = dsl.selectFrom(CLIENTS)
@@ -95,6 +87,9 @@ public class JooqClientRepository implements ClientRepository {
         return rec == null ? null : toEntity(rec);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Client findByIdentifier(ClientCondition condition) {
         Record rec = dsl.selectFrom(CLIENTS)
@@ -104,6 +99,9 @@ public class JooqClientRepository implements ClientRepository {
         return rec == null ? null : toEntity(rec);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Client persist(Client entity) {
         if (entity.getId() == null) {
@@ -139,6 +137,9 @@ public class JooqClientRepository implements ClientRepository {
         return entity;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean deleteById(Client entity) {
         int rows = dsl.update(CLIENTS)
@@ -148,6 +149,31 @@ public class JooqClientRepository implements ClientRepository {
                 .and(CLIENTS.VERSION.eq((long) entity.getVersion()))
                 .execute();
         return rows > 0;
+    }
+
+    /**
+     * 検索条件から絞り込みクエリを組み立てます（ページング・並び順は含まない）。
+     *
+     * @param condition 検索条件
+     * @return 絞り込み済みクエリ
+     */
+    private SelectQuery<Record> applyFilters(ClientCondition condition) {
+        SelectQuery<Record> q = dsl.selectQuery();
+        q.addFrom(CLIENTS);
+        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
+            String kw = "%" + condition.getKeyword() + "%";
+            q.addConditions(CLIENTS.NAME.like(kw).or(CLIENTS.EMAIL.like(kw)));
+        }
+        if (condition.getStartFrom() != null) {
+            q.addConditions(CLIENTS.START_AT.greaterOrEqual(condition.getStartFrom()));
+        }
+        if (condition.getStartTo() != null) {
+            q.addConditions(CLIENTS.START_AT.lessOrEqual(condition.getStartTo()));
+        }
+        if (!condition.getStatuses().isEmpty()) {
+            q.addConditions(CLIENTS.STATUS.in(condition.getStatuses().stream().map(Long::valueOf).toList()));
+        }
+        return q;
     }
 
     /**

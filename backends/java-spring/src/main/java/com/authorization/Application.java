@@ -16,6 +16,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 public class Application {
+
+    /**
+     * アプリケーションを起動します。
+     *
+     * @param args 起動引数
+     */
     public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone(System.getenv().getOrDefault("APP_TIMEZONE", "Asia/Tokyo")));
         SpringApplication.run(Application.class, args);

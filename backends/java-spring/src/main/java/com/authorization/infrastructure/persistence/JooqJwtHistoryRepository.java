@@ -28,29 +28,26 @@ public class JooqJwtHistoryRepository implements JwtHistoryRepository {
 
     private final DSLContext dsl;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param dsl jOOQ DSLContext
+     */
     public JooqJwtHistoryRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
     /**
-     * クライアントIDに紐づく未削除JWT履歴クエリを組み立てます。
-     *
-     * @param condition 検索条件
-     * @return クエリ
+     * {@inheritDoc}
      */
-    private SelectQuery<Record> baseQuery(JwtHistoryCondition condition) {
-        SelectQuery<Record> q = dsl.selectQuery();
-        q.addFrom(JWT_HISTORIES);
-        q.addConditions(JWT_HISTORIES.CLIENT_ID.eq(condition.getClientId()));
-        q.addConditions(JWT_HISTORIES.DELETED_AT.isNull());
-        return q;
-    }
-
     @Override
     public int countByClientId(JwtHistoryCondition condition) {
         return dsl.fetchCount(baseQuery(condition));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<JwtHistory> findByClientId(JwtHistoryCondition condition) {
         SelectQuery<Record> q = baseQuery(condition);
@@ -67,6 +64,9 @@ public class JooqJwtHistoryRepository implements JwtHistoryRepository {
         return q.fetch().map(JooqJwtHistoryRepository::toEntity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public JwtHistory persist(JwtHistory entity) {
         LocalDateTime now = LocalDateTime.now();
@@ -83,6 +83,20 @@ public class JooqJwtHistoryRepository implements JwtHistoryRepository {
         r.store();
         entity.setId(r.getId());
         return entity;
+    }
+
+    /**
+     * クライアントIDに紐づく未削除JWT履歴クエリを組み立てます。
+     *
+     * @param condition 検索条件
+     * @return クエリ
+     */
+    private SelectQuery<Record> baseQuery(JwtHistoryCondition condition) {
+        SelectQuery<Record> q = dsl.selectQuery();
+        q.addFrom(JWT_HISTORIES);
+        q.addConditions(JWT_HISTORIES.CLIENT_ID.eq(condition.getClientId()));
+        q.addConditions(JWT_HISTORIES.DELETED_AT.isNull());
+        return q;
     }
 
     /**

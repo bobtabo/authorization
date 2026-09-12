@@ -25,6 +25,11 @@ public class AppException extends RuntimeException {
         this.statusCode = statusCode;
     }
 
+    /**
+     * HTTPステータスコードを返します。
+     *
+     * @return HTTPステータスコード
+     */
     public int getStatusCode() {
         return statusCode;
     }

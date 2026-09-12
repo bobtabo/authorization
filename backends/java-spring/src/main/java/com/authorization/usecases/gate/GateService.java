@@ -198,6 +198,14 @@ public class GateService extends AbstractService {
         return vo;
     }
 
+    /**
+     * PEM形式のRSA秘密鍵を読み込みます。
+     *
+     * @param pem PEM形式の秘密鍵文字列
+     * @return RSA秘密鍵
+     * @throws NoSuchAlgorithmException RSAアルゴリズムが利用できない場合
+     * @throws InvalidKeySpecException 鍵の形式が不正な場合
+     */
     private static RSAPrivateKey loadPrivateKey(String pem) throws NoSuchAlgorithmException, InvalidKeySpecException {
         String cleaned = pem
                 .replace("-----BEGIN PRIVATE KEY-----", "")
@@ -207,6 +215,14 @@ public class GateService extends AbstractService {
         return (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(bytes));
     }
 
+    /**
+     * PEM形式のRSA公開鍵を読み込みます。
+     *
+     * @param pem PEM形式の公開鍵文字列
+     * @return RSA公開鍵
+     * @throws NoSuchAlgorithmException RSAアルゴリズムが利用できない場合
+     * @throws InvalidKeySpecException 鍵の形式が不正な場合
+     */
     private static RSAPublicKey loadPublicKey(String pem) throws NoSuchAlgorithmException, InvalidKeySpecException {
         String cleaned = pem
                 .replace("-----BEGIN PUBLIC KEY-----", "")

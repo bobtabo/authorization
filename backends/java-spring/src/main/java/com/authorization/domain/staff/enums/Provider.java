@@ -16,10 +16,20 @@ public enum Provider {
 
     private final int value;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param value プロバイダー整数値
+     */
     Provider(int value) {
         this.value = value;
     }
 
+    /**
+     * プロバイダー整数値を返します。
+     *
+     * @return プロバイダー整数値
+     */
     public int value() {
         return value;
     }

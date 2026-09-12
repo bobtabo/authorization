@@ -19,10 +19,20 @@ public enum ClientStatus {
 
     private final int value;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param value 状態整数値
+     */
     ClientStatus(int value) {
         this.value = value;
     }
 
+    /**
+     * 状態整数値を返します。
+     *
+     * @return 状態整数値
+     */
     public int value() {
         return value;
     }

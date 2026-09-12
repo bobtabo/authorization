@@ -17,6 +17,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ConfigLoader {
 
+    /**
+     * `.env` を読み込み {@link AppConfig} を組み立てます。
+     *
+     * @return アプリケーション設定
+     */
     @Bean
     public AppConfig appConfig() {
         String envFile = System.getenv("ENV_FILE") != null ? System.getenv("ENV_FILE") : ".env";
@@ -65,11 +70,27 @@ public class ConfigLoader {
                         str(env, "AWS_SECRET_ACCESS_KEY", "")));
     }
 
+    /**
+     * 環境変数から文字列値を取得します。未設定の場合は既定値を返します。
+     *
+     * @param env Dotenv
+     * @param key 環境変数キー
+     * @param def 既定値
+     * @return 設定値
+     */
     private static String str(Dotenv env, String key, String def) {
         String v = env.get(key);
         return v != null ? v : def;
     }
 
+    /**
+     * 環境変数からint値を取得します。未設定・不正な値の場合は既定値を返します。
+     *
+     * @param env Dotenv
+     * @param key 環境変数キー
+     * @param def 既定値
+     * @return 設定値
+     */
     private static int intVal(Dotenv env, String key, int def) {
         try {
             return Integer.parseInt(str(env, key, String.valueOf(def)));
@@ -78,6 +99,14 @@ public class ConfigLoader {
         }
     }
 
+    /**
+     * 環境変数からlong値を取得します。未設定・不正な値の場合は既定値を返します。
+     *
+     * @param env Dotenv
+     * @param key 環境変数キー
+     * @param def 既定値
+     * @return 設定値
+     */
     private static long longVal(Dotenv env, String key, long def) {
         try {
             return Long.parseLong(str(env, key, String.valueOf(def)));

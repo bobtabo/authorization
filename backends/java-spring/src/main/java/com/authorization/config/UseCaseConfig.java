@@ -36,41 +36,97 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class UseCaseConfig {
 
+    /**
+     * {@link StaffService} を組み立てます。
+     *
+     * @param repository スタッフRepository
+     * @param conditionMapper DTO→Condition マッパー
+     * @param apiMapper Entity→ValueObject マッパー
+     * @return スタッフService
+     */
     @Bean
     public StaffService staffService(StaffRepository repository, StaffConditionMapper conditionMapper,
             StaffApiMapper apiMapper) {
         return new StaffService(repository, conditionMapper, apiMapper);
     }
 
+    /**
+     * {@link ClientService} を組み立てます。
+     *
+     * @param repository クライアントRepository
+     * @param conditionMapper DTO→Condition マッパー
+     * @param apiMapper Entity→ValueObject マッパー
+     * @return クライアントService
+     */
     @Bean
     public ClientService clientService(ClientRepository repository, ClientConditionMapper conditionMapper,
             ClientApiMapper apiMapper) {
         return new ClientService(repository, conditionMapper, apiMapper);
     }
 
+    /**
+     * {@link JwtHistoryService} を組み立てます。
+     *
+     * @param repository JWT履歴Repository
+     * @return JWT履歴Service
+     */
     @Bean
     public JwtHistoryService jwtHistoryService(JwtHistoryRepository repository) {
         return new JwtHistoryService(repository);
     }
 
+    /**
+     * {@link NotificationService} を組み立てます。
+     *
+     * @param notificationRepository 通知Repository
+     * @param staffRepository スタッフRepository
+     * @param conditionMapper DTO→Condition マッパー
+     * @return 通知Service
+     */
     @Bean
     public NotificationService notificationService(NotificationRepository notificationRepository,
             StaffRepository staffRepository, NotificationConditionMapper conditionMapper) {
         return new NotificationService(notificationRepository, staffRepository, conditionMapper);
     }
 
+    /**
+     * {@link InvitationService} を組み立てます。
+     *
+     * @param invitationRepository 招待Repository
+     * @param invitationAuthRepository 招待認証Repository
+     * @param cfg アプリケーション設定
+     * @return 招待Service
+     */
     @Bean
     public InvitationService invitationService(InvitationRepository invitationRepository,
             InvitationAuthRepository invitationAuthRepository, AppConfig cfg) {
         return new InvitationService(invitationRepository, invitationAuthRepository, cfg.app().frontendUrl());
     }
 
+    /**
+     * {@link GateService} を組み立てます。
+     *
+     * @param clientRepository クライアントRepository
+     * @param gateRepository 認可Repository
+     * @param historyRepository JWT履歴Repository
+     * @param cfg アプリケーション設定
+     * @return 認可Service
+     */
     @Bean
     public GateService gateService(ClientRepository clientRepository, GateRepository gateRepository,
             JwtHistoryRepository historyRepository, AppConfig cfg) {
         return new GateService(clientRepository, gateRepository, historyRepository, cfg.jwt());
     }
 
+    /**
+     * {@link AuthService} を組み立てます。
+     *
+     * @param staffRepository スタッフRepository
+     * @param invitationAuthRepository 招待認証Repository
+     * @param conditionMapper DTO→Condition マッパー
+     * @param apiMapper Entity→ValueObject マッパー
+     * @return 認証Service
+     */
     @Bean
     public AuthService authService(StaffRepository staffRepository,
             InvitationAuthRepository invitationAuthRepository, StaffConditionMapper conditionMapper,

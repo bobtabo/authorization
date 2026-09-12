@@ -22,11 +22,20 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
     private final JedisPool pool;
     private final String cachePrefix;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param pool Redis接続プール
+     * @param cfg アプリケーション設定
+     */
     public RedisInvitationAuthRepository(JedisPool pool, AppConfig cfg) {
         this.pool = pool;
         this.cachePrefix = cfg.app().cachePrefix();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void store(String token, int role, int ttl) {
         try (Jedis jedis = pool.getResource()) {
@@ -34,6 +43,9 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer find(String token) {
         try (Jedis jedis = pool.getResource()) {
@@ -49,6 +61,9 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer consume(String token) {
         try (Jedis jedis = pool.getResource()) {
@@ -64,6 +79,9 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void remove(String token) {
         try (Jedis jedis = pool.getResource()) {

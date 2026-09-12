@@ -25,10 +25,18 @@ public class JooqInvitationRepository implements InvitationRepository {
 
     private final DSLContext dsl;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param dsl jOOQ DSLContext
+     */
     public JooqInvitationRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Invitation getCurrentByRole(int role) {
         Record rec = dsl.selectFrom(INVITATIONS)
@@ -40,6 +48,9 @@ public class JooqInvitationRepository implements InvitationRepository {
         return rec == null ? null : toEntity(rec);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Invitation persist(Invitation entity) {
         int rows = dsl.update(INVITATIONS)
@@ -57,6 +68,9 @@ public class JooqInvitationRepository implements InvitationRepository {
         return entity;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Invitation findByToken(InvitationCondition condition) {
         Record rec = dsl.selectFrom(INVITATIONS)

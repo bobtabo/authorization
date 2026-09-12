@@ -32,6 +32,11 @@ public class GateController {
 
     private final GateService service;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param service 認可Service
+     */
     public GateController(GateService service) {
         this.service = service;
     }

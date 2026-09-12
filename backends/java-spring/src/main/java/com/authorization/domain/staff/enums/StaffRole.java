@@ -16,10 +16,20 @@ public enum StaffRole {
 
     private final int value;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param value 権限整数値
+     */
     StaffRole(int value) {
         this.value = value;
     }
 
+    /**
+     * 権限整数値を返します。
+     *
+     * @return 権限整数値
+     */
     public int value() {
         return value;
     }

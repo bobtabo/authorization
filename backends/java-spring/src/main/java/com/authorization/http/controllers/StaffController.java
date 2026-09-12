@@ -42,6 +42,11 @@ public class StaffController {
 
     private final StaffService service;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param service スタッフService
+     */
     public StaffController(StaffService service) {
         this.service = service;
     }

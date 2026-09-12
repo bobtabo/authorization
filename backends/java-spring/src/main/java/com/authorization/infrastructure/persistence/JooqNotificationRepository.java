@@ -26,10 +26,18 @@ public class JooqNotificationRepository implements NotificationRepository {
 
     private final DSLContext dsl;
 
+    /**
+     * コンストラクタ。
+     *
+     * @param dsl jOOQ DSLContext
+     */
     public JooqNotificationRepository(DSLContext dsl) {
         this.dsl = dsl;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Notification> listPage(NotificationCondition condition) {
         Long afterId = decodeCursor(condition.getCursor());
@@ -46,6 +54,9 @@ public class JooqNotificationRepository implements NotificationRepository {
                 .map(JooqNotificationRepository::toEntity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int counts(NotificationCondition condition) {
         var q = dsl.selectCount()
@@ -58,6 +69,9 @@ public class JooqNotificationRepository implements NotificationRepository {
         return q.fetchOne(0, int.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int updateRead(NotificationCondition condition) {
         var q = dsl.update(NOTIFICATIONS)
@@ -77,6 +91,9 @@ public class JooqNotificationRepository implements NotificationRepository {
         return q.execute();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void persist(Notification entity) {
         var r = dsl.newRecord(NOTIFICATIONS);
@@ -85,6 +102,9 @@ public class JooqNotificationRepository implements NotificationRepository {
         entity.setId(r.getId());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void insertBatch(List<Notification> entities) {
         var records = entities.stream().map(entity -> {
@@ -115,6 +135,12 @@ public class JooqNotificationRepository implements NotificationRepository {
         r.setVersion((long) (entity.getVersion() != null ? entity.getVersion() : 1));
     }
 
+    /**
+     * カーソル文字列から通知IDを復号します。
+     *
+     * @param cursor カーソル文字列
+     * @return 通知ID、復号できない場合は null
+     */
     private static Long decodeCursor(String cursor) {
         if (cursor == null || cursor.isBlank()) {
             return null;
