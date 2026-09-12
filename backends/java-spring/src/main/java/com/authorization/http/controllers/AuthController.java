@@ -15,8 +15,10 @@ import com.authorization.usecases.auth.dtos.AuthUserDto;
 import com.authorization.usecases.auth.dtos.SocialDto;
 import com.authorization.usecases.invitation.InvitationService;
 import com.authorization.usecases.invitation.dtos.InvitationDto;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -47,7 +49,8 @@ public class AuthController {
     private static final Duration OAUTH_HTTP_TIMEOUT = Duration.ofSeconds(10);
     private static final HttpClient HTTP =
             HttpClient.newBuilder().connectTimeout(OAUTH_HTTP_TIMEOUT).build();
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON =
+            new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
     private static final String GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
     private static final String GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
 
@@ -99,11 +102,7 @@ public class AuthController {
         dto.setToken(token);
 
         var vo = invitationService.findByToken(dto);
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("found", vo.isFound());
-        data.put("url", vo.getUrl());
-        data.put("display_url", vo.getDisplayUrl());
-        data.put("token", vo.getToken());
+        Map<String, Object> data = JSON.convertValue(vo, new TypeReference<Map<String, Object>>() {});
         return ResponseHelper.success(data);
     }
 
@@ -309,14 +308,7 @@ public class AuthController {
      * @return レスポンス用マップ
      */
     private static Map<String, Object> toJson(StaffVo vo) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("id", vo.getId());
-        data.put("name", vo.getName());
-        data.put("email", vo.getEmail());
-        data.put("avatar", vo.getAvatar());
-        data.put("role", vo.getRole());
-        data.put("status", vo.getStatus());
-        return data;
+        return JSON.convertValue(vo, new TypeReference<Map<String, Object>>() {});
     }
 
     /**

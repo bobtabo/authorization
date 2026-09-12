@@ -5,6 +5,8 @@
  */
 package com.authorization.domain.client.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * クライアントの状態を表す列挙型です。
  *
@@ -33,6 +35,7 @@ public enum ClientStatus {
      *
      * @return 状態整数値
      */
+    @JsonValue
     public int value() {
         return value;
     }

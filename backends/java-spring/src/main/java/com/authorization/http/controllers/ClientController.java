@@ -27,6 +27,9 @@ import com.authorization.usecases.jwthistory.JwtHistoryService;
 import com.authorization.usecases.jwthistory.dtos.JwtHistoryDto;
 import com.authorization.usecases.notification.NotificationService;
 import com.authorization.usecases.notification.dtos.NotificationCreateDto;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,6 +60,8 @@ public class ClientController {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ISO_DATE_TIME;
     private static final DateTimeFormatter FMT_SEC = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final ObjectMapper JSON =
+            new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 
     private final ClientService clientService;
     private final NotificationService notificationService;
@@ -261,9 +266,7 @@ public class ClientController {
         dto.setIdentifier(identifier);
 
         ClientQrVo vo = clientService.getQr(dto);
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("identifier", vo.getIdentifier());
-        data.put("deeplink_url", vo.getDeeplinkUrl());
+        Map<String, Object> data = JSON.convertValue(vo, new TypeReference<Map<String, Object>>() {});
         return ResponseHelper.success(data);
     }
 
@@ -309,10 +312,7 @@ public class ClientController {
         dto.setIdentifier(identifier);
 
         ClientInfoVo vo = clientService.getInfo(dto);
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("identifier", vo.getIdentifier());
-        data.put("name", vo.getName());
-        data.put("status", vo.getStatus());
+        Map<String, Object> data = JSON.convertValue(vo, new TypeReference<Map<String, Object>>() {});
         return ResponseHelper.success(data);
     }
 

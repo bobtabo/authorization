@@ -5,6 +5,7 @@
  */
 package com.authorization.support.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -17,11 +18,16 @@ import lombok.Data;
 public abstract class AbstractEntity {
 
     private LocalDateTime createdAt;
+    @JsonIgnore
     private Long createdBy;
     private LocalDateTime updatedAt;
+    @JsonIgnore
     private Long updatedBy;
+    @JsonIgnore
     private LocalDateTime deletedAt;
+    @JsonIgnore
     private Long deletedBy;
+    @JsonIgnore
     private Integer version;
 
     /**

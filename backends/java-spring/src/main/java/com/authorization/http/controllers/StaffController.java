@@ -14,6 +14,9 @@ import com.authorization.support.http.responses.Pager;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.staff.StaffService;
 import com.authorization.usecases.staff.dtos.StaffDto;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +42,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class StaffController {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final ObjectMapper JSON =
+            new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 
     private final StaffService service;
 
@@ -169,12 +174,8 @@ public class StaffController {
      * @return レスポンス用マップ
      */
     private static Map<String, Object> toJson(StaffResourceVo staff) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("id", staff.getId());
-        data.put("name", staff.getName());
-        data.put("email", staff.getEmail());
-        data.put("role", staff.getRole());
-        data.put("status", staff.getStatus());
+        Map<String, Object> data = JSON.convertValue(staff, new TypeReference<Map<String, Object>>() {});
+        data.remove("found");
         data.put("created_at", staff.getCreatedAt() != null ? staff.getCreatedAt().format(FMT) : null);
         data.put("updated_at", staff.getUpdatedAt() != null ? staff.getUpdatedAt().format(FMT) : null);
         return data;

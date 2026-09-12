@@ -13,6 +13,9 @@ import com.authorization.support.exceptions.AppException;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.notification.NotificationService;
 import com.authorization.usecases.notification.dtos.NotificationDto;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,6 +39,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ISO_DATE_TIME;
+    private static final ObjectMapper JSON =
+            new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 
     private final NotificationService service;
 
@@ -158,14 +163,7 @@ public class NotificationController {
      * @return レスポンス用マップ
      */
     private static Map<String, Object> toJson(Notification notification) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("id", notification.getId());
-        data.put("staff_id", notification.getStaffId());
-        data.put("message_type", notification.getMessageType());
-        data.put("title", notification.getTitle());
-        data.put("message", notification.getMessage());
-        data.put("url", notification.getUrl());
-        data.put("read", notification.isRead());
+        Map<String, Object> data = JSON.convertValue(notification, new TypeReference<Map<String, Object>>() {});
         data.put("created_at", notification.getCreatedAt() != null ? notification.getCreatedAt().format(FMT) : null);
         data.put("updated_at", notification.getUpdatedAt() != null ? notification.getUpdatedAt().format(FMT) : null);
         return data;

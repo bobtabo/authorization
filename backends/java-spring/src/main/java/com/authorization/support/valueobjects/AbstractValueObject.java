@@ -5,6 +5,7 @@
  */
 package com.authorization.support.valueobjects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -15,5 +16,6 @@ import lombok.Data;
 @Data
 public abstract class AbstractValueObject {
 
+    @JsonIgnore
     private Integer version;
 }

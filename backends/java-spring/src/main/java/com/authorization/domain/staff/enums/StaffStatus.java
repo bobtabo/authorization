@@ -5,6 +5,8 @@
  */
 package com.authorization.domain.staff.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * スタッフの状態を表す列挙型です。
  *
@@ -30,6 +32,7 @@ public enum StaffStatus {
      *
      * @return 状態整数値
      */
+    @JsonValue
     public int value() {
         return value;
     }

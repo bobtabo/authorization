@@ -5,6 +5,8 @@
  */
 package com.authorization.domain.staff.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * スタッフ権限を表す列挙型です。
  *
@@ -30,6 +32,7 @@ public enum StaffRole {
      *
      * @return 権限整数値
      */
+    @JsonValue
     public int value() {
         return value;
     }

@@ -10,7 +10,9 @@ import com.authorization.support.exceptions.AppException;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.invitation.InvitationService;
 import com.authorization.usecases.invitation.dtos.InvitationDto;
-import java.util.LinkedHashMap;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -27,6 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/admin/invitation")
 public class AdminInvitationController {
+
+    private static final ObjectMapper JSON =
+            new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 
     private final InvitationService service;
 
@@ -106,11 +111,6 @@ public class AdminInvitationController {
      * @return レスポンス用マップ
      */
     private static Map<String, Object> toJson(InvitationVo invitation) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("found", invitation.isFound());
-        data.put("url", invitation.getUrl());
-        data.put("display_url", invitation.getDisplayUrl());
-        data.put("token", invitation.getToken());
-        return data;
+        return JSON.convertValue(invitation, new TypeReference<Map<String, Object>>() {});
     }
 }
