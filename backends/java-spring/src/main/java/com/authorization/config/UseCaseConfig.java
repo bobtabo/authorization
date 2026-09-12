@@ -6,6 +6,7 @@
 package com.authorization.config;
 
 import com.authorization.domain.client.mappers.ClientApiMapper;
+import com.authorization.domain.client.mappers.ClientDtoMapper;
 import com.authorization.domain.client.mappers.ClientConditionMapper;
 import com.authorization.domain.client.repositories.ClientRepository;
 import com.authorization.domain.client.repositories.JwtHistoryRepository;
@@ -13,7 +14,9 @@ import com.authorization.domain.gate.repositories.GateRepository;
 import com.authorization.domain.invitation.repositories.InvitationAuthRepository;
 import com.authorization.domain.invitation.repositories.InvitationRepository;
 import com.authorization.domain.notification.mappers.NotificationConditionMapper;
+import com.authorization.domain.notification.mappers.NotificationCreateMapper;
 import com.authorization.domain.notification.repositories.NotificationRepository;
+import com.authorization.domain.staff.mappers.SocialDtoMapper;
 import com.authorization.domain.staff.mappers.StaffApiMapper;
 import com.authorization.domain.staff.mappers.StaffConditionMapper;
 import com.authorization.domain.staff.repositories.StaffRepository;
@@ -56,12 +59,13 @@ public class UseCaseConfig {
      * @param repository クライアントRepository
      * @param conditionMapper DTO→Condition マッパー
      * @param apiMapper Entity→ValueObject マッパー
+     * @param dtoMapper DTO→Entity マッパー
      * @return クライアントService
      */
     @Bean
     public ClientService clientService(ClientRepository repository, ClientConditionMapper conditionMapper,
-            ClientApiMapper apiMapper) {
-        return new ClientService(repository, conditionMapper, apiMapper);
+            ClientApiMapper apiMapper, ClientDtoMapper dtoMapper) {
+        return new ClientService(repository, conditionMapper, apiMapper, dtoMapper);
     }
 
     /**
@@ -81,12 +85,14 @@ public class UseCaseConfig {
      * @param notificationRepository 通知Repository
      * @param staffRepository スタッフRepository
      * @param conditionMapper DTO→Condition マッパー
+     * @param createMapper DTO→Entity マッパー
      * @return 通知Service
      */
     @Bean
     public NotificationService notificationService(NotificationRepository notificationRepository,
-            StaffRepository staffRepository, NotificationConditionMapper conditionMapper) {
-        return new NotificationService(notificationRepository, staffRepository, conditionMapper);
+            StaffRepository staffRepository, NotificationConditionMapper conditionMapper,
+            NotificationCreateMapper createMapper) {
+        return new NotificationService(notificationRepository, staffRepository, conditionMapper, createMapper);
     }
 
     /**
@@ -125,12 +131,14 @@ public class UseCaseConfig {
      * @param invitationAuthRepository 招待認証Repository
      * @param conditionMapper DTO→Condition マッパー
      * @param apiMapper Entity→ValueObject マッパー
+     * @param socialDtoMapper ソーシャルDTO→Entity マッパー
      * @return 認証Service
      */
     @Bean
     public AuthService authService(StaffRepository staffRepository,
             InvitationAuthRepository invitationAuthRepository, StaffConditionMapper conditionMapper,
-            StaffApiMapper apiMapper) {
-        return new AuthService(staffRepository, invitationAuthRepository, conditionMapper, apiMapper);
+            StaffApiMapper apiMapper, SocialDtoMapper socialDtoMapper) {
+        return new AuthService(staffRepository, invitationAuthRepository, conditionMapper, apiMapper,
+                socialDtoMapper);
     }
 }

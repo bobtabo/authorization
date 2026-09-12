@@ -10,6 +10,7 @@ import com.authorization.domain.client.entities.Client;
 import com.authorization.domain.client.enums.ClientStatus;
 import com.authorization.domain.client.mappers.ClientApiMapper;
 import com.authorization.domain.client.mappers.ClientConditionMapper;
+import com.authorization.domain.client.mappers.ClientDtoMapper;
 import com.authorization.domain.client.repositories.ClientRepository;
 import com.authorization.domain.client.valueobjects.ClientDetailVo;
 import com.authorization.domain.client.valueobjects.ClientInfoVo;
@@ -44,6 +45,7 @@ public class ClientService extends AbstractService {
     private final ClientRepository repository;
     private final ClientConditionMapper conditionMapper;
     private final ClientApiMapper apiMapper;
+    private final ClientDtoMapper dtoMapper;
 
     /**
      * コンストラクタ。
@@ -51,12 +53,17 @@ public class ClientService extends AbstractService {
      * @param repository クライアントRepository
      * @param conditionMapper DTO→Condition マッパー
      * @param apiMapper Entity→ValueObject マッパー
+     * @param dtoMapper DTO→Entity マッパー
      */
     public ClientService(
-            ClientRepository repository, ClientConditionMapper conditionMapper, ClientApiMapper apiMapper) {
+            ClientRepository repository,
+            ClientConditionMapper conditionMapper,
+            ClientApiMapper apiMapper,
+            ClientDtoMapper dtoMapper) {
         this.repository = repository;
         this.conditionMapper = conditionMapper;
         this.apiMapper = apiMapper;
+        this.dtoMapper = dtoMapper;
     }
 
     /**
@@ -121,14 +128,7 @@ public class ClientService extends AbstractService {
         RsaKeyPair keys = generateRsaKeys();
 
         Client entity = new Client();
-        entity.setName(dto.getName());
-        entity.setPostCode(dto.getPostCode());
-        entity.setPref(dto.getPref());
-        entity.setCity(dto.getCity());
-        entity.setAddress(dto.getAddress());
-        entity.setBuilding(dto.getBuilding());
-        entity.setTel(dto.getTel());
-        entity.setEmail(dto.getEmail());
+        dtoMapper.applyBasicInfo(dto, entity);
         entity.setIdentifier(generateHex(8));
         entity.setStatus(ClientStatus.Inactive);
         entity.setPrivateKey(keys.privatePem());
@@ -160,30 +160,9 @@ public class ClientService extends AbstractService {
 
         // identifier は登録時に自動生成するため更新不可。
         // status は下記の遷移ロジックで個別に制御する。accessToken は不変。
-        if (dto.getName() != null) {
-            entity.setName(dto.getName());
-        }
-        if (dto.getPostCode() != null) {
-            entity.setPostCode(dto.getPostCode());
-        }
-        if (dto.getPref() != null) {
-            entity.setPref(dto.getPref());
-        }
-        if (dto.getCity() != null) {
-            entity.setCity(dto.getCity());
-        }
-        if (dto.getAddress() != null) {
-            entity.setAddress(dto.getAddress());
-        }
-        if (dto.getBuilding() != null) {
-            entity.setBuilding(dto.getBuilding());
-        }
-        if (dto.getTel() != null) {
-            entity.setTel(dto.getTel());
-        }
-        if (dto.getEmail() != null) {
-            entity.setEmail(dto.getEmail());
-        }
+        // dtoMapper.applyBasicInfo はDTOの値がnullのプロパティを上書きしないため、
+        // 部分更新（PATCH）としてそのまま使える。
+        dtoMapper.applyBasicInfo(dto, entity);
 
         if (dto.getStatus() != null) {
             entity.setStatus(dto.getStatus());

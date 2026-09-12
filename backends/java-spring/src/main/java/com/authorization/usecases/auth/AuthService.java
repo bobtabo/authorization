@@ -10,6 +10,7 @@ import com.authorization.domain.staff.condition.StaffCondition;
 import com.authorization.domain.staff.entities.Staff;
 import com.authorization.domain.staff.enums.StaffRole;
 import com.authorization.domain.staff.enums.StaffStatus;
+import com.authorization.domain.staff.mappers.SocialDtoMapper;
 import com.authorization.domain.staff.mappers.StaffApiMapper;
 import com.authorization.domain.staff.mappers.StaffConditionMapper;
 import com.authorization.domain.staff.repositories.StaffRepository;
@@ -31,6 +32,7 @@ public class AuthService extends AbstractService {
     private final InvitationAuthRepository invitationAuthRepository;
     private final StaffConditionMapper conditionMapper;
     private final StaffApiMapper apiMapper;
+    private final SocialDtoMapper socialDtoMapper;
 
     /**
      * コンストラクタ。
@@ -39,16 +41,19 @@ public class AuthService extends AbstractService {
      * @param invitationAuthRepository 招待認証Repository
      * @param conditionMapper DTO→Condition マッパー
      * @param apiMapper Entity→ValueObject マッパー
+     * @param socialDtoMapper ソーシャルDTO→Entity マッパー
      */
     public AuthService(
             StaffRepository staffRepository,
             InvitationAuthRepository invitationAuthRepository,
             StaffConditionMapper conditionMapper,
-            StaffApiMapper apiMapper) {
+            StaffApiMapper apiMapper,
+            SocialDtoMapper socialDtoMapper) {
         this.staffRepository = staffRepository;
         this.invitationAuthRepository = invitationAuthRepository;
         this.conditionMapper = conditionMapper;
         this.apiMapper = apiMapper;
+        this.socialDtoMapper = socialDtoMapper;
     }
 
     /**
@@ -87,12 +92,7 @@ public class AuthService extends AbstractService {
                 throw AppException.forbidden("invitation_required");
             }
 
-            Staff newEntity = new Staff();
-            newEntity.setName(dto.getName());
-            newEntity.setEmail(dto.getEmail());
-            newEntity.setProvider(dto.getProvider());
-            newEntity.setProviderId(dto.getProviderId());
-            newEntity.setAvatar(dto.getAvatar());
+            Staff newEntity = socialDtoMapper.toEntity(dto);
             newEntity.setRole(StaffRole.from(roleValue));
             newEntity.setStatus(StaffStatus.Active);
             newEntity.setLastLoginAt(LocalDateTime.now());

@@ -8,6 +8,7 @@ package com.authorization.usecases.notification;
 import com.authorization.domain.notification.condition.NotificationCondition;
 import com.authorization.domain.notification.entities.Notification;
 import com.authorization.domain.notification.mappers.NotificationConditionMapper;
+import com.authorization.domain.notification.mappers.NotificationCreateMapper;
 import com.authorization.domain.notification.repositories.NotificationRepository;
 import com.authorization.domain.notification.valueobjects.NotificationCountsVo;
 import com.authorization.domain.notification.valueobjects.NotificationListVo;
@@ -30,6 +31,7 @@ public class NotificationService extends AbstractService {
     private final NotificationRepository notificationRepository;
     private final StaffRepository staffRepository;
     private final NotificationConditionMapper conditionMapper;
+    private final NotificationCreateMapper createMapper;
 
     /**
      * コンストラクタ。
@@ -37,14 +39,17 @@ public class NotificationService extends AbstractService {
      * @param notificationRepository 通知Repository
      * @param staffRepository スタッフRepository
      * @param conditionMapper DTO→Condition マッパー
+     * @param createMapper DTO→Entity マッパー
      */
     public NotificationService(
             NotificationRepository notificationRepository,
             StaffRepository staffRepository,
-            NotificationConditionMapper conditionMapper) {
+            NotificationConditionMapper conditionMapper,
+            NotificationCreateMapper createMapper) {
         this.notificationRepository = notificationRepository;
         this.staffRepository = staffRepository;
         this.conditionMapper = conditionMapper;
+        this.createMapper = createMapper;
     }
 
     /**
@@ -117,12 +122,8 @@ public class NotificationService extends AbstractService {
         List<Staff> staffs = staffRepository.findAllActive();
 
         List<Notification> notifications = staffs.stream().map(staff -> {
-            Notification entity = new Notification();
+            Notification entity = createMapper.toEntity(dto);
             entity.setStaffId(staff.getId());
-            entity.setMessageType(dto.getMessageType());
-            entity.setTitle(dto.getTitle());
-            entity.setMessage(dto.getMessage());
-            entity.setUrl(dto.getUrl());
             entity.assignCreated(dto.getExecutorId());
             return entity;
         }).toList();
