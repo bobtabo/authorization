@@ -9,10 +9,11 @@ import static com.authorization.jooq.Tables.INVITATIONS;
 
 import com.authorization.domain.invitation.condition.InvitationCondition;
 import com.authorization.domain.invitation.entities.Invitation;
+import com.authorization.domain.invitation.mappers.InvitationRecordMapper;
 import com.authorization.domain.invitation.repositories.InvitationRepository;
+import com.authorization.jooq.tables.records.InvitationsRecord;
 import com.authorization.support.exceptions.AppException;
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,14 +25,17 @@ import org.springframework.stereotype.Component;
 public class JooqInvitationRepository implements InvitationRepository {
 
     private final DSLContext dsl;
+    private final InvitationRecordMapper recordMapper;
 
     /**
      * コンストラクタ。
      *
      * @param dsl jOOQ DSLContext
+     * @param recordMapper 招待 Entity/Record マッパー
      */
-    public JooqInvitationRepository(DSLContext dsl) {
+    public JooqInvitationRepository(DSLContext dsl, InvitationRecordMapper recordMapper) {
         this.dsl = dsl;
+        this.recordMapper = recordMapper;
     }
 
     /**
@@ -39,13 +43,13 @@ public class JooqInvitationRepository implements InvitationRepository {
      */
     @Override
     public Invitation getCurrentByRole(int role) {
-        Record rec = dsl.selectFrom(INVITATIONS)
+        InvitationsRecord rec = dsl.selectFrom(INVITATIONS)
                 .where(INVITATIONS.ROLE.eq((long) role))
                 .and(INVITATIONS.DELETED_AT.isNull())
                 .orderBy(INVITATIONS.CREATED_AT.desc())
                 .limit(1)
                 .fetchOne();
-        return rec == null ? null : toEntity(rec);
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 
     /**
@@ -73,27 +77,10 @@ public class JooqInvitationRepository implements InvitationRepository {
      */
     @Override
     public Invitation findByToken(InvitationCondition condition) {
-        Record rec = dsl.selectFrom(INVITATIONS)
+        InvitationsRecord rec = dsl.selectFrom(INVITATIONS)
                 .where(INVITATIONS.TOKEN.eq(condition.getToken()))
                 .and(INVITATIONS.DELETED_AT.isNull())
                 .fetchOne();
-        return rec == null ? null : toEntity(rec);
-    }
-
-    /**
-     * jOOQレコードを招待エンティティへ変換します。
-     *
-     * @param rec jOOQレコード
-     * @return 招待エンティティ
-     */
-    private static Invitation toEntity(Record rec) {
-        Invitation i = new Invitation();
-        i.setId(rec.get(INVITATIONS.ID));
-        i.setToken(rec.get(INVITATIONS.TOKEN));
-        i.setRole(rec.get(INVITATIONS.ROLE).intValue());
-        i.setCreatedAt(rec.get(INVITATIONS.CREATED_AT));
-        i.setUpdatedAt(rec.get(INVITATIONS.UPDATED_AT));
-        i.setVersion(rec.get(INVITATIONS.VERSION).intValue());
-        return i;
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 }

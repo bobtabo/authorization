@@ -9,11 +9,12 @@ import static com.authorization.jooq.Tables.NOTIFICATIONS;
 
 import com.authorization.domain.notification.condition.NotificationCondition;
 import com.authorization.domain.notification.entities.Notification;
+import com.authorization.domain.notification.mappers.NotificationRecordMapper;
 import com.authorization.domain.notification.repositories.NotificationRepository;
+import com.authorization.jooq.tables.records.NotificationsRecord;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.jooq.DSLContext;
-import org.jooq.Record;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,14 +26,17 @@ import org.springframework.stereotype.Component;
 public class JooqNotificationRepository implements NotificationRepository {
 
     private final DSLContext dsl;
+    private final NotificationRecordMapper recordMapper;
 
     /**
      * コンストラクタ。
      *
      * @param dsl jOOQ DSLContext
+     * @param recordMapper 通知 Entity/Record マッパー
      */
-    public JooqNotificationRepository(DSLContext dsl) {
+    public JooqNotificationRepository(DSLContext dsl, NotificationRecordMapper recordMapper) {
         this.dsl = dsl;
+        this.recordMapper = recordMapper;
     }
 
     /**
@@ -51,7 +55,7 @@ public class JooqNotificationRepository implements NotificationRepository {
         return q.orderBy(NOTIFICATIONS.ID.desc())
                 .limit(condition.getLimit() + 1)
                 .fetch()
-                .map(JooqNotificationRepository::toEntity);
+                .map(recordMapper::toEntity);
     }
 
     /**
@@ -96,8 +100,8 @@ public class JooqNotificationRepository implements NotificationRepository {
      */
     @Override
     public void persist(Notification entity) {
-        var r = dsl.newRecord(NOTIFICATIONS);
-        fillRecord(r, entity);
+        NotificationsRecord r = dsl.newRecord(NOTIFICATIONS);
+        recordMapper.fillRecord(entity, r);
         r.store();
         entity.setId(r.getId());
     }
@@ -108,31 +112,11 @@ public class JooqNotificationRepository implements NotificationRepository {
     @Override
     public void insertBatch(List<Notification> entities) {
         var records = entities.stream().map(entity -> {
-            var r = dsl.newRecord(NOTIFICATIONS);
-            fillRecord(r, entity);
+            NotificationsRecord r = dsl.newRecord(NOTIFICATIONS);
+            recordMapper.fillRecord(entity, r);
             return r;
         }).toList();
         dsl.batchInsert(records).execute();
-    }
-
-    /**
-     * エンティティの値をjOOQレコードへ設定します。
-     *
-     * @param r jOOQレコード
-     * @param entity 通知エンティティ
-     */
-    private static void fillRecord(com.authorization.jooq.tables.records.NotificationsRecord r, Notification entity) {
-        r.setStaffId(entity.getStaffId());
-        r.setMessageType((long) entity.getMessageType());
-        r.setTitle(entity.getTitle());
-        r.setMessage(entity.getMessage());
-        r.setUrl(entity.getUrl());
-        r.setRead((short) 0);
-        r.setCreatedAt(entity.getCreatedAt());
-        r.setCreatedBy(entity.getCreatedBy());
-        r.setUpdatedAt(entity.getUpdatedAt());
-        r.setUpdatedBy(entity.getUpdatedBy());
-        r.setVersion((long) (entity.getVersion() != null ? entity.getVersion() : 1));
     }
 
     /**
@@ -152,30 +136,5 @@ public class JooqNotificationRepository implements NotificationRepository {
         } catch (IllegalArgumentException e) {
             return null;
         }
-    }
-
-    /**
-     * jOOQレコードを通知エンティティへ変換します。
-     *
-     * @param rec jOOQレコード
-     * @return 通知エンティティ
-     */
-    private static Notification toEntity(Record rec) {
-        Notification n = new Notification();
-        n.setId(rec.get(NOTIFICATIONS.ID));
-        n.setStaffId(rec.get(NOTIFICATIONS.STAFF_ID));
-        n.setMessageType(rec.get(NOTIFICATIONS.MESSAGE_TYPE).intValue());
-        n.setTitle(rec.get(NOTIFICATIONS.TITLE));
-        n.setMessage(rec.get(NOTIFICATIONS.MESSAGE));
-        n.setUrl(rec.get(NOTIFICATIONS.URL));
-        n.setRead(rec.get(NOTIFICATIONS.READ) != 0);
-        n.setCreatedAt(rec.get(NOTIFICATIONS.CREATED_AT));
-        n.setCreatedBy(rec.get(NOTIFICATIONS.CREATED_BY));
-        n.setUpdatedAt(rec.get(NOTIFICATIONS.UPDATED_AT));
-        n.setUpdatedBy(rec.get(NOTIFICATIONS.UPDATED_BY));
-        n.setDeletedAt(rec.get(NOTIFICATIONS.DELETED_AT));
-        n.setDeletedBy(rec.get(NOTIFICATIONS.DELETED_BY));
-        n.setVersion(rec.get(NOTIFICATIONS.VERSION).intValue());
-        return n;
     }
 }

@@ -9,17 +9,16 @@ import static com.authorization.jooq.Tables.STAFFS;
 
 import com.authorization.domain.staff.condition.StaffCondition;
 import com.authorization.domain.staff.entities.Staff;
-import com.authorization.domain.staff.enums.Provider;
-import com.authorization.domain.staff.enums.StaffRole;
-import com.authorization.domain.staff.enums.StaffStatus;
+import com.authorization.domain.staff.mappers.StaffRecordMapper;
 import com.authorization.domain.staff.repositories.StaffRepository;
+import com.authorization.jooq.tables.records.StaffsRecord;
 import com.authorization.support.exceptions.AppException;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.SelectQuery;
 import org.jooq.SortOrder;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,14 +30,17 @@ import org.springframework.stereotype.Component;
 public class JooqStaffRepository implements StaffRepository {
 
     private final DSLContext dsl;
+    private final StaffRecordMapper recordMapper;
 
     /**
      * コンストラクタ。
      *
      * @param dsl jOOQ DSLContext
+     * @param recordMapper スタッフ Entity/Record マッパー
      */
-    public JooqStaffRepository(DSLContext dsl) {
+    public JooqStaffRepository(DSLContext dsl, StaffRecordMapper recordMapper) {
         this.dsl = dsl;
+        this.recordMapper = recordMapper;
     }
 
     /**
@@ -46,7 +48,7 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public int countByCondition(StaffCondition condition) {
-        return dsl.fetchCount(applyFilters(condition));
+        return dsl.fetchCount(dsl.selectFrom(STAFFS).where(buildCondition(condition)));
     }
 
     /**
@@ -54,7 +56,7 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public List<Staff> findByCondition(StaffCondition condition) {
-        SelectQuery<Record> q = applyFilters(condition);
+        var step = dsl.selectFrom(STAFFS).where(buildCondition(condition));
         var option = condition.getOption();
         if (option != null) {
             String column = option.getOrderBy() != null ? option.getOrderBy() : option.getOrderByDesc();
@@ -64,12 +66,12 @@ public class JooqStaffRepository implements StaffRepository {
                 case "status" -> STAFFS.DELETED_AT;
                 default -> STAFFS.CREATED_AT;
             };
-            q.addOrderBy(sortField.sort(option.getOrderByDesc() != null ? SortOrder.DESC : SortOrder.ASC));
+            step.orderBy(sortField.sort(option.getOrderByDesc() != null ? SortOrder.DESC : SortOrder.ASC));
             if (condition.isPaging()) {
-                q.addLimit(option.getOffset(), Math.clamp(option.getLimit(), 1, 500));
+                step.limit(option.getOffset(), Math.clamp(option.getLimit(), 1, 500));
             }
         }
-        return q.fetch().map(JooqStaffRepository::toEntity);
+        return step.fetch().map(recordMapper::toEntity);
     }
 
     /**
@@ -77,11 +79,11 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public Staff findById(StaffCondition condition) {
-        Record rec = dsl.selectFrom(STAFFS)
+        StaffsRecord rec = dsl.selectFrom(STAFFS)
                 .where(STAFFS.ID.eq(condition.getId()))
                 .and(STAFFS.DELETED_AT.isNull())
                 .fetchOne();
-        return rec == null ? null : toEntity(rec);
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 
     /**
@@ -89,12 +91,12 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public Staff findByProvider(StaffCondition condition) {
-        Record rec = dsl.selectFrom(STAFFS)
+        StaffsRecord rec = dsl.selectFrom(STAFFS)
                 .where(STAFFS.PROVIDER.eq(condition.getProvider().value()))
                 .and(STAFFS.PROVIDER_ID.eq(condition.getProviderId()))
                 .and(STAFFS.DELETED_AT.isNull())
                 .fetchOne();
-        return rec == null ? null : toEntity(rec);
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 
     /**
@@ -102,7 +104,7 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public List<Staff> findAllActive() {
-        return dsl.selectFrom(STAFFS).where(STAFFS.DELETED_AT.isNull()).fetch().map(JooqStaffRepository::toEntity);
+        return dsl.selectFrom(STAFFS).where(STAFFS.DELETED_AT.isNull()).fetch().map(recordMapper::toEntity);
     }
 
     /**
@@ -111,19 +113,8 @@ public class JooqStaffRepository implements StaffRepository {
     @Override
     public Staff persist(Staff entity) {
         if (entity.getId() == null) {
-            var r = dsl.newRecord(STAFFS);
-            r.setName(entity.getName());
-            r.setEmail(entity.getEmail());
-            r.setProvider(entity.getProvider().value());
-            r.setProviderId(entity.getProviderId());
-            r.setAvatar(entity.getAvatar());
-            r.setRole((long) entity.getRole().value());
-            r.setLastLoginAt(entity.getLastLoginAt());
-            r.setCreatedAt(entity.getCreatedAt());
-            r.setCreatedBy(entity.getCreatedBy());
-            r.setUpdatedAt(entity.getUpdatedAt());
-            r.setUpdatedBy(entity.getUpdatedBy());
-            r.setVersion((long) entity.getVersion());
+            StaffsRecord r = dsl.newRecord(STAFFS);
+            recordMapper.fillRecord(entity, r);
             r.store();
             entity.setId(r.getId());
             return entity;
@@ -179,48 +170,20 @@ public class JooqStaffRepository implements StaffRepository {
     }
 
     /**
-     * 検索条件から絞り込みクエリを組み立てます。
+     * 検索条件から絞り込み条件を組み立てます。
      *
      * @param condition 検索条件
-     * @return 絞り込み済みクエリ
+     * @return 絞り込み条件
      */
-    private SelectQuery<Record> applyFilters(StaffCondition condition) {
-        SelectQuery<Record> q = dsl.selectQuery();
-        q.addFrom(STAFFS);
+    private static Condition buildCondition(StaffCondition condition) {
+        Condition cond = DSL.noCondition();
         if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
             String kw = "%" + condition.getKeyword() + "%";
-            q.addConditions(STAFFS.NAME.like(kw).or(STAFFS.EMAIL.like(kw)));
+            cond = cond.and(STAFFS.NAME.like(kw).or(STAFFS.EMAIL.like(kw)));
         }
         if (!condition.getRoles().isEmpty()) {
-            q.addConditions(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));
+            cond = cond.and(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));
         }
-        return q;
-    }
-
-    /**
-     * jOOQレコードをスタッフエンティティへ変換します。status は deletedAt の有無から算出します。
-     *
-     * @param rec jOOQレコード
-     * @return スタッフエンティティ
-     */
-    private static Staff toEntity(Record rec) {
-        Staff s = new Staff();
-        s.setId(rec.get(STAFFS.ID));
-        s.setName(rec.get(STAFFS.NAME));
-        s.setEmail(rec.get(STAFFS.EMAIL));
-        s.setProvider(Provider.from(rec.get(STAFFS.PROVIDER)));
-        s.setProviderId(rec.get(STAFFS.PROVIDER_ID));
-        s.setAvatar(rec.get(STAFFS.AVATAR));
-        s.setRole(StaffRole.from(rec.get(STAFFS.ROLE).intValue()));
-        s.setLastLoginAt(rec.get(STAFFS.LAST_LOGIN_AT));
-        s.setCreatedAt(rec.get(STAFFS.CREATED_AT));
-        s.setCreatedBy(rec.get(STAFFS.CREATED_BY));
-        s.setUpdatedAt(rec.get(STAFFS.UPDATED_AT));
-        s.setUpdatedBy(rec.get(STAFFS.UPDATED_BY));
-        s.setDeletedAt(rec.get(STAFFS.DELETED_AT));
-        s.setDeletedBy(rec.get(STAFFS.DELETED_BY));
-        s.setVersion(rec.get(STAFFS.VERSION).intValue());
-        s.setStatus(rec.get(STAFFS.DELETED_AT) == null ? StaffStatus.Active : StaffStatus.Inactive);
-        return s;
+        return cond;
     }
 }

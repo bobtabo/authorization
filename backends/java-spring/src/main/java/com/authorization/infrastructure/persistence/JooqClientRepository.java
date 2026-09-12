@@ -10,14 +10,15 @@ import static com.authorization.jooq.Tables.CLIENTS;
 import com.authorization.domain.client.condition.ClientCondition;
 import com.authorization.domain.client.entities.Client;
 import com.authorization.domain.client.enums.ClientStatus;
+import com.authorization.domain.client.mappers.ClientRecordMapper;
 import com.authorization.domain.client.repositories.ClientRepository;
 import com.authorization.jooq.tables.records.ClientsRecord;
 import com.authorization.support.exceptions.AppException;
 import java.util.List;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.SelectQuery;
 import org.jooq.SortOrder;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,14 +32,17 @@ import org.springframework.stereotype.Component;
 public class JooqClientRepository implements ClientRepository {
 
     private final DSLContext dsl;
+    private final ClientRecordMapper recordMapper;
 
     /**
      * コンストラクタ。
      *
      * @param dsl jOOQ DSLContext
+     * @param recordMapper クライアント Entity/Record マッパー
      */
-    public JooqClientRepository(DSLContext dsl) {
+    public JooqClientRepository(DSLContext dsl, ClientRecordMapper recordMapper) {
         this.dsl = dsl;
+        this.recordMapper = recordMapper;
     }
 
     /**
@@ -46,15 +50,15 @@ public class JooqClientRepository implements ClientRepository {
      */
     @Override
     public List<Client> findByCondition(ClientCondition condition) {
-        SelectQuery<Record> q = applyFilters(condition);
+        var step = dsl.selectFrom(CLIENTS).where(buildCondition(condition));
         if (condition.getOption() != null) {
-            q.addOrderBy(sortField(condition.getOption().getOrderBy(), condition.getOption().getOrderByDesc())
+            step.orderBy(sortField(condition.getOption().getOrderBy(), condition.getOption().getOrderByDesc())
                     .sort(condition.getOption().getOrderByDesc() != null ? SortOrder.DESC : SortOrder.ASC));
             if (condition.isPaging()) {
-                q.addLimit(condition.getOption().getOffset(), Math.clamp(condition.getOption().getLimit(), 1, 500));
+                step.limit(condition.getOption().getOffset(), Math.clamp(condition.getOption().getLimit(), 1, 500));
             }
         }
-        return q.fetch().map(JooqClientRepository::toEntity);
+        return step.fetch().map(recordMapper::toEntity);
     }
 
     /**
@@ -62,7 +66,7 @@ public class JooqClientRepository implements ClientRepository {
      */
     @Override
     public int countByCondition(ClientCondition condition) {
-        return dsl.fetchCount(applyFilters(condition));
+        return dsl.fetchCount(dsl.selectFrom(CLIENTS).where(buildCondition(condition)));
     }
 
     /**
@@ -70,8 +74,8 @@ public class JooqClientRepository implements ClientRepository {
      */
     @Override
     public Client findById(ClientCondition condition) {
-        Record rec = dsl.selectFrom(CLIENTS).where(CLIENTS.ID.eq(condition.getId())).fetchOne();
-        return rec == null ? null : toEntity(rec);
+        ClientsRecord rec = dsl.selectFrom(CLIENTS).where(CLIENTS.ID.eq(condition.getId())).fetchOne();
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 
     /**
@@ -79,12 +83,12 @@ public class JooqClientRepository implements ClientRepository {
      */
     @Override
     public Client findByAccessToken(ClientCondition condition) {
-        Record rec = dsl.selectFrom(CLIENTS)
+        ClientsRecord rec = dsl.selectFrom(CLIENTS)
                 .where(CLIENTS.ACCESS_TOKEN.eq(condition.getAccessToken()))
                 .and(CLIENTS.STATUS.eq((long) ClientStatus.Active.value()))
                 .and(CLIENTS.DELETED_AT.isNull())
                 .fetchOne();
-        return rec == null ? null : toEntity(rec);
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 
     /**
@@ -92,11 +96,11 @@ public class JooqClientRepository implements ClientRepository {
      */
     @Override
     public Client findByIdentifier(ClientCondition condition) {
-        Record rec = dsl.selectFrom(CLIENTS)
+        ClientsRecord rec = dsl.selectFrom(CLIENTS)
                 .where(CLIENTS.IDENTIFIER.eq(condition.getIdentifier()))
                 .and(CLIENTS.DELETED_AT.isNull())
                 .fetchOne();
-        return rec == null ? null : toEntity(rec);
+        return rec == null ? null : recordMapper.toEntity(rec);
     }
 
     /**
@@ -106,7 +110,7 @@ public class JooqClientRepository implements ClientRepository {
     public Client persist(Client entity) {
         if (entity.getId() == null) {
             ClientsRecord r = dsl.newRecord(CLIENTS);
-            fillRecord(r, entity);
+            recordMapper.fillRecord(entity, r);
             r.store();
             entity.setId(r.getId());
             return entity;
@@ -152,28 +156,27 @@ public class JooqClientRepository implements ClientRepository {
     }
 
     /**
-     * 検索条件から絞り込みクエリを組み立てます（ページング・並び順は含まない）。
+     * 検索条件から絞り込み条件を組み立てます（ページング・並び順は含まない）。
      *
      * @param condition 検索条件
-     * @return 絞り込み済みクエリ
+     * @return 絞り込み条件
      */
-    private SelectQuery<Record> applyFilters(ClientCondition condition) {
-        SelectQuery<Record> q = dsl.selectQuery();
-        q.addFrom(CLIENTS);
+    private static Condition buildCondition(ClientCondition condition) {
+        Condition cond = DSL.noCondition();
         if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
             String kw = "%" + condition.getKeyword() + "%";
-            q.addConditions(CLIENTS.NAME.like(kw).or(CLIENTS.EMAIL.like(kw)));
+            cond = cond.and(CLIENTS.NAME.like(kw).or(CLIENTS.EMAIL.like(kw)));
         }
         if (condition.getStartFrom() != null) {
-            q.addConditions(CLIENTS.START_AT.greaterOrEqual(condition.getStartFrom()));
+            cond = cond.and(CLIENTS.START_AT.greaterOrEqual(condition.getStartFrom()));
         }
         if (condition.getStartTo() != null) {
-            q.addConditions(CLIENTS.START_AT.lessOrEqual(condition.getStartTo()));
+            cond = cond.and(CLIENTS.START_AT.lessOrEqual(condition.getStartTo()));
         }
         if (!condition.getStatuses().isEmpty()) {
-            q.addConditions(CLIENTS.STATUS.in(condition.getStatuses().stream().map(Long::valueOf).toList()));
+            cond = cond.and(CLIENTS.STATUS.in(condition.getStatuses().stream().map(Long::valueOf).toList()));
         }
-        return q;
+        return cond;
     }
 
     /**
@@ -192,70 +195,5 @@ public class JooqClientRepository implements ClientRepository {
             case "start_at" -> CLIENTS.START_AT;
             default -> CLIENTS.CREATED_AT;
         };
-    }
-
-    /**
-     * エンティティの値をjOOQレコードへ設定します（新規登録用）。
-     *
-     * @param r jOOQレコード
-     * @param entity クライアントエンティティ
-     */
-    private static void fillRecord(ClientsRecord r, Client entity) {
-        r.setName(entity.getName());
-        r.setIdentifier(entity.getIdentifier());
-        r.setPostCode(entity.getPostCode());
-        r.setPref(entity.getPref());
-        r.setCity(entity.getCity());
-        r.setAddress(entity.getAddress());
-        r.setBuilding(entity.getBuilding());
-        r.setTel(entity.getTel());
-        r.setEmail(entity.getEmail());
-        r.setAccessToken(entity.getAccessToken());
-        r.setPrivateKey(entity.getPrivateKey());
-        r.setPublicKey(entity.getPublicKey());
-        r.setFingerprint(entity.getFingerprint());
-        r.setStatus((long) entity.getStatus().value());
-        r.setStartAt(entity.getStartAt());
-        r.setStopAt(entity.getStopAt());
-        r.setCreatedAt(entity.getCreatedAt());
-        r.setCreatedBy(entity.getCreatedBy());
-        r.setUpdatedAt(entity.getUpdatedAt());
-        r.setUpdatedBy(entity.getUpdatedBy());
-        r.setVersion((long) entity.getVersion());
-    }
-
-    /**
-     * jOOQレコードをクライアントエンティティへ変換します。
-     *
-     * @param rec jOOQレコード
-     * @return クライアントエンティティ
-     */
-    private static Client toEntity(Record rec) {
-        Client c = new Client();
-        c.setId(rec.get(CLIENTS.ID));
-        c.setName(rec.get(CLIENTS.NAME));
-        c.setIdentifier(rec.get(CLIENTS.IDENTIFIER));
-        c.setPostCode(rec.get(CLIENTS.POST_CODE));
-        c.setPref(rec.get(CLIENTS.PREF));
-        c.setCity(rec.get(CLIENTS.CITY));
-        c.setAddress(rec.get(CLIENTS.ADDRESS));
-        c.setBuilding(rec.get(CLIENTS.BUILDING) != null ? rec.get(CLIENTS.BUILDING) : "");
-        c.setTel(rec.get(CLIENTS.TEL));
-        c.setEmail(rec.get(CLIENTS.EMAIL));
-        c.setAccessToken(rec.get(CLIENTS.ACCESS_TOKEN));
-        c.setPrivateKey(rec.get(CLIENTS.PRIVATE_KEY));
-        c.setPublicKey(rec.get(CLIENTS.PUBLIC_KEY));
-        c.setFingerprint(rec.get(CLIENTS.FINGERPRINT));
-        c.setStatus(ClientStatus.from(rec.get(CLIENTS.STATUS).intValue()));
-        c.setStartAt(rec.get(CLIENTS.START_AT));
-        c.setStopAt(rec.get(CLIENTS.STOP_AT));
-        c.setCreatedAt(rec.get(CLIENTS.CREATED_AT));
-        c.setCreatedBy(rec.get(CLIENTS.CREATED_BY));
-        c.setUpdatedAt(rec.get(CLIENTS.UPDATED_AT));
-        c.setUpdatedBy(rec.get(CLIENTS.UPDATED_BY));
-        c.setDeletedAt(rec.get(CLIENTS.DELETED_AT));
-        c.setDeletedBy(rec.get(CLIENTS.DELETED_BY));
-        c.setVersion(rec.get(CLIENTS.VERSION).intValue());
-        return c;
     }
 }
