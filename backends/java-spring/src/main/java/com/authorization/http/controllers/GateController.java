@@ -11,7 +11,9 @@ import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.gate.GateService;
 import com.authorization.usecases.gate.dtos.GateIssueDto;
 import com.authorization.usecases.gate.dtos.GateVerifyDto;
-import java.util.LinkedHashMap;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +31,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/gate")
 public class GateController {
+
+    // AbstractValueObject由来のversion（GateVerifyVoでは未使用のため常にnull）を
+    // 出力に含めないよう、NON_NULLを設定する。
+    private static final ObjectMapper JSON =
+            new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     private final GateService service;
 
@@ -86,14 +93,7 @@ public class GateController {
 
         GateVerifyVo vo = service.verify(dto);
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("iss", vo.getIss());
-        data.put("sub", vo.getSub());
-        data.put("aud", vo.getAud());
-        data.put("exp", vo.getExp());
-        data.put("iat", vo.getIat());
-        data.put("nbf", vo.getNbf());
-        data.put("jti", vo.getJti());
+        Map<String, Object> data = JSON.convertValue(vo, new TypeReference<Map<String, Object>>() {});
         return ResponseHelper.success(data);
     }
 }
