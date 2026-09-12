@@ -5,5 +5,3 @@ reviews:
     base_branches:
       - "develop"
       - "main"
-  path_filters:
-    - "!.claude/settings.json"
