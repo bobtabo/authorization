@@ -48,7 +48,7 @@ bin/docker-common.sh env        # 証明書と .env を配置（local/common/.en
 ```bash
 cd docker
 bin/docker-common.sh up      # 1. 共通インフラ（nginx-proxy / MySQL / Redis / LocalStack）
-bin/docker-backends.sh up    # 2. 全11バックエンドを一括起動
+bin/docker-backends.sh up    # 2. 全12バックエンドを一括起動
 ```
 
 個別に起動する場合はバックエンドごとのスクリプトを使う（対応表は backend-dispatch Skill）:
@@ -59,7 +59,7 @@ bin/docker-go-gin.sh up      # go-gin だけ起動（他は docker-go-echo.sh / 
 ```
 
 - 1つのバックエンドだけ触る作業では `docker-backends.sh up` を使わず個別起動にする
-  （10コンテナのビルドは時間とリソースを消費する）。
+  （12コンテナのビルドは時間とリソースを消費する）。
 - 各 `docker-<x>.sh up` は `docker/local/app-<x>/.env` が無ければ `.env.example` から
   自動生成した上で `docker compose -p auth-<x> up -d --build` を実行する。
 - `docker-backends.sh` が受け付ける引数は `up` / `down` のみ（`exec` / `start` / `stop` は
