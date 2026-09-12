@@ -65,8 +65,9 @@ public class JooqNotificationRepository implements NotificationRepository {
                 .set(NOTIFICATIONS.UPDATED_AT, LocalDateTime.now())
                 .where(NOTIFICATIONS.DELETED_AT.isNull());
         if (condition.getId() != null) {
-            // 単一通知の更新は id のみで一意に決まるため staff_id での絞り込みは行わない。
+            // 単一通知の更新は他staffの通知を更新できないよう staff_id でも絞り込む。
             q.and(NOTIFICATIONS.ID.eq(condition.getId()));
+            q.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
         } else if (condition.getStaffId() != null && condition.isAll()) {
             q.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
         } else if (condition.getStaffId() != null && !condition.getIds().isEmpty()) {

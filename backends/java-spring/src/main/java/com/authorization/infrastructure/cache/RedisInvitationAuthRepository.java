@@ -50,6 +50,21 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
     }
 
     @Override
+    public Integer consume(String token) {
+        try (Jedis jedis = pool.getResource()) {
+            String v = jedis.getDel(cacheKey(token));
+            if (v == null) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(v);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+    }
+
+    @Override
     public void remove(String token) {
         try (Jedis jedis = pool.getResource()) {
             jedis.del(cacheKey(token));

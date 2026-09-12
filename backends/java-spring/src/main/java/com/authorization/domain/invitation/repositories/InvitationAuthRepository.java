@@ -30,6 +30,15 @@ public interface InvitationAuthRepository {
     Integer find(String token);
 
     /**
+     * 招待トークンに紐づくロールを取得し、同一操作でトークンを削除します。
+     * 並行するリクエストが同じトークンを取得できないよう、取得と削除をアトミックに行います。
+     *
+     * @param token 招待トークン
+     * @return ロール、未保存の場合 null
+     */
+    Integer consume(String token);
+
+    /**
      * 招待トークンを削除します。
      *
      * @param token 招待トークン

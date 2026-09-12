@@ -89,7 +89,6 @@ public class GateService extends AbstractService {
 
         if (token == null) {
             token = issueJwt(dto.getMemberId(), identifier, client.getPrivateKey(), client.getFingerprint());
-            gateRepository.putJwt(identifier, dto.getMemberId(), token, (int) jwtConfig.cacheTtl());
 
             JwtHistory history = new JwtHistory();
             history.setClientId(client.getId());
@@ -98,6 +97,10 @@ public class GateService extends AbstractService {
             history.setJwt(token);
             history.assignCreated(0);
             historyRepository.persist(history);
+
+            // 履歴の保存に成功してからキャッシュを公開する（DBを正本にし、
+            // 履歴が無いJWTがキャッシュに残ることを防ぐ）。
+            gateRepository.putJwt(identifier, dto.getMemberId(), token, (int) jwtConfig.cacheTtl());
         }
 
         GateIssueVo vo = new GateIssueVo();

@@ -10,6 +10,7 @@ import static com.authorization.jooq.Tables.INVITATIONS;
 import com.authorization.domain.invitation.condition.InvitationCondition;
 import com.authorization.domain.invitation.entities.Invitation;
 import com.authorization.domain.invitation.repositories.InvitationRepository;
+import com.authorization.support.exceptions.AppException;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.stereotype.Component;
@@ -45,11 +46,14 @@ public class JooqInvitationRepository implements InvitationRepository {
                 .set(INVITATIONS.TOKEN, entity.getToken())
                 .set(INVITATIONS.UPDATED_AT, entity.getUpdatedAt())
                 .set(INVITATIONS.UPDATED_BY, entity.getUpdatedBy())
+                .set(INVITATIONS.VERSION, (long) (entity.getVersion() + 1))
                 .where(INVITATIONS.ID.eq(entity.getId()))
+                .and(INVITATIONS.VERSION.eq((long) entity.getVersion()))
                 .execute();
         if (rows == 0) {
-            throw new com.authorization.support.exceptions.AppException(409, "optimistic_lock");
+            throw new AppException(409, "optimistic_lock");
         }
+        entity.setVersion(entity.getVersion() + 1);
         return entity;
     }
 

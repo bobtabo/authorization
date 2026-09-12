@@ -67,9 +67,11 @@ public class InvitationService extends AbstractService {
         if (entity == null) {
             throw AppException.notFound("invitation_not_found");
         }
+        String oldToken = entity.getToken();
         entity.setToken(generateHex(16));
         entity.assignUpdated(dto.getExecutorId() == null ? 0 : dto.getExecutorId());
         Invitation saved = invitationRepository.persist(entity);
+        invitationAuthRepository.remove(oldToken);
 
         return toVo(saved.getToken());
     }

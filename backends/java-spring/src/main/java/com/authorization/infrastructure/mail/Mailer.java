@@ -95,11 +95,49 @@ public class Mailer {
 
     private static String buildActivationHtml(String name, String activateUrl, String appName) {
         int year = Year.now().getValue();
+        String safeUrl = isAbsoluteHttpUrl(activateUrl) ? escapeHtml(activateUrl) : "";
         return ACTIVATION_TEMPLATE
-                .replace("{{NAME}}", name)
-                .replace("{{ACTIVATE_URL}}", activateUrl)
-                .replace("{{APP_NAME}}", appName)
+                .replace("{{NAME}}", escapeHtml(name))
+                .replace("{{ACTIVATE_URL}}", safeUrl)
+                .replace("{{APP_NAME}}", escapeHtml(appName))
                 .replace("{{YEAR}}", String.valueOf(year));
+    }
+
+    /**
+     * 絶対URLかつ http/https スキームであるかを判定します。
+     *
+     * @param url 検証対象のURL文字列
+     * @return http/https の絶対URLである場合 true
+     */
+    private static boolean isAbsoluteHttpUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return false;
+        }
+        try {
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            return uri.isAbsolute() && ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme));
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * HTMLテンプレートへの埋め込み用に特殊文字をエスケープします。
+     *
+     * @param value 埋め込む文字列
+     * @return エスケープ済み文字列
+     */
+    private static String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     private static final String ACTIVATION_TEMPLATE = """

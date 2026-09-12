@@ -13,6 +13,7 @@ import com.authorization.domain.staff.enums.Provider;
 import com.authorization.domain.staff.enums.StaffRole;
 import com.authorization.domain.staff.enums.StaffStatus;
 import com.authorization.domain.staff.repositories.StaffRepository;
+import com.authorization.support.exceptions.AppException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.jooq.DSLContext;
@@ -134,10 +135,12 @@ public class JooqStaffRepository implements StaffRepository {
                 .set(STAFFS.UPDATED_BY, entity.getUpdatedBy())
                 .set(STAFFS.VERSION, (long) (entity.getVersion() + 1))
                 .where(STAFFS.ID.eq(entity.getId()))
+                .and(STAFFS.VERSION.eq((long) entity.getVersion()))
                 .execute();
-        if (rows > 0) {
-            entity.setVersion(entity.getVersion() + 1);
+        if (rows == 0) {
+            throw new AppException(409, "optimistic_lock");
         }
+        entity.setVersion(entity.getVersion() + 1);
         return entity;
     }
 

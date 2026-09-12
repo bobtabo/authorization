@@ -82,11 +82,10 @@ public class AuthService extends AbstractService {
         Staff saved;
         if (entity == null) {
             String token = dto.getInvitationToken();
-            Integer roleValue = (token == null || token.isEmpty()) ? null : invitationAuthRepository.find(token);
+            Integer roleValue = (token == null || token.isEmpty()) ? null : invitationAuthRepository.consume(token);
             if (roleValue == null) {
                 throw AppException.forbidden("invitation_required");
             }
-            invitationAuthRepository.remove(token);
 
             Staff newEntity = new Staff();
             newEntity.setName(dto.getName());

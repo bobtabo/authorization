@@ -136,6 +136,8 @@ public class NotificationController {
     public ResponseEntity<Map<String, Object>> read(
             @PathVariable long id,
             @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId) {
+        requireStaffId(staffId);
+
         NotificationDto dto = new NotificationDto();
         dto.setStaffId(staffId);
         dto.setNotificationId(id);

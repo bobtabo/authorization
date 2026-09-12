@@ -23,6 +23,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -42,7 +43,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AuthController {
 
-    private static final HttpClient HTTP = HttpClient.newHttpClient();
+    private static final Duration OAUTH_HTTP_TIMEOUT = Duration.ofSeconds(10);
+    private static final HttpClient HTTP =
+            HttpClient.newBuilder().connectTimeout(OAUTH_HTTP_TIMEOUT).build();
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final AuthService authService;
@@ -283,6 +286,7 @@ public class AuthController {
                 + "&redirect_uri=" + encode(cfg.oauth().googleRedirectUrl())
                 + "&grant_type=authorization_code";
         HttpRequest req = HttpRequest.newBuilder(URI.create("https://oauth2.googleapis.com/token"))
+                .timeout(OAUTH_HTTP_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
@@ -292,6 +296,7 @@ public class AuthController {
 
     private Map<String, String> fetchGoogleUserInfo(String accessToken) throws Exception {
         HttpRequest req = HttpRequest.newBuilder(URI.create("https://www.googleapis.com/oauth2/v2/userinfo"))
+                .timeout(OAUTH_HTTP_TIMEOUT)
                 .header("Authorization", "Bearer " + accessToken)
                 .GET()
                 .build();
@@ -309,6 +314,7 @@ public class AuthController {
                 + "&client_secret=" + encode(cfg.oauth().githubClientSecret())
                 + "&code=" + encode(code);
         HttpRequest req = HttpRequest.newBuilder(URI.create("https://github.com/login/oauth/access_token"))
+                .timeout(OAUTH_HTTP_TIMEOUT)
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -319,6 +325,7 @@ public class AuthController {
 
     private Map<String, String> fetchGithubUserInfo(String accessToken) throws Exception {
         HttpRequest userReq = HttpRequest.newBuilder(URI.create("https://api.github.com/user"))
+                .timeout(OAUTH_HTTP_TIMEOUT)
                 .header("Authorization", "Bearer " + accessToken)
                 .header("Accept", "application/json")
                 .GET()
@@ -335,6 +342,7 @@ public class AuthController {
         String email = userJson.path("email").asText("");
         if (email.isEmpty()) {
             HttpRequest emailReq = HttpRequest.newBuilder(URI.create("https://api.github.com/user/emails"))
+                    .timeout(OAUTH_HTTP_TIMEOUT)
                     .header("Authorization", "Bearer " + accessToken)
                     .header("Accept", "application/json")
                     .GET()

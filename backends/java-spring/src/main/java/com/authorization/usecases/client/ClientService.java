@@ -213,6 +213,9 @@ public class ClientService extends AbstractService {
         if (entity == null) {
             throw AppException.notFound("client_not_found");
         }
+        if (dto.getVersion() != null && !dto.getVersion().equals(entity.getVersion())) {
+            throw new AppException(409, "optimistic_lock");
+        }
 
         entity.setStatus(ClientStatus.Closed);
         entity.assignUpdated(dto.getExecutorId() == null ? 0 : dto.getExecutorId());
