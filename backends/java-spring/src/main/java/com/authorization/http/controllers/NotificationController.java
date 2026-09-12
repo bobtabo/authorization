@@ -154,20 +154,20 @@ public class NotificationController {
     /**
      * 通知エンティティをレスポンス用マップへ変換します。
      *
-     * @param n 通知エンティティ
+     * @param notification 通知エンティティ
      * @return レスポンス用マップ
      */
-    private static Map<String, Object> toJson(Notification n) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", n.getId());
-        m.put("staff_id", n.getStaffId());
-        m.put("message_type", n.getMessageType());
-        m.put("title", n.getTitle());
-        m.put("message", n.getMessage());
-        m.put("url", n.getUrl());
-        m.put("read", n.isRead());
-        m.put("created_at", n.getCreatedAt() != null ? n.getCreatedAt().format(FMT) : null);
-        m.put("updated_at", n.getUpdatedAt() != null ? n.getUpdatedAt().format(FMT) : null);
-        return m;
+    private static Map<String, Object> toJson(Notification notification) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", notification.getId());
+        data.put("staff_id", notification.getStaffId());
+        data.put("message_type", notification.getMessageType());
+        data.put("title", notification.getTitle());
+        data.put("message", notification.getMessage());
+        data.put("url", notification.getUrl());
+        data.put("read", notification.isRead());
+        data.put("created_at", notification.getCreatedAt() != null ? notification.getCreatedAt().format(FMT) : null);
+        data.put("updated_at", notification.getUpdatedAt() != null ? notification.getUpdatedAt().format(FMT) : null);
+        return data;
     }
 }
