@@ -73,10 +73,10 @@ public class JooqJwtHistoryRepository implements JwtHistoryRepository {
      */
     @Override
     public JwtHistory persist(JwtHistory entity) {
-        JwtHistoriesRecord r = dsl.newRecord(JWT_HISTORIES);
-        recordMapper.fillRecord(entity, r);
-        r.store();
-        entity.setId(r.getId());
+        JwtHistoriesRecord jwtHistoriesRecord = dsl.newRecord(JWT_HISTORIES);
+        recordMapper.fillRecord(entity, jwtHistoriesRecord);
+        jwtHistoriesRecord.store();
+        entity.setId(jwtHistoriesRecord.getId());
         return entity;
     }
 

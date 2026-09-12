@@ -109,10 +109,10 @@ public class JooqClientRepository implements ClientRepository {
     @Override
     public Client persist(Client entity) {
         if (entity.getId() == null) {
-            ClientsRecord r = dsl.newRecord(CLIENTS);
-            recordMapper.fillRecord(entity, r);
-            r.store();
-            entity.setId(r.getId());
+            ClientsRecord clientsRecord = dsl.newRecord(CLIENTS);
+            recordMapper.fillRecord(entity, clientsRecord);
+            clientsRecord.store();
+            entity.setId(clientsRecord.getId());
             return entity;
         }
 

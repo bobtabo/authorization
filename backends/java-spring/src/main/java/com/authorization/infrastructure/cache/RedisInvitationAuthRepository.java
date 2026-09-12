@@ -49,12 +49,12 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
     @Override
     public Integer find(String token) {
         try (Jedis jedis = pool.getResource()) {
-            String v = jedis.get(cacheKey(token));
-            if (v == null) {
+            String value = jedis.get(cacheKey(token));
+            if (value == null) {
                 return null;
             }
             try {
-                return Integer.parseInt(v);
+                return Integer.parseInt(value);
             } catch (NumberFormatException e) {
                 return null;
             }
@@ -67,12 +67,12 @@ public class RedisInvitationAuthRepository implements InvitationAuthRepository {
     @Override
     public Integer consume(String token) {
         try (Jedis jedis = pool.getResource()) {
-            String v = jedis.getDel(cacheKey(token));
-            if (v == null) {
+            String value = jedis.getDel(cacheKey(token));
+            if (value == null) {
                 return null;
             }
             try {
-                return Integer.parseInt(v);
+                return Integer.parseInt(value);
             } catch (NumberFormatException e) {
                 return null;
             }

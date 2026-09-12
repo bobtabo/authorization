@@ -37,23 +37,23 @@ public class StoreResponse extends AbstractResponse {
     /**
      * コンストラクタ。
      *
-     * @param v クライアント登録・更新ValueObject
+     * @param store クライアント登録・更新ValueObject
      */
-    public StoreResponse(ClientStoreVo v) {
-        this.id = v.getId();
-        this.name = v.getName();
-        this.identifier = v.getIdentifier();
-        this.postCode = v.getPostCode();
-        this.pref = v.getPref();
-        this.city = v.getCity();
-        this.address = v.getAddress();
-        this.building = v.getBuilding();
-        this.tel = v.getTel();
-        this.email = v.getEmail();
-        this.status = v.getStatus();
-        this.startAt = v.getStartAt() != null ? v.getStartAt().format(FMT) : "";
-        this.stopAt = v.getStopAt() != null ? v.getStopAt().format(FMT) : "";
-        this.createdAt = v.getCreatedAt() != null ? v.getCreatedAt().format(FMT) : "";
-        this.updatedAt = v.getUpdatedAt() != null ? v.getUpdatedAt().format(FMT) : "";
+    public StoreResponse(ClientStoreVo store) {
+        this.id = store.getId();
+        this.name = store.getName();
+        this.identifier = store.getIdentifier();
+        this.postCode = store.getPostCode();
+        this.pref = store.getPref();
+        this.city = store.getCity();
+        this.address = store.getAddress();
+        this.building = store.getBuilding();
+        this.tel = store.getTel();
+        this.email = store.getEmail();
+        this.status = store.getStatus();
+        this.startAt = store.getStartAt() != null ? store.getStartAt().format(FMT) : "";
+        this.stopAt = store.getStopAt() != null ? store.getStopAt().format(FMT) : "";
+        this.createdAt = store.getCreatedAt() != null ? store.getCreatedAt().format(FMT) : "";
+        this.updatedAt = store.getUpdatedAt() != null ? store.getUpdatedAt().format(FMT) : "";
     }
 }

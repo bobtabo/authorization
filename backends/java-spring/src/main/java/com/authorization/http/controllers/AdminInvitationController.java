@@ -102,15 +102,15 @@ public class AdminInvitationController {
     /**
      * 招待 ValueObject を JSON へ変換します。
      *
-     * @param v 招待ValueObject
+     * @param invitation 招待ValueObject
      * @return レスポンス用マップ
      */
-    private static Map<String, Object> toJson(InvitationVo v) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("found", v.isFound());
-        m.put("url", v.getUrl());
-        m.put("display_url", v.getDisplayUrl());
-        m.put("token", v.getToken());
-        return m;
+    private static Map<String, Object> toJson(InvitationVo invitation) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("found", invitation.isFound());
+        data.put("url", invitation.getUrl());
+        data.put("display_url", invitation.getDisplayUrl());
+        data.put("token", invitation.getToken());
+        return data;
     }
 }

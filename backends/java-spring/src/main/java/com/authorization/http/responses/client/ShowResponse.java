@@ -37,23 +37,23 @@ public class ShowResponse extends AbstractResponse {
     /**
      * コンストラクタ。
      *
-     * @param v クライアント詳細ValueObject
+     * @param detail クライアント詳細ValueObject
      */
-    public ShowResponse(ClientDetailVo v) {
-        this.id = v.getId();
-        this.name = v.getName();
-        this.identifier = v.getIdentifier();
-        this.postCode = v.getPostCode();
-        this.pref = v.getPref();
-        this.city = v.getCity();
-        this.address = v.getAddress();
-        this.building = v.getBuilding();
-        this.tel = v.getTel();
-        this.email = v.getEmail();
-        this.status = v.getStatus();
-        this.startAt = v.getStartAt() != null ? v.getStartAt().format(FMT) : "";
-        this.stopAt = v.getStopAt() != null ? v.getStopAt().format(FMT) : "";
-        this.createdAt = v.getCreatedAt() != null ? v.getCreatedAt().format(FMT) : "";
-        this.updatedAt = v.getUpdatedAt() != null ? v.getUpdatedAt().format(FMT) : "";
+    public ShowResponse(ClientDetailVo detail) {
+        this.id = detail.getId();
+        this.name = detail.getName();
+        this.identifier = detail.getIdentifier();
+        this.postCode = detail.getPostCode();
+        this.pref = detail.getPref();
+        this.city = detail.getCity();
+        this.address = detail.getAddress();
+        this.building = detail.getBuilding();
+        this.tel = detail.getTel();
+        this.email = detail.getEmail();
+        this.status = detail.getStatus();
+        this.startAt = detail.getStartAt() != null ? detail.getStartAt().format(FMT) : "";
+        this.stopAt = detail.getStopAt() != null ? detail.getStopAt().format(FMT) : "";
+        this.createdAt = detail.getCreatedAt() != null ? detail.getCreatedAt().format(FMT) : "";
+        this.updatedAt = detail.getUpdatedAt() != null ? detail.getUpdatedAt().format(FMT) : "";
     }
 }

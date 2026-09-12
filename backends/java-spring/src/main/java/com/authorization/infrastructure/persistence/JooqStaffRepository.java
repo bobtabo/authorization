@@ -113,10 +113,10 @@ public class JooqStaffRepository implements StaffRepository {
     @Override
     public Staff persist(Staff entity) {
         if (entity.getId() == null) {
-            StaffsRecord r = dsl.newRecord(STAFFS);
-            recordMapper.fillRecord(entity, r);
-            r.store();
-            entity.setId(r.getId());
+            StaffsRecord staffsRecord = dsl.newRecord(STAFFS);
+            recordMapper.fillRecord(entity, staffsRecord);
+            staffsRecord.store();
+            entity.setId(staffsRecord.getId());
             return entity;
         }
 

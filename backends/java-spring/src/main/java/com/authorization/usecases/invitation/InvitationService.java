@@ -180,8 +180,8 @@ public class InvitationService extends AbstractService {
         byte[] buf = new byte[byteCount];
         new SecureRandom().nextBytes(buf);
         StringBuilder sb = new StringBuilder(byteCount * 2);
-        for (byte b : buf) {
-            sb.append(String.format("%02x", b));
+        for (byte value : buf) {
+            sb.append(String.format("%02x", value));
         }
         return sb.toString();
     }

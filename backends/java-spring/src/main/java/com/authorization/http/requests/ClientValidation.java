@@ -68,22 +68,22 @@ public final class ClientValidation {
     /**
      * 必須項目の文字列を検証します。
      *
-     * @param s 検証対象の文字列
+     * @param value 検証対象の文字列
      * @param maxLen 最大文字数
      * @return 空でなく最大文字数以内の場合 true
      */
-    private static boolean isValid(String s, int maxLen) {
-        return s != null && !s.isEmpty() && s.length() <= maxLen;
+    private static boolean isValid(String value, int maxLen) {
+        return value != null && !value.isEmpty() && value.length() <= maxLen;
     }
 
     /**
      * 省略可能な文字列を検証します。
      *
-     * @param s 検証対象の文字列
+     * @param value 検証対象の文字列
      * @param maxLen 最大文字数
      * @return null、または最大文字数以内の場合 true
      */
-    private static boolean maxLenOrNull(String s, int maxLen) {
-        return s == null || s.length() <= maxLen;
+    private static boolean maxLenOrNull(String value, int maxLen) {
+        return value == null || value.length() <= maxLen;
     }
 }

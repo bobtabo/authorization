@@ -165,18 +165,18 @@ public class StaffController {
     /**
      * スタッフリソース ValueObject を JSON へ変換します。
      *
-     * @param s スタッフリソースValueObject
+     * @param staff スタッフリソースValueObject
      * @return レスポンス用マップ
      */
-    private static Map<String, Object> toJson(StaffResourceVo s) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", s.getId());
-        m.put("name", s.getName());
-        m.put("email", s.getEmail());
-        m.put("role", s.getRole());
-        m.put("status", s.getStatus());
-        m.put("created_at", s.getCreatedAt() != null ? s.getCreatedAt().format(FMT) : null);
-        m.put("updated_at", s.getUpdatedAt() != null ? s.getUpdatedAt().format(FMT) : null);
-        return m;
+    private static Map<String, Object> toJson(StaffResourceVo staff) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", staff.getId());
+        data.put("name", staff.getName());
+        data.put("email", staff.getEmail());
+        data.put("role", staff.getRole());
+        data.put("status", staff.getStatus());
+        data.put("created_at", staff.getCreatedAt() != null ? staff.getCreatedAt().format(FMT) : null);
+        data.put("updated_at", staff.getUpdatedAt() != null ? staff.getUpdatedAt().format(FMT) : null);
+        return data;
     }
 }

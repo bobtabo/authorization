@@ -385,40 +385,40 @@ public class ClientController {
      * @return 値、未設定の場合は空文字列
      */
     private static String str(Map<String, Object> body, String key) {
-        Object v = body.get(key);
-        return v != null ? v.toString() : "";
+        Object value = body.get(key);
+        return value != null ? value.toString() : "";
     }
 
     /**
      * クライアント Entity を一覧行の JSON に変換します。
      *
-     * @param c クライアント Entity
+     * @param client クライアント Entity
      * @return レスポンス用マップ
      */
-    private static Map<String, Object> toListJson(Client c) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", c.getId());
-        m.put("name", c.getName());
-        m.put("status", c.getStatus().value());
-        m.put("start_at", c.getStartAt() != null ? c.getStartAt().format(FMT) : null);
-        m.put("stop_at", c.getStopAt() != null ? c.getStopAt().format(FMT) : null);
-        m.put("created_at", c.getCreatedAt().format(FMT));
-        m.put("updated_at", c.getUpdatedAt().format(FMT));
-        return m;
+    private static Map<String, Object> toListJson(Client client) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", client.getId());
+        data.put("name", client.getName());
+        data.put("status", client.getStatus().value());
+        data.put("start_at", client.getStartAt() != null ? client.getStartAt().format(FMT) : null);
+        data.put("stop_at", client.getStopAt() != null ? client.getStopAt().format(FMT) : null);
+        data.put("created_at", client.getCreatedAt().format(FMT));
+        data.put("updated_at", client.getUpdatedAt().format(FMT));
+        return data;
     }
 
     /**
      * JWT履歴 Entity を JSON へ変換します。
      *
-     * @param h JWT履歴Entity
+     * @param history JWT履歴Entity
      * @return レスポンス用マップ
      */
-    private static Map<String, Object> toHistoryJson(JwtHistory h) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", h.getId());
-        m.put("member_id", h.getMemberId());
-        m.put("issue_at", h.getIssueAt().format(FMT_SEC));
-        m.put("jwt", h.getJwt());
-        return m;
+    private static Map<String, Object> toHistoryJson(JwtHistory history) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", history.getId());
+        data.put("member_id", history.getMemberId());
+        data.put("issue_at", history.getIssueAt().format(FMT_SEC));
+        data.put("jwt", history.getJwt());
+        return data;
     }
 }

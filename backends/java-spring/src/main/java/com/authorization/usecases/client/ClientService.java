@@ -296,18 +296,18 @@ public class ClientService extends AbstractService {
     /**
      * "yyyy-MM-dd HH:mm:ss" または "yyyy-MM-dd" 形式の日付文字列を解析します。
      *
-     * @param s 日付文字列
+     * @param value 日付文字列
      * @return 解析結果。解析できない場合は null
      */
-    private static LocalDateTime parseDate(String s) {
-        if (s == null || s.isEmpty()) {
+    private static LocalDateTime parseDate(String value) {
+        if (value == null || value.isEmpty()) {
             return null;
         }
         try {
-            return LocalDateTime.parse(s, FMT_FULL);
+            return LocalDateTime.parse(value, FMT_FULL);
         } catch (DateTimeParseException e) {
             try {
-                return LocalDate.parse(s, FMT_DATE).atStartOfDay();
+                return LocalDate.parse(value, FMT_DATE).atStartOfDay();
             } catch (DateTimeParseException ignored) {
                 return null;
             }
@@ -324,8 +324,8 @@ public class ClientService extends AbstractService {
         byte[] buf = new byte[byteCount];
         new SecureRandom().nextBytes(buf);
         StringBuilder sb = new StringBuilder(byteCount * 2);
-        for (byte b : buf) {
-            sb.append(String.format("%02x", b));
+        for (byte value : buf) {
+            sb.append(String.format("%02x", value));
         }
         return sb.toString();
     }

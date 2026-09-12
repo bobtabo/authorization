@@ -79,8 +79,8 @@ public class ConfigLoader {
      * @return 設定値
      */
     private static String str(Dotenv env, String key, String def) {
-        String v = env.get(key);
-        return v != null ? v : def;
+        String value = env.get(key);
+        return value != null ? value : def;
     }
 
     /**

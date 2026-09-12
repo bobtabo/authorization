@@ -45,14 +45,14 @@ public class JooqNotificationRepository implements NotificationRepository {
     @Override
     public List<Notification> listPage(NotificationCondition condition) {
         Long afterId = decodeCursor(condition.getCursor());
-        var q = dsl.selectFrom(NOTIFICATIONS)
+        var query = dsl.selectFrom(NOTIFICATIONS)
                 .where(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()))
                 .and(NOTIFICATIONS.DELETED_AT.isNull());
         if (afterId != null) {
-            q.and(NOTIFICATIONS.ID.lessThan(afterId));
+            query.and(NOTIFICATIONS.ID.lessThan(afterId));
         }
         // カーソルページングでは +1 件多く取得し、次ページの有無を判定する（Service側の責務）。
-        return q.orderBy(NOTIFICATIONS.ID.desc())
+        return query.orderBy(NOTIFICATIONS.ID.desc())
                 .limit(condition.getLimit() + 1)
                 .fetch()
                 .map(recordMapper::toEntity);
@@ -63,14 +63,14 @@ public class JooqNotificationRepository implements NotificationRepository {
      */
     @Override
     public int counts(NotificationCondition condition) {
-        var q = dsl.selectCount()
+        var query = dsl.selectCount()
                 .from(NOTIFICATIONS)
                 .where(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()))
                 .and(NOTIFICATIONS.DELETED_AT.isNull());
         if (condition.isCountUnread()) {
-            q.and(NOTIFICATIONS.READ.eq((short) 0));
+            query.and(NOTIFICATIONS.READ.eq((short) 0));
         }
-        return q.fetchOne(0, int.class);
+        return query.fetchOne(0, int.class);
     }
 
     /**
@@ -78,21 +78,21 @@ public class JooqNotificationRepository implements NotificationRepository {
      */
     @Override
     public int updateRead(NotificationCondition condition) {
-        var q = dsl.update(NOTIFICATIONS)
+        var query = dsl.update(NOTIFICATIONS)
                 .set(NOTIFICATIONS.READ, (short) 1)
                 .set(NOTIFICATIONS.UPDATED_AT, LocalDateTime.now())
                 .where(NOTIFICATIONS.DELETED_AT.isNull());
         if (condition.getId() != null) {
             // 単一通知の更新は他staffの通知を更新できないよう staff_id でも絞り込む。
-            q.and(NOTIFICATIONS.ID.eq(condition.getId()));
-            q.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
+            query.and(NOTIFICATIONS.ID.eq(condition.getId()));
+            query.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
         } else if (condition.getStaffId() != null && condition.isAll()) {
-            q.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
+            query.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
         } else if (condition.getStaffId() != null && !condition.getIds().isEmpty()) {
-            q.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
-            q.and(NOTIFICATIONS.ID.in(condition.getIds()));
+            query.and(NOTIFICATIONS.STAFF_ID.eq(condition.getStaffId()));
+            query.and(NOTIFICATIONS.ID.in(condition.getIds()));
         }
-        return q.execute();
+        return query.execute();
     }
 
     /**
@@ -100,10 +100,10 @@ public class JooqNotificationRepository implements NotificationRepository {
      */
     @Override
     public void persist(Notification entity) {
-        NotificationsRecord r = dsl.newRecord(NOTIFICATIONS);
-        recordMapper.fillRecord(entity, r);
-        r.store();
-        entity.setId(r.getId());
+        NotificationsRecord notificationsRecord = dsl.newRecord(NOTIFICATIONS);
+        recordMapper.fillRecord(entity, notificationsRecord);
+        notificationsRecord.store();
+        entity.setId(notificationsRecord.getId());
     }
 
     /**
@@ -112,9 +112,9 @@ public class JooqNotificationRepository implements NotificationRepository {
     @Override
     public void insertBatch(List<Notification> entities) {
         var records = entities.stream().map(entity -> {
-            NotificationsRecord r = dsl.newRecord(NOTIFICATIONS);
-            recordMapper.fillRecord(entity, r);
-            return r;
+            NotificationsRecord notificationsRecord = dsl.newRecord(NOTIFICATIONS);
+            recordMapper.fillRecord(entity, notificationsRecord);
+            return notificationsRecord;
         }).toList();
         dsl.batchInsert(records).execute();
     }

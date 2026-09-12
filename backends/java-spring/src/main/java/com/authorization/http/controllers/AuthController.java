@@ -309,14 +309,14 @@ public class AuthController {
      * @return レスポンス用マップ
      */
     private static Map<String, Object> toJson(StaffVo vo) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", vo.getId());
-        m.put("name", vo.getName());
-        m.put("email", vo.getEmail());
-        m.put("avatar", vo.getAvatar());
-        m.put("role", vo.getRole());
-        m.put("status", vo.getStatus());
-        return m;
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", vo.getId());
+        data.put("name", vo.getName());
+        data.put("email", vo.getEmail());
+        data.put("avatar", vo.getAvatar());
+        data.put("role", vo.getRole());
+        data.put("status", vo.getStatus());
+        return data;
     }
 
     /**
@@ -355,12 +355,12 @@ public class AuthController {
                 .GET()
                 .build();
         JsonNode json = JSON.readTree(HTTP.send(req, HttpResponse.BodyHandlers.ofString()).body());
-        Map<String, String> m = new LinkedHashMap<>();
-        m.put("id", json.path("id").asText(""));
-        m.put("name", json.path("name").asText(""));
-        m.put("email", json.path("email").asText(""));
-        m.put("picture", json.path("picture").asText(""));
-        return m;
+        Map<String, String> userInfo = new LinkedHashMap<>();
+        userInfo.put("id", json.path("id").asText(""));
+        userInfo.put("name", json.path("name").asText(""));
+        userInfo.put("email", json.path("email").asText(""));
+        userInfo.put("picture", json.path("picture").asText(""));
+        return userInfo;
     }
 
     /**
@@ -417,39 +417,39 @@ public class AuthController {
                     .GET()
                     .build();
             JsonNode emails = JSON.readTree(HTTP.send(emailReq, HttpResponse.BodyHandlers.ofString()).body());
-            for (JsonNode e : emails) {
-                if (e.path("primary").asBoolean(false)) {
-                    email = e.path("email").asText("");
+            for (JsonNode emailEntry : emails) {
+                if (emailEntry.path("primary").asBoolean(false)) {
+                    email = emailEntry.path("email").asText("");
                     break;
                 }
             }
         }
 
-        Map<String, String> m = new LinkedHashMap<>();
-        m.put("id", id);
-        m.put("name", name);
-        m.put("email", email);
-        m.put("avatar", avatar);
-        return m;
+        Map<String, String> userInfo = new LinkedHashMap<>();
+        userInfo.put("id", id);
+        userInfo.put("name", name);
+        userInfo.put("email", email);
+        userInfo.put("avatar", avatar);
+        return userInfo;
     }
 
     /**
      * 空文字列を null に変換します。
      *
-     * @param s 対象文字列
+     * @param value 対象文字列
      * @return 空文字列でなければそのまま、空文字列またはnullならnull
      */
-    private static String blankToNull(String s) {
-        return (s == null || s.isEmpty()) ? null : s;
+    private static String blankToNull(String value) {
+        return (value == null || value.isEmpty()) ? null : value;
     }
 
     /**
      * URLエンコードします（UTF-8）。
      *
-     * @param s 対象文字列
+     * @param value 対象文字列
      * @return エンコード後の文字列
      */
-    private static String encode(String s) {
-        return URLEncoder.encode(s, StandardCharsets.UTF_8);
+    private static String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }
