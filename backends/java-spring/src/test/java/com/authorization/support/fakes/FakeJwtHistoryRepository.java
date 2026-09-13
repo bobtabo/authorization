@@ -8,8 +8,11 @@ package com.authorization.support.fakes;
 import com.authorization.domain.client.condition.JwtHistoryCondition;
 import com.authorization.domain.client.entities.JwtHistory;
 import com.authorization.domain.client.repositories.JwtHistoryRepository;
+import com.authorization.support.repositories.conditions.Option;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * テスト用の手書きFakeJWT履歴Repositoryです（モックライブラリは使いません）。
@@ -74,9 +77,23 @@ public class FakeJwtHistoryRepository implements JwtHistoryRepository {
     /** {@inheritDoc} */
     @Override
     public List<JwtHistory> findByClientId(JwtHistoryCondition condition) {
-        return histories.stream()
-                .filter(history -> history.getClientId().equals(condition.getClientId()))
-                .toList();
+        Stream<JwtHistory> stream = histories.stream()
+                .filter(history -> history.getClientId().equals(condition.getClientId()));
+
+        Option option = condition.getOption();
+        boolean asc = option != null && option.getOrderBy() != null;
+        boolean sortByMemberId = option != null
+                && "member_id".equals(option.getOrderBy() != null ? option.getOrderBy() : option.getOrderByDesc());
+        Comparator<JwtHistory> comparator = sortByMemberId
+                ? Comparator.comparing(JwtHistory::getMemberId)
+                : Comparator.comparing(JwtHistory::getIssueAt);
+        stream = stream.sorted(asc ? comparator : comparator.reversed());
+
+        if (option != null && condition.isPaging()) {
+            int limit = (int) Math.clamp(option.getLimit(), 1, 500);
+            stream = stream.skip(option.getOffset()).limit(limit);
+        }
+        return stream.toList();
     }
 
     /** {@inheritDoc} */

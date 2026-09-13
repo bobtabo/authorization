@@ -8,11 +8,13 @@ package com.authorization.support.fakes;
 import com.authorization.domain.staff.condition.StaffCondition;
 import com.authorization.domain.staff.entities.Staff;
 import com.authorization.domain.staff.repositories.StaffRepository;
-import java.util.ArrayList;
+import com.authorization.support.repositories.conditions.Option;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * テスト用の手書きFakeスタッフRepositoryです（モックライブラリは使いません）。
@@ -71,13 +73,60 @@ public class FakeStaffRepository implements StaffRepository {
     /** {@inheritDoc} */
     @Override
     public List<Staff> findByCondition(StaffCondition condition) {
-        return new ArrayList<>(staffs.values());
+        Stream<Staff> stream = filtered(condition);
+        Option option = condition.getOption();
+        if (option != null) {
+            String column = option.getOrderBy() != null ? option.getOrderBy() : option.getOrderByDesc();
+            boolean desc = option.getOrderByDesc() != null;
+            stream = stream.sorted(sortComparator(column, desc));
+            if (condition.isPaging()) {
+                int limit = (int) Math.clamp(option.getLimit(), 1, 500);
+                stream = stream.skip(option.getOffset()).limit(limit);
+            }
+        }
+        return stream.toList();
     }
 
     /** {@inheritDoc} */
     @Override
     public int countByCondition(StaffCondition condition) {
-        return staffs.size();
+        return (int) filtered(condition).count();
+    }
+
+    /**
+     * keyword/roles による絞り込みを適用します（{@code JooqStaffRepository.buildCondition}と
+     * 同じ条件。論理削除済みも除外しません）。
+     *
+     * @param condition 検索条件
+     * @return 絞り込み済みのスタッフストリーム
+     */
+    private Stream<Staff> filtered(StaffCondition condition) {
+        Stream<Staff> stream = staffs.values().stream();
+        if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
+            String keyword = condition.getKeyword();
+            stream = stream.filter(staff -> staff.getName().contains(keyword) || staff.getEmail().contains(keyword));
+        }
+        if (!condition.getRoles().isEmpty()) {
+            stream = stream.filter(staff -> condition.getRoles().contains(staff.getRole().value()));
+        }
+        return stream;
+    }
+
+    /**
+     * {@code JooqStaffRepository.findByCondition}と同じ並び替え対象カラムの分岐を再現します。
+     *
+     * @param column 並び替え対象カラム名
+     * @param desc 降順の場合 true
+     * @return 比較器
+     */
+    private static Comparator<Staff> sortComparator(String column, boolean desc) {
+        Comparator<Staff> comparator = switch (column == null ? "" : column) {
+            case "name" -> Comparator.comparing(Staff::getName);
+            case "role" -> Comparator.comparing(staff -> staff.getRole().value());
+            case "status" -> Comparator.comparing(Staff::getDeletedAt, Comparator.nullsFirst(Comparator.naturalOrder()));
+            default -> Comparator.comparing(Staff::getCreatedAt, Comparator.nullsFirst(Comparator.naturalOrder()));
+        };
+        return desc ? comparator.reversed() : comparator;
     }
 
     /** {@inheritDoc} */

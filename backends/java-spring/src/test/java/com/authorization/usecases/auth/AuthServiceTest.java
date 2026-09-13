@@ -65,6 +65,7 @@ class AuthServiceTest {
         assertEquals("new-avatar", existing.getAvatar());
         assertNotNull(existing.getLastLoginAt());
         assertEquals(0, invitationAuthRepository.getRemovedTokens().size());
+        assertEquals(1, staffRepository.getPersistCallCount());
     }
 
     /**

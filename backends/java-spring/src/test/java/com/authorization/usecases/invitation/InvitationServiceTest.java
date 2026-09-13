@@ -75,6 +75,7 @@ class InvitationServiceTest {
         assertNotEquals("old-token", vo.getToken());
         assertTrue(invitationAuthRepository.getRemovedTokens().contains("old-token"));
         assertFalse(invitationAuthRepository.contains("old-token"));
+        assertEquals(1, invitationRepository.getPersistCallCount());
     }
 
     /**

@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.authorization.domain.staff.condition.StaffCondition;
 import com.authorization.domain.staff.entities.Staff;
 import com.authorization.domain.staff.enums.StaffRole;
 import com.authorization.domain.staff.mappers.StaffApiMapperImpl;
@@ -52,7 +53,10 @@ class StaffServiceTest {
                 .add(makeStaff(2L, StaffRole.Administrator));
         StaffService service = newService(repository);
 
-        StaffListVo vo = service.index(new StaffDto());
+        StaffDto dto = new StaffDto();
+        dto.setLimit(10);
+        dto.setPaging(1);
+        StaffListVo vo = service.index(dto);
 
         assertEquals(2, vo.getCount());
         assertEquals(2, vo.getItems().size());
@@ -99,6 +103,9 @@ class StaffServiceTest {
 
         assertTrue(vo.isOk());
         assertEquals(1, repository.getPersistCallCount());
+        StaffCondition condition = new StaffCondition();
+        condition.setId(1L);
+        assertEquals(StaffRole.Administrator, repository.findById(condition).getRole());
     }
 
     /**

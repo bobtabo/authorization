@@ -111,6 +111,7 @@ class ClientServiceTest {
         service.update(dto);
 
         assertNotNull(repository.findById(conditionOf(1L)).getStartAt());
+        assertEquals(1, repository.getPersistCallCount());
     }
 
     /**
@@ -164,6 +165,8 @@ class ClientServiceTest {
         Client saved = repository.findById(conditionOf(1L));
         assertEquals(ClientStatus.Closed, saved.getStatus());
         assertNotNull(saved.getDeletedAt());
+        assertEquals(1, repository.getPersistCallCount());
+        assertEquals(1, repository.getDeleteByIdCallCount());
     }
 
     /**
@@ -197,6 +200,7 @@ class ClientServiceTest {
 
         assertEquals("token-1", vo.getAccessToken());
         assertEquals(ClientStatus.Active, repository.findById(conditionOf(1L)).getStatus());
+        assertEquals(1, repository.getPersistCallCount());
     }
 
     /**
@@ -214,6 +218,7 @@ class ClientServiceTest {
         service.stop(dto);
 
         assertEquals(ClientStatus.Suspended, repository.findById(conditionOf(1L)).getStatus());
+        assertEquals(1, repository.getPersistCallCount());
     }
 
     /**
