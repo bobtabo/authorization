@@ -26,6 +26,7 @@ var hostMap = map[string]string{
 	"/function/go-gin":    "apis.authorization-go-gin.dev",
 	"/function/go-beego":  "apis.authorization-go-beego.dev",
 	"/function/go-echo":   "apis.authorization-go-echo.dev",
+	"/function/java":      "apis.authorization-java.dev",
 	"/function/kotlin":    "apis.authorization-kotlin.dev",
 	"/function/python":    "apis.authorization-python.dev",
 	"/function/rb-hanami": "apis.authorization-rb-hanami.dev",

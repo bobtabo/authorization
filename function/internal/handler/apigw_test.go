@@ -96,6 +96,14 @@ func TestHandler_Proxy(t *testing.T) {
 			wantHost:    "apis.authorization-go-beego.dev",
 		},
 		{
+			name:        "Java バックエンドへ転送",
+			path:        "/function/java/api/clients",
+			method:      "GET",
+			wantStatus:  200,
+			wantBackend: "/api/clients",
+			wantHost:    "apis.authorization-java.dev",
+		},
+		{
 			name:        "Kotlin バックエンドへ転送",
 			path:        "/function/kotlin/api/clients",
 			method:      "GET",
