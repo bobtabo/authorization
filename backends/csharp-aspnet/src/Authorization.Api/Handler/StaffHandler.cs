@@ -1,8 +1,6 @@
-/*
- * スタッフハンドラーモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
 using Authorization.Api.UseCase.Staff;
@@ -11,7 +9,8 @@ using static Authorization.Api.Handler.HttpHelpers;
 namespace Authorization.Api.Handler;
 
 /// <summary>スタッフハンドラーです。</summary>
-public sealed class StaffHandler(StaffInteractor staffUC)
+/// <param name="staffUC">スタッフService</param>
+public sealed class StaffHandler(StaffService staffUC)
 {
     /// <summary>スタッフ一覧を返します。</summary>
     /// <param name="req">HTTPリクエスト（keyword/roles/limit/page/sort/sort_typeを使用）</param>

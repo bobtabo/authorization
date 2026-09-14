@@ -1,8 +1,6 @@
-/*
- * DI 登録・ルーティング・例外ハンドリングモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.Json;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Client;
@@ -59,17 +57,17 @@ public static class AppModule
         services.AddSingleton<IInvitationAuthRepository, RedisInvitationAuthRepository>();
         services.AddSingleton<IMailer, SesMailer>();
 
-        services.AddScoped<AuthInteractor>();
-        services.AddScoped<ClientInteractor>();
-        services.AddScoped<StaffInteractor>();
-        services.AddScoped<InvitationInteractor>();
-        services.AddScoped<NotificationInteractor>();
-        services.AddScoped(sp => new GateInteractor(
+        services.AddScoped<AuthService>();
+        services.AddScoped<ClientService>();
+        services.AddScoped<StaffService>();
+        services.AddScoped<InvitationService>();
+        services.AddScoped<NotificationService>();
+        services.AddScoped(sp => new GateService(
             sp.GetRequiredService<IClientRepository>(),
             sp.GetRequiredService<IGateCacheRepository>(),
             cfg.Jwt,
             sp.GetRequiredService<IJwtHistoryRepository>(),
-            sp.GetRequiredService<ILogger<GateInteractor>>()));
+            sp.GetRequiredService<ILogger<GateService>>()));
 
         services.AddScoped<AuthHandler>();
         services.AddScoped<ClientHandler>();

@@ -1,8 +1,6 @@
-/*
- * クライアントユースケース DTO モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 namespace Authorization.Api.UseCase.Client;
 
 /// <summary>一覧検索条件 DTO です。</summary>

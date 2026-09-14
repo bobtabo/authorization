@@ -1,10 +1,6 @@
-/*
- * 認証ハンドラーモジュール。
- *
- * OAuth（Google / GitHub）のリダイレクト・コールバック、ログイン状態の取得、ログアウト、招待確認を扱います。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.Json;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Staff;
@@ -48,6 +44,8 @@ public interface IOAuthClient
 }
 
 /// <summary>HttpClient による OAuth クライアントです。</summary>
+/// <param name="http">HTTPクライアント</param>
+/// <param name="oauth">OAuth設定</param>
 public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAuthClient
 {
     /// <inheritdoc/>
@@ -171,9 +169,14 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
 }
 
 /// <summary>認証ハンドラーです。</summary>
+/// <param name="authUC">認証Service</param>
+/// <param name="invitationUC">招待Service</param>
+/// <param name="oauthClient">OAuthプロバイダークライアント</param>
+/// <param name="cfg">アプリケーション設定</param>
+/// <param name="logger">ロガー</param>
 public sealed class AuthHandler(
-    AuthInteractor authUC,
-    InvitationInteractor invitationUC,
+    AuthService authUC,
+    InvitationService invitationUC,
     IOAuthClient oauthClient,
     AppConfig cfg,
     ILogger<AuthHandler> logger)

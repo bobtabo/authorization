@@ -1,8 +1,6 @@
-/*
- * クライアント詳細Responseモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Support;
 using Authorization.Api.Support.Http.Responses;

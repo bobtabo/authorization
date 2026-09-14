@@ -1,8 +1,6 @@
-/*
- * スタッフリポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Infrastructure.Model;
@@ -13,6 +11,7 @@ using StaffEntity = Authorization.Api.Domain.Staff.Staff;
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core によるスタッフリポジトリです。</summary>
+/// <param name="db">DbContext</param>
 public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
 {
     /// <summary>検索条件（キーワード・ロール）をクエリに適用します（ページング・並び順は含まない）。</summary>

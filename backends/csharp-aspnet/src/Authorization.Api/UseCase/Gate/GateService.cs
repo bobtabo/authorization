@@ -1,8 +1,6 @@
-/*
- * Gate（JWT 発行・検証）ユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -20,13 +18,18 @@ public sealed record GateIssueDto(string AccessToken, string MemberId);
 /// <summary>JWT 検証 DTO です。</summary>
 public sealed record GateVerifyDto(string Identifier, string Token);
 
-/// <summary>Gate ユースケースです。</summary>
-public sealed class GateInteractor(
+/// <summary>GateServiceクラスです。</summary>
+/// <param name="clientRepo">クライアントリポジトリ</param>
+/// <param name="cache">Gate JWTキャッシュリポジトリ</param>
+/// <param name="jwt">JWT設定</param>
+/// <param name="historyRepo">JWT履歴リポジトリ（省略可）</param>
+/// <param name="logger">ロガー（省略可）</param>
+public sealed class GateService(
     IClientRepository clientRepo,
     IGateCacheRepository cache,
     JwtSettings jwt,
     IJwtHistoryRepository? historyRepo = null,
-    ILogger<GateInteractor>? logger = null)
+    ILogger<GateService>? logger = null)
 {
     /// <summary>
     /// アクセストークンに対応するクライアントの秘密鍵で JWT を発行します。

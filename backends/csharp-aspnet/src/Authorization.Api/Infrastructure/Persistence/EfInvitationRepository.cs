@@ -1,8 +1,6 @@
-/*
- * 招待リポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Security.Cryptography;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Invitation;
@@ -13,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core による招待リポジトリです。</summary>
+/// <param name="db">DbContext</param>
+/// <param name="app">アプリケーション設定</param>
 public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : IInvitationRepository
 {
     /// <inheritdoc/>

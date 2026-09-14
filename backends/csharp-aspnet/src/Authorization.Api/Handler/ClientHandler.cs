@@ -1,8 +1,6 @@
-/*
- * クライアントハンドラーモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.RegularExpressions;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Client;
@@ -59,14 +57,28 @@ public static partial class ClientValidation
         (tel is null || TelPattern().IsMatch(tel)) &&
         (email is null || (email.Length <= 255 && EmailPattern().IsMatch(email)));
 
+    /// <summary>必須項目を検証します（空でなく、最大長以内であること）。</summary>
+    /// <param name="v">検証対象の文字列</param>
+    /// <param name="max">最大長</param>
+    /// <returns>妥当な場合 true</returns>
     private static bool Required(string v, int max) => v.Length > 0 && v.Length <= max;
+
+    /// <summary>任意項目を検証します（null可、指定時は最大長以内であること）。</summary>
+    /// <param name="v">検証対象の文字列（null可）</param>
+    /// <param name="max">最大長</param>
+    /// <returns>妥当な場合 true</returns>
     private static bool Optional(string? v, int max) => v is null || v.Length <= max;
 }
 
 /// <summary>クライアントハンドラーです。</summary>
+/// <param name="clientUC">クライアントService</param>
+/// <param name="notificationUC">通知Service</param>
+/// <param name="mailer">メール送信インターフェース</param>
+/// <param name="jwtHistoryRepo">JWT履歴リポジトリ</param>
+/// <param name="app">アプリケーション設定</param>
 public sealed class ClientHandler(
-    ClientInteractor clientUC,
-    NotificationInteractor notificationUC,
+    ClientService clientUC,
+    NotificationService notificationUC,
     IMailer mailer,
     IJwtHistoryRepository jwtHistoryRepo,
     AppSettings app)

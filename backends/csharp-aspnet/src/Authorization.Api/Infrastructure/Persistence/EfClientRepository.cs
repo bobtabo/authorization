@@ -1,8 +1,6 @@
-/*
- * クライアントリポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Infrastructure.Model;
@@ -13,6 +11,7 @@ using ClientEntity = Authorization.Api.Domain.Client.Client;
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core によるクライアントリポジトリです。</summary>
+/// <param name="db">DbContext</param>
 public sealed class EfClientRepository(AppDbContext db) : IClientRepository
 {
     /// <summary>検索条件（キーワード・期間・状態）をクエリに適用します（ページング・並び順は含まない）。</summary>
@@ -179,6 +178,7 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
 }
 
 /// <summary>EF Core による JWT 履歴リポジトリです。</summary>
+/// <param name="db">DbContext</param>
 public sealed class EfJwtHistoryRepository(AppDbContext db) : IJwtHistoryRepository
 {
     /// <summary>指定クライアントの未削除JWT履歴クエリを組み立てます。</summary>

@@ -1,8 +1,6 @@
-/*
- * 基底Responseモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Reflection;
 using System.Text.Json;
 

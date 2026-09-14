@@ -1,8 +1,6 @@
-/*
- * 通知リポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text;
 using Authorization.Api.Domain.Notification;
 using Authorization.Api.Infrastructure.Db;
@@ -14,6 +12,7 @@ using NotificationEntity = Authorization.Api.Domain.Notification.Notification;
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core による通知リポジトリです。</summary>
+/// <param name="db">DbContext</param>
 public sealed class EfNotificationRepository(AppDbContext db) : INotificationRepository
 {
     /// <inheritdoc/>

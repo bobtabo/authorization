@@ -1,8 +1,6 @@
-/*
- * ハンドラー共通ヘルパーモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.Json;
 using System.Text.Json.Nodes;
 

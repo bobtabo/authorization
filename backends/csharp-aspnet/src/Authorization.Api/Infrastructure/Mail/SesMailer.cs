@@ -1,8 +1,6 @@
-/*
- * メール送信（Amazon SES）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Amazon;
 using Amazon.Runtime;
 using Amazon.SimpleEmail;
@@ -23,6 +21,9 @@ public interface IMailer
 }
 
 /// <summary>Amazon SES によるメール送信です。</summary>
+/// <param name="mail">メール設定</param>
+/// <param name="aws">AWS設定</param>
+/// <param name="logger">ロガー</param>
 public sealed class SesMailer(MailSettings mail, AwsSettings aws, ILogger<SesMailer> logger) : IMailer
 {
     /// <inheritdoc/>

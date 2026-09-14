@@ -1,15 +1,15 @@
-/*
- * 招待ユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Invitation;
 using Authorization.Api.Support;
 
 namespace Authorization.Api.UseCase.Invitation;
 
-/// <summary>招待ユースケースです。</summary>
-public sealed class InvitationInteractor(IInvitationRepository invitationRepo, IInvitationAuthRepository invitationAuthRepo)
+/// <summary>招待Serviceクラスです。</summary>
+/// <param name="invitationRepo">招待リポジトリ</param>
+/// <param name="invitationAuthRepo">招待認可キャッシュリポジトリ</param>
+public sealed class InvitationService(IInvitationRepository invitationRepo, IInvitationAuthRepository invitationAuthRepo)
 {
     private const long AuthTtlSeconds = 600;
 

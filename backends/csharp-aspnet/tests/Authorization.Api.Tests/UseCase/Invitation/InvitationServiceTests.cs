@@ -6,12 +6,12 @@ using Authorization.Api.UseCase.Invitation;
 
 namespace Authorization.Api.Tests.UseCase.Invitation;
 
-public class InvitationInteractorTests
+public class InvitationServiceTests
 {
     [Fact]
     public async Task CurrentAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new InvitationInteractor(new FakeInvitationRepository(), new FakeInvitationAuthRepository());
+        var uc = new InvitationService(new FakeInvitationRepository(), new FakeInvitationAuthRepository());
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.CurrentAsync(StaffRole.Admin));
 
@@ -23,7 +23,7 @@ public class InvitationInteractorTests
     {
         var vo = new InvitationVo("tok-1", StaffRole.Admin, "https://example.com/i/tok-1", "example.com/i/tok-1");
         var repo = new FakeInvitationRepository().Add(vo);
-        var uc = new InvitationInteractor(repo, new FakeInvitationAuthRepository());
+        var uc = new InvitationService(repo, new FakeInvitationAuthRepository());
 
         var result = await uc.CurrentAsync(StaffRole.Admin);
 
@@ -34,7 +34,7 @@ public class InvitationInteractorTests
     public async Task IssueAsync_DelegatesToRepository()
     {
         var repo = new FakeInvitationRepository();
-        var uc = new InvitationInteractor(repo, new FakeInvitationAuthRepository());
+        var uc = new InvitationService(repo, new FakeInvitationAuthRepository());
 
         var result = await uc.IssueAsync(StaffRole.Member);
 
@@ -48,7 +48,7 @@ public class InvitationInteractorTests
         var previous = new InvitationVo("tok-old", StaffRole.Member, "https://example.com/i/tok-old", "example.com/i/tok-old");
         var repo = new FakeInvitationRepository().Add(previous);
         var authRepo = new FakeInvitationAuthRepository().Add("tok-old", StaffRole.Member);
-        var uc = new InvitationInteractor(repo, authRepo);
+        var uc = new InvitationService(repo, authRepo);
 
         var result = await uc.IssueAsync(StaffRole.Member);
 
@@ -59,7 +59,7 @@ public class InvitationInteractorTests
     [Fact]
     public async Task FindByTokenAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new InvitationInteractor(new FakeInvitationRepository(), new FakeInvitationAuthRepository());
+        var uc = new InvitationService(new FakeInvitationRepository(), new FakeInvitationAuthRepository());
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.FindByTokenAsync("unknown"));
 
@@ -72,7 +72,7 @@ public class InvitationInteractorTests
         var vo = new InvitationVo("tok-1", StaffRole.Admin, "https://example.com/i/tok-1", "example.com/i/tok-1");
         var repo = new FakeInvitationRepository().Add(vo);
         var authRepo = new FakeInvitationAuthRepository();
-        var uc = new InvitationInteractor(repo, authRepo);
+        var uc = new InvitationService(repo, authRepo);
 
         var result = await uc.FindByTokenAsync("tok-1");
 

@@ -1,8 +1,6 @@
-/*
- * 認証ユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Invitation;
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
@@ -19,8 +17,10 @@ public sealed record LoginDto(
     string? InvitationToken = null
 );
 
-/// <summary>認証ユースケースです。</summary>
-public sealed class AuthInteractor(IStaffRepository staffRepo, IInvitationAuthRepository invitationAuthRepo)
+/// <summary>認証Serviceクラスです。</summary>
+/// <param name="staffRepo">スタッフリポジトリ</param>
+/// <param name="invitationAuthRepo">招待認可キャッシュリポジトリ</param>
+public sealed class AuthService(IStaffRepository staffRepo, IInvitationAuthRepository invitationAuthRepo)
 {
     /// <summary>スタッフを ID で取得します。</summary>
     /// <param name="id">スタッフID</param>

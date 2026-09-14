@@ -1,8 +1,6 @@
-/*
- * アプリケーション設定モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using MySqlConnector;
 
 namespace Authorization.Api.Config;

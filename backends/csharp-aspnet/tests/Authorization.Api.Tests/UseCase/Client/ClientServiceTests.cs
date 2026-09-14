@@ -10,12 +10,12 @@ using ClientEntity = Authorization.Api.Domain.Client.Client;
 
 namespace Authorization.Api.Tests.UseCase.Client;
 
-public class ClientInteractorTests : IDisposable
+public class ClientServiceTests : IDisposable
 {
     private readonly SqliteConnection connection;
     private readonly AppDbContext db;
 
-    public ClientInteractorTests()
+    public ClientServiceTests()
     {
         connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
@@ -54,7 +54,7 @@ public class ClientInteractorTests : IDisposable
     public async Task FindByConditionWithCountAsync_MapsToListItemAndReturnsCount()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1)).Add(MakeClient(2, status: ClientStatus.Active));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var (items, count) = await uc.FindByConditionWithCountAsync(new ClientListConditionDto());
 
@@ -67,7 +67,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task FindByIdAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.FindByIdAsync(999));
 
@@ -78,7 +78,7 @@ public class ClientInteractorTests : IDisposable
     public async Task FindByIdAsync_Found_ReturnsDetail()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var detail = await uc.FindByIdAsync(1);
 
@@ -91,7 +91,7 @@ public class ClientInteractorTests : IDisposable
     public async Task StoreAsync_CreatesInactiveClientWithGeneratedCredentials()
     {
         var repo = new FakeClientRepository();
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var result = await uc.StoreAsync(new ClientStoreDto(
             Name: "New Client", PostCode: "100-0001", Pref: "東京都", City: "千代田区",
@@ -110,7 +110,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task UpdateAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
             uc.UpdateAsync(MakeUpdateDto(id: 999, version: 1)));
@@ -122,7 +122,7 @@ public class ClientInteractorTests : IDisposable
     public async Task UpdateAsync_VersionMismatch_ThrowsConflict()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, version: 3));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
             uc.UpdateAsync(MakeUpdateDto(id: 1, version: 1)));
@@ -134,7 +134,7 @@ public class ClientInteractorTests : IDisposable
     public async Task UpdateAsync_PartialFields_OnlyUpdatesProvidedFields()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var detail = await uc.UpdateAsync(MakeUpdateDto(id: 1, version: 1, name: "Renamed"));
 
@@ -146,7 +146,7 @@ public class ClientInteractorTests : IDisposable
     public async Task UpdateAsync_StatusToActive_SetsStartAt()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Inactive));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var detail = await uc.UpdateAsync(MakeUpdateDto(id: 1, version: 1, status: ClientStatus.Active));
 
@@ -159,7 +159,7 @@ public class ClientInteractorTests : IDisposable
     public async Task UpdateAsync_StatusToSuspended_SetsStopAt()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Active));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var detail = await uc.UpdateAsync(MakeUpdateDto(id: 1, version: 1, status: ClientStatus.Suspended));
 
@@ -172,7 +172,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task DestroyAsync_VersionMissing_ThrowsBadRequest()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.DestroyAsync(1, executorId: 9, version: null));
 
@@ -182,7 +182,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task DestroyAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.DestroyAsync(999, executorId: 9, version: 1));
 
@@ -193,7 +193,7 @@ public class ClientInteractorTests : IDisposable
     public async Task DestroyAsync_VersionMismatch_ThrowsConflict()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, version: 3));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.DestroyAsync(1, executorId: 9, version: 1));
 
@@ -208,7 +208,7 @@ public class ClientInteractorTests : IDisposable
         // 紐づく本物の EfClientRepository を使う。
         var repo = new EfClientRepository(db);
         var seeded = await repo.SaveAsync(MakeClient(id: 0, status: ClientStatus.Active));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         await uc.DestroyAsync(seeded.Id, executorId: 9, version: seeded.Version);
 
@@ -223,7 +223,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task GetQrAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.GetQrAsync(new ClientQrDto("unknown")));
 
@@ -234,7 +234,7 @@ public class ClientInteractorTests : IDisposable
     public async Task GetQrAsync_Found_ReturnsDeeplink()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var vo = await uc.GetQrAsync(new ClientQrDto("identifier-1"));
 
@@ -244,7 +244,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task GetInfoAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.GetInfoAsync(new ClientInfoDto("unknown")));
 
@@ -257,7 +257,7 @@ public class ClientInteractorTests : IDisposable
     public async Task StartAsync_InactiveClient_TransitionsToActive()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Inactive));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         var vo = await uc.StartAsync(new ClientStartDto("identifier-1"));
 
@@ -271,7 +271,7 @@ public class ClientInteractorTests : IDisposable
     {
         var startAt = new DateTime(2026, 1, 1);
         var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Active, startAt: startAt));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         await uc.StartAsync(new ClientStartDto("identifier-1"));
 
@@ -282,7 +282,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task StartAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.StartAsync(new ClientStartDto("unknown")));
 
@@ -293,7 +293,7 @@ public class ClientInteractorTests : IDisposable
     public async Task StopAsync_ActiveClient_TransitionsToSuspended()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Active));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         await uc.StopAsync(new ClientStopDto("identifier-1"));
 
@@ -305,7 +305,7 @@ public class ClientInteractorTests : IDisposable
     public async Task StopAsync_NotActive_NoOp()
     {
         var repo = new FakeClientRepository().Add(MakeClient(1, status: ClientStatus.Inactive));
-        var uc = new ClientInteractor(repo, db);
+        var uc = new ClientService(repo, db);
 
         await uc.StopAsync(new ClientStopDto("identifier-1"));
 
@@ -316,7 +316,7 @@ public class ClientInteractorTests : IDisposable
     [Fact]
     public async Task StopAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new ClientInteractor(new FakeClientRepository(), db);
+        var uc = new ClientService(new FakeClientRepository(), db);
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.StopAsync(new ClientStopDto("unknown")));
 

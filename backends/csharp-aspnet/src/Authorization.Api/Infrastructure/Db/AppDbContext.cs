@@ -1,14 +1,13 @@
-/*
- * EF Core DbContext モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Infrastructure.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Authorization.Api.Infrastructure.Db;
 
 /// <summary>アプリケーションの DbContext です。</summary>
+/// <param name="options">DbContextオプション</param>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<ClientModel>       Clients       => Set<ClientModel>();
