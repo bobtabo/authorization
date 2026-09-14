@@ -26,6 +26,14 @@ public interface IInvitationRepository
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>招待、存在しない場合はnull</returns>
     Task<InvitationVo?> FindByTokenAsync(string token, CancellationToken ct = default);
+
+    /// <summary>
+    /// 招待トークンを論理削除します（ローテーション時に古いトークンを無効化し、
+    /// 以後 <see cref="FindByTokenAsync"/> がキャッシュを再生成できないようにするため）。
+    /// </summary>
+    /// <param name="token">招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    Task RetireAsync(string token, CancellationToken ct = default);
 }
 
 /// <summary>招待トークン→ロールの認可キャッシュです（Redis 等）。</summary>

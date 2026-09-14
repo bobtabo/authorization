@@ -22,8 +22,10 @@ public sealed class InvitationService(IInvitationRepository invitationRepo, IInv
         await invitationRepo.GetCurrentByRoleAsync(role, ct) ?? throw AppException.NotFound("invitation_not_found");
 
     /// <summary>
-    /// 指定ロールの招待を新規発行します。以前の招待トークンが認可キャッシュに残っている場合は
-    /// 無効化します（ローテーション後も古いトークンでログインできてしまうことを防ぐため）。
+    /// 指定ロールの招待を新規発行します。以前の招待トークンは永続化層で無効化（論理削除）した上で
+    /// 認可キャッシュからも削除します。永続化層を先に無効化することで、ローテーション後に
+    /// <see cref="FindByTokenAsync"/> が古いトークンを再度見つけて認可キャッシュを
+    /// 再生成してしまう（キャッシュ削除が無意味になる）レースを防ぎます。
     /// </summary>
     /// <param name="role">ロール種別（1=管理者、2=メンバー）</param>
     /// <param name="ct">キャンセレーショントークン</param>
@@ -32,7 +34,11 @@ public sealed class InvitationService(IInvitationRepository invitationRepo, IInv
     {
         var previous = await invitationRepo.GetCurrentByRoleAsync(role, ct);
         var issued   = await invitationRepo.IssueAsync(role, ct);
-        if (previous is not null) await invitationAuthRepo.RemoveAsync(previous.Token, ct);
+        if (previous is not null)
+        {
+            await invitationRepo.RetireAsync(previous.Token, ct);
+            await invitationAuthRepo.RemoveAsync(previous.Token, ct);
+        }
         return issued;
     }
 

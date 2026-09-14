@@ -7,6 +7,7 @@ public sealed class FakeInvitationRepository : IInvitationRepository
     private readonly Dictionary<int, InvitationVo> currentByRole = [];
     private readonly Dictionary<string, InvitationVo> byToken = [];
     public int IssueCallCount { get; private set; }
+    public List<string> Retired { get; } = [];
 
     public FakeInvitationRepository Add(InvitationVo vo, bool isCurrent = true)
     {
@@ -29,4 +30,11 @@ public sealed class FakeInvitationRepository : IInvitationRepository
 
     public Task<InvitationVo?> FindByTokenAsync(string token, CancellationToken ct = default) =>
         Task.FromResult(byToken.TryGetValue(token, out var v) ? v : null);
+
+    public Task RetireAsync(string token, CancellationToken ct = default)
+    {
+        Retired.Add(token);
+        byToken.Remove(token);
+        return Task.CompletedTask;
+    }
 }

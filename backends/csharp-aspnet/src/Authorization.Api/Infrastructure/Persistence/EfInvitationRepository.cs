@@ -53,6 +53,15 @@ public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : I
         return m is null ? null : BuildVo(m.Token, m.Role, app.FrontendUrl);
     }
 
+    /// <inheritdoc/>
+    public async Task RetireAsync(string token, CancellationToken ct = default)
+    {
+        var now = DateTime.Now;
+        await db.Invitations.Where(i => i.Token == token && i.DeletedAt == null).ExecuteUpdateAsync(u => u
+            .SetProperty(x => x.DeletedAt, now)
+            .SetProperty(x => x.UpdatedAt, now), ct);
+    }
+
     /// <summary>招待 URL と表示用 URL を組み立てます。</summary>
     /// <param name="token">招待トークン</param>
     /// <param name="role">ロール種別（1=管理者、2=メンバー）</param>

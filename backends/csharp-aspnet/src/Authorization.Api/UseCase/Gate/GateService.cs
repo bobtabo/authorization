@@ -50,15 +50,19 @@ public sealed class GateService(
         var token = IssueJwt(dto.MemberId, c.Identifier, c.PrivateKey, c.Fingerprint, jwt.Issuer, jwt.Ttl);
 
         // 履歴の保存に成功してからキャッシュを公開する（DBを正本にし、履歴の無いJWTが
-        // キャッシュに残ることを防ぐ）。
+        // キャッシュに残ることを防ぐ）。履歴保存に失敗した場合はキャッシュへ進まない。
+        var historySaved = true;
         if (historyRepo is not null)
         {
             try { await historyRepo.SaveAsync(c.Id, dto.MemberId, DateTime.Now, token, ct); }
-            catch (Exception e) { logger?.LogWarning(e, "jwt history save failed"); }
+            catch (Exception e) { logger?.LogWarning(e, "jwt history save failed"); historySaved = false; }
         }
 
-        try { await cache.PutJwtAsync(c.Identifier, dto.MemberId, token, jwt.CacheTtl, ct); }
-        catch (Exception e) { logger?.LogWarning(e, "gate jwt cache put failed"); }
+        if (historySaved)
+        {
+            try { await cache.PutJwtAsync(c.Identifier, dto.MemberId, token, jwt.CacheTtl, ct); }
+            catch (Exception e) { logger?.LogWarning(e, "gate jwt cache put failed"); }
+        }
 
         return new GateIssueVo(token);
     }

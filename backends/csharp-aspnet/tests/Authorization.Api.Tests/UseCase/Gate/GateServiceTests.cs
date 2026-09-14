@@ -170,7 +170,7 @@ public class GateServiceTests
     }
 
     [Fact]
-    public async Task IssueTokenAsync_HistorySaveFails_DoesNotThrow()
+    public async Task IssueTokenAsync_HistorySaveFails_DoesNotThrowAndDoesNotCache()
     {
         var clientRepo  = new FakeClientRepository().Add(MakeClient());
         var cache       = new FakeGateCacheRepository();
@@ -180,6 +180,7 @@ public class GateServiceTests
         var vo = await uc.IssueTokenAsync(new GateIssueDto("token-1", "member-1"));
 
         Assert.NotEmpty(vo.Token);
+        Assert.Equal(0, cache.PutCallCount);
     }
 
     [Fact]

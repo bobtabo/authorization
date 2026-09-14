@@ -54,6 +54,24 @@ public class InvitationServiceTests
 
         Assert.NotEqual("tok-old", result.Token);
         Assert.Contains("tok-old", authRepo.Removed);
+        Assert.Contains("tok-old", repo.Retired);
+    }
+
+    [Fact]
+    public async Task IssueAsync_WithPreviousInvitation_OldTokenNoLongerResolvable()
+    {
+        // ローテーション後、古いトークンを永続化層で無効化しているため、
+        // FindByTokenAsync が再度キャッシュを復活させることができないことを確認する
+        // （認可キャッシュ削除だけでは、再アクセスによるキャッシュ再生成レースを防げないため）。
+        var previous = new InvitationVo("tok-old", StaffRole.Member, "https://example.com/i/tok-old", "example.com/i/tok-old");
+        var repo = new FakeInvitationRepository().Add(previous);
+        var authRepo = new FakeInvitationAuthRepository().Add("tok-old", StaffRole.Member);
+        var uc = new InvitationService(repo, authRepo);
+
+        await uc.IssueAsync(StaffRole.Member);
+
+        var ex = await Assert.ThrowsAsync<AppException>(() => uc.FindByTokenAsync("tok-old"));
+        Assert.Equal(404, ex.StatusCode);
     }
 
     [Fact]
