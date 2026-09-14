@@ -85,7 +85,7 @@ func (h *Handler) Handle(
 	}
 
 	// HTTP リクエストを組み立てる
-	httpReq, err := newRequest(ctx, req.HTTPMethod, targetURL, req.Body, req.Headers)
+	httpReq, err := newRequest(ctx, req.HTTPMethod, targetURL, req.Body, requestHeaders(req))
 	if err != nil {
 		slog.ErrorContext(ctx, "build request", "error", err)
 		return events.APIGatewayProxyResponse{
@@ -150,8 +150,21 @@ func resolveBackend(rawPath string) (host, path string) {
 	return "", ""
 }
 
+// requestHeaders はリクエストヘッダを返す。同名ヘッダの複数値（Cookie 等）を落とさないよう
+// MultiValueHeaders を優先し、空の場合のみ Headers を使う。
+func requestHeaders(req events.APIGatewayProxyRequest) map[string][]string {
+	if len(req.MultiValueHeaders) > 0 {
+		return req.MultiValueHeaders
+	}
+	headers := make(map[string][]string, len(req.Headers))
+	for k, v := range req.Headers {
+		headers[k] = []string{v}
+	}
+	return headers
+}
+
 // newRequest は API Gateway イベントのフィールドから *http.Request を組み立てる。
-func newRequest(ctx context.Context, method, targetURL, body string, headers map[string]string) (*http.Request, error) {
+func newRequest(ctx context.Context, method, targetURL, body string, headers map[string][]string) (*http.Request, error) {
 	var bodyReader io.Reader
 	if body != "" {
 		bodyReader = strings.NewReader(body)
@@ -161,8 +174,10 @@ func newRequest(ctx context.Context, method, targetURL, body string, headers map
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range headers {
-		req.Header.Set(k, v)
+	for k, vs := range headers {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
 	}
 	return req, nil
 }

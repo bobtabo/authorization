@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"authorization/function/internal/adapter"
@@ -209,4 +210,56 @@ func TestHandler_UnknownPrefix_Returns404(t *testing.T) {
 	if resp.StatusCode != 404 {
 		t.Fatalf("StatusCode = %d, want 404", resp.StatusCode)
 	}
+}
+
+func TestHandler_ForwardsMultiValueHeaders(t *testing.T) {
+	t.Parallel()
+
+	mock := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Backend-Cookies", strings.Join(r.Header.Values("Cookie"), "|"))
+		w.Header().Set("X-Backend-Accept", strings.Join(r.Header.Values("Accept"), "|"))
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(mock.Close)
+
+	h := handler.New(newTestDeps(&backendRedirect{target: mock.Listener.Addr().String()}))
+
+	t.Run("MultiValueHeaders があれば全値を転送する", func(t *testing.T) {
+		t.Parallel()
+
+		resp, err := h.Handle(context.Background(), events.APIGatewayProxyRequest{
+			Path:       "/function/java/api/auth/me",
+			HTTPMethod: "GET",
+			Headers:    map[string]string{"Cookie": "a=1", "Accept": "application/json"},
+			MultiValueHeaders: map[string][]string{
+				"Cookie": {"a=1", "staff_id=1"},
+				"Accept": {"application/json"},
+			},
+		})
+		if err != nil {
+			t.Fatalf("Handle: %v", err)
+		}
+		if got := resp.Headers["X-Backend-Cookies"]; got != "a=1|staff_id=1" {
+			t.Fatalf("Cookie = %q, want %q", got, "a=1|staff_id=1")
+		}
+		if got := resp.Headers["X-Backend-Accept"]; got != "application/json" {
+			t.Fatalf("Accept = %q, want %q", got, "application/json")
+		}
+	})
+
+	t.Run("MultiValueHeaders が空なら Headers を使う", func(t *testing.T) {
+		t.Parallel()
+
+		resp, err := h.Handle(context.Background(), events.APIGatewayProxyRequest{
+			Path:       "/function/java/api/auth/me",
+			HTTPMethod: "GET",
+			Headers:    map[string]string{"Cookie": "staff_id=1"},
+		})
+		if err != nil {
+			t.Fatalf("Handle: %v", err)
+		}
+		if got := resp.Headers["X-Backend-Cookies"]; got != "staff_id=1" {
+			t.Fatalf("Cookie = %q, want %q", got, "staff_id=1")
+		}
+	})
 }
