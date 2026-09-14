@@ -27,6 +27,8 @@ servers:
     description: ローカルGo（Beego）環境
   - url: https://apis.authorization-go-echo.dev/api
     description: ローカルGo（Echo）環境
+  - url: https://apis.authorization-java.dev/api
+    description: ローカルJava（Spring Boot）環境
   - url: https://apis.authorization-kotlin.dev/api
     description: ローカルKotlin（Ktor）環境
   - url: https://apis.authorization-python.dev/api
@@ -94,6 +96,8 @@ paths:
         description: ローカルGo（Beego）環境
       - url: https://apis.authorization-go-echo.dev
         description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-java.dev
+        description: ローカルJava（Spring Boot）環境
       - url: https://apis.authorization-kotlin.dev
         description: ローカルKotlin（Ktor）環境
       - url: https://apis.authorization-python.dev
@@ -139,6 +143,8 @@ paths:
         description: ローカルGo（Beego）環境
       - url: https://apis.authorization-go-echo.dev
         description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-java.dev
+        description: ローカルJava（Spring Boot）環境
       - url: https://apis.authorization-kotlin.dev
         description: ローカルKotlin（Ktor）環境
       - url: https://apis.authorization-python.dev
@@ -184,6 +190,8 @@ paths:
         description: ローカルGo（Beego）環境
       - url: https://apis.authorization-go-echo.dev
         description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-java.dev
+        description: ローカルJava（Spring Boot）環境
       - url: https://apis.authorization-kotlin.dev
         description: ローカルKotlin（Ktor）環境
       - url: https://apis.authorization-python.dev
@@ -239,6 +247,8 @@ paths:
         description: ローカルGo（Beego）環境
       - url: https://apis.authorization-go-echo.dev
         description: ローカルGo（Echo）環境
+      - url: https://apis.authorization-java.dev
+        description: ローカルJava（Spring Boot）環境
       - url: https://apis.authorization-kotlin.dev
         description: ローカルKotlin（Ktor）環境
       - url: https://apis.authorization-python.dev

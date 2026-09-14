@@ -1,5 +1,5 @@
 // Package main は AWS Lambda（custom runtime provided.al2023）のエントリ。
-// API Gateway HTTP API（v2）または Lambda Function URL から渡るペイロードを想定している。
+// API Gateway REST API（v1 プロキシ統合）から渡るペイロードを想定している。
 package main
 
 import (

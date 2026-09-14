@@ -219,6 +219,7 @@ export function ConsoleHeader(): React.JSX.Element {
                 <option value="go-gin">Go (Gin)</option>
                 <option value="go-beego">Go (Beego)</option>
                 <option value="go-echo">Go (Echo)</option>
+                <option value="java">Java</option>
                 <option value="kotlin">Kotlin</option>
                 <option value="php">PHP</option>
                 <option value="python">Python</option>
