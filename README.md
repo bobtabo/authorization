@@ -36,10 +36,12 @@
 ## :building_construction: システム構造
 
 ```.
-├── 📂 backends/           # バックエンド構成（PHP / Go / Kotlin / Python / TypeScript / Ruby / Rust）
+├── 📂 backends/           # バックエンド構成（PHP / Go / Kotlin / Python / TypeScript / Ruby / Rust / C# / Java）
+│   ├── csharp-aspnet/
 │   ├── go-beego/
 │   ├── go-echo/
 │   ├── go-gin/
+│   ├── java-spring/
 │   ├── kotlin-ktor/
 │   ├── php-laravel/
 │   ├── python-fastapi/
