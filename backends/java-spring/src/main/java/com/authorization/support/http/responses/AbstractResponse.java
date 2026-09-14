@@ -6,6 +6,7 @@
 package com.authorization.support.http.responses;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +38,7 @@ public abstract class AbstractResponse {
         Set<String> excludes = getExcludeKeys();
         Map<String, Object> result = new LinkedHashMap<>();
         for (Field field : getClass().getDeclaredFields()) {
-            if (excludes.contains(field.getName())) {
+            if (Modifier.isStatic(field.getModifiers()) || excludes.contains(field.getName())) {
                 continue;
             }
             field.setAccessible(true);
