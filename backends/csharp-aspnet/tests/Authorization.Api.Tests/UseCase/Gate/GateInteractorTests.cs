@@ -144,6 +144,20 @@ public class GateInteractorTests
     }
 
     [Fact]
+    public async Task IssueTokenAsync_CacheMiss_SavesHistoryBeforePuttingCache()
+    {
+        var order       = new List<string>();
+        var clientRepo  = new FakeClientRepository().Add(MakeClient());
+        var cache       = new FakeGateCacheRepository { OnPut = () => { order.Add("cache"); return Task.CompletedTask; } };
+        var historyRepo = new FakeJwtHistoryRepository { OnSave = () => { order.Add("history"); return Task.CompletedTask; } };
+        var uc = new GateInteractor(clientRepo, cache, Jwt, historyRepo);
+
+        await uc.IssueTokenAsync(new GateIssueDto("token-1", "member-1"));
+
+        Assert.Equal(["history", "cache"], order);
+    }
+
+    [Fact]
     public async Task IssueTokenAsync_CachePutFails_DoesNotThrow()
     {
         var clientRepo = new FakeClientRepository().Add(MakeClient());

@@ -9,6 +9,7 @@ public sealed class FakeNotificationRepository : INotificationRepository
     public Action<int>? OnListPage;
     public bool MarkReadResult = true;
     public long? LastMarkReadId;
+    public long? LastMarkReadStaffId;
 
     public Task<NotificationPage> ListPageAsync(long staffId, string? cursor, int limit, CancellationToken ct = default)
     {
@@ -28,9 +29,10 @@ public sealed class FakeNotificationRepository : INotificationRepository
         Stored.Add((staffId, messageType, title, message, createdBy, url));
     }
 
-    public Task<bool> MarkReadAsync(long id, CancellationToken ct = default)
+    public Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default)
     {
         LastMarkReadId = id;
+        LastMarkReadStaffId = staffId;
         return Task.FromResult(MarkReadResult);
     }
 }

@@ -21,12 +21,20 @@ public sealed class InvitationInteractor(IInvitationRepository invitationRepo, I
     public async Task<InvitationVo> CurrentAsync(int role, CancellationToken ct = default) =>
         await invitationRepo.GetCurrentByRoleAsync(role, ct) ?? throw AppException.NotFound("invitation_not_found");
 
-    /// <summary>指定ロールの招待を新規発行します。</summary>
+    /// <summary>
+    /// 指定ロールの招待を新規発行します。以前の招待トークンが認可キャッシュに残っている場合は
+    /// 無効化します（ローテーション後も古いトークンでログインできてしまうことを防ぐため）。
+    /// </summary>
     /// <param name="role">ロール種別（1=管理者、2=メンバー）</param>
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>新規発行した招待</returns>
-    public Task<InvitationVo> IssueAsync(int role, CancellationToken ct = default) =>
-        invitationRepo.IssueAsync(role, ct);
+    public async Task<InvitationVo> IssueAsync(int role, CancellationToken ct = default)
+    {
+        var previous = await invitationRepo.GetCurrentByRoleAsync(role, ct);
+        var issued   = await invitationRepo.IssueAsync(role, ct);
+        if (previous is not null) await invitationAuthRepo.RemoveAsync(previous.Token, ct);
+        return issued;
+    }
 
     /// <summary>
     /// 招待トークンを検索し、見つかった場合はログイン時に参照する認可キャッシュへ保存します。

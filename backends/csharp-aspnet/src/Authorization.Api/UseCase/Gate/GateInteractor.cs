@@ -46,14 +46,16 @@ public sealed class GateInteractor(
 
         var token = IssueJwt(dto.MemberId, c.Identifier, c.PrivateKey, c.Fingerprint, jwt.Issuer, jwt.Ttl);
 
-        try { await cache.PutJwtAsync(c.Identifier, dto.MemberId, token, jwt.CacheTtl, ct); }
-        catch (Exception e) { logger?.LogWarning(e, "gate jwt cache put failed"); }
-
+        // 履歴の保存に成功してからキャッシュを公開する（DBを正本にし、履歴の無いJWTが
+        // キャッシュに残ることを防ぐ）。
         if (historyRepo is not null)
         {
             try { await historyRepo.SaveAsync(c.Id, dto.MemberId, DateTime.Now, token, ct); }
             catch (Exception e) { logger?.LogWarning(e, "jwt history save failed"); }
         }
+
+        try { await cache.PutJwtAsync(c.Identifier, dto.MemberId, token, jwt.CacheTtl, ct); }
+        catch (Exception e) { logger?.LogWarning(e, "gate jwt cache put failed"); }
 
         return new GateIssueVo(token);
     }

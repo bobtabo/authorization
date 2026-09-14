@@ -88,12 +88,22 @@ public sealed class SesMailer(MailSettings mail, AwsSettings aws, ILogger<SesMai
     /// <param name="activateUrl">利用開始URL</param>
     /// <param name="appName">アプリ名</param>
     /// <returns>HTML本文</returns>
-    public static string BuildActivationHtml(string name, string activateUrl, string appName) =>
-        ActivationTemplate
-            .Replace("{{NAME}}", name)
-            .Replace("{{ACTIVATE_URL}}", activateUrl)
-            .Replace("{{APP_NAME}}", appName)
+    public static string BuildActivationHtml(string name, string activateUrl, string appName)
+    {
+        var safeUrl = IsAbsoluteHttpUrl(activateUrl) ? System.Net.WebUtility.HtmlEncode(activateUrl) : "";
+        return ActivationTemplate
+            .Replace("{{NAME}}", System.Net.WebUtility.HtmlEncode(name))
+            .Replace("{{ACTIVATE_URL}}", safeUrl)
+            .Replace("{{APP_NAME}}", System.Net.WebUtility.HtmlEncode(appName))
             .Replace("{{YEAR}}", DateTime.Now.Year.ToString());
+    }
+
+    /// <summary>絶対URLかつ http/https スキームであるかを判定します。</summary>
+    /// <param name="url">検証対象のURL文字列</param>
+    /// <returns>http/https の絶対URLである場合 true</returns>
+    private static bool IsAbsoluteHttpUrl(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
+        (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
     private const string ActivationTemplate = @"<!DOCTYPE html>
 <html lang=""ja"">

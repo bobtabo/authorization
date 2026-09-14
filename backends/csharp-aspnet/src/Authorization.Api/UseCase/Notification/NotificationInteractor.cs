@@ -61,7 +61,9 @@ public sealed class NotificationInteractor(
 
     /// <summary>1 件を既読にします。</summary>
     /// <param name="id">通知ID</param>
+    /// <param name="staffId">スタッフID（所有者チェック用）</param>
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>更新できた場合は true</returns>
-    public Task<bool> MarkReadAsync(long id, CancellationToken ct = default) => repo.MarkReadAsync(id, ct);
+    public Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default) =>
+        repo.MarkReadAsync(id, staffId, ct);
 }

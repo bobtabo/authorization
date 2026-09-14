@@ -140,12 +140,15 @@ public sealed class NotificationHandler(NotificationInteractor notificationUC, A
 
     /// <summary>1 件を既読にします。</summary>
     /// <param name="id">通知ID（文字列）</param>
+    /// <param name="req">HTTPリクエスト（staff_idをクッキーから取得）</param>
     /// <param name="ct">キャンセレーショントークン</param>
-    /// <returns>更新した通知IDのJSON、IDが不正な場合は400</returns>
-    public async Task<IResult> ReadAsync(string id, CancellationToken ct)
+    /// <returns>更新した通知IDのJSON、IDが不正な場合は400、未認証の場合は401</returns>
+    public async Task<IResult> ReadAsync(string id, HttpRequest req, CancellationToken ct)
     {
+        var staffId = StaffId(req);
+        if (staffId == 0) return Unauthenticated();
         if (!long.TryParse(id, out var notificationId)) return InvalidId();
-        await notificationUC.MarkReadAsync(notificationId, ct);
+        await notificationUC.MarkReadAsync(notificationId, staffId, ct);
         return Results.Json(new Dictionary<string, object?> { ["id"] = notificationId });
     }
 

@@ -71,9 +71,10 @@ public interface INotificationRepository
     /// <param name="ct">キャンセレーショントークン</param>
     Task StoreAsync(long staffId, int messageType, string title, string message, long createdBy, string? url, CancellationToken ct = default);
 
-    /// <summary>1 件を既読にします。</summary>
+    /// <summary>1 件を既読にします。他スタッフの通知を既読にできないよう staffId でも絞り込みます。</summary>
     /// <param name="id">通知ID</param>
+    /// <param name="staffId">スタッフID（所有者チェック用）</param>
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>更新できた場合は true</returns>
-    Task<bool> MarkReadAsync(long id, CancellationToken ct = default);
+    Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default);
 }

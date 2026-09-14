@@ -43,6 +43,20 @@ public class InvitationInteractorTests
     }
 
     [Fact]
+    public async Task IssueAsync_WithPreviousInvitation_InvalidatesOldTokenCache()
+    {
+        var previous = new InvitationVo("tok-old", StaffRole.Member, "https://example.com/i/tok-old", "example.com/i/tok-old");
+        var repo = new FakeInvitationRepository().Add(previous);
+        var authRepo = new FakeInvitationAuthRepository().Add("tok-old", StaffRole.Member);
+        var uc = new InvitationInteractor(repo, authRepo);
+
+        var result = await uc.IssueAsync(StaffRole.Member);
+
+        Assert.NotEqual("tok-old", result.Token);
+        Assert.Contains("tok-old", authRepo.Removed);
+    }
+
+    [Fact]
     public async Task FindByTokenAsync_NotFound_ThrowsNotFound()
     {
         var uc = new InvitationInteractor(new FakeInvitationRepository(), new FakeInvitationAuthRepository());

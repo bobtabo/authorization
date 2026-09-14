@@ -88,10 +88,10 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
     }
 
     /// <inheritdoc/>
-    public async Task<bool> MarkReadAsync(long id, CancellationToken ct = default)
+    public async Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
-        var rows = await db.Notifications.Where(n => n.Id == id).ExecuteUpdateAsync(u => u
+        var rows = await db.Notifications.Where(n => n.Id == id && n.StaffId == staffId).ExecuteUpdateAsync(u => u
             .SetProperty(n => n.Read, true)
             .SetProperty(n => n.UpdatedAt, now), ct);
         return rows > 0;

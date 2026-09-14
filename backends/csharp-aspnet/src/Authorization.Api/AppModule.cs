@@ -158,7 +158,7 @@ public static class AppModule
         api.MapGet("/notifications/counts", (HttpRequest req, NotificationHandler h, CancellationToken ct) => h.CountsAsync(req, ct));
         api.MapGet("/notifications",        (HttpRequest req, NotificationHandler h, CancellationToken ct) => h.IndexAsync(req, ct));
         api.MapPatch("/notifications",      (HttpRequest req, NotificationHandler h, CancellationToken ct) => h.ReadAllAsync(req, ct));
-        api.MapPatch("/notifications/{id}", (string id, NotificationHandler h, CancellationToken ct) => h.ReadAsync(id, ct));
+        api.MapPatch("/notifications/{id}", (string id, HttpRequest req, NotificationHandler h, CancellationToken ct) => h.ReadAsync(id, req, ct));
 
         return app;
     }

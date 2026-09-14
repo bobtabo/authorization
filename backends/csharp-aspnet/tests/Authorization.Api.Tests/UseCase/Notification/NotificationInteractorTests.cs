@@ -78,9 +78,10 @@ public class NotificationInteractorTests
         var notifRepo = new FakeNotificationRepository { MarkReadResult = true };
         var uc = new NotificationInteractor(notifRepo, new FakeStaffRepository());
 
-        var result = await uc.MarkReadAsync(42);
+        var result = await uc.MarkReadAsync(42, 9);
 
         Assert.True(result);
         Assert.Equal(42, notifRepo.LastMarkReadId);
+        Assert.Equal(9, notifRepo.LastMarkReadStaffId);
     }
 }

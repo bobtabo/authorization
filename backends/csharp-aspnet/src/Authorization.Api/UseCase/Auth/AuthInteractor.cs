@@ -51,10 +51,9 @@ public sealed class AuthInteractor(IStaffRepository staffRepo, IInvitationAuthRe
         else
         {
             var token = dto.InvitationToken;
-            var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.GetRoleAsync(token, ct);
+            var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.ConsumeRoleAsync(token, ct);
             if (role is null) throw AppException.Forbidden("invitation_required");
 
-            await invitationAuthRepo.RemoveAsync(token!, ct);
             staff = new Domain.Staff.Staff
             {
                 Name        = dto.Name,

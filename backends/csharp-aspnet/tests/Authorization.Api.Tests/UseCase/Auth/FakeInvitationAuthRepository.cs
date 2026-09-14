@@ -24,6 +24,14 @@ public sealed class FakeInvitationAuthRepository : IInvitationAuthRepository
     public Task<int?> GetRoleAsync(string token, CancellationToken ct = default) =>
         Task.FromResult(roles.TryGetValue(token, out var r) ? r : (int?)null);
 
+    public Task<int?> ConsumeRoleAsync(string token, CancellationToken ct = default)
+    {
+        if (!roles.TryGetValue(token, out var r)) return Task.FromResult((int?)null);
+        roles.Remove(token);
+        Removed.Add(token);
+        return Task.FromResult((int?)r);
+    }
+
     public Task RemoveAsync(string token, CancellationToken ct = default)
     {
         Removed.Add(token);
