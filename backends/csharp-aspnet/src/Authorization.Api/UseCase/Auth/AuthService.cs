@@ -4,6 +4,7 @@
 using Authorization.Api.Domain.Invitation;
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
+using Mapster;
 
 namespace Authorization.Api.UseCase.Auth;
 
@@ -54,13 +55,10 @@ public sealed class AuthService(IStaffRepository staffRepo, IInvitationAuthRepos
             var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.ConsumeRoleAsync(token, ct);
             if (role is null) throw AppException.Forbidden("invitation_required");
 
-            staff = new Domain.Staff.Staff
+            // dto.Adapt<Staff>() が Name/Email/Provider/ProviderId/Avatar をMapsterで
+            // 自動マッピングする。招待ロールから決まるRole等はwithで上書きする。
+            staff = dto.Adapt<Domain.Staff.Staff>() with
             {
-                Name        = dto.Name,
-                Email       = dto.Email,
-                Provider    = dto.Provider,
-                ProviderId  = dto.ProviderId,
-                Avatar      = dto.Avatar,
                 Role        = StaffRole.From(role.Value),
                 LastLoginAt = now,
                 CreatedAt   = now,

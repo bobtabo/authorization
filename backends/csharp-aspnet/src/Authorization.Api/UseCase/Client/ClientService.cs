@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Support;
+using Mapster;
 using ClientEntity = Authorization.Api.Domain.Client.Client;
 
 namespace Authorization.Api.UseCase.Client;
@@ -61,17 +62,11 @@ public sealed class ClientService(IClientRepository repo, AppDbContext db)
     {
         var (privPem, pubPem, fingerprint) = GenerateRsaKeys();
         var now = DateTime.Now;
-        var c = new ClientEntity
+        // dto.Adapt<ClientEntity>() が Name/PostCode/Pref/City/Address/Building/Tel/Email を
+        // Mapsterで自動マッピングする。生成規則・個別ロジックがある項目のみwithで上書きする。
+        var c = dto.Adapt<ClientEntity>() with
         {
-            Name        = dto.Name,
             Identifier  = GenerateHex(8),
-            PostCode    = dto.PostCode,
-            Pref        = dto.Pref,
-            City        = dto.City,
-            Address     = dto.Address,
-            Building    = dto.Building,
-            Tel         = dto.Tel,
-            Email       = dto.Email,
             AccessToken = GenerateHex(32),
             PrivateKey  = privPem,
             PublicKey   = pubPem,

@@ -5,6 +5,7 @@ using Authorization.Api.Domain.Client;
 using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Infrastructure.Model;
 using Authorization.Api.Support;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using ClientEntity = Authorization.Api.Domain.Client.Client;
 
@@ -80,30 +81,11 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
     {
         if (c.Id == 0)
         {
-            var m = new ClientModel
-            {
-                Name        = c.Name,
-                Identifier  = c.Identifier,
-                PostCode    = c.PostCode,
-                Pref        = c.Pref,
-                City        = c.City,
-                Address     = c.Address,
-                Building    = c.Building,
-                Tel         = c.Tel,
-                Email       = c.Email,
-                AccessToken = c.AccessToken,
-                PrivateKey  = c.PrivateKey,
-                PublicKey   = c.PublicKey,
-                Fingerprint = c.Fingerprint,
-                Status      = c.Status,
-                StartAt     = c.StartAt,
-                StopAt      = c.StopAt,
-                CreatedAt   = c.CreatedAt,
-                CreatedBy   = (int)(c.CreatedBy ?? 0),
-                UpdatedAt   = c.UpdatedAt,
-                UpdatedBy   = (int)(c.UpdatedBy ?? 0),
-                Version     = c.Version,
-            };
+            // c.Adapt<ClientModel>() がフィールドをMapsterで自動マッピングする。
+            // CreatedBy/UpdatedByはlong?→intの既定値変換（nullは0）が必要なため明示的に設定する。
+            var m = c.Adapt<ClientModel>();
+            m.CreatedBy = (int)(c.CreatedBy ?? 0);
+            m.UpdatedBy = (int)(c.UpdatedBy ?? 0);
             db.Clients.Add(m);
             await db.SaveChangesAsync(ct);
             db.Entry(m).State = EntityState.Detached;
@@ -148,33 +130,8 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
     /// <summary>DBモデルをドメインエンティティに変換します。</summary>
     /// <param name="m">DBモデル</param>
     /// <returns>ドメインエンティティ</returns>
-    private static ClientEntity ToEntity(ClientModel m) => new()
-    {
-        Id          = m.Id,
-        Name        = m.Name,
-        Identifier  = m.Identifier,
-        PostCode    = m.PostCode,
-        Pref        = m.Pref,
-        City        = m.City,
-        Address     = m.Address,
-        Building    = m.Building ?? "",
-        Tel         = m.Tel,
-        Email       = m.Email,
-        AccessToken = m.AccessToken,
-        PrivateKey  = m.PrivateKey,
-        PublicKey   = m.PublicKey,
-        Fingerprint = m.Fingerprint,
-        Status      = m.Status,
-        StartAt     = m.StartAt,
-        StopAt      = m.StopAt,
-        CreatedAt   = m.CreatedAt,
-        CreatedBy   = m.CreatedBy,
-        UpdatedAt   = m.UpdatedAt,
-        UpdatedBy   = m.UpdatedBy,
-        DeletedAt   = m.DeletedAt,
-        DeletedBy   = m.DeletedBy,
-        Version     = m.Version,
-    };
+    private static ClientEntity ToEntity(ClientModel m) =>
+        m.Adapt<ClientEntity>() with { Building = m.Building ?? "" };
 }
 
 /// <summary>EF Core による JWT 履歴リポジトリです。</summary>
