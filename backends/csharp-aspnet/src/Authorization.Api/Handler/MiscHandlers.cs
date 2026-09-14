@@ -1,8 +1,6 @@
-/*
- * 招待（管理者）・Gate・通知ハンドラーモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Notification;
 using Authorization.Api.Domain.Staff;
@@ -15,7 +13,8 @@ using static Authorization.Api.Handler.HttpHelpers;
 namespace Authorization.Api.Handler;
 
 /// <summary>管理者向け招待ハンドラーです。</summary>
-public sealed class AdminInvitationHandler(InvitationInteractor invitationUC)
+/// <param name="invitationUC">招待Service</param>
+public sealed class AdminInvitationHandler(InvitationService invitationUC)
 {
     /// <summary>指定ロールの現在の招待を返します。</summary>
     /// <param name="req">HTTPリクエスト（roleクエリ。未指定はメンバー）</param>
@@ -56,7 +55,8 @@ public sealed class AdminInvitationHandler(InvitationInteractor invitationUC)
 }
 
 /// <summary>Gate（JWT 発行・検証）ハンドラーです。</summary>
-public sealed class GateHandler(GateInteractor gateUC)
+/// <param name="gateUC">GateService</param>
+public sealed class GateHandler(GateService gateUC)
 {
     /// <summary>クライアントのアクセストークン（Bearer）とメンバーIDでJWTを発行します。</summary>
     /// <param name="req">HTTPリクエスト（memberクエリ、Authorizationヘッダー）</param>
@@ -93,7 +93,9 @@ public sealed class GateHandler(GateInteractor gateUC)
 }
 
 /// <summary>通知ハンドラーです。</summary>
-public sealed class NotificationHandler(NotificationInteractor notificationUC, AppSettings app)
+/// <param name="notificationUC">通知Service</param>
+/// <param name="app">アプリケーション設定</param>
+public sealed class NotificationHandler(NotificationService notificationUC, AppSettings app)
 {
     /// <summary>未読・総件数を返します。</summary>
     /// <param name="req">HTTPリクエスト（staff_idをクッキーから取得）</param>
@@ -140,12 +142,15 @@ public sealed class NotificationHandler(NotificationInteractor notificationUC, A
 
     /// <summary>1 件を既読にします。</summary>
     /// <param name="id">通知ID（文字列）</param>
+    /// <param name="req">HTTPリクエスト（staff_idをクッキーから取得）</param>
     /// <param name="ct">キャンセレーショントークン</param>
-    /// <returns>更新した通知IDのJSON、IDが不正な場合は400</returns>
-    public async Task<IResult> ReadAsync(string id, CancellationToken ct)
+    /// <returns>更新した通知IDのJSON、IDが不正な場合は400、未認証の場合は401</returns>
+    public async Task<IResult> ReadAsync(string id, HttpRequest req, CancellationToken ct)
     {
+        var staffId = StaffId(req);
+        if (staffId == 0) return Unauthenticated();
         if (!long.TryParse(id, out var notificationId)) return InvalidId();
-        await notificationUC.MarkReadAsync(notificationId, ct);
+        await notificationUC.MarkReadAsync(notificationId, staffId, ct);
         return Results.Json(new Dictionary<string, object?> { ["id"] = notificationId });
     }
 

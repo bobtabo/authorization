@@ -1,8 +1,6 @@
-/*
- * アプリケーション例外モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 namespace Authorization.Api.Support;
 
 /// <summary>HTTP ステータスコードを持つアプリケーション例外です。</summary>

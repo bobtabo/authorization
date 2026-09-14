@@ -1,16 +1,13 @@
-/*
- * 認証ハンドラーモジュール。
- *
- * OAuth（Google / GitHub）のリダイレクト・コールバック、ログイン状態の取得、ログアウト、招待確認を扱います。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.Json;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
 using Authorization.Api.UseCase.Auth;
 using Authorization.Api.UseCase.Invitation;
+using Microsoft.AspNetCore.WebUtilities;
 using static Authorization.Api.Handler.HttpHelpers;
 
 namespace Authorization.Api.Handler;
@@ -47,6 +44,8 @@ public interface IOAuthClient
 }
 
 /// <summary>HttpClient による OAuth クライアントです。</summary>
+/// <param name="http">HTTPクライアント</param>
+/// <param name="oauth">OAuth設定</param>
 public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAuthClient
 {
     /// <inheritdoc/>
@@ -170,13 +169,21 @@ public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAu
 }
 
 /// <summary>認証ハンドラーです。</summary>
+/// <param name="authUC">認証Service</param>
+/// <param name="invitationUC">招待Service</param>
+/// <param name="oauthClient">OAuthプロバイダークライアント</param>
+/// <param name="cfg">アプリケーション設定</param>
+/// <param name="logger">ロガー</param>
 public sealed class AuthHandler(
-    AuthInteractor authUC,
-    InvitationInteractor invitationUC,
+    AuthService authUC,
+    InvitationService invitationUC,
     IOAuthClient oauthClient,
     AppConfig cfg,
     ILogger<AuthHandler> logger)
 {
+    private const string GoogleAuthUrl = "https://accounts.google.com/o/oauth2/auth";
+    private const string GithubAuthorizeUrl = "https://github.com/login/oauth/authorize";
+
     /// <summary>フロントエンドのエラーページURLを組み立てます。</summary>
     /// <param name="code">エラーコード（表示用）</param>
     /// <returns>エラーページURL</returns>
@@ -189,11 +196,15 @@ public sealed class AuthHandler(
     {
         var token = Query(req, "token");
         var state = string.IsNullOrEmpty(token) ? "state" : token;
-        var url = "https://accounts.google.com/o/oauth2/auth" +
-                  $"?client_id={cfg.OAuth.GoogleClientId}" +
-                  $"&redirect_uri={cfg.OAuth.GoogleRedirectUrl}" +
-                  "&response_type=code&scope=email+profile&access_type=online" +
-                  $"&state={Uri.EscapeDataString(state)}";
+        var url = QueryHelpers.AddQueryString(GoogleAuthUrl, new Dictionary<string, string?>
+        {
+            ["client_id"] = cfg.OAuth.GoogleClientId,
+            ["redirect_uri"] = cfg.OAuth.GoogleRedirectUrl,
+            ["response_type"] = "code",
+            ["scope"] = "email profile",
+            ["access_type"] = "online",
+            ["state"] = state,
+        });
         return Results.Redirect(url);
     }
 
@@ -230,14 +241,14 @@ public sealed class AuthHandler(
     public IResult GithubRedirect(HttpRequest req)
     {
         var token = Query(req, "token");
-        var state = string.IsNullOrEmpty(token)
-            ? Uri.EscapeDataString(cfg.App.Runtime)
-            : Uri.EscapeDataString($"{cfg.App.Runtime}|{token}");
-        var url = "https://github.com/login/oauth/authorize" +
-                  $"?client_id={cfg.OAuth.GithubClientId}" +
-                  $"&redirect_uri={Uri.EscapeDataString(cfg.OAuth.GithubRedirectUrl)}" +
-                  "&scope=user:email" +
-                  $"&state={state}";
+        var state = string.IsNullOrEmpty(token) ? cfg.App.Runtime : $"{cfg.App.Runtime}|{token}";
+        var url = QueryHelpers.AddQueryString(GithubAuthorizeUrl, new Dictionary<string, string?>
+        {
+            ["client_id"] = cfg.OAuth.GithubClientId,
+            ["redirect_uri"] = cfg.OAuth.GithubRedirectUrl,
+            ["scope"] = "user:email",
+            ["state"] = state,
+        });
         return Results.Redirect(url);
     }
 

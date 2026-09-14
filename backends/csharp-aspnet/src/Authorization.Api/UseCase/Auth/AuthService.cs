@@ -1,11 +1,10 @@
-/*
- * 認証ユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Invitation;
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
+using Mapster;
 
 namespace Authorization.Api.UseCase.Auth;
 
@@ -19,8 +18,10 @@ public sealed record LoginDto(
     string? InvitationToken = null
 );
 
-/// <summary>認証ユースケースです。</summary>
-public sealed class AuthInteractor(IStaffRepository staffRepo, IInvitationAuthRepository invitationAuthRepo)
+/// <summary>認証Serviceクラスです。</summary>
+/// <param name="staffRepo">スタッフリポジトリ</param>
+/// <param name="invitationAuthRepo">招待認可キャッシュリポジトリ</param>
+public sealed class AuthService(IStaffRepository staffRepo, IInvitationAuthRepository invitationAuthRepo)
 {
     /// <summary>スタッフを ID で取得します。</summary>
     /// <param name="id">スタッフID</param>
@@ -51,17 +52,13 @@ public sealed class AuthInteractor(IStaffRepository staffRepo, IInvitationAuthRe
         else
         {
             var token = dto.InvitationToken;
-            var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.GetRoleAsync(token, ct);
+            var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.ConsumeRoleAsync(token, ct);
             if (role is null) throw AppException.Forbidden("invitation_required");
 
-            await invitationAuthRepo.RemoveAsync(token!, ct);
-            staff = new Domain.Staff.Staff
+            // dto.Adapt<Staff>() が Name/Email/Provider/ProviderId/Avatar をMapsterで
+            // 自動マッピングする。招待ロールから決まるRole等はwithで上書きする。
+            staff = dto.Adapt<Domain.Staff.Staff>() with
             {
-                Name        = dto.Name,
-                Email       = dto.Email,
-                Provider    = dto.Provider,
-                ProviderId  = dto.ProviderId,
-                Avatar      = dto.Avatar,
                 Role        = StaffRole.From(role.Value),
                 LastLoginAt = now,
                 CreatedAt   = now,

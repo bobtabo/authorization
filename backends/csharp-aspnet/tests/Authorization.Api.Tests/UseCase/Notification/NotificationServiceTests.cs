@@ -3,7 +3,7 @@ using Authorization.Api.UseCase.Notification;
 
 namespace Authorization.Api.Tests.UseCase.Notification;
 
-public class NotificationInteractorTests
+public class NotificationServiceTests
 {
     private static Authorization.Api.Domain.Staff.Staff MakeStaff(long id, DateTime? deletedAt = null) => new()
     {
@@ -20,7 +20,7 @@ public class NotificationInteractorTests
             .Add(MakeStaff(1))
             .Add(MakeStaff(2, deletedAt: DateTime.Now));
         var notifRepo = new FakeNotificationRepository();
-        var uc = new NotificationInteractor(notifRepo, staffRepo);
+        var uc = new NotificationService(notifRepo, staffRepo);
 
         await uc.FanOutAsync(new NotificationFanOutDto(1, "Title", "Message", ExecutorId: 9));
 
@@ -33,7 +33,7 @@ public class NotificationInteractorTests
     {
         var staffRepo = new FakeStaffRepository().Add(MakeStaff(1));
         var notifRepo = new FakeNotificationRepository();
-        var uc = new NotificationInteractor(notifRepo, staffRepo);
+        var uc = new NotificationService(notifRepo, staffRepo);
 
         await uc.FanOutAsync(new NotificationFanOutDto(1, "Title", "Message", ExecutorId: 9, Url: "  "));
 
@@ -48,7 +48,7 @@ public class NotificationInteractorTests
         {
             OnStore = staffId => staffId == 2 ? throw new InvalidOperationException("boom") : Task.CompletedTask,
         };
-        var uc = new NotificationInteractor(notifRepo, staffRepo);
+        var uc = new NotificationService(notifRepo, staffRepo);
 
         await uc.FanOutAsync(new NotificationFanOutDto(1, "Title", "Message", ExecutorId: 9));
 
@@ -65,7 +65,7 @@ public class NotificationInteractorTests
     {
         int? seenLimit = null;
         var notifRepo = new FakeNotificationRepository { OnListPage = l => seenLimit = l };
-        var uc = new NotificationInteractor(notifRepo, new FakeStaffRepository());
+        var uc = new NotificationService(notifRepo, new FakeStaffRepository());
 
         await uc.ListPageAsync(1, null, requested);
 
@@ -76,11 +76,12 @@ public class NotificationInteractorTests
     public async Task MarkReadAsync_DelegatesToRepository()
     {
         var notifRepo = new FakeNotificationRepository { MarkReadResult = true };
-        var uc = new NotificationInteractor(notifRepo, new FakeStaffRepository());
+        var uc = new NotificationService(notifRepo, new FakeStaffRepository());
 
-        var result = await uc.MarkReadAsync(42);
+        var result = await uc.MarkReadAsync(42, 9);
 
         Assert.True(result);
         Assert.Equal(42, notifRepo.LastMarkReadId);
+        Assert.Equal(9, notifRepo.LastMarkReadStaffId);
     }
 }

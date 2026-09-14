@@ -1,12 +1,11 @@
-/*
- * クライアントハンドラーモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.RegularExpressions;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Domain.Notification;
+using Authorization.Api.Http.Responses.Client;
 using Authorization.Api.Infrastructure.Mail;
 using Authorization.Api.Support;
 using Authorization.Api.UseCase.Client;
@@ -58,14 +57,28 @@ public static partial class ClientValidation
         (tel is null || TelPattern().IsMatch(tel)) &&
         (email is null || (email.Length <= 255 && EmailPattern().IsMatch(email)));
 
+    /// <summary>必須項目を検証します（空でなく、最大長以内であること）。</summary>
+    /// <param name="v">検証対象の文字列</param>
+    /// <param name="max">最大長</param>
+    /// <returns>妥当な場合 true</returns>
     private static bool Required(string v, int max) => v.Length > 0 && v.Length <= max;
+
+    /// <summary>任意項目を検証します（null可、指定時は最大長以内であること）。</summary>
+    /// <param name="v">検証対象の文字列（null可）</param>
+    /// <param name="max">最大長</param>
+    /// <returns>妥当な場合 true</returns>
     private static bool Optional(string? v, int max) => v is null || v.Length <= max;
 }
 
 /// <summary>クライアントハンドラーです。</summary>
+/// <param name="clientUC">クライアントService</param>
+/// <param name="notificationUC">通知Service</param>
+/// <param name="mailer">メール送信インターフェース</param>
+/// <param name="jwtHistoryRepo">JWT履歴リポジトリ</param>
+/// <param name="app">アプリケーション設定</param>
 public sealed class ClientHandler(
-    ClientInteractor clientUC,
-    NotificationInteractor notificationUC,
+    ClientService clientUC,
+    NotificationService notificationUC,
     IMailer mailer,
     IJwtHistoryRepository jwtHistoryRepo,
     AppSettings app)
@@ -122,7 +135,7 @@ public sealed class ClientHandler(
     {
         if (!long.TryParse(id, out var clientId)) return InvalidId();
         var c = await clientUC.FindByIdAsync(clientId, ct);
-        return Results.Json(DetailJson(c));
+        return Results.Json(new ShowResponse(c).Attributes());
     }
 
     /// <summary>
@@ -198,7 +211,7 @@ public sealed class ClientHandler(
         var dto = new ClientUpdateDto(clientId, name, postCode, pref, city, address, building, tel, email, status,
             executorId, v);
         var c = await clientUC.UpdateAsync(dto, ct);
-        return Results.Json(DetailJson(c));
+        return Results.Json(new ShowResponse(c).Attributes());
     }
 
     /// <summary>QRコード用データを返します。</summary>
@@ -299,27 +312,4 @@ public sealed class ClientHandler(
             ["pager"] = Pager.Build(count, limit, offset, histories.Count).ToJson(),
         });
     }
-
-    /// <summary>クライアント詳細を JSON 用の辞書に変換します。</summary>
-    /// <param name="c">クライアント詳細</param>
-    /// <returns>JSON化用の辞書</returns>
-    private static Dictionary<string, object?> DetailJson(ClientDetailVo c) => new()
-    {
-        ["id"]         = c.Id,
-        ["name"]       = c.Name,
-        ["identifier"] = c.Identifier,
-        ["post_code"]  = c.PostCode,
-        ["pref"]       = c.Pref,
-        ["city"]       = c.City,
-        ["address"]    = c.Address,
-        ["building"]   = c.Building,
-        ["tel"]        = c.Tel,
-        ["email"]      = c.Email,
-        ["status"]     = c.Status,
-        ["start_at"]   = DateFormat.ToMinute(c.StartAt),
-        ["stop_at"]    = DateFormat.ToMinute(c.StopAt),
-        ["created_at"] = DateFormat.ToMinute(c.CreatedAt),
-        ["updated_at"] = DateFormat.ToMinute(c.UpdatedAt),
-        ["version"]    = c.Version,
-    };
 }

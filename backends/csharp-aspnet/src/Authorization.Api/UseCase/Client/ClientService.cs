@@ -1,18 +1,19 @@
-/*
- * クライアントユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Security.Cryptography;
 using Authorization.Api.Domain.Client;
 using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Support;
+using Mapster;
 using ClientEntity = Authorization.Api.Domain.Client.Client;
 
 namespace Authorization.Api.UseCase.Client;
 
-/// <summary>クライアントユースケースです。</summary>
-public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
+/// <summary>クライアントServiceクラスです。</summary>
+/// <param name="repo">クライアントリポジトリ</param>
+/// <param name="db">DbContext</param>
+public sealed class ClientService(IClientRepository repo, AppDbContext db)
 {
     /// <summary>条件に一致するクライアント一覧と総件数を返します。</summary>
     /// <param name="dto">検索条件（キーワード・期間・状態・ページング・並び順）</param>
@@ -61,17 +62,11 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
     {
         var (privPem, pubPem, fingerprint) = GenerateRsaKeys();
         var now = DateTime.Now;
-        var c = new ClientEntity
+        // dto.Adapt<ClientEntity>() が Name/PostCode/Pref/City/Address/Building/Tel/Email を
+        // Mapsterで自動マッピングする。生成規則・個別ロジックがある項目のみwithで上書きする。
+        var c = dto.Adapt<ClientEntity>() with
         {
-            Name        = dto.Name,
             Identifier  = GenerateHex(8),
-            PostCode    = dto.PostCode,
-            Pref        = dto.Pref,
-            City        = dto.City,
-            Address     = dto.Address,
-            Building    = dto.Building,
-            Tel         = dto.Tel,
-            Email       = dto.Email,
             AccessToken = GenerateHex(32),
             PrivateKey  = privPem,
             PublicKey   = pubPem,
@@ -204,6 +199,9 @@ public sealed class ClientInteractor(IClientRepository repo, AppDbContext db)
         }
     }
 
+    /// <summary>クライアントEntityを詳細VOへ変換します。</summary>
+    /// <param name="c">クライアントEntity</param>
+    /// <returns>クライアント詳細VO</returns>
     private static ClientDetailVo ToDetail(ClientEntity c) => new(
         c.Id, c.Name, c.Identifier, c.PostCode, c.Pref, c.City, c.Address, c.Building, c.Tel, c.Email,
         c.Status, c.StartAt, c.StopAt, c.CreatedAt, c.UpdatedAt, c.Version);

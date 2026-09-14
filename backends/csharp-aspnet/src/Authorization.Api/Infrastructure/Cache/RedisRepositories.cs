@@ -1,8 +1,6 @@
-/*
- * Redis キャッシュリポジトリモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Gate;
 using Authorization.Api.Domain.Invitation;
@@ -31,6 +29,8 @@ public static class RedisConnection
 }
 
 /// <summary>Redis による Gate JWT キャッシュです。</summary>
+/// <param name="redis">Redis接続</param>
+/// <param name="app">アプリケーション設定</param>
 public sealed class RedisGateRepository(IConnectionMultiplexer redis, AppSettings app) : IGateCacheRepository
 {
     /// <summary>Redisキーを組み立てます。</summary>
@@ -52,6 +52,8 @@ public sealed class RedisGateRepository(IConnectionMultiplexer redis, AppSetting
 }
 
 /// <summary>Redis による招待認可キャッシュです。</summary>
+/// <param name="redis">Redis接続</param>
+/// <param name="app">アプリケーション設定</param>
 public sealed class RedisInvitationAuthRepository(IConnectionMultiplexer redis, AppSettings app) : IInvitationAuthRepository
 {
     /// <summary>Redisキーを組み立てます。</summary>
@@ -67,6 +69,13 @@ public sealed class RedisInvitationAuthRepository(IConnectionMultiplexer redis, 
     public async Task<int?> GetRoleAsync(string token, CancellationToken ct = default)
     {
         var v = await redis.GetDatabase().StringGetAsync(Key(token));
+        return v.IsNullOrEmpty ? null : int.TryParse(v.ToString(), out var role) ? role : null;
+    }
+
+    /// <inheritdoc/>
+    public async Task<int?> ConsumeRoleAsync(string token, CancellationToken ct = default)
+    {
+        var v = await redis.GetDatabase().StringGetDeleteAsync(Key(token));
         return v.IsNullOrEmpty ? null : int.TryParse(v.ToString(), out var role) ? role : null;
     }
 

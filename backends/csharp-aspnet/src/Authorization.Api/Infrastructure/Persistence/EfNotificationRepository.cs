@@ -1,8 +1,6 @@
-/*
- * 通知リポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text;
 using Authorization.Api.Domain.Notification;
 using Authorization.Api.Infrastructure.Db;
@@ -14,6 +12,7 @@ using NotificationEntity = Authorization.Api.Domain.Notification.Notification;
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core による通知リポジトリです。</summary>
+/// <param name="db">DbContext</param>
 public sealed class EfNotificationRepository(AppDbContext db) : INotificationRepository
 {
     /// <inheritdoc/>
@@ -88,10 +87,10 @@ public sealed class EfNotificationRepository(AppDbContext db) : INotificationRep
     }
 
     /// <inheritdoc/>
-    public async Task<bool> MarkReadAsync(long id, CancellationToken ct = default)
+    public async Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default)
     {
         var now  = DateTime.Now;
-        var rows = await db.Notifications.Where(n => n.Id == id).ExecuteUpdateAsync(u => u
+        var rows = await db.Notifications.Where(n => n.Id == id && n.StaffId == staffId).ExecuteUpdateAsync(u => u
             .SetProperty(n => n.Read, true)
             .SetProperty(n => n.UpdatedAt, now), ct);
         return rows > 0;

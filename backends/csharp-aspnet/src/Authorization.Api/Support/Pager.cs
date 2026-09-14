@@ -1,8 +1,6 @@
-/*
- * ページャー算出モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 namespace Authorization.Api.Support;
 
 /// <summary>一覧 API のページャー情報です（openapi.yml の Pager スキーマに対応）。</summary>

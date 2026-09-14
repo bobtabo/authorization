@@ -1,8 +1,6 @@
-/*
- * 招待リポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Security.Cryptography;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Invitation;
@@ -13,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core による招待リポジトリです。</summary>
+/// <param name="db">DbContext</param>
+/// <param name="app">アプリケーション設定</param>
 public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : IInvitationRepository
 {
     /// <inheritdoc/>
@@ -51,6 +51,15 @@ public sealed class EfInvitationRepository(AppDbContext db, AppSettings app) : I
         var m = await db.Invitations.AsNoTracking()
             .FirstOrDefaultAsync(i => i.Token == token && i.DeletedAt == null, ct);
         return m is null ? null : BuildVo(m.Token, m.Role, app.FrontendUrl);
+    }
+
+    /// <inheritdoc/>
+    public async Task RetireAsync(string token, CancellationToken ct = default)
+    {
+        var now = DateTime.Now;
+        await db.Invitations.Where(i => i.Token == token && i.DeletedAt == null).ExecuteUpdateAsync(u => u
+            .SetProperty(x => x.DeletedAt, now)
+            .SetProperty(x => x.UpdatedAt, now), ct);
     }
 
     /// <summary>招待 URL と表示用 URL を組み立てます。</summary>

@@ -1,8 +1,6 @@
-/*
- * 招待 ドメインモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 namespace Authorization.Api.Domain.Invitation;
 
 /// <summary>招待 VO です。</summary>
@@ -28,6 +26,14 @@ public interface IInvitationRepository
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>招待、存在しない場合はnull</returns>
     Task<InvitationVo?> FindByTokenAsync(string token, CancellationToken ct = default);
+
+    /// <summary>
+    /// 招待トークンを論理削除します（ローテーション時に古いトークンを無効化し、
+    /// 以後 <see cref="FindByTokenAsync"/> がキャッシュを再生成できないようにするため）。
+    /// </summary>
+    /// <param name="token">招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    Task RetireAsync(string token, CancellationToken ct = default);
 }
 
 /// <summary>招待トークン→ロールの認可キャッシュです（Redis 等）。</summary>
@@ -45,6 +51,15 @@ public interface IInvitationAuthRepository
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>ロール種別、無ければnull</returns>
     Task<int?> GetRoleAsync(string token, CancellationToken ct = default);
+
+    /// <summary>
+    /// 招待トークンに対応するロールを取得し、同一操作でトークンを削除します。
+    /// 並行するリクエストが同じトークンを取得できないよう、取得と削除をアトミックに行います。
+    /// </summary>
+    /// <param name="token">招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>ロール種別、無ければnull</returns>
+    Task<int?> ConsumeRoleAsync(string token, CancellationToken ct = default);
 
     /// <summary>招待トークンのキャッシュを削除します。</summary>
     /// <param name="token">招待トークン</param>

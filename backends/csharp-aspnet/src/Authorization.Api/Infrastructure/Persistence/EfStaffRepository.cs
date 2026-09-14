@@ -1,18 +1,18 @@
-/*
- * スタッフリポジトリ（EF Core）モジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Infrastructure.Db;
 using Authorization.Api.Infrastructure.Model;
 using Authorization.Api.Support;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using StaffEntity = Authorization.Api.Domain.Staff.Staff;
 
 namespace Authorization.Api.Infrastructure.Persistence;
 
 /// <summary>EF Core によるスタッフリポジトリです。</summary>
+/// <param name="db">DbContext</param>
 public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
 {
     /// <summary>検索条件（キーワード・ロール）をクエリに適用します（ページング・並び順は含まない）。</summary>
@@ -78,21 +78,11 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
     {
         if (s.Id == 0)
         {
-            var m = new StaffModel
-            {
-                Name        = s.Name,
-                Email       = s.Email,
-                Provider    = s.Provider,
-                ProviderId  = s.ProviderId,
-                Avatar      = s.Avatar,
-                Role        = s.Role,
-                LastLoginAt = s.LastLoginAt,
-                CreatedAt   = s.CreatedAt,
-                CreatedBy   = (int)(s.CreatedBy ?? 0),
-                UpdatedAt   = s.UpdatedAt,
-                UpdatedBy   = (int)(s.UpdatedBy ?? 0),
-                Version     = s.Version,
-            };
+            // s.Adapt<StaffModel>() がフィールドをMapsterで自動マッピングする。
+            // CreatedBy/UpdatedByはlong?→intの既定値変換（nullは0）が必要なため明示的に設定する。
+            var m = s.Adapt<StaffModel>();
+            m.CreatedBy = (int)(s.CreatedBy ?? 0);
+            m.UpdatedBy = (int)(s.UpdatedBy ?? 0);
             db.Staffs.Add(m);
             await db.SaveChangesAsync(ct);
             db.Entry(m).State = EntityState.Detached;
@@ -153,22 +143,5 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
     /// <summary>DBモデルをドメインエンティティに変換します。</summary>
     /// <param name="m">DBモデル</param>
     /// <returns>ドメインエンティティ</returns>
-    private static StaffEntity ToEntity(StaffModel m) => new()
-    {
-        Id          = m.Id,
-        Name        = m.Name,
-        Email       = m.Email,
-        Provider    = m.Provider,
-        ProviderId  = m.ProviderId,
-        Avatar      = m.Avatar,
-        Role        = m.Role,
-        LastLoginAt = m.LastLoginAt,
-        CreatedAt   = m.CreatedAt,
-        CreatedBy   = m.CreatedBy,
-        UpdatedAt   = m.UpdatedAt,
-        UpdatedBy   = m.UpdatedBy,
-        DeletedAt   = m.DeletedAt,
-        DeletedBy   = m.DeletedBy,
-        Version     = m.Version,
-    };
+    private static StaffEntity ToEntity(StaffModel m) => m.Adapt<StaffEntity>();
 }

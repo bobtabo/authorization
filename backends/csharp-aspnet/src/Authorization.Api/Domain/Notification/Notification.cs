@@ -1,8 +1,6 @@
-/*
- * 通知 ドメインモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 namespace Authorization.Api.Domain.Notification;
 
 /// <summary>通知メッセージ種別です。</summary>
@@ -71,9 +69,10 @@ public interface INotificationRepository
     /// <param name="ct">キャンセレーショントークン</param>
     Task StoreAsync(long staffId, int messageType, string title, string message, long createdBy, string? url, CancellationToken ct = default);
 
-    /// <summary>1 件を既読にします。</summary>
+    /// <summary>1 件を既読にします。他スタッフの通知を既読にできないよう staffId でも絞り込みます。</summary>
     /// <param name="id">通知ID</param>
+    /// <param name="staffId">スタッフID（所有者チェック用）</param>
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>更新できた場合は true</returns>
-    Task<bool> MarkReadAsync(long id, CancellationToken ct = default);
+    Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default);
 }

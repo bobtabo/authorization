@@ -1,8 +1,6 @@
-/*
- * 通知ユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Notification;
 using Authorization.Api.Domain.Staff;
 
@@ -11,11 +9,14 @@ namespace Authorization.Api.UseCase.Notification;
 /// <summary>全スタッフ配信 DTO です。</summary>
 public sealed record NotificationFanOutDto(int MessageType, string Title, string Message, long ExecutorId, string Url = "");
 
-/// <summary>通知ユースケースです。</summary>
-public sealed class NotificationInteractor(
+/// <summary>通知Serviceクラスです。</summary>
+/// <param name="repo">通知リポジトリ</param>
+/// <param name="staffRepo">スタッフリポジトリ</param>
+/// <param name="logger">ロガー（省略可）</param>
+public sealed class NotificationService(
     INotificationRepository repo,
     IStaffRepository staffRepo,
-    ILogger<NotificationInteractor>? logger = null)
+    ILogger<NotificationService>? logger = null)
 {
     /// <summary>cursor ページネーションで通知一覧を返します。limit は 1〜100 に丸めます。</summary>
     /// <param name="staffId">スタッフID</param>
@@ -61,7 +62,9 @@ public sealed class NotificationInteractor(
 
     /// <summary>1 件を既読にします。</summary>
     /// <param name="id">通知ID</param>
+    /// <param name="staffId">スタッフID（所有者チェック用）</param>
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>更新できた場合は true</returns>
-    public Task<bool> MarkReadAsync(long id, CancellationToken ct = default) => repo.MarkReadAsync(id, ct);
+    public Task<bool> MarkReadAsync(long id, long staffId, CancellationToken ct = default) =>
+        repo.MarkReadAsync(id, staffId, ct);
 }

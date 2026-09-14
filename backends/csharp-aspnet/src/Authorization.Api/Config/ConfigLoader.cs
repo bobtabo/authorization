@@ -1,10 +1,6 @@
-/*
- * 設定読み込みモジュール。
- *
- * .env ファイルと環境変数から AppConfig を組み立てます。環境変数が優先されます。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 namespace Authorization.Api.Config;
 
 /// <summary>.env と環境変数から設定を読み込みます。</summary>

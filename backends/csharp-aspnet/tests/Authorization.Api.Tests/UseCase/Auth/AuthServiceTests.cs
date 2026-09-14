@@ -5,7 +5,7 @@ using Authorization.Api.UseCase.Auth;
 
 namespace Authorization.Api.Tests.UseCase.Auth;
 
-public class AuthInteractorTests
+public class AuthServiceTests
 {
     private static Authorization.Api.Domain.Staff.Staff MakeStaff(long id, int provider, string providerId) => new()
     {
@@ -20,7 +20,7 @@ public class AuthInteractorTests
     [Fact]
     public async Task FindUserAsync_NotFound_ThrowsNotFound()
     {
-        var uc = new AuthInteractor(new FakeStaffRepository(), new FakeInvitationAuthRepository());
+        var uc = new AuthService(new FakeStaffRepository(), new FakeInvitationAuthRepository());
 
         var ex = await Assert.ThrowsAsync<AppException>(() => uc.FindUserAsync(999));
 
@@ -31,7 +31,7 @@ public class AuthInteractorTests
     public async Task LoginAsync_ExistingStaff_UpdatesAvatarAndLastLogin()
     {
         var staffRepo = new FakeStaffRepository().Add(MakeStaff(1, StaffProvider.Google, "g-1"));
-        var uc = new AuthInteractor(staffRepo, new FakeInvitationAuthRepository());
+        var uc = new AuthService(staffRepo, new FakeInvitationAuthRepository());
 
         var staff = await uc.LoginAsync(new LoginDto(StaffProvider.Google, "g-1", "New Name", "new@example.com", "avatar.png"));
 
@@ -42,7 +42,7 @@ public class AuthInteractorTests
     [Fact]
     public async Task LoginAsync_NewStaffWithoutInvitationToken_ThrowsForbidden()
     {
-        var uc = new AuthInteractor(new FakeStaffRepository(), new FakeInvitationAuthRepository());
+        var uc = new AuthService(new FakeStaffRepository(), new FakeInvitationAuthRepository());
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
             uc.LoginAsync(new LoginDto(StaffProvider.Google, "g-new", "Name", "a@example.com", null)));
@@ -53,7 +53,7 @@ public class AuthInteractorTests
     [Fact]
     public async Task LoginAsync_NewStaffWithInvalidInvitationToken_ThrowsForbidden()
     {
-        var uc = new AuthInteractor(new FakeStaffRepository(), new FakeInvitationAuthRepository());
+        var uc = new AuthService(new FakeStaffRepository(), new FakeInvitationAuthRepository());
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
             uc.LoginAsync(new LoginDto(StaffProvider.Google, "g-new", "Name", "a@example.com", null, InvitationToken: "unknown-token")));
@@ -66,7 +66,7 @@ public class AuthInteractorTests
     {
         var staffRepo      = new FakeStaffRepository();
         var invitationRepo = new FakeInvitationAuthRepository().Add("tok-1", StaffRole.Admin);
-        var uc = new AuthInteractor(staffRepo, invitationRepo);
+        var uc = new AuthService(staffRepo, invitationRepo);
 
         var staff = await uc.LoginAsync(new LoginDto(StaffProvider.Google, "g-new", "New", "new@example.com", null, InvitationToken: "tok-1"));
 
@@ -79,7 +79,7 @@ public class AuthInteractorTests
     {
         var staffRepo      = new FakeStaffRepository();
         var invitationRepo = new FakeInvitationAuthRepository().Add("tok-1", 999);
-        var uc = new AuthInteractor(staffRepo, invitationRepo);
+        var uc = new AuthService(staffRepo, invitationRepo);
 
         var staff = await uc.LoginAsync(new LoginDto(StaffProvider.Google, "g-new", "New", "new@example.com", null, InvitationToken: "tok-1"));
 

@@ -1,8 +1,6 @@
-/*
- * スタッフユースケースモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
 
@@ -14,8 +12,9 @@ public sealed record StaffUpdateRoleDto(long Id, int Role, long ExecutorId);
 /// <summary>削除 DTO です。</summary>
 public sealed record StaffDestroyDto(long Id, long ExecutorId);
 
-/// <summary>スタッフユースケースです。</summary>
-public sealed class StaffInteractor(IStaffRepository repo)
+/// <summary>スタッフServiceクラスです。</summary>
+/// <param name="repo">スタッフリポジトリ</param>
+public sealed class StaffService(IStaffRepository repo)
 {
     /// <summary>条件に一致するスタッフ一覧と総件数を返します。</summary>
     /// <param name="cond">検索条件（キーワード・ロール・ページング・並び順）</param>

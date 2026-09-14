@@ -1,8 +1,6 @@
-/*
- * DI 登録・ルーティング・例外ハンドリングモジュール。
- *
- * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
- */
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Text.Json;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Client;
@@ -59,17 +57,17 @@ public static class AppModule
         services.AddSingleton<IInvitationAuthRepository, RedisInvitationAuthRepository>();
         services.AddSingleton<IMailer, SesMailer>();
 
-        services.AddScoped<AuthInteractor>();
-        services.AddScoped<ClientInteractor>();
-        services.AddScoped<StaffInteractor>();
-        services.AddScoped<InvitationInteractor>();
-        services.AddScoped<NotificationInteractor>();
-        services.AddScoped(sp => new GateInteractor(
+        services.AddScoped<AuthService>();
+        services.AddScoped<ClientService>();
+        services.AddScoped<StaffService>();
+        services.AddScoped<InvitationService>();
+        services.AddScoped<NotificationService>();
+        services.AddScoped(sp => new GateService(
             sp.GetRequiredService<IClientRepository>(),
             sp.GetRequiredService<IGateCacheRepository>(),
             cfg.Jwt,
             sp.GetRequiredService<IJwtHistoryRepository>(),
-            sp.GetRequiredService<ILogger<GateInteractor>>()));
+            sp.GetRequiredService<ILogger<GateService>>()));
 
         services.AddScoped<AuthHandler>();
         services.AddScoped<ClientHandler>();
@@ -158,7 +156,7 @@ public static class AppModule
         api.MapGet("/notifications/counts", (HttpRequest req, NotificationHandler h, CancellationToken ct) => h.CountsAsync(req, ct));
         api.MapGet("/notifications",        (HttpRequest req, NotificationHandler h, CancellationToken ct) => h.IndexAsync(req, ct));
         api.MapPatch("/notifications",      (HttpRequest req, NotificationHandler h, CancellationToken ct) => h.ReadAllAsync(req, ct));
-        api.MapPatch("/notifications/{id}", (string id, NotificationHandler h, CancellationToken ct) => h.ReadAsync(id, ct));
+        api.MapPatch("/notifications/{id}", (string id, HttpRequest req, NotificationHandler h, CancellationToken ct) => h.ReadAsync(id, req, ct));
 
         return app;
     }
