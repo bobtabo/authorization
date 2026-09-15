@@ -22,11 +22,15 @@ public static class TestHelper
 {
     private static readonly Lazy<AppConfig> LazyConfig = new(() =>
     {
-        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APP_ENV")))
-        {
-            Environment.SetEnvironmentVariable("APP_ENV", "testing");
-        }
-        return ConfigLoader.Load();
+        Environment.SetEnvironmentVariable("APP_ENV", "testing");
+        var cfg = ConfigLoader.Load();
+
+        if (cfg.App.Env != "testing")
+            throw new InvalidOperationException($"integration tests require APP_ENV=testing (actual: {cfg.App.Env})");
+        if (!cfg.Db.Database.EndsWith("_test", StringComparison.Ordinal))
+            throw new InvalidOperationException($"integration tests require a *_test database (actual: {cfg.Db.Database})");
+
+        return cfg;
     });
 
     private static readonly Lazy<IConnectionMultiplexer> LazyRedis = new(() =>

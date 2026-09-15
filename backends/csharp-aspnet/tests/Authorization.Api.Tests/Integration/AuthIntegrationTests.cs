@@ -58,7 +58,12 @@ public class AuthIntegrationTests(IntegrationWebAppFactory factory) : Integratio
 
         Assert.Equal(HttpStatusCode.OK, res.StatusCode);
         Assert.True(res.Headers.TryGetValues("Set-Cookie", out var cookies));
-        Assert.Contains(cookies!, c => c.StartsWith("staff_id=", StringComparison.Ordinal));
+        var cookie = Assert.Single(cookies!, c => c.StartsWith("staff_id=", StringComparison.Ordinal));
+        var attrs  = cookie.Split(';').Select(a => a.Trim()).ToList();
+        Assert.Equal("staff_id=", attrs[0]);
+        Assert.Contains("max-age=0", attrs, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("path=/", attrs, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("httponly", attrs, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
