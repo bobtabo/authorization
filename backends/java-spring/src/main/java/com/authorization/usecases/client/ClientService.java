@@ -107,13 +107,14 @@ public class ClientService extends AbstractService {
      *
      * @param dto クライアントDTO
      * @return クライアント詳細ValueObject
+     * @throws AppException 存在しない場合（404）
      */
     public ClientDetailVo show(ClientDto dto) {
         ClientCondition condition = conditionMapper.toCondition(dto);
         Client entity = repository.findById(condition);
 
         if (entity == null) {
-            return new ClientDetailVo();
+            throw AppException.notFound("client_not_found");
         }
         return apiMapper.toDetailVo(entity);
     }

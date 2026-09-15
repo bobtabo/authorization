@@ -21,16 +21,13 @@ import org.mapstruct.MappingTarget;
 public interface InvitationRecordMapper {
 
     /**
-     * jOOQレコードを招待Entityへ変換します。createdBy/updatedBy/deletedAt/deletedBy は既存実装から
-     * 引き続き設定しません（招待情報の表示ではこれらを使用しないため）。
+     * jOOQレコードを招待Entityへ変換します。createdBy/updatedBy/deletedAt/deletedBy も
+     * マッピングします（issue()がこのEntityを再度fillRecordで書き戻すため、無視すると
+     * created_by等がnullになってUPDATEが失敗する）。
      *
      * @param rec jOOQレコード
      * @return 招待Entity
      */
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "deletedAt", ignore = true)
-    @Mapping(target = "deletedBy", ignore = true)
     Invitation toEntity(InvitationsRecord rec);
 
     /**
