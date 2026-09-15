@@ -154,6 +154,15 @@ dotnet test tests/Authorization.Api.Tests
 
 Service 層のユニットテスト（xUnit）です。手書きの Fake リポジトリを使い、モックライブラリには依存していません。
 
+DB/Redis 接続先は `.env.testing`（ベース設定）と `.env.testing.local`（存在すればローカル上書き）を
+マージして読み込みます（`ConfigLoader.Load`）。
+
+- `.env.testing`: CI で使用。GitHub Actions の MySQL/Redis サービスコンテナは `127.0.0.1` で
+  待ち受けるため、このホスト名のままで動作する（CI では `DB_HOST`/`REDIS_HOST` 等を実行環境変数として
+  直接指定しており、実際にはこのファイルの値より優先される）
+- `.env.testing.local`: ローカルの Docker コンテナ内から実行する場合に使用。`127.0.0.1` はコンテナ
+  自身を指してしまうため、`DB_HOST`/`REDIS_HOST` を `host.docker.internal` に変更したもの
+
 ---
 
 ## :whale: Docker
