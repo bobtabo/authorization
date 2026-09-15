@@ -3,7 +3,7 @@
 &nbsp;&nbsp;
 <a href="https://spring.io/projects/spring-boot" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/spring/spring-original.svg" height="72" alt="Spring Boot"></a>
 &nbsp;&nbsp;
-<a href="https://www.jooq.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/gradle/gradle-original.svg" height="72" alt="Gradle"></a>
+<a href="https://gradle.org/" target="_blank"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/gradle/gradle-original.svg" height="72" alt="Gradle"></a>
 </p>
 
 <p align="center">
