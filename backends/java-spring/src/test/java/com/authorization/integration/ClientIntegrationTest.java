@@ -72,7 +72,7 @@ class ClientIntegrationTest {
     void showNonexistentIdReturnsError() {
         EntityExchangeResult<Map> result = client.get().uri("/api/clients/99999").exchange().expectBody(Map.class).returnResult();
 
-        assertThat(result.getStatus().value()).isNotEqualTo(200);
+        assertThat(result.getStatus().value()).isEqualTo(404);
     }
 
     @Test
@@ -151,7 +151,7 @@ class ClientIntegrationTest {
     void qrNonexistentIdentifierReturnsError() {
         EntityExchangeResult<Map> result = client.get().uri("/api/clients/nonexistent-identifier/qr").exchange().expectBody(Map.class).returnResult();
 
-        assertThat(result.getStatus().value()).isNotEqualTo(200);
+        assertThat(result.getStatus().value()).isEqualTo(404);
     }
 
     @Test
@@ -170,7 +170,7 @@ class ClientIntegrationTest {
     void infoNonexistentIdentifierReturnsError() {
         EntityExchangeResult<Map> result = client.get().uri("/api/clients/nonexistent-identifier/info").exchange().expectBody(Map.class).returnResult();
 
-        assertThat(result.getStatus().value()).isNotEqualTo(200);
+        assertThat(result.getStatus().value()).isEqualTo(404);
     }
 
     @Test
@@ -187,7 +187,7 @@ class ClientIntegrationTest {
     void startNonexistentIdentifierReturnsError() {
         EntityExchangeResult<Map> result = client.patch().uri("/api/clients/nonexistent-identifier/start").exchange().expectBody(Map.class).returnResult();
 
-        assertThat(result.getStatus().value()).isNotEqualTo(200);
+        assertThat(result.getStatus().value()).isEqualTo(404);
     }
 
     @Test
@@ -206,6 +206,6 @@ class ClientIntegrationTest {
     void stopNonexistentIdentifierReturnsError() {
         EntityExchangeResult<Map> result = client.patch().uri("/api/clients/nonexistent-identifier/stop").exchange().expectBody(Map.class).returnResult();
 
-        assertThat(result.getStatus().value()).isNotEqualTo(200);
+        assertThat(result.getStatus().value()).isEqualTo(404);
     }
 }

@@ -5,10 +5,12 @@
  */
 package com.authorization.integration;
 
+import static com.authorization.jooq.Tables.STAFFS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 import com.authorization.Application;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,14 +77,17 @@ class StaffIntegrationTest {
 
         assertThat(result.getStatus().value()).isEqualTo(200);
         assertThat(((Number) result.getResponseBody().get("id")).longValue()).isEqualTo(target.id());
+        Long persistedRole = TestHelper.dsl().select(STAFFS.ROLE).from(STAFFS)
+                .where(STAFFS.ID.eq(target.id())).fetchOne(STAFFS.ROLE);
+        assertThat(persistedRole).isEqualTo(1L);
     }
 
     @Test
     void restoreRestoresDeletedStaffAndReturnsId() {
         var staff = TestHelper.createStaff();
-        TestHelper.dsl().update(com.authorization.jooq.Tables.STAFFS)
-                .set(com.authorization.jooq.Tables.STAFFS.DELETED_AT, java.time.LocalDateTime.now())
-                .where(com.authorization.jooq.Tables.STAFFS.ID.eq(staff.id()))
+        TestHelper.dsl().update(STAFFS)
+                .set(STAFFS.DELETED_AT, LocalDateTime.now())
+                .where(STAFFS.ID.eq(staff.id()))
                 .execute();
 
         EntityExchangeResult<Map> result = client.patch()
@@ -93,6 +98,9 @@ class StaffIntegrationTest {
 
         assertThat(result.getStatus().value()).isEqualTo(200);
         assertThat(((Number) result.getResponseBody().get("id")).longValue()).isEqualTo(staff.id());
+        LocalDateTime deletedAt = TestHelper.dsl().select(STAFFS.DELETED_AT).from(STAFFS)
+                .where(STAFFS.ID.eq(staff.id())).fetchOne(STAFFS.DELETED_AT);
+        assertThat(deletedAt).isNull();
     }
 
     @Test
@@ -111,5 +119,8 @@ class StaffIntegrationTest {
 
         assertThat(result.getStatus().value()).isEqualTo(200);
         assertThat(((Number) result.getResponseBody().get("id")).longValue()).isEqualTo(target.id());
+        LocalDateTime deletedAt = TestHelper.dsl().select(STAFFS.DELETED_AT).from(STAFFS)
+                .where(STAFFS.ID.eq(target.id())).fetchOne(STAFFS.DELETED_AT);
+        assertThat(deletedAt).isNotNull();
     }
 }

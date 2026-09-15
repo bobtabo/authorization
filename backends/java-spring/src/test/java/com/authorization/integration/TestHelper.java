@@ -62,6 +62,7 @@ public final class TestHelper {
     private static final String CACHED_PUBLIC_KEY_PEM = toPem("PUBLIC KEY", CACHED_KEY_PAIR.getPublic().getEncoded());
 
     static {
+        verifyTestEnvironment();
         ensureSchema();
     }
 
@@ -81,11 +82,20 @@ public final class TestHelper {
      * 全テーブルのデータと Redis のキーを全て削除します。テストの前処理として呼び出します。
      */
     public static void truncateTables() {
-        DSL.execute("SET FOREIGN_KEY_CHECKS=0");
-        for (String table : new String[] {"jwt_histories", "notifications", "invitations", "clients", "staffs"}) {
-            DSL.execute("TRUNCATE TABLE " + table);
-        }
-        DSL.execute("SET FOREIGN_KEY_CHECKS=1");
+        // SET FOREIGN_KEY_CHECKS はセッション（接続）単位の設定のため、TRUNCATEと同じ
+        // 物理接続で実行する必要がある。DSL.execute()の呼び出しごとにHikariプールから
+        // 接続を取得し直すと、別の接続でTRUNCATEが実行されFK制約に阻まれる可能性がある。
+        DSL.connection(connection -> {
+            DSLContext ctx = org.jooq.impl.DSL.using(connection);
+            try {
+                ctx.execute("SET FOREIGN_KEY_CHECKS=0");
+                for (String table : new String[] {"jwt_histories", "notifications", "invitations", "clients", "staffs"}) {
+                    ctx.execute("TRUNCATE TABLE " + table);
+                }
+            } finally {
+                ctx.execute("SET FOREIGN_KEY_CHECKS=1");
+            }
+        });
         try (var jedis = JEDIS_POOL.getResource()) {
             jedis.flushDB();
         }
@@ -263,6 +273,24 @@ public final class TestHelper {
     private static String toPem(String label, byte[] der) {
         String body = Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(der);
         return "-----BEGIN " + label + "-----\n" + body + "\n-----END " + label + "-----\n";
+    }
+
+    /**
+     * 接続先が誤ってテスト用以外（開発DB等）を向いていないか検証します。ENV_FILE未指定時に
+     * ConfigLoaderの既定値（.env）が読み込まれてしまうと、本番/開発相当のDBに対して
+     * truncateTables()（TRUNCATE + Redis FLUSHDB）が実行されてしまうため、
+     * APP_ENVとDB名を確認し、満たさない場合はテスト自体を起動不可にする。
+     */
+    private static void verifyTestEnvironment() {
+        if (!"testing".equals(CFG.app().env())) {
+            throw new IllegalStateException(
+                    "integration tests require APP_ENV=testing (actual: " + CFG.app().env() + "). "
+                            + "ENV_FILE が未指定、または .env.testing/.env.testing.local 以外を指している可能性があります。");
+        }
+        if (!CFG.db().database().endsWith("_test")) {
+            throw new IllegalStateException(
+                    "integration tests require a *_test database (actual: " + CFG.db().database() + ")");
+        }
     }
 
     /**

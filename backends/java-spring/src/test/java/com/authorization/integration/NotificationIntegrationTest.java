@@ -5,6 +5,7 @@
  */
 package com.authorization.integration;
 
+import static com.authorization.jooq.Tables.NOTIFICATIONS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
@@ -111,6 +112,10 @@ class NotificationIntegrationTest {
                 .returnResult();
 
         assertThat(result.getStatus().value()).isEqualTo(200);
+        int unreadCount = TestHelper.dsl().selectCount().from(NOTIFICATIONS)
+                .where(NOTIFICATIONS.STAFF_ID.eq(staff.id())).and(NOTIFICATIONS.READ.eq((short) 0))
+                .fetchOne(0, int.class);
+        assertThat(unreadCount).isZero();
     }
 
     @Test
@@ -128,6 +133,7 @@ class NotificationIntegrationTest {
     void readMarksSingleNotificationAsRead() {
         var staff = TestHelper.createStaff();
         var notif = TestHelper.createNotification(staff.id(), "通知1");
+        var other = TestHelper.createNotification(staff.id(), "通知2");
 
         EntityExchangeResult<Map> result = client.patch()
                 .uri("/api/notifications/" + notif.id())
@@ -138,5 +144,12 @@ class NotificationIntegrationTest {
 
         assertThat(result.getStatus().value()).isEqualTo(200);
         assertThat(((Number) result.getResponseBody().get("id")).longValue()).isEqualTo(notif.id());
+        Short readFlag = TestHelper.dsl().select(NOTIFICATIONS.READ).from(NOTIFICATIONS)
+                .where(NOTIFICATIONS.ID.eq(notif.id())).fetchOne(NOTIFICATIONS.READ);
+        assertThat(readFlag).isEqualTo((short) 1);
+        // 更新スコープが対象通知のみに限定されていること（他の通知は未読のまま）を確認する。
+        Short otherReadFlag = TestHelper.dsl().select(NOTIFICATIONS.READ).from(NOTIFICATIONS)
+                .where(NOTIFICATIONS.ID.eq(other.id())).fetchOne(NOTIFICATIONS.READ);
+        assertThat(otherReadFlag).isEqualTo((short) 0);
     }
 }
