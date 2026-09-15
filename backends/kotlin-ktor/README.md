@@ -143,9 +143,17 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ## :test_tube: テスト
 
-```bash
-gradle test
-```
+一部が実 DB/Redis に接続する統合テストのため、`ENV_FILE` で接続先を切り替えます
+（未指定時は `build.gradle.kts` の既定値 `.env.testing.local` が使われます）。
+
+| 環境 | コマンド |
+|---|---|
+| ローカル（Docker コンテナ内） | `gradle test` |
+| CI | `ENV_FILE=.env.testing gradle test` |
+
+- `.env.testing.local`: `DB_HOST`/`REDIS_HOST` が `host.docker.internal`
+  （コンテナ内から見たホストマシン）
+- `.env.testing`: `DB_HOST`/`REDIS_HOST` が `127.0.0.1`（GitHub Actions のサービスコンテナ向け）
 
 ---
 

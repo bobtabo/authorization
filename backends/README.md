@@ -93,6 +93,20 @@
 <td><a href="./ruby-hanami/README.md">README.md</a></td>
 <td align="center">✅ 完了</td>
 </tr>
+<tr>
+<td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg" width="32" height="32" alt="C#"></td>
+<td><a href="https://learn.microsoft.com/dotnet/csharp/"><b>C#</b></a> + <a href="https://learn.microsoft.com/aspnet/core/"><b>ASP.NET Core</b></a></td>
+<td><a href="./csharp-aspnet/"><code>csharp-aspnet/</code></a></td>
+<td><a href="./csharp-aspnet/README.md">README.md</a></td>
+<td align="center">✅ 完了</td>
+</tr>
+<tr>
+<td align="center"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg" width="32" height="32" alt="Java"></td>
+<td><a href="https://openjdk.org/"><b>Java</b></a> + <a href="https://spring.io/projects/spring-boot"><b>Spring Boot</b></a></td>
+<td><a href="./java-spring/"><code>java-spring/</code></a></td>
+<td><a href="./java-spring/README.md">README.md</a></td>
+<td align="center">✅ 完了</td>
+</tr>
 </tbody>
 </table>
 
