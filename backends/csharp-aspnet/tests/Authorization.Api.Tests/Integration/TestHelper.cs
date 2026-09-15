@@ -109,15 +109,18 @@ public static class TestHelper
         var now = DateTime.Now;
         var staff = new StaffModel
         {
-            Name       = name,
-            Email      = email,
-            Provider   = StaffProvider.Google,
-            ProviderId = providerId,
-            Role       = role,
-            CreatedAt  = now,
-            UpdatedAt  = now,
-            DeletedAt  = deleted ? now : null,
-            Version    = 1,
+            Name        = name,
+            Email       = email,
+            Provider    = StaffProvider.Google,
+            ProviderId  = providerId,
+            Role        = role,
+            LastLoginAt = now,
+            CreatedAt   = now,
+            CreatedBy   = 0,
+            UpdatedAt   = now,
+            UpdatedBy   = 0,
+            DeletedAt   = deleted ? now : null,
+            Version     = 1,
         };
         using var db = NewDbContext();
         db.Staffs.Add(staff);
@@ -153,7 +156,9 @@ public static class TestHelper
             Status      = status,
             StartAt     = status == ClientStatus.Active ? now : null,
             CreatedAt   = now,
+            CreatedBy   = 0,
             UpdatedAt   = now,
+            UpdatedBy   = 0,
             Version     = 1,
         };
         using var db = NewDbContext();
@@ -174,7 +179,9 @@ public static class TestHelper
             Token     = token,
             Role      = role,
             CreatedAt = now,
+            CreatedBy = 0,
             UpdatedAt = now,
+            UpdatedBy = 0,
             Version   = 1,
         };
         using var db = NewDbContext();
