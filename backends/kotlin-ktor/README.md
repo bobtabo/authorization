@@ -143,19 +143,17 @@ Docker 環境では `docker compose up -d` で自動起動します。
 
 ## :test_tube: テスト
 
-```bash
-gradle test
-```
+一部が実 DB/Redis に接続する統合テストのため、`ENV_FILE` で接続先を切り替えます
+（未指定時は `build.gradle.kts` の既定値 `.env.testing.local` が使われます）。
 
-DB/Redis 接続先は `ENV_FILE` 環境変数で指定した1ファイルのみを読み込みます（`build.gradle.kts` の
-`tasks.test` が既定値を設定）。
+| 環境 | コマンド |
+|---|---|
+| ローカル（Docker コンテナ内） | `gradle test` |
+| CI | `ENV_FILE=.env.testing gradle test` |
 
-- `.env.testing`: CI で使用（`.github/workflows/kotlin-ci.yml` が `ENV_FILE=.env.testing` を明示的に
-  設定する）。GitHub Actions の MySQL/Redis サービスコンテナは `127.0.0.1` で待ち受けるため、この
-  ホスト名のままで動作する
-- `.env.testing.local`: `ENV_FILE` 未指定時のデフォルト。ローカルの Docker コンテナ内から
-  `gradle test` を実行する場合に使用する。`127.0.0.1` はコンテナ自身を指してしまうため、
-  `DB_HOST`/`REDIS_HOST` を `host.docker.internal` に変更したもの
+- `.env.testing.local`: `DB_HOST`/`REDIS_HOST` が `host.docker.internal`
+  （コンテナ内から見たホストマシン）
+- `.env.testing`: `DB_HOST`/`REDIS_HOST` が `127.0.0.1`（GitHub Actions のサービスコンテナ向け）
 
 ---
 
