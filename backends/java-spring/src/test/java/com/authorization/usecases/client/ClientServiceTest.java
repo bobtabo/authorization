@@ -7,7 +7,6 @@ package com.authorization.usecases.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.authorization.domain.client.entities.Client;
@@ -15,7 +14,6 @@ import com.authorization.domain.client.enums.ClientStatus;
 import com.authorization.domain.client.mappers.ClientApiMapperImpl;
 import com.authorization.domain.client.mappers.ClientConditionMapperImpl;
 import com.authorization.domain.client.mappers.ClientDtoMapperImpl;
-import com.authorization.domain.client.valueobjects.ClientDetailVo;
 import com.authorization.domain.client.valueobjects.ClientStartVo;
 import com.authorization.domain.client.valueobjects.ClientStoreVo;
 import com.authorization.support.exceptions.AppException;
@@ -31,17 +29,19 @@ import org.junit.jupiter.api.Test;
 class ClientServiceTest {
 
     /**
-     * 対象クライアントが存在しない場合、found でない空のValueObjectを返すことを確認します。
+     * 対象クライアントが存在しない場合、404（client_not_found）を投げることを確認します。
      */
     @Test
-    void showReturnsEmptyVoWhenClientDoesNotExist() {
+    void showThrowsNotFoundWhenClientDoesNotExist() {
         ClientService service = newService(new FakeClientRepository());
 
         ClientDto dto = new ClientDto();
         dto.setId(99L);
-        ClientDetailVo vo = service.show(dto);
 
-        assertNull(vo.getId());
+        AppException exception = assertThrows(AppException.class, () -> service.show(dto));
+
+        assertEquals(404, exception.getStatusCode());
+        assertEquals("client_not_found", exception.getMessage());
     }
 
     /**
