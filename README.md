@@ -36,10 +36,12 @@
 ## :building_construction: システム構造
 
 ```.
-├── 📂 backends/           # バックエンド構成（PHP / Go / Kotlin / Python / TypeScript / Ruby / Rust）
+├── 📂 backends/           # バックエンド構成（PHP / Go / Kotlin / Python / TypeScript / Ruby / Rust / C# / Java）
+│   ├── csharp-aspnet/
 │   ├── go-beego/
 │   ├── go-echo/
 │   ├── go-gin/
+│   ├── java-spring/
 │   ├── kotlin-ktor/
 │   ├── php-laravel/
 │   ├── python-fastapi/
@@ -109,6 +111,8 @@
    - `http://localhost:3000/function/kotlin/auth/google/callback`
    - `http://localhost:3000/function/rails/auth/google/callback`
    - `http://localhost:3000/function/hanami/auth/google/callback`
+   - `http://localhost:3000/function/csharp/auth/google/callback`
+   - `http://localhost:3000/function/java/auth/google/callback`
 5. 発行された クライアント ID / クライアントシークレット を、各バックエンドの `.env` の `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` に設定する
 
 #### GitHub Developer Settings
