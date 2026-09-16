@@ -153,8 +153,24 @@ Docker 環境では `docker compose up -d` で自動起動します。
 gradle test
 ```
 
-JUnit 5 によるServiceのユニットテストです。手書きの Fake リポジトリを使い、モックライブラリや実
-DB/Redis 接続には依存していません。ローカル・CI とも同じコマンドで実行できます。
+JUnit 5 によるテストで、2層構成です。
+
+- `usecases/<domain>/*ServiceTest.java`: Service 層のユニットテスト。手書きの Fake リポジトリを
+  使い、モックライブラリや実 DB/Redis 接続には依存しません
+- `integration/*IntegrationTest.java`: 実 HTTP エンドポイント経由の統合テスト
+  （`@SpringBootTest(webEnvironment = RANDOM_PORT)` + `RestTestClient`）。実 MySQL/Redis に
+  接続するため、`gradle test` の実行には DB/Redis への接続が必要です
+
+DB/Redis 接続先は `ENV_FILE` 環境変数で指定した1ファイルのみを読み込みます（`build.gradle.kts` の
+`tasks.test` が既定値を設定）。
+
+| 環境 | コマンド |
+|---|---|
+| ローカル（Docker コンテナ内） | `gradle test` |
+| CI | `ENV_FILE=.env.testing gradle test` |
+
+- `.env.testing.local`: `DB_HOST`/`REDIS_HOST` が `host.docker.internal`
+- `.env.testing`: `DB_HOST`/`REDIS_HOST` が `127.0.0.1`（GitHub Actions のサービスコンテナ向け）
 
 ---
 
