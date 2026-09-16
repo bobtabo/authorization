@@ -152,9 +152,19 @@ Docker 環境では `docker compose up -d` で自動起動します。
 dotnet test tests/Authorization.Api.Tests
 ```
 
-Service 層のユニットテスト（xUnit）です。手書きの Fake リポジトリ（一部は EF Core の SQLite
-インメモリプロバイダ）を使い、モックライブラリや実 DB/Redis 接続には依存していません。
-ローカル・CI とも同じコマンドで実行できます。
+xUnit によるテストで、2層構成です。
+
+- `UseCase/<domain>/*ServiceTests.cs`: Service 層のユニットテスト。手書きの Fake リポジトリ
+  （一部は EF Core の SQLite インメモリプロバイダ）を使い、モックライブラリや実 DB/Redis
+  接続には依存しません
+- `Integration/*IntegrationTests.cs`: 実 HTTP エンドポイント経由の統合テスト
+  （`WebApplicationFactory<Program>`）。実 MySQL/Redis に接続するため、`dotnet test` の
+  実行には DB/Redis への接続が必要です
+
+DB/Redis 接続先は `.env.testing`（ベース設定）と `.env.testing.local`（存在すればローカル上書き、
+`host.docker.internal`）をマージして読み込みます（`ConfigLoader.Load`）。CI では
+`DB_HOST`/`REDIS_HOST` 等を `127.0.0.1` として実行環境変数で直接指定しており、ファイルの値より
+優先されるため、ローカル・CI とも同じコマンドで実行できます。
 
 ---
 
