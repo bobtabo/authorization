@@ -33,6 +33,7 @@ public class StoreResponse extends AbstractResponse {
     private final String stopAt;
     private final String createdAt;
     private final String updatedAt;
+    private final Integer version;
 
     /**
      * コンストラクタ。
@@ -55,5 +56,6 @@ public class StoreResponse extends AbstractResponse {
         this.stopAt = store.getStopAt() != null ? store.getStopAt().format(FMT) : "";
         this.createdAt = store.getCreatedAt() != null ? store.getCreatedAt().format(FMT) : "";
         this.updatedAt = store.getUpdatedAt() != null ? store.getUpdatedAt().format(FMT) : "";
+        this.version = store.getVersion();
     }
 }

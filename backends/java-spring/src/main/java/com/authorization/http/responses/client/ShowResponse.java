@@ -33,6 +33,7 @@ public class ShowResponse extends AbstractResponse {
     private final String stopAt;
     private final String createdAt;
     private final String updatedAt;
+    private final Integer version;
 
     /**
      * コンストラクタ。
@@ -55,5 +56,6 @@ public class ShowResponse extends AbstractResponse {
         this.stopAt = detail.getStopAt() != null ? detail.getStopAt().format(FMT) : "";
         this.createdAt = detail.getCreatedAt() != null ? detail.getCreatedAt().format(FMT) : "";
         this.updatedAt = detail.getUpdatedAt() != null ? detail.getUpdatedAt().format(FMT) : "";
+        this.version = detail.getVersion();
     }
 }
