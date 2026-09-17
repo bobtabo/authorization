@@ -181,6 +181,16 @@ public class JooqStaffRepository implements StaffRepository {
         if (!condition.getRoles().isEmpty()) {
             cond = cond.and(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));
         }
+        if (!condition.getStatuses().isEmpty()) {
+            // staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+            boolean active = condition.getStatuses().contains(1);
+            boolean inactive = condition.getStatuses().contains(0);
+            if (active && !inactive) {
+                cond = cond.and(STAFFS.DELETED_AT.isNull());
+            } else if (inactive && !active) {
+                cond = cond.and(STAFFS.DELETED_AT.isNotNull());
+            }
+        }
         return cond;
     }
 }

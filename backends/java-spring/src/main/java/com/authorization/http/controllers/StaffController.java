@@ -56,6 +56,7 @@ public class StaffController {
      *
      * @param keyword 検索キーワード
      * @param roles 権限フィルタ
+     * @param statuses 状態フィルタ
      * @param sort ソート対象カラム
      * @param sortType ソート順
      * @param limit 取得件数
@@ -66,6 +67,7 @@ public class StaffController {
     public ResponseEntity<Map<String, Object>> index(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) List<Integer> roles,
+            @RequestParam(required = false) List<Integer> statuses,
             @RequestParam(required = false) String sort,
             @RequestParam(name = "sort_type", required = false) String sortType,
             @RequestParam(required = false, defaultValue = "10") int limit,
@@ -73,6 +75,7 @@ public class StaffController {
         StaffDto dto = new StaffDto();
         dto.setKeyword(keyword);
         dto.setRoles(roles == null ? List.of() : roles);
+        dto.setStatuses(statuses == null ? List.of() : statuses);
         dto.setSort(sort == null ? "" : sort);
         dto.setSortType(com.authorization.support.enums.SortType.fromValue(sortType));
         dto.setLimit(limit);
