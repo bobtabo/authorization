@@ -27,6 +27,14 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
             q = q.Where(s => EF.Functions.Like(s.Name, kw) || EF.Functions.Like(s.Email, kw));
         }
         if (cond.Roles.Count > 0) q = q.Where(s => cond.Roles.Contains(s.Role));
+        if (cond.Statuses.Count > 0)
+        {
+            // staffsテーブルにstatusカラムは無く、DeletedAtの有無で有効/無効を判定する。
+            var active   = cond.Statuses.Contains(1);
+            var inactive = cond.Statuses.Contains(0);
+            if (active && !inactive) q = q.Where(s => s.DeletedAt == null);
+            else if (inactive && !active) q = q.Where(s => s.DeletedAt != null);
+        }
         return q;
     }
 

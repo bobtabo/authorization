@@ -55,6 +55,7 @@ public sealed record StaffCondition
 {
     public string?   Keyword  { get; init; }
     public List<int> Roles    { get; init; } = [];
+    public List<int> Statuses { get; init; } = [];
     public int       Offset   { get; init; }
     public int       Limit    { get; init; } = 10;
     public string?   Sort     { get; init; }
