@@ -81,20 +81,6 @@ class AppRequest extends FormRequest
     }
 
     /**
-     * {@inheritdoc}
-     */
-    #[\Override]
-    protected function failedValidation(Validator $validator)
-    {
-        /** @var AppValidator $validator */
-        $exception = (new ValidationException($validator))
-            ->errorBag($this->errorBag)
-            ->redirectTo($this->getRedirectUrl());
-
-        throw $exception;
-    }
-
-    /**
      * クエリ文字列から配列パラメータを取得します。
      *
      * ブラケット付き（`key[]=1&key[]=2`）・ブラケット無しの繰り返しキー
@@ -120,12 +106,26 @@ class AppRequest extends FormRequest
             }
             [$rawKey, $rawValue] = array_pad(explode('=', $pair, 2), 2, '');
             $decodedKey = urldecode($rawKey);
-            if ($decodedKey === $key || $decodedKey === $key . '[]') {
+            if ($decodedKey === $key || $decodedKey === $key.'[]') {
                 $values[] = urldecode($rawValue);
             }
         }
 
         return $values;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    #[\Override]
+    protected function failedValidation(Validator $validator)
+    {
+        /** @var AppValidator $validator */
+        $exception = (new ValidationException($validator))
+            ->errorBag($this->errorBag)
+            ->redirectTo($this->getRedirectUrl());
+
+        throw $exception;
     }
 
     /**
@@ -135,7 +135,7 @@ class AppRequest extends FormRequest
      */
     protected function getExtendValue(): array
     {
-        $agent = new Agent();
+        $agent = new Agent;
         $result = [
             'device' => $agent->device(),
             'platform' => $agent->platform(),
