@@ -17,7 +17,7 @@ RSpec.describe UseCase::Staff::Interactor do
     it "returns items and count from repo" do
       items = [
         Domain::Staff::ListItem.new(id: 1, name: "S1", email: "s1@example.com", role: 2,
-          status: :active, created_at: Time.now, updated_at: Time.now),
+          status: 1, created_at: Time.now, updated_at: Time.now),
       ]
       allow(stub_repo).to receive(:count_by_condition).and_return(1)
       allow(stub_repo).to receive(:find_by_condition).and_return(items)
