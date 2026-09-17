@@ -12,13 +12,15 @@ class Api::StaffsController < Api::BaseController
     limit  = (params[:limit]  || 10).to_i
     page   = (params[:page]   || 1).to_i
     offset = limit * (page - 1)
-    keyword = params[:keyword]
-    roles   = Array(params[:roles]).flat_map { |r| r.to_s.split(",") }.filter_map(&:to_i)
+    keyword  = params[:keyword]
+    roles    = array_query("roles").flat_map { |r| r.split(",") }.filter_map { |r| Integer(r, exception: false) }
+    statuses = array_query("statuses").flat_map { |r| r.split(",") }.filter_map { |r| Integer(r, exception: false) }
 
     result = container[:staff_uc].find_by_condition(
       Domain::Staff::Condition.new(
         keyword:   keyword,
         roles:     roles,
+        statuses:  statuses,
         offset:    offset,
         limit:     limit,
         sort:      params[:sort],

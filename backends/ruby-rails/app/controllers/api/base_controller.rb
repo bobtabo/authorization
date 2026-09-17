@@ -17,6 +17,27 @@ class Api::BaseController < ApplicationController
   # @return [Integer] Cookie から取得したスタッフ ID
   def staff_id_from_cookie = cookies[:staff_id].to_i
 
+  # クエリ文字列から配列パラメータを取得します。
+  #
+  # ブラケット付き（key[]=1&key[]=2）・ブラケット無しの繰り返しキー
+  # （key=1&key=2、OpenAPI仕様の style: form, explode: true）のどちらでも
+  # 配列として取得できます。Rackの標準的なクエリパース（Rack::Utils.parse_nested_query）は
+  # ブラケット無しの繰り返しキーを配列として扱わず最後の値で上書きしてしまうため、
+  # 生のクエリ文字列を自前で解析します。
+  #
+  # @param key [String] パラメータ名
+  # @return [Array<String>] 値の一覧（該当パラメータが無ければ空配列）
+  def array_query(key)
+    query_string = request.query_string
+    return [] if query_string.blank?
+
+    query_string.split("&").filter_map do |pair|
+      raw_key, raw_value = pair.split("=", 2)
+      decoded_key = CGI.unescape(raw_key.to_s)
+      CGI.unescape(raw_value.to_s) if decoded_key == key || decoded_key == "#{key}[]"
+    end
+  end
+
   DEFAULT_PAGE_COUNT = 5
 
   def build_pager(count, limit, offset, record_count)
