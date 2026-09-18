@@ -106,7 +106,7 @@ class AppRequest extends FormRequest
             }
             [$rawKey, $rawValue] = array_pad(explode('=', $pair, 2), 2, '');
             $decodedKey = urldecode($rawKey);
-            if ($decodedKey === $key || $decodedKey === $key.'[]') {
+            if ($decodedKey === $key || $decodedKey === $key . '[]') {
                 $values[] = urldecode($rawValue);
             }
         }
@@ -135,7 +135,7 @@ class AppRequest extends FormRequest
      */
     protected function getExtendValue(): array
     {
-        $agent = new Agent;
+        $agent = new Agent();
         $result = [
             'device' => $agent->device(),
             'platform' => $agent->platform(),
