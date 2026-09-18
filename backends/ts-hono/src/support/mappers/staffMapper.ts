@@ -36,6 +36,7 @@ PojosMetadataMap.create<StaffListItem>(StaffListItemSymbol, {
   email: String,
   role: Number,
   status: Number,
+  version: Number,
   createdAt: () => Date,
   updatedAt: () => Date,
 });

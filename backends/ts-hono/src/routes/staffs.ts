@@ -16,7 +16,7 @@ const app = new Hono();
 
 function mapStaff(s: StaffListItem) {
   return {
-    id: s.id, name: s.name, email: s.email, role: s.role, status: s.status,
+    id: s.id, name: s.name, email: s.email, role: s.role, status: s.status, version: s.version,
     created_at: formatTime(s.createdAt), updated_at: formatTime(s.updatedAt),
   };
 }
@@ -41,12 +41,12 @@ app.get("/staffs", async (c) => {
 
 app.patch("/staffs/:id/updateRole", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
-  const body = await c.req.json<{ role?: number }>();
+  const body = await c.req.json<{ role?: number; version?: number }>();
   if (body.role === undefined) throw badRequest("role_required");
   const executorId = getStaffIdFromCookie(c);
   await db.transaction(async (tx) => {
     const uc = new StaffInteractor(new DrizzleStaffRepository(asTx(tx)));
-    await uc.updateRole(id, body.role!, executorId);
+    await uc.updateRole(id, body.role!, body.version ?? 0, executorId);
   });
   return c.json({ id });
 });
@@ -62,10 +62,11 @@ app.patch("/staffs/:id/restore", async (c) => {
 
 app.delete("/staffs/:id/delete", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
+  const body = await c.req.json<{ version?: number }>();
   const executorId = getStaffIdFromCookie(c);
   await db.transaction(async (tx) => {
     const uc = new StaffInteractor(new DrizzleStaffRepository(asTx(tx)));
-    await uc.destroy(id, executorId);
+    await uc.destroy(id, body.version ?? 0, executorId);
   });
   return c.json({ id });
 });

@@ -34,14 +34,15 @@ export class StaffInteractor {
    * スタッフの権限を更新します。
    * @param staffId - スタッフID
    * @param role - 新しい権限値
+   * @param version - 楽観排他ロック用バージョン
    * @param executorId - 操作者スタッフID
    * @throws AppError 自分自身のロール更新、またはスタッフが存在しない場合
    */
-  async updateRole(staffId: number, role: number, executorId: number): Promise<void> {
+  async updateRole(staffId: number, role: number, version: number, executorId: number): Promise<void> {
     if (staffId === executorId) throw badRequest("cannot_update_own_role");
     const staff = await this.repo.findById(staffId);
     if (!staff) throw notFound("staff_not_found");
-    await this.repo.updateRole(staffId, role, staff.version);
+    await this.repo.updateRole(staffId, role, version);
   }
 
   /**
@@ -58,13 +59,14 @@ export class StaffInteractor {
   /**
    * スタッフを論理削除します。
    * @param staffId - スタッフID
+   * @param version - 楽観排他ロック用バージョン
    * @param executorId - 操作者スタッフID
    * @throws AppError 自分自身の削除、またはスタッフが存在しない場合
    */
-  async destroy(staffId: number, executorId: number): Promise<void> {
+  async destroy(staffId: number, version: number, executorId: number): Promise<void> {
     if (staffId === executorId) throw badRequest("cannot_delete_self");
     const staff = await this.repo.findById(staffId);
     if (!staff) throw notFound("staff_not_found");
-    await this.repo.softDelete(staffId, staff.version);
+    await this.repo.softDelete(staffId, version);
   }
 }
