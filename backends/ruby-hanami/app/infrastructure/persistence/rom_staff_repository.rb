@@ -115,8 +115,8 @@ module Infrastructure
         true
       end
 
-      def restore(id, version)
-        affected = @ds.where(id: id, version: version)
+      def restore(id)
+        affected = @ds.where(id: id).exclude(deleted_at: nil)
                       .update(deleted_at: nil, deleted_by: nil, updated_at: Time.now,
                               version: Sequel[:version] + 1)
         raise Domain::ConflictError if affected == 0
