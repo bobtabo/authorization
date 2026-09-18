@@ -84,11 +84,11 @@ def index(
 
 class UpdateRoleBody(BaseModel):
     role: int
-    version: int
+    version: int = 0
 
 
 class DestroyBody(BaseModel):
-    version: int
+    version: int = 0
 
 
 @router.patch("/staffs/{staff_id}/updateRole")
@@ -112,7 +112,7 @@ def restore(staff_id: int, interactor: StaffInteractor = Depends(get_staff_inter
 @router.delete("/staffs/{staff_id}/delete")
 def destroy(
     staff_id: int,
-    body: DestroyBody,
+    body: DestroyBody = DestroyBody(),
     executor_id: int = Depends(get_staff_id_from_cookie),
     interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
