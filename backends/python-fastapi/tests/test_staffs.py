@@ -55,7 +55,8 @@ class TestDestroy:
     def test_スタッフが削除できる(self, client, db_session):
         staff = make_staff(db_session, email="target@example.com")
         executor = make_staff(db_session, email="executor@example.com")
-        res = client.delete(
+        res = client.request(
+            "DELETE",
             f"/api/staffs/{staff.id}/delete",
             json={"version": staff.version},
             cookies={"staff_id": str(executor.id)},
