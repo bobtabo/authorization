@@ -6,6 +6,7 @@ import (
 	domstaff "authorization-go-echo/internal/domain/staff"
 	"authorization-go-echo/internal/support"
 	"context"
+	"slices"
 	"time"
 )
 
@@ -64,6 +65,15 @@ func (r *EntStaffRepository) applyFilters(q *ent.StaffQuery, cond domstaff.Condi
 	}
 	if len(cond.Roles) > 0 {
 		q = q.Where(staff.RoleIn(cond.Roles...))
+	}
+	// staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+	if len(cond.Statuses) > 0 {
+		active, inactive := slices.Contains(cond.Statuses, 1), slices.Contains(cond.Statuses, 0)
+		if active && !inactive {
+			q = q.Where(staff.DeletedAtIsNil())
+		} else if inactive && !active {
+			q = q.Where(staff.DeletedAtNotNil())
+		}
 	}
 	return q
 }

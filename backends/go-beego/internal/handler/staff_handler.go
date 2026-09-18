@@ -31,6 +31,7 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(ctx.Request.URL.Query()["roles"])
+	cond.Statuses = parseIntList(ctx.Request.URL.Query()["statuses"])
 
 	limit := 10
 	if v := ctx.Input.Query("limit"); v != "" {

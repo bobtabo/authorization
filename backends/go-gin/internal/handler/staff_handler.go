@@ -35,6 +35,7 @@ func (h *StaffHandler) Index(c *gin.Context) {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(c.QueryArray("roles"))
+	cond.Statuses = parseIntList(c.QueryArray("statuses"))
 
 	limit := 10
 	if v := c.Query("limit"); v != "" {

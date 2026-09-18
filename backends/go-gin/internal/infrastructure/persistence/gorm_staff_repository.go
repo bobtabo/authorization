@@ -6,6 +6,7 @@ import (
 	"authorization-go/internal/support"
 	"authorization-go/pkg/apperror"
 	"errors"
+	"slices"
 	"time"
 
 	"gorm.io/gorm"
@@ -72,6 +73,15 @@ func (r *GormStaffRepository) applyFilters(q *gorm.DB, cond domstaff.Condition) 
 	}
 	if len(cond.Roles) > 0 {
 		q = q.Where("role IN ?", cond.Roles)
+	}
+	// staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+	if len(cond.Statuses) > 0 {
+		active, inactive := slices.Contains(cond.Statuses, 1), slices.Contains(cond.Statuses, 0)
+		if active && !inactive {
+			q = q.Where("deleted_at IS NULL")
+		} else if inactive && !active {
+			q = q.Where("deleted_at IS NOT NULL")
+		}
 	}
 	return q
 }

@@ -27,6 +27,7 @@ func (h *StaffHandler) Index(c echo.Context) error {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(c.QueryParams()["roles"])
+	cond.Statuses = parseIntList(c.QueryParams()["statuses"])
 
 	limit := 10
 	if v := c.QueryParam("limit"); v != "" {

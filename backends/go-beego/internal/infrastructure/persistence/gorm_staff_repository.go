@@ -5,6 +5,7 @@ import (
 	"authorization-go-beego/internal/infrastructure/model"
 	"authorization-go-beego/internal/support"
 	"authorization-go-beego/pkg/apperror"
+	"slices"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -63,6 +64,15 @@ func (r *OrmStaffRepository) applyFilters(qs orm.QuerySeter, cond domstaff.Condi
 	}
 	if len(cond.Roles) > 0 {
 		qs = qs.Filter("role__in", cond.Roles)
+	}
+	// staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+	if len(cond.Statuses) > 0 {
+		active, inactive := slices.Contains(cond.Statuses, 1), slices.Contains(cond.Statuses, 0)
+		if active && !inactive {
+			qs = qs.Filter("deleted_at__isnull", true)
+		} else if inactive && !active {
+			qs = qs.Filter("deleted_at__isnull", false)
+		}
 	}
 	return qs
 }
