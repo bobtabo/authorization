@@ -3,69 +3,69 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use sqlx::{MySqlPool, QueryBuilder};
 use crate::domain::client::{
     condition::Condition,
     entity::Client,
     repository::{DomainError, Repository},
 };
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use sqlx::{MySqlPool, QueryBuilder};
 
 #[derive(sqlx::FromRow)]
 struct ClientRow {
-    id:           u64,
-    name:         String,
-    identifier:   String,
-    post_code:    String,
-    pref:         String,
-    city:         String,
-    address:      String,
-    building:     Option<String>,
-    tel:          String,
-    email:        String,
+    id: u64,
+    name: String,
+    identifier: String,
+    post_code: String,
+    pref: String,
+    city: String,
+    address: String,
+    building: Option<String>,
+    tel: String,
+    email: String,
     access_token: String,
-    private_key:  String,
-    public_key:   String,
-    fingerprint:  String,
-    status:       u32,
+    private_key: String,
+    public_key: String,
+    fingerprint: String,
+    status: u32,
     start_at: Option<DateTime<Utc>>,
     stop_at: Option<DateTime<Utc>>,
     created_at: DateTime<Utc>,
-    created_by:   Option<u32>,
+    created_by: Option<u32>,
     updated_at: DateTime<Utc>,
-    updated_by:   Option<u32>,
+    updated_by: Option<u32>,
     deleted_at: Option<DateTime<Utc>>,
-    deleted_by:   Option<u32>,
-    version:      u32,
+    deleted_by: Option<u32>,
+    version: u32,
 }
 
 fn row_to_entity(r: ClientRow) -> Client {
     Client {
-        id:           r.id,
-        name:         r.name,
-        identifier:   r.identifier,
-        post_code:    r.post_code,
-        pref:         r.pref,
-        city:         r.city,
-        address:      r.address,
-        building:     r.building.unwrap_or_default(),
-        tel:          r.tel,
-        email:        r.email,
+        id: r.id,
+        name: r.name,
+        identifier: r.identifier,
+        post_code: r.post_code,
+        pref: r.pref,
+        city: r.city,
+        address: r.address,
+        building: r.building.unwrap_or_default(),
+        tel: r.tel,
+        email: r.email,
         access_token: r.access_token,
-        private_key:  r.private_key,
-        public_key:   r.public_key,
-        fingerprint:  r.fingerprint,
-        status:       r.status as i32,
-        start_at:     r.start_at,
-        stop_at:      r.stop_at,
-        created_at:   r.created_at,
-        created_by:   r.created_by,
-        updated_at:   r.updated_at,
-        updated_by:   r.updated_by,
-        deleted_at:   r.deleted_at,
-        deleted_by:   r.deleted_by,
-        version:      r.version as i32,
+        private_key: r.private_key,
+        public_key: r.public_key,
+        fingerprint: r.fingerprint,
+        status: r.status as i32,
+        start_at: r.start_at,
+        stop_at: r.stop_at,
+        created_at: r.created_at,
+        created_by: r.created_by,
+        updated_at: r.updated_at,
+        updated_by: r.updated_by,
+        deleted_at: r.deleted_at,
+        deleted_by: r.deleted_by,
+        version: r.version as i32,
     }
 }
 
@@ -81,12 +81,10 @@ impl SqlxClientRepository {
     }
 
     async fn fetch_by_id(&self, id: u64) -> Result<Option<Client>, DomainError> {
-        let row = sqlx::query_as::<_, ClientRow>(
-            "SELECT * FROM clients WHERE id = ?"
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let row = sqlx::query_as::<_, ClientRow>("SELECT * FROM clients WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
         Ok(row.map(row_to_entity))
     }
 
@@ -119,9 +117,8 @@ impl SqlxClientRepository {
 #[async_trait]
 impl Repository for SqlxClientRepository {
     async fn find_by_condition(&self, cond: &Condition) -> Result<Vec<Client>, DomainError> {
-        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
-            "SELECT * FROM clients WHERE 1=1"
-        );
+        let mut qb: QueryBuilder<sqlx::MySql> =
+            QueryBuilder::new("SELECT * FROM clients WHERE 1=1");
         Self::apply_filters(&mut qb, cond);
 
         let sort_col = match cond.sort.as_deref() {
@@ -145,14 +142,16 @@ impl Repository for SqlxClientRepository {
             qb.push_bind(cond.offset);
         }
 
-        let rows = qb.build_query_as::<ClientRow>().fetch_all(&self.pool).await?;
+        let rows = qb
+            .build_query_as::<ClientRow>()
+            .fetch_all(&self.pool)
+            .await?;
         Ok(rows.into_iter().map(row_to_entity).collect())
     }
 
     async fn count_by_condition(&self, cond: &Condition) -> Result<i64, DomainError> {
-        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
-            "SELECT COUNT(*) as cnt FROM clients WHERE 1=1"
-        );
+        let mut qb: QueryBuilder<sqlx::MySql> =
+            QueryBuilder::new("SELECT COUNT(*) as cnt FROM clients WHERE 1=1");
         Self::apply_filters(&mut qb, cond);
         let row: (i64,) = qb.build_query_as().fetch_one(&self.pool).await?;
         Ok(row.0)
@@ -174,7 +173,7 @@ impl Repository for SqlxClientRepository {
 
     async fn find_by_identifier(&self, identifier: &str) -> Result<Option<Client>, DomainError> {
         let row = sqlx::query_as::<_, ClientRow>(
-            "SELECT * FROM clients WHERE identifier = ? AND deleted_at IS NULL LIMIT 1"
+            "SELECT * FROM clients WHERE identifier = ? AND deleted_at IS NULL LIMIT 1",
         )
         .bind(identifier)
         .fetch_optional(&self.pool)
@@ -258,14 +257,12 @@ impl Repository for SqlxClientRepository {
 
     async fn soft_delete(&self, id: u64, deleted_by: u32) -> Result<(), DomainError> {
         let now = chrono::Utc::now();
-        sqlx::query(
-            "UPDATE clients SET deleted_at = ?, deleted_by = ? WHERE id = ?"
-        )
-        .bind(now)
-        .bind(deleted_by)
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
+        sqlx::query("UPDATE clients SET deleted_at = ?, deleted_by = ? WHERE id = ?")
+            .bind(now)
+            .bind(deleted_by)
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 }

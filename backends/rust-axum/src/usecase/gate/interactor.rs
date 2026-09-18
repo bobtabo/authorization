@@ -3,40 +3,48 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use std::sync::Arc;
+use super::dto::{IssueDto, VerifyDto};
 use crate::{
     config::Config,
     domain::{
-        client::repository::{Repository as ClientRepository, JwtHistoryRepository},
+        client::repository::{JwtHistoryRepository, Repository as ClientRepository},
         gate::value_objects::{CacheRepository, IssueVo, VerifyVo},
     },
 };
-use super::dto::{IssueDto, VerifyDto};
+use std::sync::Arc;
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
 /// Gate JWT 発行・検証のユースケース実装。
 pub struct Interactor {
-    client_repo:  Arc<dyn ClientRepository>,
-    cache:        Arc<dyn CacheRepository>,
-    cfg:          Arc<Config>,
+    client_repo: Arc<dyn ClientRepository>,
+    cache: Arc<dyn CacheRepository>,
+    cfg: Arc<Config>,
     history_repo: Arc<dyn JwtHistoryRepository>,
 }
 
 impl Interactor {
     /// リポジトリ・キャッシュ・設定を受け取りインタラクターを生成します。
     pub fn new(
-        client_repo:  Arc<dyn ClientRepository>,
-        cache:        Arc<dyn CacheRepository>,
-        cfg:          Arc<Config>,
+        client_repo: Arc<dyn ClientRepository>,
+        cache: Arc<dyn CacheRepository>,
+        cfg: Arc<Config>,
         history_repo: Arc<dyn JwtHistoryRepository>,
     ) -> Self {
-        Self { client_repo, cache, cfg, history_repo }
+        Self {
+            client_repo,
+            cache,
+            cfg,
+            history_repo,
+        }
     }
 
     /// アクセストークンを検証し JWT を発行して VO を返します。
     pub async fn issue_token(&self, dto: IssueDto) -> Result<IssueVo, UseCaseError> {
-        let c = self.client_repo.find_by_access_token(&dto.access_token).await?
+        let c = self
+            .client_repo
+            .find_by_access_token(&dto.access_token)
+            .await?
             .ok_or_else(|| -> UseCaseError { "client_not_found".to_string().into() })?;
 
         if let Ok(Some(cached)) = self.cache.get_jwt(&c.identifier, &dto.member_id).await {
@@ -54,17 +62,36 @@ impl Interactor {
             self.cfg.jwt.ttl,
         )?;
 
-        let _ = self.cache.put_jwt(&c.identifier, &dto.member_id, &token, self.cfg.jwt.cache_ttl).await;
-        let _ = self.history_repo.save(c.id, &dto.member_id, chrono::Utc::now(), &token).await;
+        let _ = self
+            .cache
+            .put_jwt(
+                &c.identifier,
+                &dto.member_id,
+                &token,
+                self.cfg.jwt.cache_ttl,
+            )
+            .await;
+        let _ = self
+            .history_repo
+            .save(c.id, &dto.member_id, chrono::Utc::now(), &token)
+            .await;
         Ok(IssueVo { token })
     }
 
     /// JWT を検証してクレームを含む VO を返します。
     pub async fn verify(&self, dto: VerifyDto) -> Result<VerifyVo, UseCaseError> {
-        let c = self.client_repo.find_by_identifier(&dto.identifier).await?
+        let c = self
+            .client_repo
+            .find_by_identifier(&dto.identifier)
+            .await?
             .ok_or_else(|| -> UseCaseError { "client_not_found".to_string().into() })?;
 
-        let claims = verify_jwt(&dto.identifier, &dto.token, &c.public_key, &self.cfg.jwt.issuer)?;
+        let claims = verify_jwt(
+            &dto.identifier,
+            &dto.token,
+            &c.public_key,
+            &self.cfg.jwt.issuer,
+        )?;
         Ok(VerifyVo { claims })
     }
 }
@@ -96,8 +123,7 @@ fn issue_jwt(
     let encoding_key = EncodingKey::from_rsa_pem(private_key_pem.as_bytes())
         .map_err(|e| -> UseCaseError { e.to_string().into() })?;
 
-    encode(&header, &claims, &encoding_key)
-        .map_err(|e| -> UseCaseError { e.to_string().into() })
+    encode(&header, &claims, &encoding_key).map_err(|e| -> UseCaseError { e.to_string().into() })
 }
 
 fn verify_jwt(
@@ -124,29 +150,31 @@ fn verify_jwt(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use std::sync::Mutex;
-    use chrono::{DateTime, Utc};
+    use crate::config::{
+        AppConfig, AwsConfig, DbConfig, JwtConfig, MailConfig, OAuthConfig, RedisConfig,
+    };
     use crate::domain::{
         client::{
             condition::Condition,
             entity::{Client, JwtHistory},
-            repository::{DomainError, Repository as ClientRepo, JwtHistoryRepository},
+            repository::{DomainError, JwtHistoryRepository, Repository as ClientRepo},
         },
         gate::value_objects::{CacheRepository, DomainError as CacheDomainError},
     };
-    use crate::config::{AppConfig, AwsConfig, DbConfig, JwtConfig, MailConfig, OAuthConfig, RedisConfig};
+    use async_trait::async_trait;
+    use chrono::{DateTime, Utc};
+    use std::sync::Mutex;
 
     struct MockClientRepo {
-        by_access_token:  Mutex<Option<Option<Client>>>,
-        by_identifier:    Mutex<Option<Option<Client>>>,
+        by_access_token: Mutex<Option<Option<Client>>>,
+        by_identifier: Mutex<Option<Option<Client>>>,
     }
 
     impl MockClientRepo {
         fn new() -> Self {
             Self {
                 by_access_token: Mutex::new(None),
-                by_identifier:   Mutex::new(None),
+                by_identifier: Mutex::new(None),
             }
         }
     }
@@ -156,7 +184,11 @@ mod tests {
     }
 
     impl MockCache {
-        fn new() -> Self { Self { get_result: Mutex::new(None) } }
+        fn new() -> Self {
+            Self {
+                get_result: Mutex::new(None),
+            }
+        }
     }
 
     struct MockJwtHistoryRepo;
@@ -164,63 +196,107 @@ mod tests {
     fn make_client() -> Client {
         let now = chrono::Utc::now();
         Client {
-            id: 1, name: "C".to_string(), identifier: "id1".to_string(),
-            post_code: "".to_string(), pref: "".to_string(), city: "".to_string(),
-            address: "".to_string(), building: "".to_string(), tel: "".to_string(),
+            id: 1,
+            name: "C".to_string(),
+            identifier: "id1".to_string(),
+            post_code: "".to_string(),
+            pref: "".to_string(),
+            city: "".to_string(),
+            address: "".to_string(),
+            building: "".to_string(),
+            tel: "".to_string(),
             email: "c@example.com".to_string(),
             access_token: "tok1".to_string(),
-            private_key: "priv".to_string(), public_key: "pub".to_string(),
+            private_key: "priv".to_string(),
+            public_key: "pub".to_string(),
             fingerprint: "SHA256:abc".to_string(),
-            status: 2, start_at: None, stop_at: None,
-            created_at: now, created_by: None, updated_at: now, updated_by: None,
-            deleted_at: None, deleted_by: None, version: 0,
+            status: 2,
+            start_at: None,
+            stop_at: None,
+            created_at: now,
+            created_by: None,
+            updated_at: now,
+            updated_by: None,
+            deleted_at: None,
+            deleted_by: None,
+            version: 0,
         }
     }
 
     fn make_config() -> Arc<Config> {
         Arc::new(Config {
             app: AppConfig {
-                env: "test".to_string(), port: "8080".to_string(),
+                env: "test".to_string(),
+                port: "8080".to_string(),
                 runtime: "rust".to_string(),
                 frontend_url: "http://localhost:3000".to_string(),
-                staff_cookie_lifetime: 60, notification_default_limit: 10,
+                staff_cookie_lifetime: 60,
+                notification_default_limit: 10,
                 cache_prefix: "test".to_string(),
             },
-            db: DbConfig { dsn: "".to_string() },
-            redis: RedisConfig { addr: "localhost:6379".to_string(), password: "".to_string(), db: 0 },
+            db: DbConfig {
+                dsn: "".to_string(),
+            },
+            redis: RedisConfig {
+                addr: "localhost:6379".to_string(),
+                password: "".to_string(),
+                db: 0,
+            },
             oauth: OAuthConfig {
-                google_client_id: "".to_string(), google_client_secret: "".to_string(),
+                google_client_id: "".to_string(),
+                google_client_secret: "".to_string(),
                 google_redirect_url: "".to_string(),
-                github_client_id: "".to_string(), github_client_secret: "".to_string(),
+                github_client_id: "".to_string(),
+                github_client_secret: "".to_string(),
                 github_redirect_url: "".to_string(),
             },
-            jwt: JwtConfig { issuer: "authorization".to_string(), algorithm: "RS256".to_string(), ttl: 1800, cache_ttl: 1800 },
+            jwt: JwtConfig {
+                issuer: "authorization".to_string(),
+                algorithm: "RS256".to_string(),
+                ttl: 1800,
+                cache_ttl: 1800,
+            },
             mail: MailConfig {
-                host: "localhost".to_string(), port: "1025".to_string(),
-                username: "".to_string(), password: "".to_string(),
+                host: "localhost".to_string(),
+                port: "1025".to_string(),
+                username: "".to_string(),
+                password: "".to_string(),
                 from_address: "no-reply@example.com".to_string(),
-                app_name: "Test".to_string(), app_env: "test".to_string(),
+                app_name: "Test".to_string(),
+                app_env: "test".to_string(),
             },
             aws: AwsConfig {
-                region: "ap-northeast-1".to_string(), endpoint: "".to_string(),
-                access_key: "".to_string(), secret_key: "".to_string(),
+                region: "ap-northeast-1".to_string(),
+                endpoint: "".to_string(),
+                access_key: "".to_string(),
+                secret_key: "".to_string(),
             },
         })
     }
 
     #[async_trait]
     impl ClientRepo for MockClientRepo {
-        async fn find_by_condition(&self, _: &Condition) -> Result<Vec<Client>, DomainError> { Ok(vec![]) }
-        async fn count_by_condition(&self, _: &Condition) -> Result<i64, DomainError> { Ok(0) }
-        async fn find_by_id(&self, _: u64) -> Result<Option<Client>, DomainError> { Ok(None) }
+        async fn find_by_condition(&self, _: &Condition) -> Result<Vec<Client>, DomainError> {
+            Ok(vec![])
+        }
+        async fn count_by_condition(&self, _: &Condition) -> Result<i64, DomainError> {
+            Ok(0)
+        }
+        async fn find_by_id(&self, _: u64) -> Result<Option<Client>, DomainError> {
+            Ok(None)
+        }
         async fn find_by_access_token(&self, _: &str) -> Result<Option<Client>, DomainError> {
             Ok(self.by_access_token.lock().unwrap().take().unwrap_or(None))
         }
         async fn find_by_identifier(&self, _: &str) -> Result<Option<Client>, DomainError> {
             Ok(self.by_identifier.lock().unwrap().take().unwrap_or(None))
         }
-        async fn save(&self, c: Client) -> Result<Client, DomainError> { Ok(c) }
-        async fn soft_delete(&self, _: u64, _: u32) -> Result<(), DomainError> { Ok(()) }
+        async fn save(&self, c: Client) -> Result<Client, DomainError> {
+            Ok(c)
+        }
+        async fn soft_delete(&self, _: u64, _: u32) -> Result<(), DomainError> {
+            Ok(())
+        }
     }
 
     #[async_trait]
@@ -235,13 +311,25 @@ mod tests {
 
     #[async_trait]
     impl JwtHistoryRepository for MockJwtHistoryRepo {
-        async fn count_by_condition(&self, _: &crate::domain::client::entity::JwtHistoryCondition) -> Result<i64, DomainError> {
+        async fn count_by_condition(
+            &self,
+            _: &crate::domain::client::entity::JwtHistoryCondition,
+        ) -> Result<i64, DomainError> {
             Ok(0)
         }
-        async fn find_by_condition(&self, _: &crate::domain::client::entity::JwtHistoryCondition) -> Result<Vec<JwtHistory>, DomainError> {
+        async fn find_by_condition(
+            &self,
+            _: &crate::domain::client::entity::JwtHistoryCondition,
+        ) -> Result<Vec<JwtHistory>, DomainError> {
             Ok(vec![])
         }
-        async fn save(&self, _: u64, _: &str, _: DateTime<Utc>, _: &str) -> Result<(), DomainError> {
+        async fn save(
+            &self,
+            _: u64,
+            _: &str,
+            _: DateTime<Utc>,
+            _: &str,
+        ) -> Result<(), DomainError> {
             Ok(())
         }
     }
@@ -253,7 +341,10 @@ mod tests {
         let cache = Arc::new(MockCache::new());
         let history_repo = Arc::new(MockJwtHistoryRepo);
         let uc = Interactor::new(client_repo, cache, make_config(), history_repo);
-        let dto = IssueDto { access_token: "bad_token".to_string(), member_id: "m1".to_string() };
+        let dto = IssueDto {
+            access_token: "bad_token".to_string(),
+            member_id: "m1".to_string(),
+        };
         assert!(uc.issue_token(dto).await.is_err());
     }
 
@@ -264,7 +355,10 @@ mod tests {
         let cache = Arc::new(MockCache::new());
         let history_repo = Arc::new(MockJwtHistoryRepo);
         let uc = Interactor::new(client_repo, cache, make_config(), history_repo);
-        let dto = VerifyDto { identifier: "no_such".to_string(), token: "bad.jwt.token".to_string() };
+        let dto = VerifyDto {
+            identifier: "no_such".to_string(),
+            token: "bad.jwt.token".to_string(),
+        };
         assert!(uc.verify(dto).await.is_err());
     }
 
@@ -276,7 +370,10 @@ mod tests {
         *cache.get_result.lock().unwrap() = Some(Some("cached.jwt.token".to_string()));
         let history_repo = Arc::new(MockJwtHistoryRepo);
         let uc = Interactor::new(client_repo, cache, make_config(), history_repo);
-        let dto = IssueDto { access_token: "tok1".to_string(), member_id: "m1".to_string() };
+        let dto = IssueDto {
+            access_token: "tok1".to_string(),
+            member_id: "m1".to_string(),
+        };
         let result = uc.issue_token(dto).await.unwrap();
         assert_eq!(result.token, "cached.jwt.token");
     }

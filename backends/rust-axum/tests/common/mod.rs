@@ -1,8 +1,8 @@
+use authorization::{build_router, build_state, config::Config};
 use axum::Router;
 use sqlx::MySqlPool;
 use std::sync::Arc;
 use tokio::sync::OnceCell;
-use authorization::{build_router, build_state, config::Config};
 
 static SCHEMA_INIT: OnceCell<()> = OnceCell::const_new();
 
@@ -10,24 +10,34 @@ static SCHEMA_INIT: OnceCell<()> = OnceCell::const_new();
 static CACHED_KEY: OnceCell<(String, String)> = OnceCell::const_new();
 
 async fn cached_rsa_pems() -> &'static (String, String) {
-    CACHED_KEY.get_or_init(|| async {
-        use rsa::{RsaPrivateKey, pkcs1::{EncodeRsaPrivateKey, EncodeRsaPublicKey, LineEnding}};
-        let mut rng = rand::rngs::OsRng;
-        let private_key = RsaPrivateKey::new(&mut rng, 2048).unwrap();
-        let public_key  = private_key.to_public_key();
-        let priv_pem = private_key.to_pkcs1_pem(LineEnding::LF).unwrap().to_string();
-        let pub_pem  = public_key.to_pkcs1_pem(LineEnding::LF).unwrap();
-        (priv_pem, pub_pem)
-    }).await
+    CACHED_KEY
+        .get_or_init(|| async {
+            use rsa::{
+                pkcs1::{EncodeRsaPrivateKey, EncodeRsaPublicKey, LineEnding},
+                RsaPrivateKey,
+            };
+            let mut rng = rand::rngs::OsRng;
+            let private_key = RsaPrivateKey::new(&mut rng, 2048).unwrap();
+            let public_key = private_key.to_public_key();
+            let priv_pem = private_key
+                .to_pkcs1_pem(LineEnding::LF)
+                .unwrap()
+                .to_string();
+            let pub_pem = public_key.to_pkcs1_pem(LineEnding::LF).unwrap();
+            (priv_pem, pub_pem)
+        })
+        .await
 }
 
 pub async fn build_test_app() -> (Router, MySqlPool) {
     let cfg = Arc::new(Config::load());
     let (state, pool) = build_state(cfg).await;
     let pool_for_init = pool.clone();
-    SCHEMA_INIT.get_or_init(|| async move {
-        ensure_schema(&pool_for_init).await;
-    }).await;
+    SCHEMA_INIT
+        .get_or_init(|| async move {
+            ensure_schema(&pool_for_init).await;
+        })
+        .await;
     let app = build_router(state);
     (app, pool)
 }
@@ -35,11 +45,20 @@ pub async fn build_test_app() -> (Router, MySqlPool) {
 async fn ensure_schema(pool: &MySqlPool) {
     // Drop and recreate tables to ensure correct column types for SQLx 0.8
     // (DATETIME instead of TIMESTAMP, since NaiveDateTime maps to DATETIME not TIMESTAMP)
-    sqlx::query("SET FOREIGN_KEY_CHECKS=0").execute(pool).await.unwrap();
+    sqlx::query("SET FOREIGN_KEY_CHECKS=0")
+        .execute(pool)
+        .await
+        .unwrap();
     for t in &["notifications", "invitations", "clients", "staffs"] {
-        sqlx::query(&format!("DROP TABLE IF EXISTS `{}`", t)).execute(pool).await.unwrap();
+        sqlx::query(&format!("DROP TABLE IF EXISTS `{}`", t))
+            .execute(pool)
+            .await
+            .unwrap();
     }
-    sqlx::query("SET FOREIGN_KEY_CHECKS=1").execute(pool).await.unwrap();
+    sqlx::query("SET FOREIGN_KEY_CHECKS=1")
+        .execute(pool)
+        .await
+        .unwrap();
 
     sqlx::query(
         "CREATE TABLE `staffs` (
@@ -60,8 +79,11 @@ async fn ensure_schema(pool: &MySqlPool) {
             `version`       INT UNSIGNED    NOT NULL DEFAULT 1,
             PRIMARY KEY (`id`),
             UNIQUE KEY `staffs_email_unique` (`email`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    ).execute(pool).await.unwrap();
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    )
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         "CREATE TABLE `clients` (
@@ -92,8 +114,11 @@ async fn ensure_schema(pool: &MySqlPool) {
             PRIMARY KEY (`id`),
             UNIQUE KEY `idx_clients_identifier` (`identifier`),
             UNIQUE KEY `idx_clients_access_token` (`access_token`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    ).execute(pool).await.unwrap();
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    )
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         "CREATE TABLE `invitations` (
@@ -109,8 +134,11 @@ async fn ensure_schema(pool: &MySqlPool) {
             `version`       INT UNSIGNED    NOT NULL DEFAULT 1,
             PRIMARY KEY (`id`),
             UNIQUE KEY `invitations_token_unique` (`token`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    ).execute(pool).await.unwrap();
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    )
+    .execute(pool)
+    .await
+    .unwrap();
 
     sqlx::query(
         "CREATE TABLE `notifications` (
@@ -129,16 +157,28 @@ async fn ensure_schema(pool: &MySqlPool) {
             `deleted_by`    INT UNSIGNED    NULL,
             `version`       INT UNSIGNED    NOT NULL DEFAULT 1,
             PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    ).execute(pool).await.unwrap();
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+    )
+    .execute(pool)
+    .await
+    .unwrap();
 }
 
 pub async fn truncate_tables(pool: &MySqlPool) {
-    sqlx::query("SET FOREIGN_KEY_CHECKS=0").execute(pool).await.unwrap();
+    sqlx::query("SET FOREIGN_KEY_CHECKS=0")
+        .execute(pool)
+        .await
+        .unwrap();
     for table in &["notifications", "invitations", "clients", "staffs"] {
-        sqlx::query(&format!("TRUNCATE TABLE {}", table)).execute(pool).await.unwrap();
+        sqlx::query(&format!("TRUNCATE TABLE {}", table))
+            .execute(pool)
+            .await
+            .unwrap();
     }
-    sqlx::query("SET FOREIGN_KEY_CHECKS=1").execute(pool).await.unwrap();
+    sqlx::query("SET FOREIGN_KEY_CHECKS=1")
+        .execute(pool)
+        .await
+        .unwrap();
 }
 
 pub async fn create_staff(pool: &MySqlPool) -> u32 {
@@ -147,7 +187,7 @@ pub async fn create_staff(pool: &MySqlPool) -> u32 {
     let result = sqlx::query(
         "INSERT INTO staffs (name, email, provider, provider_id, role, \
          created_at, created_by, updated_at, updated_by, version) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind("テストスタッフ")
     .bind(&email)
@@ -166,18 +206,18 @@ pub async fn create_staff(pool: &MySqlPool) -> u32 {
 }
 
 pub struct ClientData {
-    pub id:           u64,
-    pub identifier:   String,
+    pub id: u64,
+    pub identifier: String,
     pub access_token: String,
 }
 
 pub async fn create_client(pool: &MySqlPool) -> ClientData {
     let (priv_pem, pub_pem) = cached_rsa_pems().await;
 
-    let token      = hex::encode(rand::random::<[u8; 32]>());
-    let id_str     = uuid::Uuid::new_v4().simple().to_string();
+    let token = hex::encode(rand::random::<[u8; 32]>());
+    let id_str = uuid::Uuid::new_v4().simple().to_string();
     let identifier = format!("test-client-{}", &id_str[..8]);
-    let now        = chrono::Local::now().naive_local();
+    let now = chrono::Local::now().naive_local();
 
     let result = sqlx::query(
         "INSERT INTO clients (name, identifier, post_code, pref, city, address, building, tel, email, \
@@ -209,7 +249,7 @@ pub async fn create_client(pool: &MySqlPool) -> ClientData {
     .unwrap();
 
     ClientData {
-        id:           result.last_insert_id(),
+        id: result.last_insert_id(),
         identifier,
         access_token: token,
     }
@@ -218,14 +258,16 @@ pub async fn create_client(pool: &MySqlPool) -> ClientData {
 pub async fn create_invitation(pool: &MySqlPool, role: u8) -> String {
     let token = hex::encode(rand::random::<[u8; 16]>());
     let now = chrono::Local::now().naive_local();
-    sqlx::query("INSERT INTO invitations (token, role, created_at, updated_at) VALUES (?, ?, ?, ?)")
-        .bind(&token)
-        .bind(role)
-        .bind(now)
-        .bind(now)
-        .execute(pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO invitations (token, role, created_at, updated_at) VALUES (?, ?, ?, ?)",
+    )
+    .bind(&token)
+    .bind(role)
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await
+    .unwrap();
     token
 }
 
@@ -234,7 +276,7 @@ pub async fn create_notification(pool: &MySqlPool, staff_id: u32, title: &str, r
     let result = sqlx::query(
         "INSERT INTO notifications (staff_id, message_type, title, message, `read`, \
          created_at, created_by, updated_at, updated_by, version) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(staff_id)
     .bind(1i32)

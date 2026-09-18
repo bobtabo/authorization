@@ -5,15 +5,15 @@
 
 /// スタッフロール更新入力 DTO。
 pub struct UpdateRoleDto {
-    pub id:          u32,
-    pub role:        i32,
+    pub id: u32,
+    pub role: i32,
     pub executor_id: u32,
-    pub version:     i32,
+    pub version: i32,
 }
 
 /// スタッフ論理削除入力 DTO。
 pub struct DestroyDto {
-    pub id:          u32,
+    pub id: u32,
     pub executor_id: u32,
-    pub version:     i32,
+    pub version: i32,
 }

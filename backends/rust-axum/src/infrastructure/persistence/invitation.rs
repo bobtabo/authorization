@@ -3,20 +3,20 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
+use crate::domain::invitation::{
+    repository::{DomainError, Repository},
+    value_objects::Vo,
+};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
-use crate::domain::invitation::{
-    value_objects::Vo,
-    repository::{DomainError, Repository},
-};
 
 #[derive(sqlx::FromRow)]
 struct InvitationRow {
     #[allow(dead_code)]
-    id:         u32,
-    token:      String,
-    role:       u8,
+    id: u32,
+    token: String,
+    role: u8,
     #[allow(dead_code)]
     created_at: DateTime<Utc>,
     #[allow(dead_code)]
@@ -30,12 +30,12 @@ struct InvitationRow {
     #[allow(dead_code)]
     deleted_by: Option<u32>,
     #[allow(dead_code)]
-    version:    u32,
+    version: u32,
 }
 
 /// SQLx を用いた招待リポジトリ実装。
 pub struct SqlxInvitationRepository {
-    pool:         MySqlPool,
+    pool: MySqlPool,
     frontend_url: String,
 }
 
@@ -46,9 +46,14 @@ impl SqlxInvitationRepository {
     }
 
     fn build_vo(&self, token: &str, role: u8) -> Vo {
-        let url         = format!("{}/invitation/{}", self.frontend_url, token);
+        let url = format!("{}/invitation/{}", self.frontend_url, token);
         let display_url = build_display_url(&url);
-        Vo { token: token.to_string(), role, url, display_url }
+        Vo {
+            token: token.to_string(),
+            role,
+            url,
+            display_url,
+        }
     }
 }
 
@@ -56,7 +61,7 @@ impl SqlxInvitationRepository {
 impl Repository for SqlxInvitationRepository {
     async fn get_current_by_role(&self, role: u8) -> Result<Option<Vo>, DomainError> {
         let row = sqlx::query_as::<_, InvitationRow>(
-            "SELECT * FROM invitations WHERE role = ? ORDER BY id DESC LIMIT 1"
+            "SELECT * FROM invitations WHERE role = ? ORDER BY id DESC LIMIT 1",
         )
         .bind(role)
         .fetch_optional(&self.pool)
@@ -80,12 +85,11 @@ impl Repository for SqlxInvitationRepository {
     }
 
     async fn find_by_token(&self, token: &str) -> Result<Option<Vo>, DomainError> {
-        let row = sqlx::query_as::<_, InvitationRow>(
-            "SELECT * FROM invitations WHERE token = ? LIMIT 1"
-        )
-        .bind(token)
-        .fetch_optional(&self.pool)
-        .await?;
+        let row =
+            sqlx::query_as::<_, InvitationRow>("SELECT * FROM invitations WHERE token = ? LIMIT 1")
+                .bind(token)
+                .fetch_optional(&self.pool)
+                .await?;
         Ok(row.map(|r| self.build_vo(&r.token, r.role)))
     }
 }
@@ -95,16 +99,26 @@ fn build_display_url(url: &str) -> String {
     const HEAD: usize = 6;
     const TAIL: usize = 4;
     if let Some(idx) = url.find(SEG) {
-        let base  = &url[..idx + SEG.len()];
+        let base = &url[..idx + SEG.len()];
         let after = &url[idx + SEG.len()..];
         let tok_end = after.find(|c| c == '?' || c == '#').unwrap_or(after.len());
-        let tok    = &after[..tok_end];
+        let tok = &after[..tok_end];
         let suffix = &after[tok_end..];
         if tok.len() > HEAD + TAIL + 3 {
-            return format!("{}{}...{}{}", base, &tok[..HEAD], &tok[tok.len() - TAIL..], suffix);
+            return format!(
+                "{}{}...{}{}",
+                base,
+                &tok[..HEAD],
+                &tok[tok.len() - TAIL..],
+                suffix
+            );
         }
     }
-    if url.len() > 72 { format!("{}...", &url[..68]) } else { url.to_string() }
+    if url.len() > 72 {
+        format!("{}...", &url[..68])
+    } else {
+        url.to_string()
+    }
 }
 
 fn generate_token() -> String {

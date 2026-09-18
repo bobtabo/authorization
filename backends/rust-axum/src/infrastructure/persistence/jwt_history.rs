@@ -3,32 +3,32 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use sqlx::MySqlPool;
 use crate::domain::client::{
     entity::{JwtHistory, JwtHistoryCondition},
     repository::{DomainError, JwtHistoryRepository},
 };
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use sqlx::MySqlPool;
 
 #[derive(sqlx::FromRow)]
 struct JwtHistoryRow {
-    id:         u64,
-    client_id:  u64,
-    member_id:  String,
-    issue_at:   DateTime<Utc>,
-    jwt:        String,
+    id: u64,
+    client_id: u64,
+    member_id: String,
+    issue_at: DateTime<Utc>,
+    jwt: String,
     created_at: DateTime<Utc>,
     deleted_at: Option<DateTime<Utc>>,
 }
 
 fn row_to_entity(r: JwtHistoryRow) -> JwtHistory {
     JwtHistory {
-        id:         r.id,
-        client_id:  r.client_id,
-        member_id:  r.member_id,
-        issue_at:   r.issue_at,
-        jwt:        r.jwt,
+        id: r.id,
+        client_id: r.client_id,
+        member_id: r.member_id,
+        issue_at: r.issue_at,
+        jwt: r.jwt,
         created_at: r.created_at,
         deleted_at: r.deleted_at,
     }
@@ -50,7 +50,7 @@ impl SqlxJwtHistoryRepository {
 impl JwtHistoryRepository for SqlxJwtHistoryRepository {
     async fn count_by_condition(&self, cond: &JwtHistoryCondition) -> Result<i64, DomainError> {
         let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM jwt_histories WHERE client_id = ? AND deleted_at IS NULL"
+            "SELECT COUNT(*) FROM jwt_histories WHERE client_id = ? AND deleted_at IS NULL",
         )
         .bind(cond.client_id)
         .fetch_one(&self.pool)
@@ -58,12 +58,19 @@ impl JwtHistoryRepository for SqlxJwtHistoryRepository {
         Ok(count)
     }
 
-    async fn find_by_condition(&self, cond: &JwtHistoryCondition) -> Result<Vec<JwtHistory>, DomainError> {
+    async fn find_by_condition(
+        &self,
+        cond: &JwtHistoryCondition,
+    ) -> Result<Vec<JwtHistory>, DomainError> {
         let sort_col = match cond.sort.as_str() {
             "member_id" => "member_id",
-            _           => "issue_at",
+            _ => "issue_at",
         };
-        let sort_order = if cond.sort_type.eq_ignore_ascii_case("asc") { "ASC" } else { "DESC" };
+        let sort_order = if cond.sort_type.eq_ignore_ascii_case("asc") {
+            "ASC"
+        } else {
+            "DESC"
+        };
         let sql = format!(
             "SELECT id, client_id, member_id, issue_at, jwt, created_at, deleted_at \
              FROM jwt_histories \

@@ -13,7 +13,7 @@ use tracing::error;
 
 pub struct Mailer {
     mail_cfg: MailConfig,
-    aws_cfg:  AwsConfig,
+    aws_cfg: AwsConfig,
 }
 
 impl Mailer {
@@ -26,19 +26,37 @@ impl Mailer {
             return;
         }
 
-        let subject = mail_subject(&self.mail_cfg.app_env, &format!("【{} / Rust】ご利用開始のご案内", self.mail_cfg.app_name));
+        let subject = mail_subject(
+            &self.mail_cfg.app_env,
+            &format!("【{} / Rust】ご利用開始のご案内", self.mail_cfg.app_name),
+        );
         let body = build_activation_html(client_name, activate_url, &self.mail_cfg.app_name);
 
         let client = self.build_ses_client();
-        let source = format!("{} <{}>", self.mail_cfg.app_name, self.mail_cfg.from_address);
+        let source = format!(
+            "{} <{}>",
+            self.mail_cfg.app_name, self.mail_cfg.from_address
+        );
 
         let dest = Destination::builder().to_addresses(to).build();
-        let subject_content = Content::builder().data(&subject).charset("UTF-8").build().unwrap();
-        let body_content = Content::builder().data(&body).charset("UTF-8").build().unwrap();
+        let subject_content = Content::builder()
+            .data(&subject)
+            .charset("UTF-8")
+            .build()
+            .unwrap();
+        let body_content = Content::builder()
+            .data(&body)
+            .charset("UTF-8")
+            .build()
+            .unwrap();
         let ses_body = Body::builder().html(body_content).build();
-        let message = Message::builder().subject(subject_content).body(ses_body).build();
+        let message = Message::builder()
+            .subject(subject_content)
+            .body(ses_body)
+            .build();
 
-        if let Err(e) = client.send_email()
+        if let Err(e) = client
+            .send_email()
             .source(&source)
             .destination(dest)
             .message(message)
@@ -50,8 +68,7 @@ impl Mailer {
     }
 
     fn build_ses_client(&self) -> SesClient {
-        let mut builder = SesConfigBuilder::new()
-            .region(Region::new(self.aws_cfg.region.clone()));
+        let mut builder = SesConfigBuilder::new().region(Region::new(self.aws_cfg.region.clone()));
 
         if !self.aws_cfg.access_key.is_empty() {
             let creds = Credentials::new(
@@ -74,11 +91,11 @@ impl Mailer {
 
 fn env_label(env: &str) -> &str {
     match env {
-        "local"   => "Local",
+        "local" => "Local",
         "testing" => "Test",
         "develop" => "Develop",
         "staging" => "Staging",
-        _         => "",
+        _ => "",
     }
 }
 
