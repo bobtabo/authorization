@@ -60,6 +60,7 @@ def _map_staff(s) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     roles: Optional[list[int]] = Query(default=None),
+    statuses: Optional[list[int]] = Query(default=None),
     limit: int = Query(default=10, ge=1),
     page: int = Query(default=1, ge=1),
     sort: Optional[str] = Query(default=None),
@@ -68,7 +69,13 @@ def index(
 ):
     offset = limit * (page - 1)
     staffs, count = interactor.find_by_condition(
-        keyword=keyword, roles=roles or [], offset=offset, limit=limit, sort=sort, sort_type=sort_type
+        keyword=keyword,
+        roles=roles or [],
+        statuses=statuses or [],
+        offset=offset,
+        limit=limit,
+        sort=sort,
+        sort_type=sort_type,
     )
     pager = _build_pager(count, limit, offset, len(staffs))
     return {"data": [_map_staff(s) for s in staffs], "pager": pager}

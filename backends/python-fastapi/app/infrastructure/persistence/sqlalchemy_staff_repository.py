@@ -41,6 +41,14 @@ class SqlAlchemyStaffRepository(StaffRepository):
             q = q.filter(or_(StaffModel.name.like(like), StaffModel.email.like(like)))
         if cond.roles:
             q = q.filter(StaffModel.role.in_(cond.roles))
+        if cond.statuses:
+            # staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+            active = 1 in cond.statuses
+            inactive = 0 in cond.statuses
+            if active and not inactive:
+                q = q.filter(StaffModel.deleted_at.is_(None))
+            elif inactive and not active:
+                q = q.filter(StaffModel.deleted_at.isnot(None))
         return q
 
     def count_staffs(self, cond: StaffCondition) -> int:

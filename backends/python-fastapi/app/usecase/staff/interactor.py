@@ -53,6 +53,7 @@ class StaffInteractor:
         self,
         keyword: Optional[str] = None,
         roles: Optional[list[int]] = None,
+        statuses: Optional[list[int]] = None,
         offset: int = 0,
         limit: int = 10,
         sort: Optional[str] = None,
@@ -63,6 +64,7 @@ class StaffInteractor:
         Args:
             keyword: キーワード検索文字列
             roles: ロールフィルター
+            statuses: 状態フィルター（1=有効, 0=無効）
             offset: オフセット
             limit: 取得件数
             sort: ソート対象
@@ -71,7 +73,15 @@ class StaffInteractor:
         Returns:
             StaffListItem のリストと総件数のタプル
         """
-        cond = StaffCondition(keyword=keyword, roles=roles or [], offset=offset, limit=limit, sort=sort, sort_type=sort_type)
+        cond = StaffCondition(
+            keyword=keyword,
+            roles=roles or [],
+            statuses=statuses or [],
+            offset=offset,
+            limit=limit,
+            sort=sort,
+            sort_type=sort_type,
+        )
         count = self.repository.count_staffs(cond)
         staffs = self.repository.find_all_staffs(cond)
         return [_to_list_item(s) for s in staffs], count
