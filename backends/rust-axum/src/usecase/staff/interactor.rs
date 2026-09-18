@@ -178,6 +178,7 @@ mod tests {
         Condition {
             keyword: None,
             roles: vec![],
+            statuses: vec![],
             offset: 0,
             limit: 20,
             sort: None,
