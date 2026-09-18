@@ -81,6 +81,8 @@ class StaffModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
     updated_by: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deleted_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class InvitationModel(Base):

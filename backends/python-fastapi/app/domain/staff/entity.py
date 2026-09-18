@@ -22,3 +22,4 @@ class Staff:
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
+    version: int = 1

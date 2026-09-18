@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.domain.staff.entity import Staff
 from app.domain.staff.condition import StaffCondition
 from app.domain.staff.repository import StaffRepository
+from app.exceptions import conflict
 from app.infrastructure.model.model import StaffModel
 from app.support.assign import assign
 
@@ -170,27 +171,35 @@ class SqlAlchemyStaffRepository(StaffRepository):
         self.db.refresh(m)
         return _to_entity(m)
 
-    def update_staff_role(self, staff: Staff, role: int) -> None:
+    def update_staff_role(self, staff: Staff, role: int, version: int) -> None:
         """スタッフのロールを更新します。
 
         Args:
             staff: 更新対象のスタッフエンティティ
             role: 新しいロール値
+            version: 楽観排他ロック用バージョン
         """
         m = self.db.query(StaffModel).filter(StaffModel.id == staff.id).first()
         if m:
+            if m.version != version:
+                raise conflict("optimistic_lock")
             m.role = role
+            m.version += 1
             self.db.flush()
 
-    def soft_delete_staff(self, staff: Staff) -> None:
+    def soft_delete_staff(self, staff: Staff, version: int) -> None:
         """スタッフを論理削除します。
 
         Args:
             staff: 削除対象のスタッフエンティティ
+            version: 楽観排他ロック用バージョン
         """
         m = self.db.query(StaffModel).filter(StaffModel.id == staff.id).first()
         if m:
+            if m.version != version:
+                raise conflict("optimistic_lock")
             m.deleted_at = datetime.now(timezone.utc)
+            m.version += 1
             self.db.flush()
 
     def restore_staff(self, staff: Staff) -> None:

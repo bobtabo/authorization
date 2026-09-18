@@ -51,6 +51,7 @@ def _map_staff(s) -> dict:
         "email": s.email,
         "role": s.role,
         "status": s.status,
+        "version": s.version,
         "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
         "updated_at": s.updated_at.strftime("%Y-%m-%d %H:%M") if s.updated_at else None,
     }
@@ -83,6 +84,11 @@ def index(
 
 class UpdateRoleBody(BaseModel):
     role: int
+    version: int
+
+
+class DestroyBody(BaseModel):
+    version: int
 
 
 @router.patch("/staffs/{staff_id}/updateRole")
@@ -92,7 +98,7 @@ def update_role(
     executor_id: int = Depends(get_staff_id_from_cookie),
     interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    dto = StaffUpdateRoleDto(staff_id=staff_id, role=body.role, executor_id=executor_id)
+    dto = StaffUpdateRoleDto(staff_id=staff_id, role=body.role, version=body.version, executor_id=executor_id)
     interactor.update_role(dto)
     return {"id": staff_id}
 
@@ -106,9 +112,10 @@ def restore(staff_id: int, interactor: StaffInteractor = Depends(get_staff_inter
 @router.delete("/staffs/{staff_id}/delete")
 def destroy(
     staff_id: int,
+    body: DestroyBody,
     executor_id: int = Depends(get_staff_id_from_cookie),
     interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    dto = StaffDestroyDto(staff_id=staff_id, executor_id=executor_id)
+    dto = StaffDestroyDto(staff_id=staff_id, version=body.version, executor_id=executor_id)
     interactor.destroy(dto)
     return {"id": staff_id}

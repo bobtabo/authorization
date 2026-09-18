@@ -29,6 +29,7 @@ def _to_list_item(staff: Staff) -> StaffListItem:
         email=staff.email,
         role=staff.role,
         status=status,
+        version=staff.version,
         created_at=staff.created_at,
         updated_at=staff.updated_at,
     )
@@ -100,7 +101,7 @@ class StaffInteractor:
         staff = self.repository.find_staff_by_id(dto.staff_id)
         if staff is None:
             raise not_found("staff_not_found")
-        self.repository.update_staff_role(staff, dto.role)
+        self.repository.update_staff_role(staff, dto.role, dto.version)
 
     def restore(self, staff_id: int) -> None:
         """スタッフの論理削除を復元します。
@@ -130,4 +131,4 @@ class StaffInteractor:
         staff = self.repository.find_staff_by_id(dto.staff_id)
         if staff is None:
             raise not_found("staff_not_found")
-        self.repository.soft_delete_staff(staff)
+        self.repository.soft_delete_staff(staff, dto.version)
