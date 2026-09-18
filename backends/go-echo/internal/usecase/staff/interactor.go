@@ -110,6 +110,7 @@ func staffToListItem(s *domstaff.Staff) *domstaff.ListItem {
 		Email:     s.Email,
 		Role:      s.Role,
 		Status:    staffStatus(s),
+		Version:   s.Version,
 		CreatedAt: s.CreatedAt,
 		UpdatedAt: s.UpdatedAt,
 	}

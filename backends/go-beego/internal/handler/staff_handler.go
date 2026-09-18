@@ -145,6 +145,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 			"email":      s.Email,
 			"role":       s.Role,
 			"status":     s.Status,
+			"version":    s.Version,
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})

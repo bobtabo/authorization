@@ -134,7 +134,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 	for _, s := range staffs {
 		out = append(out, map[string]interface{}{
 			"id": s.ID, "name": s.Name, "email": s.Email, "role": s.Role,
-			"status": s.Status, "created_at": formatTime(s.CreatedAt), "updated_at": formatTime(s.UpdatedAt),
+			"status": s.Status, "version": s.Version, "created_at": formatTime(s.CreatedAt), "updated_at": formatTime(s.UpdatedAt),
 		})
 	}
 	return out
