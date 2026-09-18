@@ -180,6 +180,7 @@ public class StaffController {
         data.put("status", staff.getStatus());
         data.put("created_at", staff.getCreatedAt() != null ? staff.getCreatedAt().format(FMT) : null);
         data.put("updated_at", staff.getUpdatedAt() != null ? staff.getUpdatedAt().format(FMT) : null);
+        data.put("version", staff.getVersion());
         return data;
     }
 }
