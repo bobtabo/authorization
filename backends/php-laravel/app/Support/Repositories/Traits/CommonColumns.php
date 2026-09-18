@@ -28,8 +28,8 @@ trait CommonColumns
     /**
      * エンティティ共通カラムを設定します。
      *
-     * @param Entity $entity エンティティ
-     * @param array $dateColumns タイムスタンプカラム配列
+     * @param  Entity  $entity  エンティティ
+     * @param  array  $dateColumns  タイムスタンプカラム配列
      * @return Entity 設定したエンティティ
      */
     protected function assignCommons(Entity $entity, array $dateColumns): Entity
@@ -39,7 +39,7 @@ trait CommonColumns
         foreach ($dateColumns as $column) {
             $camel = Str::camel($column);
             if ($entityClass->hasProperty($camel) && empty($entity->$camel)) {
-                $entity->assign([ $camel => Carbon::now() ]);
+                $entity->assign([$camel => Carbon::now()]);
             }
         }
 
@@ -57,8 +57,8 @@ trait CommonColumns
     /**
      * モデル共通カラムをエンティティに設定します。
      *
-     * @param array $entityAttributes エンティティ属性
-     * @param Model $model モデル
+     * @param  array  $entityAttributes  エンティティ属性
+     * @param  Model  $model  モデル
      * @return array 設定したエンティティ属性
      */
     protected function assignCommonsByModel(array $entityAttributes, Model $model): array
@@ -75,7 +75,10 @@ trait CommonColumns
             }
         }
 
-        $entityAttributes[$model->getDeletedAtColumn()] = null;
+        // 論理削除状態は delete()/restore() の責務であり、save() では既存行の
+        // deleted_at をそのまま維持する（無効化したエンティティを編集しても
+        // 誤って復活させないため）。
+        $entityAttributes[$model->getDeletedAtColumn()] = $model->{$model->getDeletedAtColumn()};
 
         return $entityAttributes;
     }
