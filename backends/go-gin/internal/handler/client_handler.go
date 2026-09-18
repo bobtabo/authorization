@@ -69,6 +69,7 @@ func (h *ClientHandler) Index(c *gin.Context) {
 			cond.StartTo = &t
 		}
 	}
+	cond.Statuses = parseIntList(c.QueryArray("statuses"))
 
 	limit := 10
 	if v := c.Query("limit"); v != "" {

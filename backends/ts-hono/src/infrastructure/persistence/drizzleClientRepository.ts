@@ -3,7 +3,7 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { and, eq, isNull, like, or, asc, desc, sql, count as drizzleCount } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, or, asc, desc, sql, count as drizzleCount } from "drizzle-orm";
 import { clients } from "../model/schema.js";
 import type { ClientRepository, FindAllOptions } from "../../domain/client/repository.js";
 import type { Client } from "../../domain/client/entity.js";
@@ -13,15 +13,15 @@ import { conflict } from "../../lib/errors.js";
 export class DrizzleClientRepository implements ClientRepository {
   constructor(private readonly db: DB) {}
 
-  private buildWhere(keyword?: string, status?: number) {
+  private buildWhere(keyword?: string, statuses?: number[]) {
     const conds = [];
     if (keyword) conds.push(or(like(clients.name, `%${keyword}%`), like(clients.identifier, `%${keyword}%`))!);
-    if (status !== undefined) conds.push(eq(clients.status, status));
+    if (statuses && statuses.length > 0) conds.push(inArray(clients.status, statuses));
     return conds.length ? and(...conds) : undefined;
   }
 
-  async findAll(keyword?: string, status?: number, options?: FindAllOptions): Promise<Client[]> {
-    const where = this.buildWhere(keyword, status);
+  async findAll(keyword?: string, statuses?: number[], options?: FindAllOptions): Promise<Client[]> {
+    const where = this.buildWhere(keyword, statuses);
     let q = this.db.select().from(clients).where(where).$dynamic();
 
     if (options?.sort) {
@@ -42,8 +42,8 @@ export class DrizzleClientRepository implements ClientRepository {
     return q;
   }
 
-  async countAll(keyword?: string, status?: number): Promise<number> {
-    const where = this.buildWhere(keyword, status);
+  async countAll(keyword?: string, statuses?: number[]): Promise<number> {
+    const where = this.buildWhere(keyword, statuses);
     const rows = await this.db.select({ value: drizzleCount(clients.id) }).from(clients).where(where);
     return rows[0]?.value ?? 0;
   }

@@ -50,6 +50,7 @@ func (h *ClientHandler) Index(c echo.Context) error {
 			cond.StartTo = &t
 		}
 	}
+	cond.Statuses = parseIntList(c.QueryParams()["statuses"])
 
 	limit := 10
 	if v := c.QueryParam("limit"); v != "" {

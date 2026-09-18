@@ -3,7 +3,7 @@
 
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -11,7 +11,7 @@ from typing import Optional
 class ClientCondition:
     """クライアント検索条件。"""
     keyword: Optional[str] = None
-    status: Optional[int] = None
+    statuses: list[int] = field(default_factory=list)
     offset: int = 0
     limit: int = 10
     sort: Optional[str] = None
