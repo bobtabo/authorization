@@ -40,7 +40,8 @@ export class StaffInteractor {
    */
   async updateRole(staffId: number, role: number, version: number, executorId: number): Promise<void> {
     if (staffId === executorId) throw badRequest("cannot_update_own_role");
-    const staff = await this.repo.findById(staffId);
+    // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
+    const staff = await this.repo.findByIdUnscoped(staffId);
     if (!staff) throw notFound("staff_not_found");
     await this.repo.updateRole(staffId, role, version);
   }

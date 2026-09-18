@@ -61,7 +61,9 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
     /// <inheritdoc/>
     public async Task<StaffEntity?> FindByIdAsync(long id, CancellationToken ct = default)
     {
-        var m = await db.Staffs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id && s.DeletedAt == null, ct);
+        // 無効化（論理削除）はログイン可否にのみ影響するため、詳細取得・権限更新等の
+        // 編集操作では無効スタッフも対象に含める（FindByProviderAsyncは別途DeletedAtで絞る）。
+        var m = await db.Staffs.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id, ct);
         return m is null ? null : ToEntity(m);
     }
 

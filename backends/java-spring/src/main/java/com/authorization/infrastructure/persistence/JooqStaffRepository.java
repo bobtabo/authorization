@@ -79,9 +79,10 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public Staff findById(StaffCondition condition) {
+        // 無効化（論理削除）はログイン可否にのみ影響するため、詳細取得・権限更新等の
+        // 編集操作では無効スタッフも対象に含める（findByProviderは別途DELETED_ATで絞る）。
         StaffsRecord rec = dsl.selectFrom(STAFFS)
                 .where(STAFFS.ID.eq(condition.getId()))
-                .and(STAFFS.DELETED_AT.isNull())
                 .fetchOne();
         return rec == null ? null : recordMapper.toEntity(rec);
     }

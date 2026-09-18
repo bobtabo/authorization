@@ -79,11 +79,12 @@ func (r *OrmStaffRepository) applyFilters(qs orm.QuerySeter, cond domstaff.Condi
 	return qs
 }
 
+// FindByID はIDでスタッフエンティティを返します。無効化（論理削除）はログイン可否にのみ
+// 影響するため、詳細取得・権限更新等の編集操作では無効スタッフも対象に含める。
 func (r *OrmStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {
 	var m model.Staff
 	err := r.o.QueryTable(new(model.Staff)).
 		Filter("id", s.ID).
-		Filter("deleted_at__isnull", true).
 		One(&m)
 	if err == orm.ErrNoRows {
 		return nil, nil
@@ -167,8 +168,9 @@ func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 
 func (r *OrmStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
+	// 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
 	res, err := r.o.Raw(
-		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND version=? AND deleted_at IS NULL",
+		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND version=?",
 		s.Role, now, s.UpdatedBy, s.ID, s.Version,
 	).Exec()
 	if err != nil {

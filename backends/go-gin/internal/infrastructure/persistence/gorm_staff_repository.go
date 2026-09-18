@@ -89,9 +89,11 @@ func (r *GormStaffRepository) applyFilters(q *gorm.DB, cond domstaff.Condition) 
 }
 
 // FindByID はIDでスタッフエンティティを返します。存在しない場合は nil を返します。
+// 無効化（論理削除）はログイン可否にのみ影響するため、詳細取得・権限更新等の
+// 編集操作では無効スタッフも対象に含める。
 func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
 	var m model.Staff
-	if err := r.db.First(&m, id).Error; err != nil {
+	if err := r.db.Unscoped().First(&m, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -150,8 +152,8 @@ func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 // version が DB と一致しない場合は楽観排他エラーを返します。
 func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint, version int) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).
-		Where("id = ? AND deleted_at IS NULL AND version = ?", id, version).
+	result := r.db.Unscoped().Model(&model.Staff{}).
+		Where("id = ? AND version = ?", id, version).
 		Updates(map[string]interface{}{
 			"role":       role,
 			"updated_at": now,

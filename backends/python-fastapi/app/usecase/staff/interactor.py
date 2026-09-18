@@ -98,7 +98,8 @@ class StaffInteractor:
         """
         if dto.staff_id == dto.executor_id:
             raise bad_request("cannot_update_own_role")
-        staff = self.repository.find_staff_by_id(dto.staff_id)
+        # 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
+        staff = self.repository.find_staff_by_id_include_deleted(dto.staff_id)
         if staff is None:
             raise not_found("staff_not_found")
         self.repository.update_staff_role(staff, dto.role, dto.version)

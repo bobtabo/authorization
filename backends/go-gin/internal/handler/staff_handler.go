@@ -87,7 +87,8 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 	}
 
 	var body struct {
-		Role int `json:"role" binding:"required"`
+		Role    int `json:"role" binding:"required"`
+		Version int `json:"version"`
 	}
 	if err = c.ShouldBindJSON(&body); err != nil {
 		_ = c.Error(apperror.BadRequest("validation_error"))
@@ -99,6 +100,7 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
 			Role:       body.Role,
+			Version:    body.Version,
 			ExecutorID: executorID,
 		})
 	}); txErr != nil {

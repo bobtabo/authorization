@@ -81,9 +81,11 @@ func (r *EntStaffRepository) applyFilters(q *ent.StaffQuery, cond domstaff.Condi
 	return q
 }
 
+// FindByID はIDでスタッフエンティティを返します。無効化（論理削除）はログイン可否にのみ
+// 影響するため、詳細取得・権限更新等の編集操作では無効スタッフも対象に含める。
 func (r *EntStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {
 	m, err := r.db.Staff.Query().
-		Where(staff.IDEQ(s.ID), staff.DeletedAtIsNil()).
+		Where(staff.IDEQ(s.ID)).
 		First(context.Background())
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -178,7 +180,7 @@ func (r *EntStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 func (r *EntStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
 	n, err := r.db.Staff.Update().
-		Where(staff.IDEQ(s.ID), staff.DeletedAtIsNil()).
+		Where(staff.IDEQ(s.ID)).
 		SetRole(s.Role).
 		SetUpdatedAt(now).
 		SetNillableUpdatedBy(uintPtrToNillable(s.UpdatedBy)).

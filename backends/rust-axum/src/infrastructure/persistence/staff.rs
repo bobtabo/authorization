@@ -236,9 +236,10 @@ impl Repository for SqlxStaffRepository {
         version: i32,
     ) -> Result<bool, DomainError> {
         let now = chrono::Utc::now();
+        // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         let result = sqlx::query(
             "UPDATE staffs SET role = ?, updated_at = ?, updated_by = ?, version = version + 1 \
-             WHERE id = ? AND deleted_at IS NULL AND version = ?",
+             WHERE id = ? AND version = ?",
         )
         .bind(role)
         .bind(now)

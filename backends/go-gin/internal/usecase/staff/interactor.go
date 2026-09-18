@@ -47,14 +47,15 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 	if dto.Role != domstaff.RoleAdmin && dto.Role != domstaff.RoleMember {
 		return apperror.BadRequest("role_invalid")
 	}
+	// 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
 	s, err := uc.repo.FindByID(dto.ID)
 	if err != nil {
 		return err
 	}
-	if s == nil || s.DeletedAt != nil {
+	if s == nil {
 		return apperror.NotFound("staff_not_found")
 	}
-	ok, err := uc.repo.UpdateRole(dto.ID, dto.Role, dto.ExecutorID, s.Version)
+	ok, err := uc.repo.UpdateRole(dto.ID, dto.Role, dto.ExecutorID, dto.Version)
 	if err != nil {
 		return err
 	}
