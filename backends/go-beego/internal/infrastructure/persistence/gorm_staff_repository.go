@@ -34,10 +34,12 @@ func (r *OrmStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domsta
 		qs = qs.Limit(cond.Limit, cond.Offset)
 	}
 
-	allowedSort := map[string]bool{"name": true, "role": true, "status": true, "created_at": true}
-	sort := "id"
-	if cond.Sort != "" && allowedSort[cond.Sort] {
-		sort = cond.Sort
+	// staffs テーブルに status カラムは無く、有効/無効は deleted_at の有無で判定するため、
+	// status によるソートは deleted_at へ読み替える。
+	sortColumns := map[string]string{"name": "name", "role": "role", "status": "deleted_at", "created_at": "created_at"}
+	sort, ok := sortColumns[cond.Sort]
+	if !ok {
+		sort = "id"
 	}
 	if cond.SortType == "desc" {
 		qs = qs.OrderBy("-" + sort)

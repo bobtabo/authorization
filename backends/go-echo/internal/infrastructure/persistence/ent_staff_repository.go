@@ -32,9 +32,12 @@ func (r *EntStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domsta
 		q = q.Limit(cond.Limit).Offset(cond.Offset)
 	}
 
+	// staffs テーブルに status カラムは無く、有効/無効は deleted_at の有無で判定するため、
+	// status によるソートは deleted_at へ読み替える。
 	allowedSort := map[string]string{
 		"name":       staff.FieldName,
 		"role":       staff.FieldRole,
+		"status":     staff.FieldDeletedAt,
 		"created_at": staff.FieldCreatedAt,
 	}
 	sortField := staff.FieldID

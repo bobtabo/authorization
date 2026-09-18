@@ -87,11 +87,8 @@ func (uc *Interactor) Restore(dto RestoreDto) error {
 	if err != nil {
 		return err
 	}
-	if current == nil {
+	if current == nil || current.DeletedAt == nil {
 		return apperror.NotFound("staff_not_found")
-	}
-	if current.Version != dto.Version {
-		return apperror.Conflict("optimistic_lock")
 	}
 	ok, err := uc.repo.Restore(&domstaff.Staff{ID: dto.ID})
 	if err != nil {

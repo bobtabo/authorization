@@ -95,14 +95,8 @@ func (h *StaffHandler) Restore(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
-	var body struct {
-		Version int `json:"version"`
-	}
-	if err = c.Bind(&body); err != nil {
-		return apperror.BadRequest("validation_error")
-	}
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
-		return h.newStaffUC(tx.Client()).Restore(ustaff.RestoreDto{ID: id, Version: body.Version})
+		return h.newStaffUC(tx.Client()).Restore(ustaff.RestoreDto{ID: id})
 	}); txErr != nil {
 		return txErr
 	}
