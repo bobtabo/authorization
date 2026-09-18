@@ -59,6 +59,7 @@ class StaffHandler(private val staffUC: StaffUC) {
                     put("email",      s.email)
                     put("role",       s.role)
                     put("status",     s.status)
+                    put("version",    s.version)
                     put("created_at", s.createdAt.format(fmt))
                     put("updated_at", s.updatedAt.format(fmt))
                 })

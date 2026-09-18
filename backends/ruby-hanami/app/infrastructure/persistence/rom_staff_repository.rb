@@ -136,6 +136,7 @@ module Infrastructure
           email:      r[:email],
           role:       r[:role],
           status:     r[:deleted_at] ? 0 : 1,
+          version:    r[:version],
           created_at: r[:created_at],
           updated_at: r[:updated_at],
         )

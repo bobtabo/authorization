@@ -13,6 +13,7 @@ pub struct ListItem {
     pub role: i32,
     /// 0=削除済み, 1=有効。
     pub status: i32,
+    pub version: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

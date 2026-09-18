@@ -35,6 +35,7 @@ class Api::StaffsController < Api::BaseController
         email:      s.email,
         role:       s.role,
         status:     s.status,
+        version:    s.version,
         created_at: s.created_at.strftime(TIME_FORMAT),
         updated_at: s.updated_at.strftime(TIME_FORMAT),
       }

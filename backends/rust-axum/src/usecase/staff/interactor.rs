@@ -66,6 +66,7 @@ fn to_list_item(s: Staff) -> ListItem {
         email: s.email,
         role: s.role,
         status,
+        version: s.version,
         created_at: s.created_at,
         updated_at: s.updated_at,
     }

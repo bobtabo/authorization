@@ -105,6 +105,7 @@ pub async fn index(
                         "email":      s.email,
                         "role":       s.role,
                         "status":     s.status,
+                        "version":    s.version,
                         "created_at": s.created_at.format(TIME_FORMAT).to_string(),
                         "updated_at": s.updated_at.format(TIME_FORMAT).to_string(),
                     })
