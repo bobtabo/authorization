@@ -25,6 +25,8 @@ app.get("/staffs", async (c) => {
   const keyword = c.req.query("keyword");
   const rolesRaw = c.req.queries("roles") ?? [];
   const roles = rolesRaw.flatMap(r => r.split(",")).map(Number).filter(n => !isNaN(n));
+  const statusesRaw = c.req.queries("statuses") ?? [];
+  const statuses = statusesRaw.flatMap(s => s.split(",")).map(Number).filter(n => !isNaN(n));
   const limit = Math.max(1, parseInt(c.req.query("limit") ?? "10", 10) || 10);
   const page = Math.max(1, parseInt(c.req.query("page") ?? "1", 10) || 1);
   const offset = limit * (page - 1);
@@ -32,7 +34,7 @@ app.get("/staffs", async (c) => {
   const sortType = c.req.query("sort_type");
 
   const uc = new StaffInteractor(new DrizzleStaffRepository(db));
-  const [list, count] = await uc.findByCondition(keyword, roles, offset, limit, sort, sortType);
+  const [list, count] = await uc.findByCondition(keyword, roles, statuses, offset, limit, sort, sortType);
   const pager = buildPager(count, limit, offset, list.length);
   return c.json({ data: list.map(mapStaff), pager });
 });

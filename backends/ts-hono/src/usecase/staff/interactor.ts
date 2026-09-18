@@ -17,15 +17,16 @@ export class StaffInteractor {
    * 検索条件に合致するスタッフ一覧の VO と総件数を返します。
    * @param keyword - キーワード検索
    * @param roles - ロールフィルター
+   * @param statuses - 状態フィルター（1=有効, 0=無効）
    * @param offset - オフセット
    * @param limit - 取得件数
    * @param sort - ソート対象
    * @param sortType - ソート順
    * @returns StaffListItem の配列と総件数のタプル
    */
-  async findByCondition(keyword?: string, roles?: number[], offset = 0, limit = 10, sort?: string, sortType?: string): Promise<[StaffListItem[], number]> {
-    const count = await this.repo.countAll(keyword, roles);
-    const staffs = await this.repo.findAll(keyword, roles, { offset, limit, sort, sortType });
+  async findByCondition(keyword?: string, roles?: number[], statuses?: number[], offset = 0, limit = 10, sort?: string, sortType?: string): Promise<[StaffListItem[], number]> {
+    const count = await this.repo.countAll(keyword, roles, statuses);
+    const staffs = await this.repo.findAll(keyword, roles, statuses, { offset, limit, sort, sortType });
     return [mapper.mapArray(staffs, StaffSymbol, StaffListItemSymbol), count];
   }
 
