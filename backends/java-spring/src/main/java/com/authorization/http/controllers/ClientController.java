@@ -102,6 +102,7 @@ public class ClientController {
      * @param keyword 検索キーワード
      * @param startFrom 利用開始日 From
      * @param startTo 利用開始日 To
+     * @param statuses 状態フィルタ
      * @param limit 取得件数
      * @param page ページ番号
      * @param sort ソート対象カラム
@@ -113,6 +114,7 @@ public class ClientController {
             @RequestParam(required = false) String keyword,
             @RequestParam(name = "start_from", required = false) String startFrom,
             @RequestParam(name = "start_to", required = false) String startTo,
+            @RequestParam(required = false) List<Integer> statuses,
             @RequestParam(required = false, defaultValue = "10") int limit,
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false) String sort,
@@ -121,6 +123,7 @@ public class ClientController {
         dto.setKeyword(keyword);
         dto.setStartFrom(startFrom);
         dto.setStartTo(startTo);
+        dto.setStatuses(statuses == null ? List.of() : statuses);
         dto.setSort(sort == null ? "" : sort);
         dto.setSortType(com.authorization.support.enums.SortType.fromValue(sortType));
         dto.setLimit(limit);

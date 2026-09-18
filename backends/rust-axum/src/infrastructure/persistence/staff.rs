@@ -3,51 +3,51 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use sqlx::{MySqlPool, QueryBuilder};
 use crate::domain::staff::{
     condition::Condition,
     entity::Staff,
     repository::{DomainError, Repository},
 };
+use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use sqlx::{MySqlPool, QueryBuilder};
 
 #[derive(sqlx::FromRow)]
 struct StaffRow {
-    id:            u32,
-    name:          String,
-    email:         String,
-    provider:      i32,
-    provider_id:   String,
-    avatar:        Option<String>,
-    role:          u32,
+    id: u32,
+    name: String,
+    email: String,
+    provider: i32,
+    provider_id: String,
+    avatar: Option<String>,
+    role: u32,
     last_login_at: Option<DateTime<Utc>>,
     created_at: DateTime<Utc>,
-    created_by:    Option<u32>,
+    created_by: Option<u32>,
     updated_at: DateTime<Utc>,
-    updated_by:    Option<u32>,
+    updated_by: Option<u32>,
     deleted_at: Option<DateTime<Utc>>,
-    deleted_by:    Option<u32>,
-    version:       u32,
+    deleted_by: Option<u32>,
+    version: u32,
 }
 
 fn row_to_entity(r: StaffRow) -> Staff {
     Staff {
-        id:            r.id,
-        name:          r.name,
-        email:         r.email,
-        provider:      r.provider,
-        provider_id:   r.provider_id,
-        avatar:        r.avatar,
-        role:          r.role as i32,
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        provider: r.provider,
+        provider_id: r.provider_id,
+        avatar: r.avatar,
+        role: r.role as i32,
         last_login_at: r.last_login_at,
-        created_at:    r.created_at,
-        created_by:    r.created_by,
-        updated_at:    r.updated_at,
-        updated_by:    r.updated_by,
-        deleted_at:    r.deleted_at,
-        deleted_by:    r.deleted_by,
-        version:       r.version as i32,
+        created_at: r.created_at,
+        created_by: r.created_by,
+        updated_at: r.updated_at,
+        updated_by: r.updated_by,
+        deleted_at: r.deleted_at,
+        deleted_by: r.deleted_by,
+        version: r.version as i32,
     }
 }
 
@@ -65,12 +65,10 @@ impl SqlxStaffRepository {
     }
 
     async fn fetch_by_id(&self, id: u32) -> Result<Option<Staff>, DomainError> {
-        let row = sqlx::query_as::<_, StaffRow>(
-            "SELECT * FROM staffs WHERE id = ?"
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let row = sqlx::query_as::<_, StaffRow>("SELECT * FROM staffs WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await?;
         Ok(row.map(row_to_entity))
     }
 
@@ -93,43 +91,57 @@ impl SqlxStaffRepository {
             }
             qb.push(")");
         }
+        // staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+        if !cond.statuses.is_empty() {
+            let active = cond.statuses.contains(&1);
+            let inactive = cond.statuses.contains(&0);
+            if active && !inactive {
+                qb.push(" AND deleted_at IS NULL");
+            } else if inactive && !active {
+                qb.push(" AND deleted_at IS NOT NULL");
+            }
+        }
     }
 }
 
 #[async_trait]
 impl Repository for SqlxStaffRepository {
     async fn count_by_condition(&self, cond: Condition) -> Result<i64, DomainError> {
-        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
-            "SELECT COUNT(*) FROM staffs WHERE 1=1"
-        );
+        let mut qb: QueryBuilder<sqlx::MySql> =
+            QueryBuilder::new("SELECT COUNT(*) FROM staffs WHERE 1=1");
         SqlxStaffRepository::push_filters(&mut qb, &cond);
         let row: (i64,) = qb.build_query_as().fetch_one(&self.pool).await?;
         Ok(row.0)
     }
 
     async fn find_by_condition(&self, cond: Condition) -> Result<Vec<Staff>, DomainError> {
-        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new(
-            "SELECT * FROM staffs WHERE 1=1"
-        );
+        let mut qb: QueryBuilder<sqlx::MySql> = QueryBuilder::new("SELECT * FROM staffs WHERE 1=1");
         SqlxStaffRepository::push_filters(&mut qb, &cond);
         let sort_col = match cond.sort.as_deref() {
             Some(s) if ALLOWED_SORT.contains(&s) => s,
             _ => "id",
         };
-        let sort_dir = if cond.sort_type.as_deref() == Some("desc") { "DESC" } else { "ASC" };
+        let sort_dir = if cond.sort_type.as_deref() == Some("desc") {
+            "DESC"
+        } else {
+            "ASC"
+        };
         qb.push(format!(" ORDER BY {} {}", sort_col, sort_dir));
         let limit = if cond.limit > 0 { cond.limit } else { 10 };
         qb.push(" LIMIT ");
         qb.push_bind(limit);
         qb.push(" OFFSET ");
         qb.push_bind(cond.offset);
-        let rows = qb.build_query_as::<StaffRow>().fetch_all(&self.pool).await?;
+        let rows = qb
+            .build_query_as::<StaffRow>()
+            .fetch_all(&self.pool)
+            .await?;
         Ok(rows.into_iter().map(row_to_entity).collect())
     }
 
     async fn find_by_id(&self, id: u32) -> Result<Option<Staff>, DomainError> {
         let row = sqlx::query_as::<_, StaffRow>(
-            "SELECT * FROM staffs WHERE id = ? AND deleted_at IS NULL LIMIT 1"
+            "SELECT * FROM staffs WHERE id = ? AND deleted_at IS NULL LIMIT 1",
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -137,9 +149,13 @@ impl Repository for SqlxStaffRepository {
         Ok(row.map(row_to_entity))
     }
 
-    async fn find_by_provider(&self, provider: i32, provider_id: &str) -> Result<Option<Staff>, DomainError> {
+    async fn find_by_provider(
+        &self,
+        provider: i32,
+        provider_id: &str,
+    ) -> Result<Option<Staff>, DomainError> {
         let row = sqlx::query_as::<_, StaffRow>(
-            "SELECT * FROM staffs WHERE provider = ? AND provider_id = ? LIMIT 1"
+            "SELECT * FROM staffs WHERE provider = ? AND provider_id = ? LIMIT 1",
         )
         .bind(provider)
         .bind(provider_id)
@@ -150,7 +166,7 @@ impl Repository for SqlxStaffRepository {
 
     async fn find_all_active(&self) -> Result<Vec<Staff>, DomainError> {
         let rows = sqlx::query_as::<_, StaffRow>(
-            "SELECT * FROM staffs WHERE deleted_at IS NULL ORDER BY id ASC"
+            "SELECT * FROM staffs WHERE deleted_at IS NULL ORDER BY id ASC",
         )
         .fetch_all(&self.pool)
         .await?;
@@ -163,7 +179,7 @@ impl Repository for SqlxStaffRepository {
                 "INSERT INTO staffs (name, email, provider, provider_id, avatar, role, \
                  last_login_at, created_at, created_by, updated_at, updated_by, \
                  deleted_at, deleted_by, version) \
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             )
             .bind(&s.name)
             .bind(&s.email)
@@ -212,11 +228,18 @@ impl Repository for SqlxStaffRepository {
         }
     }
 
-    async fn update_role(&self, id: u32, role: i32, updated_by: u32, version: i32) -> Result<bool, DomainError> {
+    async fn update_role(
+        &self,
+        id: u32,
+        role: i32,
+        updated_by: u32,
+        version: i32,
+    ) -> Result<bool, DomainError> {
         let now = chrono::Utc::now();
+        // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         let result = sqlx::query(
             "UPDATE staffs SET role = ?, updated_at = ?, updated_by = ?, version = version + 1 \
-             WHERE id = ? AND deleted_at IS NULL AND version = ?"
+             WHERE id = ? AND version = ?",
         )
         .bind(role)
         .bind(now)
@@ -231,11 +254,16 @@ impl Repository for SqlxStaffRepository {
         Ok(true)
     }
 
-    async fn soft_delete(&self, id: u32, deleted_by: u32, version: i32) -> Result<bool, DomainError> {
+    async fn soft_delete(
+        &self,
+        id: u32,
+        deleted_by: u32,
+        version: i32,
+    ) -> Result<bool, DomainError> {
         let now = chrono::Utc::now();
         let result = sqlx::query(
             "UPDATE staffs SET deleted_at = ?, deleted_by = ? \
-             WHERE id = ? AND deleted_at IS NULL AND version = ?"
+             WHERE id = ? AND deleted_at IS NULL AND version = ?",
         )
         .bind(now)
         .bind(deleted_by)
@@ -252,7 +280,7 @@ impl Repository for SqlxStaffRepository {
     async fn restore(&self, id: u32) -> Result<bool, DomainError> {
         let result = sqlx::query(
             "UPDATE staffs SET deleted_at = NULL, deleted_by = NULL \
-             WHERE id = ? AND deleted_at IS NOT NULL"
+             WHERE id = ? AND deleted_at IS NOT NULL",
         )
         .bind(id)
         .execute(&self.pool)

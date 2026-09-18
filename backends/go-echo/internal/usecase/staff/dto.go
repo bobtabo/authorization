@@ -27,6 +27,4 @@ type DestroyDto struct {
 type RestoreDto struct {
 	// ID はスタッフID。
 	ID uint
-	// Version は楽観排他ロック用バージョン番号。
-	Version int
 }

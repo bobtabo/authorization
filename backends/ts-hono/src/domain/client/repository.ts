@@ -17,8 +17,8 @@ export interface FindAllOptions {
 
 /** クライアントのリポジトリインターフェース。 */
 export interface ClientRepository {
-  findAll(keyword?: string, status?: number, options?: FindAllOptions): Promise<Client[]>;
-  countAll(keyword?: string, status?: number): Promise<number>;
+  findAll(keyword?: string, statuses?: number[], options?: FindAllOptions): Promise<Client[]>;
+  countAll(keyword?: string, statuses?: number[]): Promise<number>;
   findById(id: number): Promise<Client | undefined>;
   findByToken(token: string): Promise<Client | undefined>;
   findByIdentifier(identifier: string): Promise<Client | undefined>;

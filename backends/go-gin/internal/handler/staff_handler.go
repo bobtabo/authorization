@@ -35,6 +35,7 @@ func (h *StaffHandler) Index(c *gin.Context) {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(c.QueryArray("roles"))
+	cond.Statuses = parseIntList(c.QueryArray("statuses"))
 
 	limit := 10
 	if v := c.Query("limit"); v != "" {
@@ -86,7 +87,8 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 	}
 
 	var body struct {
-		Role int `json:"role" binding:"required"`
+		Role    int `json:"role" binding:"required"`
+		Version int `json:"version"`
 	}
 	if err = c.ShouldBindJSON(&body); err != nil {
 		_ = c.Error(apperror.BadRequest("validation_error"))
@@ -98,6 +100,7 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
 			Role:       body.Role,
+			Version:    body.Version,
 			ExecutorID: executorID,
 		})
 	}); txErr != nil {
@@ -157,6 +160,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []gin.H {
 			"email":      s.Email,
 			"role":       s.Role,
 			"status":     s.Status,
+			"version":    s.Version,
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})

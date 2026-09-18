@@ -4,7 +4,7 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, Query, RawQuery, State},
     http::StatusCode,
     Json,
 };
@@ -12,27 +12,26 @@ use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+use super::{int_array_query, staff_id_from_cookie, TIME_FORMAT};
 use crate::{
     state::AppState,
-    usecase::staff::dto::{UpdateRoleDto, DestroyDto},
+    usecase::staff::dto::{DestroyDto, UpdateRoleDto},
 };
-use super::{staff_id_from_cookie, TIME_FORMAT};
 
 /// スタッフ一覧取得クエリ。
 #[derive(Deserialize)]
 pub struct IndexQuery {
-    pub keyword:   Option<String>,
-    pub roles:     Option<String>,
-    pub limit:     Option<i64>,
-    pub page:      Option<i64>,
-    pub sort:      Option<String>,
+    pub keyword: Option<String>,
+    pub limit: Option<i64>,
+    pub page: Option<i64>,
+    pub sort: Option<String>,
     pub sort_type: Option<String>,
 }
 
 /// スタッフロール更新リクエストボディ。
 #[derive(Deserialize)]
 pub struct UpdateRoleBody {
-    pub role:    i32,
+    pub role: i32,
     pub version: i32,
 }
 
@@ -48,7 +47,11 @@ fn build_pager(count: i64, limit: i64, offset: i64, record_count: i64) -> Value 
     let effective_limit = if limit <= 0 { 10 } else { limit };
     let page_count = std::cmp::max(1, (count as f64 / effective_limit as f64).ceil() as i64);
     let last_page_offset = (page_count * effective_limit) - effective_limit;
-    let effective_offset = if count > 0 && offset > last_page_offset { last_page_offset } else { offset };
+    let effective_offset = if count > 0 && offset > last_page_offset {
+        last_page_offset
+    } else {
+        offset
+    };
     let page = (effective_offset as f64 / effective_limit as f64).ceil() as i64 + 1;
     let start_page = std::cmp::max(1, page - (DEFAULT_PAGE_COUNT - 1));
     let end_page = std::cmp::min(page_count, start_page + (DEFAULT_PAGE_COUNT - 1));
@@ -73,39 +76,48 @@ fn build_pager(count: i64, limit: i64, offset: i64, record_count: i64) -> Value 
 /// スタッフ一覧を返します。
 pub async fn index(
     State(state): State<AppState>,
+    RawQuery(raw_query): RawQuery,
     Query(q): Query<IndexQuery>,
 ) -> (StatusCode, Json<Value>) {
     use crate::domain::staff::condition::Condition;
-    let limit  = q.limit.unwrap_or(10).max(1);
-    let page   = q.page.unwrap_or(1).max(1);
+    let limit = q.limit.unwrap_or(10).max(1);
+    let page = q.page.unwrap_or(1).max(1);
     let offset = limit * (page - 1);
-    let roles = q.roles
-        .as_deref()
-        .map(|s| s.split(',').filter_map(|v| v.trim().parse::<i32>().ok()).collect())
-        .unwrap_or_default();
+    let roles = int_array_query(raw_query.as_deref(), "roles");
+    let statuses = int_array_query(raw_query.as_deref(), "statuses");
     let cond = Condition {
-        keyword:   q.keyword,
+        keyword: q.keyword,
         roles,
+        statuses,
         offset,
         limit,
-        sort:      q.sort,
+        sort: q.sort,
         sort_type: q.sort_type,
     };
     match state.staff_uc.find_by_condition_with_count(cond).await {
         Ok((staffs, count)) => {
-            let data: Vec<Value> = staffs.iter().map(|s| json!({
-                "id":         s.id,
-                "name":       s.name,
-                "email":      s.email,
-                "role":       s.role,
-                "status":     s.status,
-                "created_at": s.created_at.format(TIME_FORMAT).to_string(),
-                "updated_at": s.updated_at.format(TIME_FORMAT).to_string(),
-            })).collect();
+            let data: Vec<Value> = staffs
+                .iter()
+                .map(|s| {
+                    json!({
+                        "id":         s.id,
+                        "name":       s.name,
+                        "email":      s.email,
+                        "role":       s.role,
+                        "status":     s.status,
+                        "version":    s.version,
+                        "created_at": s.created_at.format(TIME_FORMAT).to_string(),
+                        "updated_at": s.updated_at.format(TIME_FORMAT).to_string(),
+                    })
+                })
+                .collect();
             let pager = build_pager(count, limit, offset, data.len() as i64);
             (StatusCode::OK, Json(json!({"data": data, "pager": pager})))
         }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        ),
     }
 }
 
@@ -120,19 +132,42 @@ pub async fn update_role(
 
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "internal_error"})),
+            )
+        }
     };
 
-    if let Err(e) = state.staff_uc.update_role(UpdateRoleDto { id, role: body.role, executor_id, version: body.version }).await {
+    if let Err(e) = state
+        .staff_uc
+        .update_role(UpdateRoleDto {
+            id,
+            role: body.role,
+            executor_id,
+            version: body.version,
+        })
+        .await
+    {
         let _ = tx.rollback().await;
         if e.to_string() == "optimistic_lock_conflict" {
-            return (StatusCode::CONFLICT, Json(json!({"error": "optimistic_lock_conflict"})));
+            return (
+                StatusCode::CONFLICT,
+                Json(json!({"error": "optimistic_lock_conflict"})),
+            );
         }
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        );
     }
 
     if tx.commit().await.is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        );
     }
 
     (StatusCode::OK, Json(json!({"id": id})))
@@ -145,16 +180,27 @@ pub async fn restore(
 ) -> (StatusCode, Json<Value>) {
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "internal_error"})),
+            )
+        }
     };
 
     if let Err(_) = state.staff_uc.restore(id).await {
         let _ = tx.rollback().await;
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        );
     }
 
     if tx.commit().await.is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        );
     }
 
     (StatusCode::OK, Json(json!({"id": id})))
@@ -171,19 +217,41 @@ pub async fn destroy(
 
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,
-        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"}))),
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "internal_error"})),
+            )
+        }
     };
 
-    if let Err(e) = state.staff_uc.destroy(DestroyDto { id, executor_id, version: body.version }).await {
+    if let Err(e) = state
+        .staff_uc
+        .destroy(DestroyDto {
+            id,
+            executor_id,
+            version: body.version,
+        })
+        .await
+    {
         let _ = tx.rollback().await;
         if e.to_string() == "optimistic_lock_conflict" {
-            return (StatusCode::CONFLICT, Json(json!({"error": "optimistic_lock_conflict"})));
+            return (
+                StatusCode::CONFLICT,
+                Json(json!({"error": "optimistic_lock_conflict"})),
+            );
         }
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        );
     }
 
     if tx.commit().await.is_err() {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": "internal_error"})));
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "internal_error"})),
+        );
     }
 
     (StatusCode::OK, Json(json!({"id": id})))

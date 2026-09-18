@@ -35,7 +35,7 @@ class TestUpdateRole:
         executor = make_staff(db_session, email="executor@example.com", role=1)
         res = client.patch(
             f"/api/staffs/{staff.id}/updateRole",
-            json={"role": 1},
+            json={"role": 1, "version": staff.version},
             cookies={"staff_id": str(executor.id)},
         )
         assert res.status_code == 200
@@ -55,8 +55,10 @@ class TestDestroy:
     def test_スタッフが削除できる(self, client, db_session):
         staff = make_staff(db_session, email="target@example.com")
         executor = make_staff(db_session, email="executor@example.com")
-        res = client.delete(
+        res = client.request(
+            "DELETE",
             f"/api/staffs/{staff.id}/delete",
+            json={"version": staff.version},
             cookies={"staff_id": str(executor.id)},
         )
         assert res.status_code == 200

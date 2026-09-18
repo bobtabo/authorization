@@ -18,6 +18,7 @@ data class ListItem(
     val email:     String,
     val role:      Int,
     val status:    Int,
+    val version:   Int,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
 )

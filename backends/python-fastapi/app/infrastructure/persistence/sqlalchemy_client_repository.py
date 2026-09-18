@@ -41,8 +41,8 @@ class SqlAlchemyClientRepository(ClientRepository):
         if cond.keyword:
             like = f"%{cond.keyword}%"
             q = q.filter(or_(ClientModel.name.like(like), ClientModel.identifier.like(like)))
-        if cond.status is not None:
-            q = q.filter(ClientModel.status == cond.status)
+        if cond.statuses:
+            q = q.filter(ClientModel.status.in_(cond.statuses))
         return q
 
     def find_all_clients(self, cond: ClientCondition) -> list[Client]:

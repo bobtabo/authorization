@@ -79,9 +79,10 @@ public class JooqStaffRepository implements StaffRepository {
      */
     @Override
     public Staff findById(StaffCondition condition) {
+        // 無効化（論理削除）はログイン可否にのみ影響するため、詳細取得・権限更新等の
+        // 編集操作では無効スタッフも対象に含める（findByProviderは別途DELETED_ATで絞る）。
         StaffsRecord rec = dsl.selectFrom(STAFFS)
                 .where(STAFFS.ID.eq(condition.getId()))
-                .and(STAFFS.DELETED_AT.isNull())
                 .fetchOne();
         return rec == null ? null : recordMapper.toEntity(rec);
     }
@@ -180,6 +181,16 @@ public class JooqStaffRepository implements StaffRepository {
         }
         if (!condition.getRoles().isEmpty()) {
             cond = cond.and(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));
+        }
+        if (!condition.getStatuses().isEmpty()) {
+            // staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+            boolean active = condition.getStatuses().contains(1);
+            boolean inactive = condition.getStatuses().contains(0);
+            if (active && !inactive) {
+                cond = cond.and(STAFFS.DELETED_AT.isNull());
+            } else if (inactive && !active) {
+                cond = cond.and(STAFFS.DELETED_AT.isNotNull());
+            }
         }
         return cond;
     }

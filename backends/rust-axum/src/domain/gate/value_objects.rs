@@ -21,7 +21,17 @@ pub type DomainError = Box<dyn std::error::Error + Send + Sync>;
 #[async_trait]
 pub trait CacheRepository: Send + Sync {
     /// キャッシュから JWT を取得します。キャッシュミス時は None を返します。
-    async fn get_jwt(&self, identifier: &str, member_id: &str) -> Result<Option<String>, DomainError>;
+    async fn get_jwt(
+        &self,
+        identifier: &str,
+        member_id: &str,
+    ) -> Result<Option<String>, DomainError>;
     /// JWT をキャッシュに保存します。
-    async fn put_jwt(&self, identifier: &str, member_id: &str, token: &str, ttl: i64) -> Result<(), DomainError>;
+    async fn put_jwt(
+        &self,
+        identifier: &str,
+        member_id: &str,
+        token: &str,
+        ttl: i64,
+    ) -> Result<(), DomainError>;
 }

@@ -60,13 +60,17 @@ class ClientHandler(
         val pageStr   = call.request.queryParameters["page"]
         val sort      = call.request.queryParameters["sort"]
         val sortType  = call.request.queryParameters["sort_type"]
+        val statuses  = call.request.queryParameters.getAll("statuses")
+            ?.flatMap { it.split(",") }
+            ?.mapNotNull { it.trim().toIntOrNull() }
+            ?: emptyList()
 
         val limit  = limitStr?.toIntOrNull()?.coerceAtLeast(1) ?: 10
         val page   = pageStr?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         val offset = limit * (page - 1)
 
         val dto = ListConditionDto(
-            keyword = keyword, startFrom = startFrom, startTo = startTo,
+            keyword = keyword, startFrom = startFrom, startTo = startTo, statuses = statuses,
             offset = offset, limit = limit, sort = sort, sortType = sortType,
         )
         val (items, count) = clientUC.findByConditionWithCount(dto)

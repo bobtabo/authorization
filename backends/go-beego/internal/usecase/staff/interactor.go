@@ -46,7 +46,7 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 	if s == nil {
 		return apperror.NotFound("staff_not_found")
 	}
-	ok, err := uc.repo.UpdateRole(&domstaff.Staff{ID: dto.ID, Role: dto.Role, UpdatedBy: &dto.ExecutorID, Version: s.Version})
+	ok, err := uc.repo.UpdateRole(&domstaff.Staff{ID: dto.ID, Role: dto.Role, UpdatedBy: &dto.ExecutorID, Version: dto.Version})
 	if err != nil {
 		return err
 	}
@@ -95,6 +95,7 @@ func staffToListItem(s *domstaff.Staff) *domstaff.ListItem {
 		Email:     s.Email,
 		Role:      s.Role,
 		Status:    staffStatus(s),
+		Version:   s.Version,
 		CreatedAt: s.CreatedAt,
 		UpdatedAt: s.UpdatedAt,
 	}

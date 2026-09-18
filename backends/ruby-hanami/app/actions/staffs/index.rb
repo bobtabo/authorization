@@ -19,13 +19,15 @@ module Authorization
           limit  = (request.params[:limit]  || 10).to_i
           page   = (request.params[:page]   || 1).to_i
           offset = limit * (page - 1)
-          keyword = request.params[:keyword]
-          roles   = Array(request.params[:roles]).flat_map { |r| r.to_s.split(",") }.filter_map(&:to_i)
+          keyword  = request.params[:keyword]
+          roles    = array_query(request, "roles").flat_map { |r| r.split(",") }.filter_map { |r| Integer(r, exception: false) }
+          statuses = array_query(request, "statuses").flat_map { |r| r.split(",") }.filter_map { |r| Integer(r, exception: false) }
 
           result = container[:staff_uc].find_by_condition(
             ::Domain::Staff::Condition.new(
               keyword:   keyword,
               roles:     roles,
+              statuses:  statuses,
               offset:    offset,
               limit:     limit,
               sort:      request.params[:sort],
@@ -40,6 +42,7 @@ module Authorization
               email:      s.email,
               role:       s.role,
               status:     s.status,
+              version:    s.version,
               created_at: s.created_at.strftime(TIME_FORMAT),
               updated_at: s.updated_at.strftime(TIME_FORMAT),
             }

@@ -13,6 +13,6 @@ module UseCase
     DestroyDto    = Struct.new(:id, :executor_id, :version, keyword_init: true)
 
     # スタッフ復元時に渡す DTO です。
-    RestoreDto    = Struct.new(:id, :version, keyword_init: true)
+    RestoreDto    = Struct.new(:id, keyword_init: true)
   end
 end

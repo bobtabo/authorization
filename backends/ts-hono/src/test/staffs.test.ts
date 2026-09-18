@@ -34,7 +34,7 @@ describe("Staffs", () => {
           "Content-Type": "application/json",
           Cookie: `staff_id=${executor.id}`,
         },
-        body: JSON.stringify({ role: 1 }),
+        body: JSON.stringify({ role: 1, version: 1 }),
       });
       expect(res.status).toBe(200);
     });
@@ -46,7 +46,8 @@ describe("Staffs", () => {
       const executor = await makeStaff({ email: "exec2@example.com" });
       const res = await app.request(`/api/staffs/${staff.id}/delete`, {
         method: "DELETE",
-        headers: { Cookie: `staff_id=${executor.id}` },
+        headers: { "Content-Type": "application/json", Cookie: `staff_id=${executor.id}` },
+        body: JSON.stringify({ version: 1 }),
       });
       expect(res.status).toBe(200);
     });
@@ -55,7 +56,8 @@ describe("Staffs", () => {
       const executor = await makeStaff({ email: "exec3@example.com" });
       const res = await app.request("/api/staffs/99999/delete", {
         method: "DELETE",
-        headers: { Cookie: `staff_id=${executor.id}` },
+        headers: { "Content-Type": "application/json", Cookie: `staff_id=${executor.id}` },
+        body: JSON.stringify({ version: 1 }),
       });
       expect(res.status).toBe(404);
     });

@@ -1,6 +1,6 @@
 mod common;
 
-use axum::http::{Request, StatusCode, header};
+use axum::http::{header, Request, StatusCode};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
@@ -120,7 +120,7 @@ async fn delete_clients_destroy_soft_deletes_client() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
     let staff_id = common::create_staff(&pool).await;
-    let client   = common::create_client(&pool).await;
+    let client = common::create_client(&pool).await;
 
     let req = Request::builder()
         .method("DELETE")
@@ -190,7 +190,7 @@ async fn delete_staffs_destroy_soft_deletes_staff() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
     let executor_id = common::create_staff(&pool).await;
-    let target_id   = common::create_staff(&pool).await;
+    let target_id = common::create_staff(&pool).await;
 
     let req = Request::builder()
         .method("DELETE")
@@ -305,7 +305,10 @@ async fn get_gate_issue_returns_jwt_token() {
 
     let req = Request::builder()
         .uri("/api/gate/issue?member=user-001")
-        .header(header::AUTHORIZATION, format!("Bearer {}", client.access_token))
+        .header(
+            header::AUTHORIZATION,
+            format!("Bearer {}", client.access_token),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -326,7 +329,10 @@ async fn get_gate_verify_returns_claims() {
     // issue
     let issue_req = Request::builder()
         .uri("/api/gate/issue?member=user-001")
-        .header(header::AUTHORIZATION, format!("Bearer {}", client.access_token))
+        .header(
+            header::AUTHORIZATION,
+            format!("Bearer {}", client.access_token),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
     let issue_res = app.clone().oneshot(issue_req).await.unwrap();
@@ -336,7 +342,10 @@ async fn get_gate_verify_returns_claims() {
 
     // verify
     let req = Request::builder()
-        .uri(format!("/api/gate/client/{}/verify?token={}", client.identifier, token))
+        .uri(format!(
+            "/api/gate/client/{}/verify?token={}",
+            client.identifier, token
+        ))
         .body(axum::body::Body::empty())
         .unwrap();
     let res = app.oneshot(req).await.unwrap();

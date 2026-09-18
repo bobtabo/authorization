@@ -27,6 +27,7 @@ func (h *StaffHandler) Index(c echo.Context) error {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(c.QueryParams()["roles"])
+	cond.Statuses = parseIntList(c.QueryParams()["statuses"])
 
 	limit := 10
 	if v := c.QueryParam("limit"); v != "" {
@@ -94,14 +95,8 @@ func (h *StaffHandler) Restore(c echo.Context) error {
 	if err != nil {
 		return apperror.BadRequest("invalid_id")
 	}
-	var body struct {
-		Version int `json:"version"`
-	}
-	if err = c.Bind(&body); err != nil {
-		return apperror.BadRequest("validation_error")
-	}
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
-		return h.newStaffUC(tx.Client()).Restore(ustaff.RestoreDto{ID: id, Version: body.Version})
+		return h.newStaffUC(tx.Client()).Restore(ustaff.RestoreDto{ID: id})
 	}); txErr != nil {
 		return txErr
 	}
@@ -133,7 +128,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 	for _, s := range staffs {
 		out = append(out, map[string]interface{}{
 			"id": s.ID, "name": s.Name, "email": s.Email, "role": s.Role,
-			"status": s.Status, "created_at": formatTime(s.CreatedAt), "updated_at": formatTime(s.UpdatedAt),
+			"status": s.Status, "version": s.Version, "created_at": formatTime(s.CreatedAt), "updated_at": formatTime(s.UpdatedAt),
 		})
 	}
 	return out

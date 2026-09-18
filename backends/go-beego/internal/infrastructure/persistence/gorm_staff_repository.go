@@ -5,6 +5,7 @@ import (
 	"authorization-go-beego/internal/infrastructure/model"
 	"authorization-go-beego/internal/support"
 	"authorization-go-beego/pkg/apperror"
+	"slices"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -33,10 +34,12 @@ func (r *OrmStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domsta
 		qs = qs.Limit(cond.Limit, cond.Offset)
 	}
 
-	allowedSort := map[string]bool{"name": true, "role": true, "status": true, "created_at": true}
-	sort := "id"
-	if cond.Sort != "" && allowedSort[cond.Sort] {
-		sort = cond.Sort
+	// staffs テーブルに status カラムは無く、有効/無効は deleted_at の有無で判定するため、
+	// status によるソートは deleted_at へ読み替える。
+	sortColumns := map[string]string{"name": "name", "role": "role", "status": "deleted_at", "created_at": "created_at"}
+	sort, ok := sortColumns[cond.Sort]
+	if !ok {
+		sort = "id"
 	}
 	if cond.SortType == "desc" {
 		qs = qs.OrderBy("-" + sort)
@@ -64,14 +67,24 @@ func (r *OrmStaffRepository) applyFilters(qs orm.QuerySeter, cond domstaff.Condi
 	if len(cond.Roles) > 0 {
 		qs = qs.Filter("role__in", cond.Roles)
 	}
+	// staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+	if len(cond.Statuses) > 0 {
+		active, inactive := slices.Contains(cond.Statuses, 1), slices.Contains(cond.Statuses, 0)
+		if active && !inactive {
+			qs = qs.Filter("deleted_at__isnull", true)
+		} else if inactive && !active {
+			qs = qs.Filter("deleted_at__isnull", false)
+		}
+	}
 	return qs
 }
 
+// FindByID はIDでスタッフエンティティを返します。無効化（論理削除）はログイン可否にのみ
+// 影響するため、詳細取得・権限更新等の編集操作では無効スタッフも対象に含める。
 func (r *OrmStaffRepository) FindByID(s *domstaff.Staff) (*domstaff.Staff, error) {
 	var m model.Staff
 	err := r.o.QueryTable(new(model.Staff)).
 		Filter("id", s.ID).
-		Filter("deleted_at__isnull", true).
 		One(&m)
 	if err == orm.ErrNoRows {
 		return nil, nil
@@ -155,8 +168,9 @@ func (r *OrmStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 
 func (r *OrmStaffRepository) UpdateRole(s *domstaff.Staff) (bool, error) {
 	now := time.Now()
+	// 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
 	res, err := r.o.Raw(
-		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND version=? AND deleted_at IS NULL",
+		"UPDATE staffs SET role=?, updated_at=?, updated_by=?, version=version+1 WHERE id=? AND version=?",
 		s.Role, now, s.UpdatedBy, s.ID, s.Version,
 	).Exec()
 	if err != nil {

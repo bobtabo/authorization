@@ -32,6 +32,7 @@ class Interactor(private val repo: Repository) {
                 email     = s.email,
                 role      = s.role,
                 status    = if (s.deletedAt != null) 0 else 1,
+                version   = s.version,
                 createdAt = s.createdAt,
                 updatedAt = s.updatedAt,
             )

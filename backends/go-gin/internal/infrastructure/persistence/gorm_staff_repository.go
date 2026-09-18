@@ -6,6 +6,7 @@ import (
 	"authorization-go/internal/support"
 	"authorization-go/pkg/apperror"
 	"errors"
+	"slices"
 	"time"
 
 	"gorm.io/gorm"
@@ -43,10 +44,12 @@ func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domst
 		q = q.Limit(cond.Limit).Offset(cond.Offset)
 	}
 
-	allowedSort := map[string]bool{"name": true, "role": true, "status": true, "created_at": true}
-	sort := "id"
-	if cond.Sort != "" && allowedSort[cond.Sort] {
-		sort = cond.Sort
+	// staffs テーブルに status カラムは無く、有効/無効は deleted_at の有無で判定するため、
+	// status によるソートは deleted_at へ読み替える。
+	sortColumns := map[string]string{"name": "name", "role": "role", "status": "deleted_at", "created_at": "created_at"}
+	sort, ok := sortColumns[cond.Sort]
+	if !ok {
+		sort = "id"
 	}
 	if cond.SortType == "desc" {
 		q = q.Order(sort + " DESC")
@@ -73,13 +76,24 @@ func (r *GormStaffRepository) applyFilters(q *gorm.DB, cond domstaff.Condition) 
 	if len(cond.Roles) > 0 {
 		q = q.Where("role IN ?", cond.Roles)
 	}
+	// staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+	if len(cond.Statuses) > 0 {
+		active, inactive := slices.Contains(cond.Statuses, 1), slices.Contains(cond.Statuses, 0)
+		if active && !inactive {
+			q = q.Where("deleted_at IS NULL")
+		} else if inactive && !active {
+			q = q.Where("deleted_at IS NOT NULL")
+		}
+	}
 	return q
 }
 
 // FindByID はIDでスタッフエンティティを返します。存在しない場合は nil を返します。
+// 無効化（論理削除）はログイン可否にのみ影響するため、詳細取得・権限更新等の
+// 編集操作では無効スタッフも対象に含める。
 func (r *GormStaffRepository) FindByID(id uint) (*domstaff.Staff, error) {
 	var m model.Staff
-	if err := r.db.First(&m, id).Error; err != nil {
+	if err := r.db.Unscoped().First(&m, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -138,8 +152,8 @@ func (r *GormStaffRepository) Save(s *domstaff.Staff) (*domstaff.Staff, error) {
 // version が DB と一致しない場合は楽観排他エラーを返します。
 func (r *GormStaffRepository) UpdateRole(id uint, role int, updatedBy uint, version int) (bool, error) {
 	now := time.Now()
-	result := r.db.Model(&model.Staff{}).
-		Where("id = ? AND deleted_at IS NULL AND version = ?", id, version).
+	result := r.db.Unscoped().Model(&model.Staff{}).
+		Where("id = ? AND version = ?", id, version).
 		Updates(map[string]interface{}{
 			"role":       role,
 			"updated_at": now,

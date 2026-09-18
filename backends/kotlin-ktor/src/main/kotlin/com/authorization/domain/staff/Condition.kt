@@ -13,6 +13,7 @@ package com.authorization.domain.staff
 data class Condition(
     val keyword:  String?   = null,
     val roles:    List<Int> = emptyList(),
+    val statuses: List<Int> = emptyList(),
     val offset:   Int       = 0,
     val limit:    Int       = 10,
     val sort:     String?   = null,

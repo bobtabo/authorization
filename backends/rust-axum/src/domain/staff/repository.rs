@@ -18,15 +18,30 @@ pub trait Repository: Send + Sync {
     /// ID でスタッフを返します（論理削除済みは除く）。
     async fn find_by_id(&self, id: u32) -> Result<Option<Staff>, DomainError>;
     /// OAuth プロバイダー情報でスタッフを返します。
-    async fn find_by_provider(&self, provider: i32, provider_id: &str) -> Result<Option<Staff>, DomainError>;
+    async fn find_by_provider(
+        &self,
+        provider: i32,
+        provider_id: &str,
+    ) -> Result<Option<Staff>, DomainError>;
     /// 論理削除されていない全スタッフを返します。
     async fn find_all_active(&self) -> Result<Vec<Staff>, DomainError>;
     /// スタッフを登録または更新して返します。
     async fn save(&self, s: Staff) -> Result<Staff, DomainError>;
     /// スタッフのロールを更新して成否を返します。楽観排他エラー時は Err を返します。
-    async fn update_role(&self, id: u32, role: i32, updated_by: u32, version: i32) -> Result<bool, DomainError>;
+    async fn update_role(
+        &self,
+        id: u32,
+        role: i32,
+        updated_by: u32,
+        version: i32,
+    ) -> Result<bool, DomainError>;
     /// スタッフを論理削除して成否を返します。楽観排他エラー時は Err を返します。
-    async fn soft_delete(&self, id: u32, deleted_by: u32, version: i32) -> Result<bool, DomainError>;
+    async fn soft_delete(
+        &self,
+        id: u32,
+        deleted_by: u32,
+        version: i32,
+    ) -> Result<bool, DomainError>;
     /// スタッフの論理削除を復元して成否を返します。
     async fn restore(&self, id: u32) -> Result<bool, DomainError>;
 }

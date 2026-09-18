@@ -26,7 +26,7 @@ module UseCase
       end
 
       def restore(dto)
-        @repo.restore(dto.id, dto.version)
+        @repo.restore(dto.id)
         nil
       end
 

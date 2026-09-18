@@ -20,12 +20,14 @@ module Authorization
           page   = (request.params[:page]   || 1).to_i
           offset = limit * (page - 1)
 
+          statuses = array_query(request, "statuses").flat_map { |s| s.split(",") }.filter_map { |s| Integer(s, exception: false) }
+
           result = container[:client_uc].find_by_condition(
             ::UseCase::Client::ListConditionDto.new(
               keyword:    request.params[:keyword],
               start_from: request.params[:start_from],
               start_to:   request.params[:start_to],
-              statuses:   [],
+              statuses:   statuses,
               offset:     offset,
               limit:      limit,
               sort:       request.params[:sort],

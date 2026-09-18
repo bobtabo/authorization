@@ -3,8 +3,7 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use std::sync::Arc;
-use chrono::{DateTime, Utc};
+use super::dto::{ListConditionDto, StartResultVo, StoreDto, UpdateDto};
 use crate::domain::client::{
     condition::Condition,
     entity::Client,
@@ -12,7 +11,8 @@ use crate::domain::client::{
     repository::Repository,
     value_objects::{DetailVo, ListItem, MobileInfoVo, StoreResultVo},
 };
-use super::dto::{ListConditionDto, StartResultVo, StoreDto, UpdateDto};
+use chrono::{DateTime, Utc};
+use std::sync::Arc;
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -28,32 +28,38 @@ impl Interactor {
     }
 
     /// 検索条件に合致するクライアント一覧の VO を返します。
-    pub async fn find_by_condition(&self, dto: ListConditionDto) -> Result<Vec<ListItem>, UseCaseError> {
+    pub async fn find_by_condition(
+        &self,
+        dto: ListConditionDto,
+    ) -> Result<Vec<ListItem>, UseCaseError> {
         let cond = Condition {
-            keyword:    dto.keyword,
+            keyword: dto.keyword,
             start_from: dto.start_from.and_then(|s| parse_datetime(&s)),
-            start_to:   dto.start_to.and_then(|s| parse_datetime(&s)),
-            statuses:   dto.statuses,
-            offset:     dto.offset,
-            limit:      dto.limit,
-            sort:       dto.sort,
-            sort_type:  dto.sort_type,
+            start_to: dto.start_to.and_then(|s| parse_datetime(&s)),
+            statuses: dto.statuses,
+            offset: dto.offset,
+            limit: dto.limit,
+            sort: dto.sort,
+            sort_type: dto.sort_type,
         };
         let clients = self.repo.find_by_condition(&cond).await?;
         Ok(clients.into_iter().map(to_list_item).collect())
     }
 
     /// 検索条件に合致するクライアント一覧と総件数を返します。
-    pub async fn find_by_condition_with_count(&self, dto: ListConditionDto) -> Result<(Vec<ListItem>, i64), UseCaseError> {
+    pub async fn find_by_condition_with_count(
+        &self,
+        dto: ListConditionDto,
+    ) -> Result<(Vec<ListItem>, i64), UseCaseError> {
         let cond = Condition {
-            keyword:    dto.keyword,
+            keyword: dto.keyword,
             start_from: dto.start_from.and_then(|s| parse_datetime(&s)),
-            start_to:   dto.start_to.and_then(|s| parse_datetime(&s)),
-            statuses:   dto.statuses,
-            offset:     dto.offset,
-            limit:      dto.limit,
-            sort:       dto.sort,
-            sort_type:  dto.sort_type,
+            start_to: dto.start_to.and_then(|s| parse_datetime(&s)),
+            statuses: dto.statuses,
+            offset: dto.offset,
+            limit: dto.limit,
+            sort: dto.sort,
+            sort_type: dto.sort_type,
         };
         let count = self.repo.count_by_condition(&cond).await?;
         let clients = self.repo.find_by_condition(&cond).await?;
@@ -62,7 +68,10 @@ impl Interactor {
 
     /// ID でクライアント詳細の VO を返します。存在しない場合はエラーを返します。
     pub async fn find_by_id(&self, id: u64) -> Result<DetailVo, UseCaseError> {
-        let c = self.repo.find_by_id(id).await?
+        let c = self
+            .repo
+            .find_by_id(id)
+            .await?
             .ok_or_else(|| simple_err("client_not_found"))?;
         Ok(to_detail_vo(c))
     }
@@ -81,64 +90,83 @@ impl Interactor {
 
         let now = chrono::Utc::now();
         let c = Client {
-            id:           0,
-            name:         dto.name,
+            id: 0,
+            name: dto.name,
             identifier,
-            post_code:    dto.post_code,
-            pref:         dto.pref,
-            city:         dto.city,
-            address:      dto.address,
-            building:     dto.building,
-            tel:          dto.tel,
-            email:        dto.email,
+            post_code: dto.post_code,
+            pref: dto.pref,
+            city: dto.city,
+            address: dto.address,
+            building: dto.building,
+            tel: dto.tel,
+            email: dto.email,
             access_token,
-            private_key:  priv_pem,
-            public_key:   pub_pem,
+            private_key: priv_pem,
+            public_key: pub_pem,
             fingerprint,
-            status:       STATUS_INACTIVE,
-            start_at:     None,
-            stop_at:      None,
-            created_at:   now,
-            created_by:   Some(dto.executor_id),
-            updated_at:   now,
-            updated_by:   Some(dto.executor_id),
-            deleted_at:   None,
-            deleted_by:   None,
-            version:      0,
+            status: STATUS_INACTIVE,
+            start_at: None,
+            stop_at: None,
+            created_at: now,
+            created_by: Some(dto.executor_id),
+            updated_at: now,
+            updated_by: Some(dto.executor_id),
+            deleted_at: None,
+            deleted_by: None,
+            version: 0,
         };
         let saved = self.repo.save(c).await?;
         Ok(StoreResultVo {
-            id:         saved.id,
-            name:       saved.name,
+            id: saved.id,
+            name: saved.name,
             identifier: saved.identifier,
-            email:      saved.email,
-            token:      saved.access_token,
+            email: saved.email,
+            token: saved.access_token,
         })
     }
 
     /// クライアントを更新し、更新後の詳細 VO を返します。楽観排他エラー時は Err を返します。
     pub async fn update(&self, dto: UpdateDto) -> Result<DetailVo, UseCaseError> {
-        let mut c = self.repo.find_by_id(dto.id).await?
+        let mut c = self
+            .repo
+            .find_by_id(dto.id)
+            .await?
             .ok_or_else(|| simple_err("client_not_found"))?;
 
         if c.version != dto.version {
             return Err("optimistic_lock_conflict".to_string().into());
         }
 
-        if let Some(v) = dto.name        { c.name      = v; }
-        if let Some(v) = dto.post_code   { c.post_code = v; }
-        if let Some(v) = dto.pref        { c.pref      = v; }
-        if let Some(v) = dto.city        { c.city      = v; }
-        if let Some(v) = dto.address     { c.address   = v; }
-        if let Some(v) = dto.building    { c.building  = v; }
-        if let Some(v) = dto.tel         { c.tel       = v; }
-        if let Some(v) = dto.email       { c.email     = v; }
+        if let Some(v) = dto.name {
+            c.name = v;
+        }
+        if let Some(v) = dto.post_code {
+            c.post_code = v;
+        }
+        if let Some(v) = dto.pref {
+            c.pref = v;
+        }
+        if let Some(v) = dto.city {
+            c.city = v;
+        }
+        if let Some(v) = dto.address {
+            c.address = v;
+        }
+        if let Some(v) = dto.building {
+            c.building = v;
+        }
+        if let Some(v) = dto.tel {
+            c.tel = v;
+        }
+        if let Some(v) = dto.email {
+            c.email = v;
+        }
 
         if let Some(status) = dto.status {
             let now = chrono::Utc::now();
             if status == 2 && c.start_at.is_none() {
                 c.start_at = Some(now);
-                c.stop_at  = None;
+                c.stop_at = None;
             }
             if status == 3 {
                 c.stop_at = Some(now);
@@ -155,8 +183,16 @@ impl Interactor {
     }
 
     /// クライアントを論理削除します。楽観排他エラー時は Err を返します。
-    pub async fn destroy(&self, id: u64, executor_id: u32, version: i32) -> Result<(), UseCaseError> {
-        let mut c = self.repo.find_by_id(id).await?
+    pub async fn destroy(
+        &self,
+        id: u64,
+        executor_id: u32,
+        version: i32,
+    ) -> Result<(), UseCaseError> {
+        let mut c = self
+            .repo
+            .find_by_id(id)
+            .await?
             .ok_or_else(|| simple_err("client_not_found"))?;
 
         if c.version != version {
@@ -164,7 +200,7 @@ impl Interactor {
         }
 
         let now = chrono::Utc::now();
-        c.status     = 4;
+        c.status = 4;
         c.updated_at = now;
         c.updated_by = Some(executor_id);
         self.repo.save(c).await?;
@@ -179,18 +215,27 @@ impl Interactor {
     }
 
     /// 識別子でクライアントを返します。存在しない場合は None を返します。
-    pub async fn find_by_identifier(&self, identifier: &str) -> Result<Option<Client>, UseCaseError> {
+    pub async fn find_by_identifier(
+        &self,
+        identifier: &str,
+    ) -> Result<Option<Client>, UseCaseError> {
         Ok(self.repo.find_by_identifier(identifier).await?)
     }
 
     /// 識別子でクライアントのモバイル情報 VO を返します。存在しない場合はエラーを返します。
-    pub async fn find_mobile_info_by_identifier(&self, identifier: &str) -> Result<MobileInfoVo, UseCaseError> {
-        let c = self.repo.find_by_identifier(identifier).await?
+    pub async fn find_mobile_info_by_identifier(
+        &self,
+        identifier: &str,
+    ) -> Result<MobileInfoVo, UseCaseError> {
+        let c = self
+            .repo
+            .find_by_identifier(identifier)
+            .await?
             .ok_or_else(|| simple_err("client_not_found"))?;
         Ok(MobileInfoVo {
             identifier: c.identifier,
-            name:       c.name,
-            status:     c.status,
+            name: c.name,
+            status: c.status,
         })
     }
 
@@ -198,7 +243,10 @@ impl Interactor {
     /// トランザクションは呼び出し側で管理してください。
     /// 成功時は access_token を含む VO を返します。
     pub async fn start(&self, identifier: &str) -> Result<StartResultVo, UseCaseError> {
-        let mut c = self.repo.find_by_identifier(identifier).await?
+        let mut c = self
+            .repo
+            .find_by_identifier(identifier)
+            .await?
             .ok_or_else(|| simple_err("client_not_found"))?;
 
         if c.status != STATUS_ACTIVE {
@@ -207,26 +255,33 @@ impl Interactor {
             if c.start_at.is_none() {
                 c.start_at = Some(now);
             }
-            c.stop_at    = None;
+            c.stop_at = None;
             c.updated_at = now;
             let saved = self.repo.save(c).await?;
-            return Ok(StartResultVo { access_token: saved.access_token });
+            return Ok(StartResultVo {
+                access_token: saved.access_token,
+            });
         }
 
-        Ok(StartResultVo { access_token: c.access_token })
+        Ok(StartResultVo {
+            access_token: c.access_token,
+        })
     }
 
     /// 利用停止処理。Active なら Suspended に変更し stop_at をセットします。
     /// Active 以外は何もしません。
     /// トランザクションは呼び出し側で管理してください。
     pub async fn stop(&self, identifier: &str) -> Result<(), UseCaseError> {
-        let mut c = self.repo.find_by_identifier(identifier).await?
+        let mut c = self
+            .repo
+            .find_by_identifier(identifier)
+            .await?
             .ok_or_else(|| simple_err("client_not_found"))?;
 
         if c.status == STATUS_ACTIVE {
             let now = chrono::Utc::now();
-            c.status     = STATUS_SUSPENDED;
-            c.stop_at    = Some(now);
+            c.status = STATUS_SUSPENDED;
+            c.stop_at = Some(now);
             c.updated_at = now;
             self.repo.save(c).await?;
         }
@@ -237,11 +292,11 @@ impl Interactor {
 
 fn to_list_item(c: Client) -> ListItem {
     ListItem {
-        id:         c.id,
-        name:       c.name,
-        status:     c.status,
-        start_at:   c.start_at,
-        stop_at:    c.stop_at,
+        id: c.id,
+        name: c.name,
+        status: c.status,
+        start_at: c.start_at,
+        stop_at: c.stop_at,
         created_at: c.created_at,
         updated_at: c.updated_at,
     }
@@ -249,19 +304,19 @@ fn to_list_item(c: Client) -> ListItem {
 
 fn to_detail_vo(c: Client) -> DetailVo {
     DetailVo {
-        id:         c.id,
-        name:       c.name,
+        id: c.id,
+        name: c.name,
         identifier: c.identifier,
-        post_code:  c.post_code,
-        pref:       c.pref,
-        city:       c.city,
-        address:    c.address,
-        building:   c.building,
-        tel:        c.tel,
-        email:      c.email,
-        status:     c.status,
-        start_at:   c.start_at,
-        stop_at:    c.stop_at,
+        post_code: c.post_code,
+        pref: c.pref,
+        city: c.city,
+        address: c.address,
+        building: c.building,
+        tel: c.tel,
+        email: c.email,
+        status: c.status,
+        start_at: c.start_at,
+        stop_at: c.stop_at,
         created_at: c.created_at,
         updated_at: c.updated_at,
     }
@@ -269,7 +324,8 @@ fn to_detail_vo(c: Client) -> DetailVo {
 
 fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
     use chrono::NaiveDateTime;
-    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").ok()
+    NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+        .ok()
         .or_else(|| NaiveDateTime::parse_from_str(s, "%Y-%m-%d 00:00:00").ok())
         .map(|dt| DateTime::from_naive_utc_and_offset(dt, Utc))
 }
@@ -279,9 +335,9 @@ fn simple_err(msg: &str) -> UseCaseError {
 }
 
 async fn generate_rsa_keys() -> Result<(String, String, String), UseCaseError> {
-    use rsa::{RsaPrivateKey, pkcs1::EncodeRsaPrivateKey, pkcs8::EncodePublicKey};
-    use sha2::{Sha256, Digest};
     use base64::Engine;
+    use rsa::{pkcs1::EncodeRsaPrivateKey, pkcs8::EncodePublicKey, RsaPrivateKey};
+    use sha2::{Digest, Sha256};
 
     let (priv_pem, pub_pem, fingerprint) = tokio::task::spawn_blocking(|| {
         let mut rng = rand::rngs::OsRng;
@@ -317,30 +373,30 @@ async fn generate_rsa_keys() -> Result<(String, String, String), UseCaseError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use std::sync::Mutex;
     use crate::domain::client::{
         condition::Condition,
         entity::Client,
         repository::{DomainError, Repository},
     };
+    use async_trait::async_trait;
+    use std::sync::Mutex;
 
     struct MockRepo {
         find_by_access_token: Mutex<Option<Option<Client>>>,
-        find_by_identifier:   Mutex<Option<Option<Client>>>,
-        find_by_id:           Mutex<Option<Option<Client>>>,
-        find_by_condition:    Mutex<Option<Vec<Client>>>,
-        save_result:          Mutex<Option<Client>>,
+        find_by_identifier: Mutex<Option<Option<Client>>>,
+        find_by_id: Mutex<Option<Option<Client>>>,
+        find_by_condition: Mutex<Option<Vec<Client>>>,
+        save_result: Mutex<Option<Client>>,
     }
 
     impl MockRepo {
         fn new() -> Self {
             Self {
                 find_by_access_token: Mutex::new(None),
-                find_by_identifier:   Mutex::new(None),
-                find_by_id:           Mutex::new(None),
-                find_by_condition:    Mutex::new(None),
-                save_result:          Mutex::new(None),
+                find_by_identifier: Mutex::new(None),
+                find_by_id: Mutex::new(None),
+                find_by_condition: Mutex::new(None),
+                save_result: Mutex::new(None),
             }
         }
     }
@@ -349,36 +405,41 @@ mod tests {
         let now = chrono::Utc::now();
         Client {
             id,
-            name:         "Test Client".to_string(),
-            identifier:   "abc123".to_string(),
-            post_code:    "1234567".to_string(),
-            pref:         "Tokyo".to_string(),
-            city:         "Shibuya".to_string(),
-            address:      "1-1-1".to_string(),
-            building:     "".to_string(),
-            tel:          "0312345678".to_string(),
-            email:        "test@example.com".to_string(),
+            name: "Test Client".to_string(),
+            identifier: "abc123".to_string(),
+            post_code: "1234567".to_string(),
+            pref: "Tokyo".to_string(),
+            city: "Shibuya".to_string(),
+            address: "1-1-1".to_string(),
+            building: "".to_string(),
+            tel: "0312345678".to_string(),
+            email: "test@example.com".to_string(),
             access_token: "token123".to_string(),
-            private_key:  "priv".to_string(),
-            public_key:   "pub".to_string(),
-            fingerprint:  "SHA256:abc".to_string(),
-            status:       1,
-            start_at:     None,
-            stop_at:      None,
-            created_at:   now,
-            created_by:   None,
-            updated_at:   now,
-            updated_by:   None,
-            deleted_at:   None,
-            deleted_by:   None,
-            version:      0,
+            private_key: "priv".to_string(),
+            public_key: "pub".to_string(),
+            fingerprint: "SHA256:abc".to_string(),
+            status: 1,
+            start_at: None,
+            stop_at: None,
+            created_at: now,
+            created_by: None,
+            updated_at: now,
+            updated_by: None,
+            deleted_at: None,
+            deleted_by: None,
+            version: 0,
         }
     }
 
     #[async_trait]
     impl Repository for MockRepo {
         async fn find_by_condition(&self, _cond: &Condition) -> Result<Vec<Client>, DomainError> {
-            Ok(self.find_by_condition.lock().unwrap().take().unwrap_or_default())
+            Ok(self
+                .find_by_condition
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or_default())
         }
         async fn count_by_condition(&self, _cond: &Condition) -> Result<i64, DomainError> {
             Ok(0)
@@ -387,13 +448,31 @@ mod tests {
             Ok(self.find_by_id.lock().unwrap().take().unwrap_or(None))
         }
         async fn find_by_access_token(&self, _token: &str) -> Result<Option<Client>, DomainError> {
-            Ok(self.find_by_access_token.lock().unwrap().take().unwrap_or(None))
+            Ok(self
+                .find_by_access_token
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or(None))
         }
-        async fn find_by_identifier(&self, _identifier: &str) -> Result<Option<Client>, DomainError> {
-            Ok(self.find_by_identifier.lock().unwrap().take().unwrap_or(None))
+        async fn find_by_identifier(
+            &self,
+            _identifier: &str,
+        ) -> Result<Option<Client>, DomainError> {
+            Ok(self
+                .find_by_identifier
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or(None))
         }
         async fn save(&self, _c: Client) -> Result<Client, DomainError> {
-            Ok(self.save_result.lock().unwrap().take().unwrap_or_else(|| make_client(1)))
+            Ok(self
+                .save_result
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or_else(|| make_client(1)))
         }
         async fn soft_delete(&self, _id: u64, _deleted_by: u32) -> Result<(), DomainError> {
             Ok(())
@@ -443,7 +522,16 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.find_by_condition.lock().unwrap() = Some(vec![make_client(1), make_client(2)]);
         let uc = Interactor::new(mock);
-        let dto = ListConditionDto { keyword: None, start_from: None, start_to: None, statuses: vec![], offset: 0, limit: 20, sort: None, sort_type: None };
+        let dto = ListConditionDto {
+            keyword: None,
+            start_from: None,
+            start_to: None,
+            statuses: vec![],
+            offset: 0,
+            limit: 20,
+            sort: None,
+            sort_type: None,
+        };
         let result = uc.find_by_condition(dto).await.unwrap();
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].id, 1);
@@ -476,7 +564,10 @@ mod tests {
         // make_client sets version = 0, but we pass version = 99
         let result = uc.destroy(1, 1, 99).await;
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap().to_string(), "optimistic_lock_conflict");
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "optimistic_lock_conflict"
+        );
     }
 
     #[tokio::test]
@@ -485,12 +576,24 @@ mod tests {
         *mock.find_by_id.lock().unwrap() = Some(Some(make_client(1)));
         let uc = Interactor::new(mock);
         let dto = UpdateDto {
-            id: 1, name: None, post_code: None, pref: None, city: None,
-            address: None, building: None, tel: None, email: None,
-            status: None, executor_id: 1, version: 99,
+            id: 1,
+            name: None,
+            post_code: None,
+            pref: None,
+            city: None,
+            address: None,
+            building: None,
+            tel: None,
+            email: None,
+            status: None,
+            executor_id: 1,
+            version: 99,
         };
         let result = uc.update(dto).await;
         assert!(result.is_err());
-        assert_eq!(result.err().unwrap().to_string(), "optimistic_lock_conflict");
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "optimistic_lock_conflict"
+        );
     }
 }

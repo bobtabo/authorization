@@ -9,6 +9,7 @@ type ListItem struct {
 	Email     string
 	Role      int
 	Status    int // 0=削除済み, 1=有効
+	Version   int
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

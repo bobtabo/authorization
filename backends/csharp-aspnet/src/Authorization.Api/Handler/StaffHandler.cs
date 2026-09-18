@@ -23,6 +23,11 @@ public sealed class StaffHandler(StaffService staffUC)
             .Select(s => int.TryParse(s.Trim(), out var r) ? r : (int?)null)
             .OfType<int>()
             .ToList();
+        var statuses = req.Query["statuses"]
+            .SelectMany(v => (v ?? "").Split(','))
+            .Select(s => int.TryParse(s.Trim(), out var r) ? r : (int?)null)
+            .OfType<int>()
+            .ToList();
         var limit = Math.Max(1, QueryInt(req, "limit") ?? 10);
         var page  = Math.Max(1, QueryInt(req, "page") ?? 1);
         if (SafeOffset(limit, page) is not int offset) return Error(400, "page_out_of_range");
@@ -31,6 +36,7 @@ public sealed class StaffHandler(StaffService staffUC)
         {
             Keyword  = Query(req, "keyword"),
             Roles    = roles,
+            Statuses = statuses,
             Offset   = offset,
             Limit    = limit,
             Sort     = Query(req, "sort"),

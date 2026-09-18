@@ -37,13 +37,17 @@ class StaffHandler(private val staffUC: StaffUC) {
             ?.flatMap { it.split(",") }
             ?.mapNotNull { it.trim().toIntOrNull() }
             ?: emptyList()
+        val statuses = call.request.queryParameters.getAll("statuses")
+            ?.flatMap { it.split(",") }
+            ?.mapNotNull { it.trim().toIntOrNull() }
+            ?: emptyList()
         val sort     = call.request.queryParameters["sort"]
         val sortType = call.request.queryParameters["sort_type"]
         val limit    = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceAtLeast(1) ?: 10
         val page     = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
         val offset   = limit * (page - 1)
 
-        val cond = Condition(keyword = keyword, roles = roles, offset = offset, limit = limit, sort = sort, sortType = sortType)
+        val cond = Condition(keyword = keyword, roles = roles, statuses = statuses, offset = offset, limit = limit, sort = sort, sortType = sortType)
         val (staffs, count) = staffUC.findByConditionWithCount(cond)
         val pager = buildPager(count, limit, offset, staffs.size)
 
@@ -55,6 +59,7 @@ class StaffHandler(private val staffUC: StaffUC) {
                     put("email",      s.email)
                     put("role",       s.role)
                     put("status",     s.status)
+                    put("version",    s.version)
                     put("created_at", s.createdAt.format(fmt))
                     put("updated_at", s.updatedAt.format(fmt))
                 })

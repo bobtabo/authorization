@@ -33,6 +33,7 @@ class StaffApiMapper
             'email' => $staff->email,
             'role' => $staff->role instanceof StaffRole ? $staff->role->value : $staff->role,
             'status' => $staff->deletedAt === null ? StaffStatus::Active->value : StaffStatus::Inactive->value,
+            'version' => $staff->version,
             'created_at' => $staff->createdAt?->format('Y-m-d H:i'),
             'updated_at' => $staff->updatedAt?->format('Y-m-d H:i'),
         ];

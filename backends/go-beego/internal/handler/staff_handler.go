@@ -31,6 +31,7 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(ctx.Request.URL.Query()["roles"])
+	cond.Statuses = parseIntList(ctx.Request.URL.Query()["statuses"])
 
 	limit := 10
 	if v := ctx.Input.Query("limit"); v != "" {
@@ -80,7 +81,8 @@ func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 	}
 
 	var body struct {
-		Role int `json:"role"`
+		Role    int `json:"role"`
+		Version int `json:"version"`
 	}
 	if err = json.Unmarshal(ctx.Input.RequestBody, &body); err != nil || body.Role == 0 {
 		writeError(ctx, apperror.BadRequest("validation_error"))
@@ -92,6 +94,7 @@ func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
 			Role:       body.Role,
+			Version:    body.Version,
 			ExecutorID: executorID,
 		})
 	}); txErr != nil {
@@ -144,6 +147,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 			"email":      s.Email,
 			"role":       s.Role,
 			"status":     s.Status,
+			"version":    s.Version,
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})
