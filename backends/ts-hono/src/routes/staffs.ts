@@ -41,7 +41,7 @@ app.get("/staffs", async (c) => {
 
 app.patch("/staffs/:id/updateRole", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
-  const body = await c.req.json<{ role?: number; version?: number }>();
+  const body = await c.req.json<{ role?: number; version?: number }>().catch(() => ({}) as { role?: number; version?: number });
   if (body.role === undefined) throw badRequest("role_required");
   const executorId = getStaffIdFromCookie(c);
   await db.transaction(async (tx) => {
@@ -62,7 +62,7 @@ app.patch("/staffs/:id/restore", async (c) => {
 
 app.delete("/staffs/:id/delete", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
-  const body = await c.req.json<{ version?: number }>();
+  const body = await c.req.json<{ version?: number }>().catch(() => ({}) as { version?: number });
   const executorId = getStaffIdFromCookie(c);
   await db.transaction(async (tx) => {
     const uc = new StaffInteractor(new DrizzleStaffRepository(asTx(tx)));
