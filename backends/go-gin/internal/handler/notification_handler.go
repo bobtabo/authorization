@@ -97,13 +97,18 @@ func (h *NotificationHandler) ReadAll(c *gin.Context) {
 // Read は通知を既読にします。
 // PATCH /api/notifications/:id
 func (h *NotificationHandler) Read(c *gin.Context) {
+	staffID := staffIDFromCookie(c)
+	if staffID == 0 {
+		_ = c.Error(apperror.Unauthorized("unauthenticated"))
+		return
+	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newNotifUC(tx).MarkRead(id)
+		return h.newNotifUC(tx).MarkRead(staffID, id)
 	}); txErr != nil {
 		_ = c.Error(txErr)
 		return
