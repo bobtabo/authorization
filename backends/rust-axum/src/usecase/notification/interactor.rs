@@ -80,8 +80,14 @@ impl Interactor {
     }
 
     /// 通知を既読にします。
-    pub async fn mark_read(&self, id: i64) -> Result<(), UseCaseError> {
-        self.repo.patch(id, true).await?;
+    pub async fn mark_read(&self, staff_id: u32, id: i64) -> Result<(), UseCaseError> {
+        let updated = self
+            .repo
+            .bulk_mark_read(staff_id as i64, vec![id], false)
+            .await?;
+        if updated == 0 {
+            return Err("notification_not_found".to_string().into());
+        }
         Ok(())
     }
 }

@@ -134,7 +134,19 @@ pub async fn read_all(State(state): State<AppState>, jar: CookieJar) -> (StatusC
 }
 
 /// 通知を既読にします。トランザクション内で処理します。
-pub async fn read(State(state): State<AppState>, Path(id): Path<i64>) -> (StatusCode, Json<Value>) {
+pub async fn read(
+    State(state): State<AppState>,
+    jar: CookieJar,
+    Path(id): Path<i64>,
+) -> (StatusCode, Json<Value>) {
+    let staff_id = staff_id_from_cookie(&jar);
+    if staff_id == 0 {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "unauthenticated"})),
+        );
+    }
+
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,
         Err(_) => {
@@ -145,8 +157,14 @@ pub async fn read(State(state): State<AppState>, Path(id): Path<i64>) -> (Status
         }
     };
 
-    if let Err(_) = state.notification_uc.mark_read(id).await {
+    if let Err(e) = state.notification_uc.mark_read(staff_id, id).await {
         let _ = tx.rollback().await;
+        if e.to_string() == "notification_not_found" {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error": "notification_not_found"})),
+            );
+        }
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({"error": "internal_error"})),
