@@ -55,9 +55,15 @@ class Api::NotificationsController < Api::BaseController
 
   # 指定通知を既読にします。
   def read
-    ActiveRecord::Base.transaction do
-      container[:notification_uc].mark_read(params[:id].to_i)
+    staff_id = staff_id_from_cookie
+    return render json: { error: "unauthenticated" }, status: :unauthorized if staff_id == 0
+
+    id = params[:id].to_i
+    updated = ActiveRecord::Base.transaction do
+      container[:notification_uc].mark_read(staff_id, id)
     end
-    render json: { id: params[:id].to_i }
+    return render json: { error: "notification_not_found" }, status: :not_found if updated.zero?
+
+    render json: { id: id }
   end
 end

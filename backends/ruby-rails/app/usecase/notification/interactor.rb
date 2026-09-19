@@ -47,9 +47,8 @@ module UseCase
         nil
       end
 
-      def mark_read(id)
-        @repo.patch(id, { "read" => true })
-        nil
+      def mark_read(staff_id, id)
+        @repo.bulk_mark_read(staff_id, [id], false)
       end
     end
   end
