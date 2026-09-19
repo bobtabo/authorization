@@ -62,7 +62,8 @@ def read_all(
 @router.patch("/notifications/{notification_id}")
 def read(
     notification_id: int,
+    staff_id: int = Depends(require_staff_id),
     interactor: NotificationInteractor = Depends(get_notification_interactor),
 ):
-    interactor.mark_read(notification_id)
+    interactor.mark_read(staff_id, notification_id)
     return {"id": notification_id}
