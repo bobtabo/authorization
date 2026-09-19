@@ -104,9 +104,32 @@ func TestNotification_Read(t *testing.T) {
 		staff := createStaff(t, nil)
 		n := createNotification(t, staff.ID, "個別通知")
 
-		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil)
+		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil,
+			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("未認証で401が返る", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "read-401@example.com"})
+		n := createNotification(t, staff.ID, "個別通知")
+
+		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil)
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("want 401, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("他staffの通知は404になる", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "read-404-self@example.com"})
+		other := createStaff(t, map[string]interface{}{"email": "read-404-other@example.com"})
+		n := createNotification(t, other.ID, "個別通知")
+
+		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil,
+			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		if w.Code != http.StatusNotFound {
+			t.Errorf("want 404, got %d: %s", w.Code, w.Body.String())
 		}
 	})
 }

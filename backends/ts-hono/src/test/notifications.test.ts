@@ -87,8 +87,29 @@ describe("Notifications", () => {
       const n = await makeNotification(staff.id);
       const res = await app.request(`/api/notifications/${n.id}`, {
         method: "PATCH",
+        headers: { Cookie: `staff_id=${staff.id}` },
       });
       expect(res.status).toBe(200);
+    });
+
+    test("未認証で401が返る", async () => {
+      const staff = await makeStaff();
+      const n = await makeNotification(staff.id);
+      const res = await app.request(`/api/notifications/${n.id}`, {
+        method: "PATCH",
+      });
+      expect(res.status).toBe(401);
+    });
+
+    test("他staffの通知は404が返る", async () => {
+      const staff = await makeStaff();
+      const other = await makeStaff();
+      const n = await makeNotification(other.id);
+      const res = await app.request(`/api/notifications/${n.id}`, {
+        method: "PATCH",
+        headers: { Cookie: `staff_id=${staff.id}` },
+      });
+      expect(res.status).toBe(404);
     });
   });
 });

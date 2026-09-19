@@ -27,10 +27,8 @@ class NotificationControllerTest extends TestCase
 
     /**
      * 通知件数集計取得テストです。
-     *
-     * @return void
      */
-    public function testCounts(): void
+    public function test_counts(): void
     {
         $response = $this->withStaffCookie(1)
             ->get('/api/notifications/counts');
@@ -42,10 +40,8 @@ class NotificationControllerTest extends TestCase
 
     /**
      * 通知一覧取得テストです。
-     *
-     * @return void
      */
-    public function testIndex(): void
+    public function test_index(): void
     {
         $params = $this->getRequestParams('Notification/index.json');
         $response = $this->withStaffCookie(1)
@@ -58,16 +54,14 @@ class NotificationControllerTest extends TestCase
 
     /**
      * url付き通知が一覧に含まれるテストです。
-     *
-     * @return void
      */
-    public function testIndexWithUrl(): void
+    public function test_index_with_url(): void
     {
-        $staff = \App\Infrastructure\Models\Staff::factory()->create();
+        $staff = Staff::factory()->create();
         Notification::factory()->create([
             'staff_id' => $staff->id,
-            'title'    => 'クライアント登録',
-            'url'      => '/clients/show?id=1',
+            'title' => 'クライアント登録',
+            'url' => '/clients/show?id=1',
         ]);
 
         $response = $this->withStaffCookie($staff->id)
@@ -80,10 +74,8 @@ class NotificationControllerTest extends TestCase
 
     /**
      * 通知一括既読テストです。
-     *
-     * @return void
      */
-    public function testBulkPatch(): void
+    public function test_bulk_patch(): void
     {
         $response = $this->withStaffCookie(1)
             ->patch('/api/notifications');
@@ -95,18 +87,41 @@ class NotificationControllerTest extends TestCase
 
     /**
      * 単一通知既読テストです。
-     *
-     * @return void
      */
-    public function testUpdate(): void
+    public function test_update(): void
     {
         $staff = Staff::factory()->create();
         $notification = Notification::factory()->create(['staff_id' => $staff->id]);
         $id = $notification->id;
-        $response = $this->patch("/api/notifications/{$id}");
+        $response = $this->withStaffCookie($staff->id)
+            ->patch("/api/notifications/{$id}");
         $data = $this->getResponseData('Notification/update.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
+    }
+
+    /**
+     * 単一通知既読の未認証テストです。
+     */
+    public function test_update_unauthenticated(): void
+    {
+        $staff = Staff::factory()->create();
+        $notification = Notification::factory()->create(['staff_id' => $staff->id]);
+        $response = $this->patch("/api/notifications/{$notification->id}");
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 他staffの通知を既読にしようとすると404になるテストです。
+     */
+    public function test_update_other_staff_notification_not_found(): void
+    {
+        $staff = Staff::factory()->create();
+        $other = Staff::factory()->create();
+        $notification = Notification::factory()->create(['staff_id' => $other->id]);
+        $response = $this->withStaffCookie($staff->id)
+            ->patch("/api/notifications/{$notification->id}");
+        $response->assertStatus(404);
     }
 }

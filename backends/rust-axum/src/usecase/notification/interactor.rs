@@ -332,6 +332,15 @@ mod tests {
         let notif_repo = Arc::new(MockNotifRepo::new());
         let staff_repo = Arc::new(MockStaffRepo::new());
         let uc = Interactor::new(notif_repo, staff_repo);
-        assert!(uc.mark_read(1).await.is_ok());
+        assert!(uc.mark_read(1, 1).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mark_read_returns_error_when_nothing_updated() {
+        let notif_repo = Arc::new(MockNotifRepo::new());
+        *notif_repo.bulk_mark_result.lock().unwrap() = 0;
+        let staff_repo = Arc::new(MockStaffRepo::new());
+        let uc = Interactor::new(notif_repo, staff_repo);
+        assert!(uc.mark_read(1, 1).await.is_err());
     }
 }
