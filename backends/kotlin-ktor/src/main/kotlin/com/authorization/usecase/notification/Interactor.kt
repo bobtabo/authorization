@@ -10,6 +10,7 @@ import com.authorization.domain.notification.Notification
 import com.authorization.domain.notification.Page
 import com.authorization.domain.notification.Repository
 import com.authorization.domain.staff.Repository as StaffRepository
+import com.authorization.support.AppException
 import java.time.format.DateTimeFormatter
 
 /**
@@ -72,8 +73,11 @@ class Interactor(
      *
      * @param id 通知 ID
      */
-    suspend fun markRead(id: Long) {
-        repo.patch(id, mapOf("read" to true))
+    suspend fun markRead(staffId: Long, id: Long) {
+        val updated = repo.bulkMarkRead(staffId, listOf(id), false)
+        if (updated == 0L) {
+            throw AppException.notFound("notification_not_found")
+        }
     }
 
     companion object {
