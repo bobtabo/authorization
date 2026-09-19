@@ -45,13 +45,14 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
                     $q->where('created_at', '<', $cursorCreatedAt)
                         ->orWhere(function ($q2) use ($cursorCreatedAt, $cursorId) {
                             $q2->where('created_at', '=', $cursorCreatedAt)
-                                ->where('id', '<', (int)$cursorId);
+                                ->where('id', '<', (int) $cursorId);
                         });
                 });
             }
         }
 
         $query->limit($condition->limit + 1);
+
         return $this->findByQuery($query);
     }
 
@@ -77,9 +78,9 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
     public function updateRead(NotificationCondition $condition): int
     {
         if ($condition->id !== null) {
-            $entity = $this->findByPk($condition->id);
-            $condition->staffId = $entity->staffId;
-            $condition->ids[] = $entity->id;
+            // staffId は呼び出し元（認証済みスタッフ）のものを維持する。対象通知の
+            // staffId で上書きすると、他staffの通知IDを指定しても既読化できてしまう。
+            $condition->ids[] = $condition->id;
         }
 
         $query = $this->getModel()->newQuery()
@@ -93,7 +94,7 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
         return $query->update([
             'read' => true,
             'updated_at' => Carbon::now(),
-            'updated_by' => $condition->staffId
+            'updated_by' => $condition->staffId,
         ]);
     }
 
@@ -112,7 +113,7 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
     #[\Override]
     protected function getModel(): Model
     {
-        return new Model();
+        return new Model;
     }
 
     /**
@@ -121,6 +122,6 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
     #[\Override]
     protected function getEntity(): Entity
     {
-        return new Entity();
+        return new Entity;
     }
 }
