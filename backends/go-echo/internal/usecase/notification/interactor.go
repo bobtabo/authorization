@@ -4,6 +4,7 @@ package notification
 import (
 	domnotification "authorization-go-echo/internal/domain/notification"
 	domstaff "authorization-go-echo/internal/domain/staff"
+	"authorization-go-echo/pkg/apperror"
 )
 
 // Interactor は通知ユースケースの実装です。
@@ -61,8 +62,14 @@ func (uc *Interactor) FanOut(dto FanOutDto) error {
 
 // MarkRead は指定した通知を既読にします。
 func (uc *Interactor) MarkRead(dto MarkReadDto) error {
-	_, err := uc.repo.Patch(dto.ID, map[string]interface{}{"read": true})
-	return err
+	updated, err := uc.repo.BulkMarkRead(int64(dto.StaffID), []int64{dto.ID}, false)
+	if err != nil {
+		return err
+	}
+	if updated == 0 {
+		return apperror.NotFound("notification_not_found")
+	}
+	return nil
 }
 
 func notificationToItem(n *domnotification.Notification) *domnotification.Item {
