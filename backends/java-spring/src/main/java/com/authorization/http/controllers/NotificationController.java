@@ -5,6 +5,7 @@
  */
 package com.authorization.http.controllers;
 
+import com.authorization.config.AppConfig;
 import com.authorization.domain.notification.entities.Notification;
 import com.authorization.domain.notification.valueobjects.NotificationCountsVo;
 import com.authorization.domain.notification.valueobjects.NotificationListVo;
@@ -38,14 +39,17 @@ public class NotificationController {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ISO_DATE_TIME;
 
     private final NotificationService service;
+    private final AppConfig cfg;
 
     /**
      * コンストラクタ。
      *
      * @param service 通知Service
+     * @param cfg アプリケーション設定
      */
-    public NotificationController(NotificationService service) {
+    public NotificationController(NotificationService service, AppConfig cfg) {
         this.service = service;
+        this.cfg = cfg;
     }
 
     /**
@@ -66,7 +70,7 @@ public class NotificationController {
         NotificationDto dto = new NotificationDto();
         dto.setStaffId(staffId);
         dto.setCursor(cursor == null || cursor.isEmpty() ? null : cursor);
-        dto.setLimit(limit != null && limit >= 1 ? limit : 1);
+        dto.setLimit(limit != null && limit >= 1 ? limit : (int) cfg.app().notificationDefaultLimit());
 
         NotificationListVo vo = service.listPage(dto);
 
