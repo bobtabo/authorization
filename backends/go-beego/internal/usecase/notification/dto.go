@@ -25,6 +25,8 @@ type BulkMarkReadDto struct {
 
 // MarkReadDto は通知個別既読の入力データです。
 type MarkReadDto struct {
+	// StaffID はスタッフID。
+	StaffID uint
 	// ID は通知ID。
 	ID int64
 }
