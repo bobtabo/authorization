@@ -66,6 +66,13 @@ class TestRead:
         assert res.status_code == 200
         assert res.json()["id"] == n.id
 
+    def test_既読済みの自分の通知は200が返る(self, client, db_session):
+        staff = make_staff(db_session)
+        n = make_notification(db_session, staff_id=staff.id, read=True)
+        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": str(staff.id)})
+        assert res.status_code == 200
+        assert res.json()["id"] == n.id
+
     def test_未認証で401が返る(self, client, db_session):
         staff = make_staff(db_session)
         n = make_notification(db_session, staff_id=staff.id)

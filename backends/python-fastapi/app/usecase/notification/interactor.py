@@ -105,7 +105,7 @@ class NotificationInteractor:
             AppException: 通知が存在しない、または他スタッフの通知の場合
         """
         updated = self.notif_repo.bulk_mark_read(staff_id, [notification_id], False)
-        if updated == 0:
+        if updated == 0 and not self.notif_repo.exists_for_staff(staff_id, notification_id):
             raise not_found("notification_not_found")
 
     def fan_out(

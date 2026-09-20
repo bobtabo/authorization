@@ -55,6 +55,11 @@ class NotificationRepository(ABC):
         ...
 
     @abstractmethod
+    def exists_for_staff(self, staff_id: int, nid: int) -> bool:
+        """スタッフが所有する通知の存在を返します。"""
+        ...
+
+    @abstractmethod
     def store(self, notification: Notification) -> Notification:
         """新規通知を保存して返します。
 
