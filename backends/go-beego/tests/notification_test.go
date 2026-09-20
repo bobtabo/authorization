@@ -112,6 +112,20 @@ func TestNotification_Read(t *testing.T) {
 		}
 	})
 
+	t.Run("既読済みの自分の通知は200になる", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "read-idempotent@example.com"})
+		n := createNotification(t, staff.ID, "既読済み通知")
+		if _, err := testOrmer.Raw("UPDATE notifications SET `read`=1 WHERE id=?", n.ID).Exec(); err != nil {
+			t.Fatalf("set read: %v", err)
+		}
+
+		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil,
+			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("未認証で401が返る", func(t *testing.T) {
 		staff := createStaff(t, map[string]interface{}{"email": "read-401@example.com"})
 		n := createNotification(t, staff.ID, "個別通知")

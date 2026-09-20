@@ -99,6 +99,15 @@ func (r *OrmNotificationRepository) BulkMarkRead(staffID int64, ids []int64, all
 	return n, nil
 }
 
+func (r *OrmNotificationRepository) ExistsForStaff(staffID int64, id int64) (bool, error) {
+	exists := r.o.QueryTable(new(model.Notification)).
+		Filter("id", id).
+		Filter("staff_id", staffID).
+		Filter("deleted_at__isnull", true).
+		Exist()
+	return exists, nil
+}
+
 func (r *OrmNotificationRepository) Store(staffID uint, messageType int, title, message string, createdBy uint, url ...string) error {
 	now := time.Now()
 	m := model.Notification{
