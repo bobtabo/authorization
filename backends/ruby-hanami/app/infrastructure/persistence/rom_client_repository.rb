@@ -28,7 +28,7 @@ module Infrastructure
         q = @ds
 
         if cond.keyword && !cond.keyword.to_s.empty?
-          kw = "%#{cond.keyword}%"
+          kw = "%#{LikeEscaper.escape(cond.keyword)}%"
           q = q.where(Sequel.|(Sequel.like(:name, kw), Sequel.like(:email, kw)))
         end
 

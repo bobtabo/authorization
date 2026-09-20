@@ -23,6 +23,15 @@ RSpec.describe "Staffs" do
       body = JSON.parse(last_response.body)
       expect(body["data"]).to eq([])
     end
+
+    it "keywordの_はワイルドカードとして解釈されない" do
+      create_staff(name: "アンダースコア", email: "a_b@example.com")
+      create_staff(name: "エックス", email: "axb@example.com")
+      get "/api/staffs", { keyword: "a_b" }
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body["data"].size).to eq(1)
+    end
   end
 
   describe "PATCH /api/staffs/:id/updateRole" do
