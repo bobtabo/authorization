@@ -18,7 +18,7 @@ module Infrastructure
       def apply_filters(q, cond)
         if cond.keyword.present?
           like = "%#{ActiveRecord::Base.sanitize_sql_like(cond.keyword)}%"
-          q = q.where("name LIKE ? OR email LIKE ?", like, like)
+          q = q.where("name LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\'", like, like)
         end
         q = q.where(role: cond.roles) if cond.roles.present?
         q = apply_status_filter(q, cond.statuses) if cond.statuses.present?
