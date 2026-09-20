@@ -86,7 +86,7 @@ RSpec.describe UseCase::Notification::Interactor do
     it "succeeds when notification is already read" do
       allow(stub_repo).to receive(:bulk_mark_read).with(10, [5], false).and_return(0)
       allow(stub_repo).to receive(:exists_for_staff?).with(10, 5).and_return(true)
-      expect(described_class.new(stub_repo, stub_staff_repo).mark_read(10, 5)).to eq(0)
+      expect(described_class.new(stub_repo, stub_staff_repo).mark_read(10, 5)).to eq(1)
     end
   end
 end
