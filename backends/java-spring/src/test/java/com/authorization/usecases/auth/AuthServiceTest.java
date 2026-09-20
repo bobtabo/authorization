@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.authorization.domain.staff.entities.Staff;
 import com.authorization.domain.staff.enums.Provider;
@@ -122,6 +123,29 @@ class AuthServiceTest {
         assertEquals(StaffRole.Administrator.value(), vo.getRole());
         assertFalse(invitationAuthRepository.contains("valid-token"));
         assertEquals(1, staffRepository.getPersistCallCount());
+    }
+
+    /**
+     * DB保存が失敗した場合、招待トークンが消費されないことを確認します
+     * （消費が先だとトークンだけ失われ、招待された本人が再ログインできなくなるため）。
+     */
+    @Test
+    void loginDoesNotConsumeInvitationTokenWhenStaffPersistFails() {
+        FakeInvitationAuthRepository invitationAuthRepository =
+                new FakeInvitationAuthRepository().put("valid-token", StaffRole.Member.value());
+        FakeStaffRepository staffRepository = new FakeStaffRepository().failOnPersist();
+        AuthService service = newService(staffRepository, invitationAuthRepository);
+
+        SocialDto dto = new SocialDto();
+        dto.setProvider(Provider.Google);
+        dto.setProviderId("new-provider-id");
+        dto.setName("New Staff");
+        dto.setEmail("new@example.com");
+        dto.setInvitationToken("valid-token");
+
+        assertThrows(RuntimeException.class, () -> service.login(dto));
+        assertTrue(invitationAuthRepository.contains("valid-token"));
+        assertEquals(0, invitationAuthRepository.getRemovedTokens().size());
     }
 
     /**

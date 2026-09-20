@@ -28,6 +28,17 @@ public class FakeStaffRepository implements StaffRepository {
     private int persistCallCount;
     private int deleteByIdCallCount;
     private int restoreByIdCallCount;
+    private boolean persistFails;
+
+    /**
+     * persist 呼び出し時に例外を投げるようにします。
+     *
+     * @return このFake自身（メソッドチェーン用）
+     */
+    public FakeStaffRepository failOnPersist() {
+        this.persistFails = true;
+        return this;
+    }
 
     /**
      * スタッフを追加します。id未設定の場合は自動採番します。
@@ -151,6 +162,9 @@ public class FakeStaffRepository implements StaffRepository {
     @Override
     public Staff persist(Staff entity) {
         persistCallCount++;
+        if (persistFails) {
+            throw new RuntimeException("db save failed");
+        }
         if (entity.getId() == null) {
             entity.setId(nextId++);
         }
