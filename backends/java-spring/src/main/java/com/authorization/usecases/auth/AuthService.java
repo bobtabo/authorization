@@ -87,7 +87,7 @@ public class AuthService extends AbstractService {
         Staff saved;
         if (entity == null) {
             String token = dto.getInvitationToken();
-            Integer roleValue = (token == null || token.isEmpty()) ? null : invitationAuthRepository.consume(token);
+            Integer roleValue = (token == null || token.isEmpty()) ? null : invitationAuthRepository.find(token);
             if (roleValue == null) {
                 throw AppException.forbidden("invitation_required");
             }
@@ -98,6 +98,9 @@ public class AuthService extends AbstractService {
             newEntity.setLastLoginAt(LocalDateTime.now());
             newEntity.assignCreated(0);
             saved = staffRepository.persist(newEntity);
+            // DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+            // トークンだけ失われ、招待された本人が再ログインできなくなる。
+            invitationAuthRepository.remove(token);
         } else {
             entity.setAvatar(dto.getAvatar());
             entity.setLastLoginAt(LocalDateTime.now());

@@ -68,12 +68,12 @@ class AuthInteractor:
             StaffVo インスタンス
         """
         staff = self.staff_repo.find_staff_by_provider(dto.provider, dto.provider_id)
+        token = None
         if staff is None:
             token = dto.invitation_token
             role_value = self.invitation_auth_repo.find(token) if token else None
             if role_value is None:
                 raise forbidden("invitation_required")
-            self.invitation_auth_repo.remove(token)
             now = datetime.now(timezone.utc)
             staff = Staff(
                 provider=dto.provider,
@@ -90,4 +90,8 @@ class AuthInteractor:
             staff.avatar = dto.avatar
             staff.last_login_at = datetime.now(timezone.utc)
         saved = self.staff_repo.save_staff(staff)
+        # DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+        # トークンだけ失われ、招待された本人が再ログインできなくなる。
+        if token is not None:
+            self.invitation_auth_repo.remove(token)
         return _staff_to_vo(saved)

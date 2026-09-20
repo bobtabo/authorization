@@ -28,23 +28,30 @@ class InteractorTest {
         findById: Staff? = null,
         findByProvider: Staff? = null,
         saveResult: Staff? = null,
+        saveThrows: Boolean = false,
     ): Repository = object : Repository {
         override suspend fun countByCondition(cond: Condition)                       = 0
         override suspend fun findByCondition(cond: Condition)                        = emptyList<Staff>()
         override suspend fun findById(id: Long)                                     = findById
         override suspend fun findByProvider(provider: Int, providerId: String)      = findByProvider
         override suspend fun findAllActive()                                         = emptyList<Staff>()
-        override suspend fun save(s: Staff)                                          = saveResult ?: s
+        override suspend fun save(s: Staff): Staff {
+            if (saveThrows) throw RuntimeException("db save failed")
+            return saveResult ?: s
+        }
         override suspend fun updateRole(id: Long, role: Int, updatedBy: Long)        = true
         override suspend fun softDelete(id: Long, deletedBy: Long, version: Int)      = true
         override suspend fun restore(id: Long)                                       = true
     }
 
-    private fun mockInvAuthRepo(storedRole: Int? = null): InvAuthRepository = object : InvAuthRepository {
+    private class RecordingInvAuthRepo(private val storedRole: Int?) : InvAuthRepository {
+        var removedTokens = mutableListOf<String>()
         override suspend fun store(token: String, role: Int, ttl: Long) {}
         override suspend fun find(token: String) = storedRole
-        override suspend fun remove(token: String) {}
+        override suspend fun remove(token: String) { removedTokens.add(token) }
     }
+
+    private fun mockInvAuthRepo(storedRole: Int? = null): InvAuthRepository = RecordingInvAuthRepo(storedRole)
 
     private fun makeUc(staffRepo: Repository, storedRole: Int? = null) =
         Interactor(staffRepo, mockInvAuthRepo(storedRole))
@@ -100,5 +107,14 @@ class InteractorTest {
         val result   = uc.login(dto)
         assertEquals(5L, result.id)
         assertTrue(result.avatar != null)
+    }
+
+    @Test
+    fun `login does not consume invitation token when staff save fails`() = runBlocking {
+        val invAuthRepo = RecordingInvAuthRepo(StaffRole.MEMBER)
+        val uc = Interactor(mockRepo(findByProvider = null, saveThrows = true), invAuthRepo)
+        val dto = LoginDto(provider = 1, providerId = "new-id", name = "New User", email = "new@example.com", avatar = null, invitationToken = "tok")
+        assertFailsWith<RuntimeException> { uc.login(dto) }
+        assertTrue(invAuthRepo.removedTokens.isEmpty())
     }
 }

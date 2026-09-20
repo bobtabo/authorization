@@ -41,6 +41,7 @@ class Interactor(
         val now = LocalDateTime.now()
         val existing = staffRepo.findByProvider(dto.provider, dto.providerId)
 
+        var consumedInvitationToken: String? = null
         val staff = if (existing != null) {
             existing.copy(
                 avatar      = dto.avatar,
@@ -53,7 +54,7 @@ class Interactor(
             if (roleValue == null) {
                 throw AppException(403, "invitation_required")
             }
-            invitationAuthRepo.remove(token!!)
+            consumedInvitationToken = token
             Staff(
                 name        = dto.name,
                 email       = dto.email,
@@ -66,6 +67,10 @@ class Interactor(
                 updatedAt   = now,
             )
         }
-        return staffRepo.save(staff)
+        val saved = staffRepo.save(staff)
+        // DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+        // トークンだけ失われ、招待された本人が再ログインできなくなる。
+        consumedInvitationToken?.let { invitationAuthRepo.remove(it) }
+        return saved
     }
 }

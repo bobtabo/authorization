@@ -62,7 +62,6 @@ impl Interactor {
                 Some(r) => r as i32,
                 None => return Err("invitation_required".to_string().into()),
             };
-            self.invitation_auth_repo.remove(token).await?;
             let new_staff = Staff {
                 id: 0,
                 name: dto.name,
@@ -80,7 +79,11 @@ impl Interactor {
                 deleted_by: None,
                 version: 0,
             };
-            self.staff_repo.save(new_staff).await?
+            let saved = self.staff_repo.save(new_staff).await?;
+            // DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+            // トークンだけ失われ、招待された本人が再ログインできなくなる。
+            self.invitation_auth_repo.remove(token).await?;
+            saved
         };
 
         Ok(to_vo(saved))
@@ -112,6 +115,7 @@ mod tests {
         find_by_provider: Mutex<Option<Option<Staff>>>,
         find_by_id: Mutex<Option<Option<Staff>>>,
         saved: Mutex<Option<Staff>>,
+        save_fails: Mutex<bool>,
     }
 
     impl MockStaffRepo {
@@ -120,22 +124,26 @@ mod tests {
                 find_by_provider: Mutex::new(None),
                 find_by_id: Mutex::new(None),
                 saved: Mutex::new(None),
+                save_fails: Mutex::new(false),
             }
         }
     }
 
     struct MockInvitationAuthRepo {
         stored: Mutex<Option<u8>>,
+        remove_calls: Mutex<u32>,
     }
     impl MockInvitationAuthRepo {
         fn with_role(role: u8) -> Self {
             Self {
                 stored: Mutex::new(Some(role)),
+                remove_calls: Mutex::new(0),
             }
         }
         fn empty() -> Self {
             Self {
                 stored: Mutex::new(None),
+                remove_calls: Mutex::new(0),
             }
         }
     }
@@ -148,6 +156,7 @@ mod tests {
             Ok(*self.stored.lock().unwrap())
         }
         async fn remove(&self, _: &str) -> Result<(), DomainError> {
+            *self.remove_calls.lock().unwrap() += 1;
             Ok(())
         }
     }
@@ -196,6 +205,9 @@ mod tests {
             Ok(vec![])
         }
         async fn save(&self, s: Staff) -> Result<Staff, DomainError> {
+            if *self.save_fails.lock().unwrap() {
+                return Err("db save failed".to_string().into());
+            }
             let result = self.saved.lock().unwrap().take().unwrap_or(s);
             Ok(result)
         }
@@ -284,5 +296,25 @@ mod tests {
         };
         let vo = uc.login(dto).await.unwrap();
         assert_eq!(vo.id, 10);
+    }
+
+    #[tokio::test]
+    async fn test_login_does_not_consume_invitation_token_when_save_fails() {
+        let mock = Arc::new(MockStaffRepo::new());
+        *mock.find_by_provider.lock().unwrap() = Some(None);
+        *mock.save_fails.lock().unwrap() = true;
+        let inv_repo = Arc::new(MockInvitationAuthRepo::with_role(2));
+        let uc = make_uc(mock, inv_repo.clone());
+        let dto = LoginDto {
+            provider: 1,
+            provider_id: "new_id".to_string(),
+            name: "Bob".to_string(),
+            email: "bob@example.com".to_string(),
+            avatar: None,
+            invitation_token: Some("tok".to_string()),
+        };
+        let result = uc.login(dto).await;
+        assert!(result.is_err());
+        assert_eq!(*inv_repo.remove_calls.lock().unwrap(), 0);
     }
 }

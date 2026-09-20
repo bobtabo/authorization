@@ -73,13 +73,6 @@ public sealed class RedisInvitationAuthRepository(IConnectionMultiplexer redis, 
     }
 
     /// <inheritdoc/>
-    public async Task<int?> ConsumeRoleAsync(string token, CancellationToken ct = default)
-    {
-        var v = await redis.GetDatabase().StringGetDeleteAsync(Key(token));
-        return v.IsNullOrEmpty ? null : int.TryParse(v.ToString(), out var role) ? role : null;
-    }
-
-    /// <inheritdoc/>
     public Task RemoveAsync(string token, CancellationToken ct = default) =>
         redis.GetDatabase().KeyDeleteAsync(Key(token));
 }

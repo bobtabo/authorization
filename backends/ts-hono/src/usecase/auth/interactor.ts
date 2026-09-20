@@ -53,7 +53,6 @@ export class AuthInteractor {
     if (!token || roleValue === null || (roleValue !== 1 && roleValue !== 2)) {
       throw forbidden("invitation_required");
     }
-    await this.invitationAuthRepo.remove(token);
 
     const staff = await this.repo.upsert({
       provider: input.provider,
@@ -64,6 +63,9 @@ export class AuthInteractor {
       role: roleValue,
       lastLoginAt: new Date(),
     });
+    // DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+    // トークンだけ失われ、招待された本人が再ログインできなくなる。
+    await this.invitationAuthRepo.remove(token);
     return mapper.map(staff, StaffSymbol, StaffVoSymbol);
   }
 }

@@ -52,15 +52,6 @@ public interface IInvitationAuthRepository
     /// <returns>ロール種別、無ければnull</returns>
     Task<int?> GetRoleAsync(string token, CancellationToken ct = default);
 
-    /// <summary>
-    /// 招待トークンに対応するロールを取得し、同一操作でトークンを削除します。
-    /// 並行するリクエストが同じトークンを取得できないよう、取得と削除をアトミックに行います。
-    /// </summary>
-    /// <param name="token">招待トークン</param>
-    /// <param name="ct">キャンセレーショントークン</param>
-    /// <returns>ロール種別、無ければnull</returns>
-    Task<int?> ConsumeRoleAsync(string token, CancellationToken ct = default);
-
     /// <summary>招待トークンのキャッシュを削除します。</summary>
     /// <param name="token">招待トークン</param>
     /// <param name="ct">キャンセレーショントークン</param>

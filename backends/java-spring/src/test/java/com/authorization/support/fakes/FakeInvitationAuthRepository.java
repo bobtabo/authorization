@@ -66,12 +66,6 @@ public class FakeInvitationAuthRepository implements InvitationAuthRepository {
 
     /** {@inheritDoc} */
     @Override
-    public synchronized Integer consume(String token) {
-        return tokenToRole.remove(token);
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public void remove(String token) {
         tokenToRole.remove(token);
         removedTokens.add(token);

@@ -21,6 +21,7 @@ use App\Support\Mappers\SimpleMapper;
 use App\Support\Services\AbstractService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
 use App\UseCases\Auth\Dtos\SocialDto;
+use AutoMapperPlus\Exception\UnregisteredMappingException;
 use Carbon\Carbon;
 
 /**
@@ -34,24 +35,23 @@ class AuthService extends AbstractService
     /**
      * コンストラクタ。
      *
-     * @param StaffRepository $staffRepository スタッフRepository
-     * @param InvitationAuthRepository $invitationAuthRepository 招待認証Repository
+     * @param  StaffRepository  $staffRepository  スタッフRepository
+     * @param  InvitationAuthRepository  $invitationAuthRepository  招待認証Repository
      */
     public function __construct(
         private readonly StaffRepository $staffRepository,
         private readonly InvitationAuthRepository $invitationAuthRepository,
-    ) {
-    }
+    ) {}
 
     /**
      * ID でスタッフ（ログインユーザー）を取得します。
      *
-     * @param AuthUserDto $dto 認証ユーザーDTO
+     * @param  AuthUserDto  $dto  認証ユーザーDTO
      * @return StaffVo スタッフValueObject（found = false のとき未存在）
      */
     public function findUser(AuthUserDto $dto): StaffVo
     {
-        $condition = new StaffCondition();
+        $condition = new StaffCondition;
         $condition->id = $dto->id;
 
         $entity = $this->staffRepository->findById($condition);
@@ -59,15 +59,15 @@ class AuthService extends AbstractService
             throw AppException::notFound('user_not_found');
         }
 
-        return (new StaffVo())->assign($entity->attributes());
+        return (new StaffVo)->assign($entity->attributes());
     }
 
     /**
      * ソーシャル認証でログインします（未登録の場合は新規作成します）。
      *
-     * @param SocialDto $dto ソーシャルDTO
+     * @param  SocialDto  $dto  ソーシャルDTO
      * @return StaffVo スタッフValueObject
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException
+     * @throws UnregisteredMappingException
      */
     public function login(SocialDto $dto): StaffVo
     {
@@ -75,7 +75,7 @@ class AuthService extends AbstractService
         $condition = SimpleMapper::map($dto, StaffCondition::class);
         $entity = $this->staffRepository->findByProvider($condition);
 
-        $vo = new StaffVo();
+        $vo = new StaffVo;
         if (empty($entity)) {
             // 新規ユーザー: 招待トークンを検証
             $token = $dto->invitationToken;
@@ -83,14 +83,16 @@ class AuthService extends AbstractService
             if ($roleValue === null) {
                 throw AppException::forbidden('invitation_required');
             }
-            $this->invitationAuthRepository->remove($token);
 
-            $newEntity = new Staff();
+            $newEntity = new Staff;
             $newEntity->assign($dto->attributes());
             $newEntity->role = StaffRole::from($roleValue);
             $newEntity->lastLoginAt = Carbon::now();
             $newEntity->assignCreated(0);
             $saved = $this->staffRepository->persist($newEntity);
+            // DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+            // トークンだけ失われ、招待された本人が再ログインできなくなる。
+            $this->invitationAuthRepository->remove($token);
         } else {
             $entity->avatar = $dto->avatar;
             $entity->lastLoginAt = Carbon::now();
