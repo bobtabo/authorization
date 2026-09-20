@@ -68,6 +68,13 @@ RSpec.describe "Notifications" do
       expect(body["id"]).to eq(notif[:id])
     end
 
+    it "既読済みの自分の通知は200を返す" do
+      staff = create_staff
+      notif = create_notification(staff[:id], "既読済み通知", read: true)
+      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      expect(last_response.status).to eq(200)
+    end
+
     it "未認証で401を返す" do
       staff = create_staff
       notif = create_notification(staff[:id], "通知1")
