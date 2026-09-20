@@ -79,8 +79,9 @@ impl SqlxStaffRepository {
                 let like = format!("%{}%", escape_like_keyword(kw));
                 qb.push(" AND (name LIKE ");
                 qb.push_bind(like.clone());
-                qb.push(" OR email LIKE ");
+                qb.push(" ESCAPE '\\' OR email LIKE ");
                 qb.push_bind(like);
+                qb.push(" ESCAPE '\\'");
                 qb.push(")");
             }
         }
