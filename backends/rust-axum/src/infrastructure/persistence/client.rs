@@ -94,7 +94,8 @@ impl SqlxClientRepository {
             if !kw.is_empty() {
                 qb.push(" AND name LIKE ");
                 qb.push_bind(format!("%{}%", escape_like_keyword(kw)));
-                qb.push(" ESCAPE '\\'");
+                qb.push(" ESCAPE ");
+                qb.push_bind("\\");
             }
         }
         if let Some(sf) = cond.start_from {
