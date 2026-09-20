@@ -174,6 +174,17 @@ impl Repository for SqlxNotificationRepository {
         Ok(result.rows_affected() as i64)
     }
 
+    async fn exists_for_staff(&self, staff_id: i64, id: i64) -> Result<bool, DomainError> {
+        let exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM notifications WHERE id = ? AND staff_id = ? AND deleted_at IS NULL)",
+        )
+        .bind(id)
+        .bind(staff_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(exists)
+    }
+
     async fn store(
         &self,
         staff_id: u32,

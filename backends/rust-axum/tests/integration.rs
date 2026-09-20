@@ -497,3 +497,20 @@ async fn patch_notifications_id_returns_404_for_other_staff_notification() {
     let res = app.oneshot(req).await.unwrap();
     assert_eq!(res.status(), StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn patch_notifications_id_succeeds_for_already_read_own_notification() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+    let notif_id = common::create_notification(&pool, staff_id, "通知1", true).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/notifications/{}", notif_id))
+        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .body(axum::body::Body::empty())
+        .unwrap();
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+}

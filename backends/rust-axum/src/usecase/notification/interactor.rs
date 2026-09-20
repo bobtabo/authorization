@@ -85,7 +85,7 @@ impl Interactor {
             .repo
             .bulk_mark_read(staff_id as i64, vec![id], false)
             .await?;
-        if updated == 0 {
+        if updated == 0 && !self.repo.exists_for_staff(staff_id as i64, id).await? {
             return Err("notification_not_found".to_string().into());
         }
         Ok(())
@@ -129,6 +129,7 @@ mod tests {
         list_page_result: Mutex<Option<EntityPage>>,
         counts_result: Mutex<(i64, i64)>,
         bulk_mark_result: Mutex<i64>,
+        exists_for_staff_result: Mutex<bool>,
     }
 
     impl MockNotifRepo {
@@ -137,6 +138,7 @@ mod tests {
                 list_page_result: Mutex::new(None),
                 counts_result: Mutex::new((3, 10)),
                 bulk_mark_result: Mutex::new(5),
+                exists_for_staff_result: Mutex::new(false),
             }
         }
     }
@@ -217,6 +219,9 @@ mod tests {
         }
         async fn bulk_mark_read(&self, _: i64, _: Vec<i64>, _: bool) -> Result<i64, DomainError> {
             Ok(*self.bulk_mark_result.lock().unwrap())
+        }
+        async fn exists_for_staff(&self, _: i64, _: i64) -> Result<bool, DomainError> {
+            Ok(*self.exists_for_staff_result.lock().unwrap())
         }
         async fn store(
             &self,
@@ -309,6 +314,15 @@ mod tests {
         let uc = Interactor::new(notif_repo, staff_repo);
         let count = uc.bulk_mark_read(1).await.unwrap();
         assert_eq!(count, 7);
+    }
+
+    #[tokio::test]
+    async fn test_mark_read_succeeds_when_notification_is_already_read() {
+        let notif_repo = Arc::new(MockNotifRepo::new());
+        *notif_repo.exists_for_staff_result.lock().unwrap() = true;
+        let staff_repo = Arc::new(MockStaffRepo::new());
+        let uc = Interactor::new(notif_repo, staff_repo);
+        assert!(uc.mark_read(1, 7).await.is_ok());
     }
 
     #[tokio::test]

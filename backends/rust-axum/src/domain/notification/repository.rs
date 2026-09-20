@@ -27,6 +27,8 @@ pub trait Repository: Send + Sync {
         ids: Vec<i64>,
         all: bool,
     ) -> Result<i64, DomainError>;
+    /// スタッフが所有する通知の存在を返します。
+    async fn exists_for_staff(&self, staff_id: i64, id: i64) -> Result<bool, DomainError>;
     /// 通知を新規登録します。
     async fn store(
         &self,
