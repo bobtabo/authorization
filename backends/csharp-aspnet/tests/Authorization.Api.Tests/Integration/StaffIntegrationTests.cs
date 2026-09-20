@@ -33,6 +33,19 @@ public class StaffIntegrationTests(IntegrationWebAppFactory factory) : Integrati
     }
 
     [Fact]
+    public async Task Index_KeywordUnderscore_IsNotTreatedAsWildcard()
+    {
+        TestHelper.CreateStaff(name: "アンダースコア", email: "a_b@example.com", providerId: "google-underscore");
+        TestHelper.CreateStaff(name: "エックス", email: "axb@example.com", providerId: "google-x");
+
+        var res  = await SendAsync(HttpMethod.Get, "/api/staffs?keyword=a_b");
+        var json = await ReadJsonAsync(res);
+
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        Assert.Equal(1, json.GetProperty("data").GetArrayLength());
+    }
+
+    [Fact]
     public async Task UpdateRole_Valid_UpdatesRole()
     {
         var adminId  = TestHelper.CreateStaff(name: "Admin", email: "admin@example.com", providerId: "google-admin");

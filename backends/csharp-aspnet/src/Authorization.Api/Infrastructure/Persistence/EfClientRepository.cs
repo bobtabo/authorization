@@ -23,8 +23,8 @@ public sealed class EfClientRepository(AppDbContext db) : IClientRepository
         var q = db.Clients.AsNoTracking().AsQueryable();
         if (!string.IsNullOrEmpty(cond.Keyword))
         {
-            var kw = $"%{cond.Keyword}%";
-            q = q.Where(c => EF.Functions.Like(c.Name, kw) || EF.Functions.Like(c.Email, kw));
+            var kw = $"%{LikeEscaper.Escape(cond.Keyword)}%";
+            q = q.Where(c => EF.Functions.Like(c.Name, kw, "\\") || EF.Functions.Like(c.Email, kw, "\\"));
         }
         if (cond.StartFrom is DateTime from) q = q.Where(c => c.StartAt >= from);
         if (cond.StartTo   is DateTime to)   q = q.Where(c => c.StartAt <= to);

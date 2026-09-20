@@ -23,8 +23,8 @@ public sealed class EfStaffRepository(AppDbContext db) : IStaffRepository
         var q = db.Staffs.AsNoTracking().AsQueryable();
         if (!string.IsNullOrEmpty(cond.Keyword))
         {
-            var kw = $"%{cond.Keyword}%";
-            q = q.Where(s => EF.Functions.Like(s.Name, kw) || EF.Functions.Like(s.Email, kw));
+            var kw = $"%{LikeEscaper.Escape(cond.Keyword)}%";
+            q = q.Where(s => EF.Functions.Like(s.Name, kw, "\\") || EF.Functions.Like(s.Email, kw, "\\"));
         }
         if (cond.Roles.Count > 0) q = q.Where(s => cond.Roles.Contains(s.Role));
         if (cond.Statuses.Count > 0)
