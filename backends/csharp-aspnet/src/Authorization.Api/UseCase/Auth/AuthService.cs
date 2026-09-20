@@ -52,7 +52,7 @@ public sealed class AuthService(IStaffRepository staffRepo, IInvitationAuthRepos
         else
         {
             var token = dto.InvitationToken;
-            var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.ConsumeRoleAsync(token, ct);
+            var role  = string.IsNullOrEmpty(token) ? null : await invitationAuthRepo.GetRoleAsync(token, ct);
             if (role is null) throw AppException.Forbidden("invitation_required");
 
             // dto.Adapt<Staff>() が Name/Email/Provider/ProviderId/Avatar をMapsterで
@@ -64,6 +64,12 @@ public sealed class AuthService(IStaffRepository staffRepo, IInvitationAuthRepos
                 CreatedAt   = now,
                 UpdatedAt   = now,
             };
+
+            var saved = await staffRepo.SaveAsync(staff, ct);
+            // DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+            // トークンだけ失われ、招待された本人が再ログインできなくなる。
+            await invitationAuthRepo.RemoveAsync(token!, ct);
+            return saved;
         }
 
         return await staffRepo.SaveAsync(staff, ct);

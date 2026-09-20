@@ -19,6 +19,7 @@ public sealed class FakeStaffRepository : IStaffRepository
     public int RestoreCallCount { get; private set; }
     public long? LastSoftDeletedId { get; private set; }
     public int? LastSoftDeletedVersion { get; private set; }
+    public bool SaveFails { get; set; }
 
     public Task<int> CountByConditionAsync(StaffCondition cond, CancellationToken ct = default) =>
         Task.FromResult(staffs.Count);
@@ -37,6 +38,7 @@ public sealed class FakeStaffRepository : IStaffRepository
 
     public Task<Authorization.Api.Domain.Staff.Staff> SaveAsync(Authorization.Api.Domain.Staff.Staff staff, CancellationToken ct = default)
     {
+        if (SaveFails) throw new InvalidOperationException("db save failed");
         var saved = staff.Id == 0 ? staff with { Id = staffs.Count + 1 } : staff with { Version = staff.Version + 1 };
         staffs[saved.Id] = saved;
         return Task.FromResult(saved);

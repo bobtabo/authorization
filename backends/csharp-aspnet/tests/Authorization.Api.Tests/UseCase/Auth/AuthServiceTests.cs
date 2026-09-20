@@ -75,6 +75,19 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task LoginAsync_SaveFails_DoesNotConsumeInvitationToken()
+    {
+        var staffRepo      = new FakeStaffRepository { SaveFails = true };
+        var invitationRepo = new FakeInvitationAuthRepository().Add("tok-1", StaffRole.Member);
+        var uc = new AuthService(staffRepo, invitationRepo);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            uc.LoginAsync(new LoginDto(StaffProvider.Google, "g-new", "New", "new@example.com", null, InvitationToken: "tok-1")));
+
+        Assert.DoesNotContain("tok-1", invitationRepo.Removed);
+    }
+
+    [Fact]
     public async Task LoginAsync_NewStaffWithNonAdminRoleValue_RoundsToMember()
     {
         var staffRepo      = new FakeStaffRepository();
