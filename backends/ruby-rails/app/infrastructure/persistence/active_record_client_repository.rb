@@ -30,7 +30,7 @@ module Infrastructure
         q = @model.all
         if cond.keyword.present?
           like = "%#{ActiveRecord::Base.sanitize_sql_like(cond.keyword)}%"
-          q = q.where("name LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\'", like, like)
+          q = q.where("name LIKE ? ESCAPE ? OR email LIKE ? ESCAPE ?", like, "\\", like, "\\")
         end
         q = q.where(status: cond.statuses) if cond.statuses.present?
         q = q.where("start_at >= ?", cond.start_from) if cond.start_from
