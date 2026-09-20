@@ -67,5 +67,13 @@ RSpec.describe UseCase::Auth::Interactor do
       expect(vo.id).to eq 5
       expect(vo.avatar).to eq "new-avatar"
     end
+
+    it "does not consume invitation token when staff save fails" do
+      allow(stub_repo).to receive(:find_by_provider).and_return(nil)
+      allow(stub_repo).to receive(:save).and_raise(StandardError, "db save failed")
+      expect(stub_auth_repo).not_to receive(:remove)
+      dto = UseCase::Auth::LoginDto.new(provider: 1, provider_id: "new-id", name: "New User", email: "new@example.com", avatar: nil, invitation_token: "tok")
+      expect { described_class.new(stub_repo, stub_auth_repo).login(dto) }.to raise_error(StandardError, "db save failed")
+    end
   end
 end
