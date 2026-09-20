@@ -26,10 +26,8 @@ class StaffControllerTest extends TestCase
 
     /**
      * スタッフ一覧取得テストです。
-     *
-     * @return void
      */
-    public function testIndex(): void
+    public function test_index(): void
     {
         $params = $this->getRequestParams('Staff/index.json');
         $response = $this->get('/api/staffs', $params);
@@ -40,11 +38,23 @@ class StaffControllerTest extends TestCase
     }
 
     /**
-     * スタッフ権限更新テストです。
-     *
-     * @return void
+     * keywordの_がワイルドカードとして解釈されないことのテストです。
      */
-    public function testUpdateRole(): void
+    public function test_index_keyword_underscore_is_not_treated_as_wildcard(): void
+    {
+        Staff::factory()->create(['name' => 'アンダースコア', 'email' => 'a_b@example.com']);
+        Staff::factory()->create(['name' => 'エックス', 'email' => 'axb@example.com']);
+
+        $response = $this->get('/api/staffs?keyword=a_b');
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+    }
+
+    /**
+     * スタッフ権限更新テストです。
+     */
+    public function test_update_role(): void
     {
         $staff = Staff::factory()->create();
         $params = $this->getRequestParams('Staff/updateRole.json');
@@ -59,10 +69,8 @@ class StaffControllerTest extends TestCase
 
     /**
      * スタッフ削除テストです。
-     *
-     * @return void
      */
-    public function testDestroy(): void
+    public function test_destroy(): void
     {
         $staff = Staff::factory()->create();
         $id = $staff->id;
