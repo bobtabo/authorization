@@ -38,7 +38,8 @@ class ExposedStaffRepository(private val db: Database) : Repository {
     override suspend fun countByCondition(cond: Condition): Int = newSuspendedTransaction(db = db) {
         var query = Staffs.selectAll()
         cond.keyword?.let { kw ->
-            query = query.andWhere { (Staffs.name like "%$kw%") or (Staffs.email like "%$kw%") }
+            val like = "%${escapeLikeKeyword(kw)}%"
+            query = query.andWhere { (Staffs.name like like) or (Staffs.email like like) }
         }
         if (cond.roles.isNotEmpty()) {
             query = query.andWhere { Staffs.role inList cond.roles }
@@ -65,7 +66,8 @@ class ExposedStaffRepository(private val db: Database) : Repository {
     override suspend fun findByCondition(cond: Condition): List<Staff> = newSuspendedTransaction(db = db) {
         var query = Staffs.selectAll()
         cond.keyword?.let { kw ->
-            query = query.andWhere { (Staffs.name like "%$kw%") or (Staffs.email like "%$kw%") }
+            val like = "%${escapeLikeKeyword(kw)}%"
+            query = query.andWhere { (Staffs.name like like) or (Staffs.email like like) }
         }
         if (cond.roles.isNotEmpty()) {
             query = query.andWhere { Staffs.role inList cond.roles }

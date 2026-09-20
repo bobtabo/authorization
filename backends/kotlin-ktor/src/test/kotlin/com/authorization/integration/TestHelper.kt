@@ -76,13 +76,13 @@ object TestHelper {
         return StaffRow(id, email)
     }
 
-    fun createClient(): ClientRow {
+    fun createClient(name: String = "テストクライアント"): ClientRow {
         val now = LocalDateTime.now()
         val token      = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "")
         val identifier = "test-client-${UUID.randomUUID().toString().take(8)}"
         val id = transaction(db) {
             Clients.insertAndGetId {
-                it[Clients.name]        = "テストクライアント"
+                it[Clients.name]        = name
                 it[Clients.identifier]  = identifier
                 it[Clients.postCode]    = "100-0001"
                 it[Clients.pref]        = "東京都"
