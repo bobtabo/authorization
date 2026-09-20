@@ -76,7 +76,7 @@ func NewAuthHandler(
 // GetMyProfile は認証済みスタッフのプロフィールを返します。
 // GET /api/auth/me
 func (h *AuthHandler) GetMyProfile(c *gin.Context) {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
@@ -97,7 +97,7 @@ func (h *AuthHandler) GetMyProfile(c *gin.Context) {
 // Login は認証済みスタッフのプロフィールを返します。
 // GET /api/auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
@@ -208,7 +208,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	c.SetCookie("staff_id", strconv.Itoa(int(staff.ID)), maxAge, "/", "", secure, true)
+	c.SetCookie("staff_id", SignStaffID(staff.ID, h.cfg.App.StaffCookieSecret), maxAge, "/", "", secure, true)
 	c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 
@@ -282,7 +282,7 @@ func (h *AuthHandler) GithubCallback(c *gin.Context) {
 
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	c.SetCookie("staff_id", strconv.Itoa(int(staff.ID)), maxAge, "/", "", secure, true)
+	c.SetCookie("staff_id", SignStaffID(staff.ID, h.cfg.App.StaffCookieSecret), maxAge, "/", "", secure, true)
 	c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 

@@ -25,6 +25,7 @@ type AppConfig struct {
 	StaffCookieLifetime      int // 分
 	NotificationDefaultLimit int
 	CachePrefix              string
+	StaffCookieSecret        string
 }
 
 type DBConfig struct {
@@ -86,6 +87,7 @@ func Load() *Config {
 			StaffCookieLifetime:      getEnvInt("STAFF_COOKIE_LIFETIME", 60),
 			NotificationDefaultLimit: getEnvInt("NOTIFICATION_DEFAULT_LIMIT", 10),
 			CachePrefix:              getEnv("CACHE_PREFIX", ""),
+			StaffCookieSecret:        getEnv("STAFF_COOKIE_SECRET", ""),
 		},
 		DB: DBConfig{
 			DSN: buildDSN(),

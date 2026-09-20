@@ -14,16 +14,18 @@ import (
 
 // StaffHandler はスタッフ関連のHTTPハンドラーを提供します。
 type StaffHandler struct {
-	db         *gorm.DB
-	newStaffUC func(*gorm.DB) *ustaff.Interactor
+	db           *gorm.DB
+	newStaffUC   func(*gorm.DB) *ustaff.Interactor
+	cookieSecret string
 }
 
 // NewStaffHandler は StaffHandler を生成します。
 //
 // db: GORM DB インスタンス
 // newStaffUC: スタッフユースケースファクトリ
-func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{db: db, newStaffUC: newStaffUC}
+// cookieSecret: staff_id クッキー署名用シークレット
+func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor, cookieSecret string) *StaffHandler {
+	return &StaffHandler{db: db, newStaffUC: newStaffUC, cookieSecret: cookieSecret}
 }
 
 // Index は検索条件に合致するスタッフ一覧を返します。
@@ -95,7 +97,7 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
@@ -135,7 +137,7 @@ func (h *StaffHandler) Destroy(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		return h.newStaffUC(tx).Destroy(ustaff.DestroyDto{
 			ID:         id,
