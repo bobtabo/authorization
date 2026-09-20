@@ -25,8 +25,8 @@ export class DrizzleStaffRepository implements StaffRepository {
     if (keyword) {
       const like_ = `%${escapeLikeKeyword(keyword)}%`;
       conds.push(or(
-        sql`${staffs.name} LIKE ${like_} ESCAPE '\\'`,
-        sql`${staffs.email} LIKE ${like_} ESCAPE '\\'`,
+        sql`${staffs.name} LIKE ${like_} ESCAPE ${"\\"}`,
+        sql`${staffs.email} LIKE ${like_} ESCAPE ${"\\"}`,
       )!);
     }
     if (roles && roles.length > 0) conds.push(inArray(staffs.role, roles));

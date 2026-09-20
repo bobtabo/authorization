@@ -19,8 +19,8 @@ export class DrizzleClientRepository implements ClientRepository {
     if (keyword) {
       const like_ = `%${escapeLikeKeyword(keyword)}%`;
       conds.push(or(
-        sql`${clients.name} LIKE ${like_} ESCAPE '\\'`,
-        sql`${clients.identifier} LIKE ${like_} ESCAPE '\\'`,
+        sql`${clients.name} LIKE ${like_} ESCAPE ${"\\"}`,
+        sql`${clients.identifier} LIKE ${like_} ESCAPE ${"\\"}`,
       )!);
     }
     if (statuses && statuses.length > 0) conds.push(inArray(clients.status, statuses));
