@@ -92,6 +92,16 @@ describe("Notifications", () => {
       expect(res.status).toBe(200);
     });
 
+    test("既読済みの自分の通知は200になる", async () => {
+      const staff = await makeStaff();
+      const n = await makeNotification(staff.id, "既読済み通知", undefined, true);
+      const res = await app.request(`/api/notifications/${n.id}`, {
+        method: "PATCH",
+        headers: { Cookie: `staff_id=${staff.id}` },
+      });
+      expect(res.status).toBe(200);
+    });
+
     test("未認証で401が返る", async () => {
       const staff = await makeStaff();
       const n = await makeNotification(staff.id);

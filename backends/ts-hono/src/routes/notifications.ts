@@ -57,9 +57,10 @@ app.patch("/notifications/:id", async (c) => {
   const id = parseInt(c.req.param("id"), 10);
   if (!id || id <= 0) throw badRequest("invalid_id");
   await db.transaction(async (tx) => {
-    const uc = new NotificationInteractor(new DrizzleNotificationRepository(asTx(tx)), new DrizzleStaffRepository(asTx(tx)));
+    const repo = new DrizzleNotificationRepository(asTx(tx));
+    const uc = new NotificationInteractor(repo, new DrizzleStaffRepository(asTx(tx)));
     const updated = await uc.bulkRead(staffId, [id], false);
-    if (updated === 0) throw notFound("notification_not_found");
+    if (updated === 0 && !(await repo.existsForStaff(staffId, id))) throw notFound("notification_not_found");
   });
   return c.json({ id });
 });
