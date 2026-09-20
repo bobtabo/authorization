@@ -63,9 +63,6 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 		if *rolePtr != domstaff.RoleAdmin && *rolePtr != domstaff.RoleMember {
 			return nil, apperror.Forbidden("invitation_required")
 		}
-		if err := uc.invitationAuthRepo.Remove(dto.InvitationToken); err != nil {
-			return nil, err
-		}
 
 		zero := uint(0)
 		newStaff := &domstaff.Staff{
@@ -83,6 +80,11 @@ func (uc *Interactor) Login(dto LoginDto) (*domstaff.Vo, error) {
 		}
 		saved, err := uc.staffRepo.Save(newStaff)
 		if err != nil {
+			return nil, err
+		}
+		// DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+		// トークンだけ失われ、招待された本人が再ログインできなくなる。
+		if err := uc.invitationAuthRepo.Remove(dto.InvitationToken); err != nil {
 			return nil, err
 		}
 		return staffToVo(saved), nil
