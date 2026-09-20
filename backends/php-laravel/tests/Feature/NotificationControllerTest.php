@@ -101,6 +101,18 @@ class NotificationControllerTest extends TestCase
             ->assertJson($data);
     }
 
+    public function test_update_already_read(): void
+    {
+        $staff = Staff::factory()->create();
+        $notification = Notification::factory()->create([
+            'staff_id' => $staff->id,
+            'read' => true,
+        ]);
+        $response = $this->withStaffCookie($staff->id)
+            ->patch("/api/notifications/{$notification->id}");
+        $response->assertStatus(200);
+    }
+
     /**
      * 単一通知既読の未認証テストです。
      */

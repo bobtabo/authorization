@@ -98,6 +98,15 @@ class EloquentNotificationRepository extends AbstractEloquentRepository implemen
         ]);
     }
 
+    #[\Override]
+    public function existsForStaff(int $staffId, int $id): bool
+    {
+        return Model::query()
+            ->where('staff_id', $staffId)
+            ->where('id', $id)
+            ->exists();
+    }
+
     /**
      * {@inheritdoc}
      */
