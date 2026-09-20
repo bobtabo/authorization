@@ -64,6 +64,26 @@ async fn get_clients_returns_list() {
 }
 
 #[tokio::test]
+async fn get_clients_keyword_percent_is_not_treated_as_wildcard() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    common::create_client_with_name(&pool, "50%割引プラン").await;
+    common::create_client_with_name(&pool, "50個セット").await;
+
+    let req = Request::builder()
+        .uri("/api/clients?keyword=50%25")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let body = res.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["data"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
 async fn post_clients_store_creates_client() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
@@ -155,6 +175,26 @@ async fn get_staffs_returns_list() {
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["data"].as_array().unwrap().len(), 2);
     assert!(json["pager"].is_object());
+}
+
+#[tokio::test]
+async fn get_staffs_keyword_underscore_is_not_treated_as_wildcard() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    common::create_staff_with_name_email(&pool, "アンダースコア", "a_b@example.com").await;
+    common::create_staff_with_name_email(&pool, "エックス", "axb@example.com").await;
+
+    let req = Request::builder()
+        .uri("/api/staffs?keyword=a_b")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(json["data"].as_array().unwrap().len(), 1);
 }
 
 #[tokio::test]

@@ -44,6 +44,17 @@ class StaffIntegrationTest {
     }
 
     @Test
+    fun `GET api staffs keyword underscore is not treated as wildcard`() = testApplication {
+        application { module(TestHelper.cfg) }
+        TestHelper.createStaff(name = "アンダースコア", email = "a_b@example.com")
+        TestHelper.createStaff(name = "エックス", email = "axb@example.com")
+        val response = client.get("/api/staffs?keyword=a_b")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertEquals(1, body["data"]!!.jsonArray.size)
+    }
+
+    @Test
     fun `PATCH api staffs id updateRole updates role and returns id`() = testApplication {
         application { module(TestHelper.cfg) }
         val target   = TestHelper.createStaff(email = "target@example.com", role = 2)

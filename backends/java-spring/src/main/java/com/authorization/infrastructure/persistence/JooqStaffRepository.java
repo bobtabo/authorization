@@ -176,8 +176,8 @@ public class JooqStaffRepository implements StaffRepository {
     private static Condition buildCondition(StaffCondition condition) {
         Condition cond = DSL.noCondition();
         if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
-            String kw = "%" + condition.getKeyword() + "%";
-            cond = cond.and(STAFFS.NAME.like(kw).or(STAFFS.EMAIL.like(kw)));
+            String kw = condition.getKeyword();
+            cond = cond.and(STAFFS.NAME.contains(kw).or(STAFFS.EMAIL.contains(kw)));
         }
         if (!condition.getRoles().isEmpty()) {
             cond = cond.and(STAFFS.ROLE.in(condition.getRoles().stream().map(Long::valueOf).toList()));

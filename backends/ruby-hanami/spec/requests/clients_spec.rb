@@ -21,6 +21,15 @@ RSpec.describe "Clients" do
       expect(last_response.status).to eq(200)
       expect(JSON.parse(last_response.body)["data"]).to eq([])
     end
+
+    it "keywordの%はワイルドカードとして解釈されない" do
+      create_client(identifier: "c-percent", name: "50%割引プラン", email: "percent@example.com")
+      create_client(identifier: "c-nomatch", name: "50個セット", email: "nomatch@example.com")
+      get "/api/clients", { keyword: "50%" }
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body["data"].size).to eq(1)
+    end
   end
 
   describe "GET /api/clients/:id" do

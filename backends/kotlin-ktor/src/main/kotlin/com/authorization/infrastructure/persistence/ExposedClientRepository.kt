@@ -12,6 +12,7 @@ import com.authorization.domain.client.Repository
 import com.authorization.infrastructure.model.Clients
 import com.authorization.support.AppException
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.LikePattern
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -40,7 +41,8 @@ class ExposedClientRepository(private val db: Database) : Repository {
     private fun applyFilters(cond: Condition): org.jetbrains.exposed.sql.Query {
         var query = Clients.selectAll()
         cond.keyword?.let { kw ->
-            query = query.andWhere { (Clients.name like "%$kw%") or (Clients.email like "%$kw%") }
+            val like = LikePattern("%${escapeLikeKeyword(kw)}%", '\\')
+            query = query.andWhere { (Clients.name like like) or (Clients.email like like) }
         }
         cond.startFrom?.let { from ->
             query = query.andWhere { Clients.startAt greaterEq from }

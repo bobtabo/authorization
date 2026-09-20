@@ -28,6 +28,15 @@ class TestIndex:
         assert res.status_code == 200
         assert res.json()["data"] == []
 
+    def test_keywordの_はワイルドカードとして解釈されない(self, client, db_session):
+        make_staff(db_session, name="アンダースコア", email="a_b@example.com")
+        make_staff(db_session, name="エックス", email="axb@example.com")
+        res = client.get("/api/staffs", params={"keyword": "a_b"})
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert len(data) == 1
+        assert data[0]["name"] == "アンダースコア"
+
 
 class TestUpdateRole:
     def test_ロールが更新できる(self, client, db_session):

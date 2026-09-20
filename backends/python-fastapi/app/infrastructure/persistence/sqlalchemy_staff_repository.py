@@ -13,6 +13,7 @@ from app.domain.staff.entity import Staff
 from app.domain.staff.condition import StaffCondition
 from app.domain.staff.repository import StaffRepository
 from app.exceptions import conflict
+from app.infrastructure.persistence.like import escape_like_keyword
 from app.infrastructure.model.model import StaffModel
 from app.support.assign import assign
 
@@ -38,8 +39,8 @@ class SqlAlchemyStaffRepository(StaffRepository):
 
     def _apply_filters(self, q, cond: StaffCondition):
         if cond.keyword:
-            like = f"%{cond.keyword}%"
-            q = q.filter(or_(StaffModel.name.like(like), StaffModel.email.like(like)))
+            like = f"%{escape_like_keyword(cond.keyword)}%"
+            q = q.filter(or_(StaffModel.name.like(like, escape="\\"), StaffModel.email.like(like, escape="\\")))
         if cond.roles:
             q = q.filter(StaffModel.role.in_(cond.roles))
         if cond.statuses:

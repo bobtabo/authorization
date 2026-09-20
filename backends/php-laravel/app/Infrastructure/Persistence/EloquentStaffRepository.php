@@ -72,9 +72,10 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
     {
         if (!empty($condition->keyword)) {
             $keyword = str($condition->keyword)->trim()->replace(' ', '')->value();
-            $query->where(function ($subQuery) use ($keyword) {
-                $subQuery->whereLike('staffs.name', "%{$keyword}%")
-                    ->orWhereLike('staffs.email', "%{$keyword}%");
+            $like = '%'.LikeEscaper::escape($keyword).'%';
+            $query->where(function ($subQuery) use ($like) {
+                $subQuery->whereRaw('staffs.name LIKE ? ESCAPE ?', [$like, '\\'])
+                    ->orWhereRaw('staffs.email LIKE ? ESCAPE ?', [$like, '\\']);
             });
         }
 

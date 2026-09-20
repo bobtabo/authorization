@@ -183,14 +183,18 @@ pub async fn truncate_tables(pool: &MySqlPool) {
 
 pub async fn create_staff(pool: &MySqlPool) -> u32 {
     let email = format!("staff-{}@example.com", uuid::Uuid::new_v4().simple());
+    create_staff_with_name_email(pool, "テストスタッフ", &email).await
+}
+
+pub async fn create_staff_with_name_email(pool: &MySqlPool, name: &str, email: &str) -> u32 {
     let now = chrono::Local::now().naive_local();
     let result = sqlx::query(
         "INSERT INTO staffs (name, email, provider, provider_id, role, \
          created_at, created_by, updated_at, updated_by, version) \
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind("テストスタッフ")
-    .bind(&email)
+    .bind(name)
+    .bind(email)
     .bind(1i32)
     .bind(format!("test-{}", uuid::Uuid::new_v4().simple()))
     .bind(1i32)
@@ -212,6 +216,10 @@ pub struct ClientData {
 }
 
 pub async fn create_client(pool: &MySqlPool) -> ClientData {
+    create_client_with_name(pool, "テストクライアント").await
+}
+
+pub async fn create_client_with_name(pool: &MySqlPool, name: &str) -> ClientData {
     let (priv_pem, pub_pem) = cached_rsa_pems().await;
 
     let token = hex::encode(rand::random::<[u8; 32]>());
@@ -225,7 +233,7 @@ pub async fn create_client(pool: &MySqlPool) -> ClientData {
          created_at, created_by, updated_at, updated_by, version) \
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
-    .bind("テストクライアント")
+    .bind(name)
     .bind(&identifier)
     .bind("100-0001")
     .bind("東京都")

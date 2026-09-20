@@ -59,6 +59,21 @@ class ClientIntegrationTest {
     }
 
     @Test
+    void indexKeywordPercentIsNotTreatedAsWildcard() {
+        TestHelper.createClient("50%割引プラン");
+        TestHelper.createClient("50個セット");
+
+        EntityExchangeResult<Map> result = client.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/clients").queryParam("keyword", "50%").build())
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(200);
+        assertThat((List<?>) result.getResponseBody().get("data")).hasSize(1);
+    }
+
+    @Test
     void showReturnsClientDetail() {
         var c = TestHelper.createClient();
 

@@ -109,9 +109,21 @@ public final class TestHelper {
      * @return 作成したスタッフ行
      */
     public static StaffRow createStaff(String email, int role) {
+        return createStaff("テストスタッフ", email, role);
+    }
+
+    /**
+     * テスト用スタッフを1件作成します。
+     *
+     * @param name  名前
+     * @param email メールアドレス
+     * @param role  ロール
+     * @return 作成したスタッフ行
+     */
+    public static StaffRow createStaff(String name, String email, int role) {
         LocalDateTime now = LocalDateTime.now();
         long id = DSL.insertInto(STAFFS)
-                .set(STAFFS.NAME, "テストスタッフ")
+                .set(STAFFS.NAME, name)
                 .set(STAFFS.EMAIL, email)
                 .set(STAFFS.PROVIDER, 1)
                 .set(STAFFS.PROVIDER_ID, "test-" + shortId())
@@ -142,11 +154,15 @@ public final class TestHelper {
      * @return 作成したクライアント行
      */
     public static ClientRow createClient() {
+        return createClient("テストクライアント");
+    }
+
+    public static ClientRow createClient(String name) {
         LocalDateTime now = LocalDateTime.now();
         String identifier = "test-client-" + shortId();
         String accessToken = shortId() + shortId();
         long id = DSL.insertInto(CLIENTS)
-                .set(CLIENTS.NAME, "テストクライアント")
+                .set(CLIENTS.NAME, name)
                 .set(CLIENTS.IDENTIFIER, identifier)
                 .set(CLIENTS.POST_CODE, "100-0001")
                 .set(CLIENTS.PREF, "東京都")

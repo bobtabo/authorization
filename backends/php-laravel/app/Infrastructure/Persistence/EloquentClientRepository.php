@@ -17,6 +17,7 @@ use App\Domain\Client\Repositories\ClientRepository;
 use App\Infrastructure\Models\Client as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
 use App\Support\Repositories\Traits\OptionBuilder;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -64,14 +65,15 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
     /**
      * 検索フィルタをクエリに適用します。
      *
-     * @param \Illuminate\Contracts\Database\Eloquent\Builder $query クエリ
-     * @param ClientCondition $condition 検索条件
+     * @param  Builder  $query  クエリ
+     * @param  ClientCondition  $condition  検索条件
      */
     private function applyFilters($query, ClientCondition $condition): void
     {
         if (!empty($condition->keyword)) {
             $keyword = str($condition->keyword)->trim()->replace(' ', '')->value();
-            $query->whereLike('clients.name', "%{$keyword}%");
+            $like = '%'.LikeEscaper::escape($keyword).'%';
+            $query->whereRaw('clients.name LIKE ? ESCAPE ?', [$like, '\\']);
         }
 
         if (!empty($condition->startFrom) && !empty($condition->startTo)) {
@@ -91,6 +93,7 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
     {
         /** @var Entity $result */
         $result = $this->findByPk($condition->id, Model::withTrashed()->newQuery());
+
         return $result;
     }
 
@@ -102,6 +105,7 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
     {
         /** @var Entity $result */
         $result = $this->save($entity);
+
         return $result;
     }
 
@@ -116,6 +120,7 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
             'access_token' => $condition->accessToken,
             'status' => ClientStatus::Active->value,
         ])->first();
+
         return $result;
     }
 
@@ -127,6 +132,7 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
     {
         /** @var Entity|null $result */
         $result = $this->findByMap(['identifier' => $condition->identifier])->first();
+
         return $result;
     }
 
@@ -145,7 +151,7 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
     #[\Override]
     protected function getModel(): Model
     {
-        return new Model();
+        return new Model;
     }
 
     /**
@@ -154,6 +160,6 @@ class EloquentClientRepository extends AbstractEloquentRepository implements Cli
     #[\Override]
     protected function getEntity(): Entity
     {
-        return new Entity();
+        return new Entity;
     }
 }

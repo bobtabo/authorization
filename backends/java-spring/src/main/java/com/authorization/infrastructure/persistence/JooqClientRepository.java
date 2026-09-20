@@ -155,8 +155,8 @@ public class JooqClientRepository implements ClientRepository {
     private static Condition buildCondition(ClientCondition condition) {
         Condition cond = DSL.noCondition();
         if (condition.getKeyword() != null && !condition.getKeyword().isEmpty()) {
-            String kw = "%" + condition.getKeyword() + "%";
-            cond = cond.and(CLIENTS.NAME.like(kw).or(CLIENTS.EMAIL.like(kw)));
+            String kw = condition.getKeyword();
+            cond = cond.and(CLIENTS.NAME.contains(kw).or(CLIENTS.EMAIL.contains(kw)));
         }
         if (condition.getStartFrom() != null) {
             cond = cond.and(CLIENTS.START_AT.greaterOrEqual(condition.getStartFrom()));

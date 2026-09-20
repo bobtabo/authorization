@@ -13,6 +13,7 @@ from app.domain.client.entity import Client
 from app.domain.client.condition import ClientCondition
 from app.domain.client.repository import ClientRepository
 from app.exceptions import conflict
+from app.infrastructure.persistence.like import escape_like_keyword
 from app.infrastructure.model.model import ClientModel
 from app.support.assign import assign
 
@@ -39,8 +40,8 @@ class SqlAlchemyClientRepository(ClientRepository):
     def _apply_filters(self, q, cond: ClientCondition):
         """共通フィルタを適用します。"""
         if cond.keyword:
-            like = f"%{cond.keyword}%"
-            q = q.filter(or_(ClientModel.name.like(like), ClientModel.identifier.like(like)))
+            like = f"%{escape_like_keyword(cond.keyword)}%"
+            q = q.filter(or_(ClientModel.name.like(like, escape="\\"), ClientModel.identifier.like(like, escape="\\")))
         if cond.statuses:
             q = q.filter(ClientModel.status.in_(cond.statuses))
         return q

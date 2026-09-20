@@ -8,6 +8,7 @@ use crate::domain::client::{
     entity::Client,
     repository::{DomainError, Repository},
 };
+use crate::infrastructure::persistence::like::escape_like_keyword;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::{MySqlPool, QueryBuilder};
@@ -92,7 +93,9 @@ impl SqlxClientRepository {
         if let Some(ref kw) = cond.keyword {
             if !kw.is_empty() {
                 qb.push(" AND name LIKE ");
-                qb.push_bind(format!("%{}%", kw));
+                qb.push_bind(format!("%{}%", escape_like_keyword(kw)));
+                qb.push(" ESCAPE ");
+                qb.push_bind("\\");
             }
         }
         if let Some(sf) = cond.start_from {

@@ -40,6 +40,17 @@ class ClientIntegrationTest {
     }
 
     @Test
+    fun `GET api clients keyword percent is not treated as wildcard`() = testApplication {
+        application { module(TestHelper.cfg) }
+        TestHelper.createClient(name = "50%割引プラン")
+        TestHelper.createClient(name = "50個セット")
+        val response = client.get("/api/clients?keyword=50%25")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+        assertEquals(1, body["data"]!!.jsonArray.size)
+    }
+
+    @Test
     fun `GET api clients id returns client detail`() = testApplication {
         application { module(TestHelper.cfg) }
         val c = TestHelper.createClient()

@@ -27,6 +27,22 @@ func TestClient_Index(t *testing.T) {
 			t.Errorf("want 200, got %d", w.Code)
 		}
 	})
+
+	t.Run("keywordの_はワイルドカードとして解釈されない", func(t *testing.T) {
+		truncateTables(t)
+		createClient(t, map[string]interface{}{"identifier": "c-underscore", "name": "a_bプラン"})
+		createClient(t, map[string]interface{}{"identifier": "c-nomatch", "name": "axbプラン", "email": "nomatch@example.com"})
+
+		w := do(http.MethodGet, "/api/clients?keyword=a_b", nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		data, _ := body["data"].([]interface{})
+		if len(data) != 1 {
+			t.Errorf("want 1 result (literal \"a_b\" match only), got %d: %s", len(data), w.Body.String())
+		}
+	})
 }
 
 func TestClient_Show(t *testing.T) {

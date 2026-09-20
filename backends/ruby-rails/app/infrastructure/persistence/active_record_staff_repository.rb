@@ -16,7 +16,10 @@ module Infrastructure
       ALLOWED_SORT = %w[name role created_at].freeze
 
       def apply_filters(q, cond)
-        q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%") if cond.keyword.present?
+        if cond.keyword.present?
+          like = "%#{ActiveRecord::Base.sanitize_sql_like(cond.keyword)}%"
+          q = q.where("name LIKE ? ESCAPE ? OR email LIKE ? ESCAPE ?", like, "\\", like, "\\")
+        end
         q = q.where(role: cond.roles) if cond.roles.present?
         q = apply_status_filter(q, cond.statuses) if cond.statuses.present?
         q

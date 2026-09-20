@@ -33,6 +33,19 @@ public class ClientIntegrationTests(IntegrationWebAppFactory factory) : Integrat
     }
 
     [Fact]
+    public async Task Index_KeywordPercent_IsNotTreatedAsWildcard()
+    {
+        TestHelper.CreateClient(name: "50%割引プラン", identifier: "client-percent", accessToken: "token-percent");
+        TestHelper.CreateClient(name: "50個セット", identifier: "client-nomatch", accessToken: "token-nomatch");
+
+        var res  = await SendAsync(HttpMethod.Get, "/api/clients?keyword=50%25");
+        var json = await ReadJsonAsync(res);
+
+        Assert.Equal(HttpStatusCode.OK, res.StatusCode);
+        Assert.Equal(1, json.GetProperty("data").GetArrayLength());
+    }
+
+    [Fact]
     public async Task Show_Existing_ReturnsDetail()
     {
         var id = TestHelper.CreateClient(name: "Detail Client");

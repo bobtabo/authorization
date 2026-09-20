@@ -11,7 +11,7 @@ module Infrastructure
 
       def apply_filters(q, cond)
         if cond.keyword && !cond.keyword.to_s.empty?
-          kw = "%#{cond.keyword}%"
+          kw = "%#{LikeEscaper.escape(cond.keyword)}%"
           q = q.where(Sequel.|(Sequel.like(:name, kw), Sequel.like(:email, kw)))
         end
         q = q.where(role: cond.roles) if cond.roles && !cond.roles.empty?

@@ -3,19 +3,26 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { and, eq, inArray, isNull, like, or, asc, desc, sql, count as drizzleCount } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, asc, desc, sql, count as drizzleCount } from "drizzle-orm";
 import { clients } from "../model/schema.js";
 import type { ClientRepository, FindAllOptions } from "../../domain/client/repository.js";
 import type { Client } from "../../domain/client/entity.js";
 import type { DB } from "../../db/client.js";
 import { conflict } from "../../lib/errors.js";
+import { escapeLikeKeyword } from "./like.js";
 
 export class DrizzleClientRepository implements ClientRepository {
   constructor(private readonly db: DB) {}
 
   private buildWhere(keyword?: string, statuses?: number[]) {
     const conds = [];
-    if (keyword) conds.push(or(like(clients.name, `%${keyword}%`), like(clients.identifier, `%${keyword}%`))!);
+    if (keyword) {
+      const like_ = `%${escapeLikeKeyword(keyword)}%`;
+      conds.push(or(
+        sql`${clients.name} LIKE ${like_} ESCAPE ${"\\"}`,
+        sql`${clients.identifier} LIKE ${like_} ESCAPE ${"\\"}`,
+      )!);
+    }
     if (statuses && statuses.length > 0) conds.push(inArray(clients.status, statuses));
     return conds.length ? and(...conds) : undefined;
   }

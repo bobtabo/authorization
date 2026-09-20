@@ -27,10 +27,8 @@ class ClientControllerTest extends TestCase
 
     /**
      * クライアント一覧取得テストです。
-     *
-     * @return void
      */
-    public function testIndex(): void
+    public function test_index(): void
     {
         $params = $this->getRequestParams('Client/index.json');
         $response = $this->get('/api/clients', $params);
@@ -41,11 +39,23 @@ class ClientControllerTest extends TestCase
     }
 
     /**
-     * クライアント詳細取得テストです。
-     *
-     * @return void
+     * keywordの%がワイルドカードとして解釈されないことのテストです。
      */
-    public function testShow(): void
+    public function test_index_keyword_percent_is_not_treated_as_wildcard(): void
+    {
+        Client::factory()->create(['name' => '50%割引プラン']);
+        Client::factory()->create(['name' => '50個セット']);
+
+        $response = $this->get('/api/clients?keyword='.urlencode('50%'));
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+    }
+
+    /**
+     * クライアント詳細取得テストです。
+     */
+    public function test_show(): void
     {
         $params = $this->getRequestParams('Client/show.json');
         $id = $params['id'];
@@ -58,10 +68,8 @@ class ClientControllerTest extends TestCase
 
     /**
      * クライアント登録テストです。
-     *
-     * @return void
      */
-    public function testStore(): void
+    public function test_store(): void
     {
         $params = $this->getRequestParams('Client/store.json');
         $response = $this->post('/api/clients/store', $params);
@@ -73,10 +81,8 @@ class ClientControllerTest extends TestCase
 
     /**
      * クライアント更新テストです。
-     *
-     * @return void
      */
-    public function testUpdate(): void
+    public function test_update(): void
     {
         $client = Client::factory()->create();
         $params = $this->getRequestParams('Client/update.json');
@@ -90,10 +96,8 @@ class ClientControllerTest extends TestCase
 
     /**
      * クライアント削除テストです。
-     *
-     * @return void
      */
-    public function testDestroy(): void
+    public function test_destroy(): void
     {
         $staff = Staff::factory()->create();
         $client = Client::factory()->create();
