@@ -38,7 +38,6 @@ module UseCase
           if role_value.nil?
             raise Domain::ForbiddenError.new("invitation_required")
           end
-          @invitation_auth_repo.remove(token)
           new_entity = Domain::Staff::Entity.new(
             id:            nil,
             name:          dto.name,
@@ -57,6 +56,9 @@ module UseCase
             version:       1,
           )
           saved = @staff_repo.save(new_entity)
+          # DB保存が成功した後に招待トークンを消費する。逆順だとDB保存失敗時に
+          # トークンだけ失われ、招待された本人が再ログインできなくなる。
+          @invitation_auth_repo.remove(token)
         end
 
         Domain::Staff::Vo.new(id: saved.id, name: saved.name, avatar: saved.avatar, role: saved.role)
