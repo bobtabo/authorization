@@ -71,7 +71,7 @@ func (r *GormStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domst
 func (r *GormStaffRepository) applyFilters(q *gorm.DB, cond domstaff.Condition) *gorm.DB {
 	if cond.Keyword != nil && *cond.Keyword != "" {
 		like := "%" + escapeLikeKeyword(*cond.Keyword) + "%"
-		q = q.Where("name LIKE ? OR email LIKE ?", like, like)
+		q = q.Where("name LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\'", like, like)
 	}
 	if len(cond.Roles) > 0 {
 		q = q.Where("role IN ?", cond.Roles)
