@@ -21,6 +21,15 @@ describe("Clients", () => {
       const body = await res.json() as { data: unknown[] };
       expect(body.data).toEqual([]);
     });
+
+    test("keywordの%はワイルドカードとして解釈されない", async () => {
+      await makeClientRecord({ identifier: "c-percent", name: "50%割引プラン", email: "percent@example.com" });
+      await makeClientRecord({ identifier: "c-nomatch", name: "50個セット", email: "nomatch@example.com" });
+      const res = await app.request(`/api/clients?keyword=${encodeURIComponent("50%")}`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as { data: unknown[] };
+      expect(body.data.length).toBe(1);
+    });
   });
 
   describe("GET /api/clients/:id", () => {

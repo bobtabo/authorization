@@ -22,6 +22,15 @@ describe("Staffs", () => {
       const body = await res.json() as { data: unknown[] };
       expect(body.data).toEqual([]);
     });
+
+    test("keywordの_はワイルドカードとして解釈されない", async () => {
+      await makeStaff({ name: "アンダースコア", email: "a_b@example.com" });
+      await makeStaff({ name: "エックス", email: "axb@example.com" });
+      const res = await app.request(`/api/staffs?keyword=${encodeURIComponent("a_b")}`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as { data: unknown[] };
+      expect(body.data.length).toBe(1);
+    });
   });
 
   describe("PATCH /api/staffs/:id/updateRole", () => {

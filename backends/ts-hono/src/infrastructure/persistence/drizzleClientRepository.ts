@@ -9,13 +9,17 @@ import type { ClientRepository, FindAllOptions } from "../../domain/client/repos
 import type { Client } from "../../domain/client/entity.js";
 import type { DB } from "../../db/client.js";
 import { conflict } from "../../lib/errors.js";
+import { escapeLikeKeyword } from "./like.js";
 
 export class DrizzleClientRepository implements ClientRepository {
   constructor(private readonly db: DB) {}
 
   private buildWhere(keyword?: string, statuses?: number[]) {
     const conds = [];
-    if (keyword) conds.push(or(like(clients.name, `%${keyword}%`), like(clients.identifier, `%${keyword}%`))!);
+    if (keyword) {
+      const like_ = `%${escapeLikeKeyword(keyword)}%`;
+      conds.push(or(like(clients.name, like_), like(clients.identifier, like_))!);
+    }
     if (statuses && statuses.length > 0) conds.push(inArray(clients.status, statuses));
     return conds.length ? and(...conds) : undefined;
   }

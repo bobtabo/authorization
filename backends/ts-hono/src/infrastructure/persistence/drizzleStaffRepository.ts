@@ -9,6 +9,7 @@ import type { StaffRepository, FindAllStaffOptions } from "../../domain/staff/re
 import type { Staff } from "../../domain/staff/entity.js";
 import type { DB } from "../../db/client.js";
 import { conflict } from "../../lib/errors.js";
+import { escapeLikeKeyword } from "./like.js";
 
 const _allowedSort: Record<string, any> = {
   name: staffs.name,
@@ -21,7 +22,10 @@ export class DrizzleStaffRepository implements StaffRepository {
 
   private buildWhere(keyword?: string, roles?: number[], statuses?: number[]) {
     const conds = [];
-    if (keyword) conds.push(or(like(staffs.name, `%${keyword}%`), like(staffs.email, `%${keyword}%`))!);
+    if (keyword) {
+      const like_ = `%${escapeLikeKeyword(keyword)}%`;
+      conds.push(or(like(staffs.name, like_), like(staffs.email, like_))!);
+    }
     if (roles && roles.length > 0) conds.push(inArray(staffs.role, roles));
     // staffs テーブルに status カラムは無く、deletedAt の有無で有効/無効を判定する。
     if (statuses && statuses.length > 0) {
