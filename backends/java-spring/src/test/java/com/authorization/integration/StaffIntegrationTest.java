@@ -62,6 +62,18 @@ class StaffIntegrationTest {
     }
 
     @Test
+    void indexKeywordUnderscoreIsNotTreatedAsWildcard() {
+        TestHelper.createStaff("アンダースコア", "a_b@example.com", 1);
+        TestHelper.createStaff("エックス", "axb@example.com", 1);
+
+        EntityExchangeResult<Map> result =
+                client.get().uri("/api/staffs?keyword=a_b").exchange().expectBody(Map.class).returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(200);
+        assertThat((List<?>) result.getResponseBody().get("data")).hasSize(1);
+    }
+
+    @Test
     void updateRoleUpdatesRoleAndReturnsId() {
         var target = TestHelper.createStaff("target@example.com", 2);
         var executor = TestHelper.createStaff("exec@example.com", 1);
