@@ -8,6 +8,7 @@ use crate::domain::staff::{
     entity::Staff,
     repository::{DomainError, Repository},
 };
+use crate::infrastructure::persistence::like::escape_like_keyword;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::{MySqlPool, QueryBuilder};
@@ -75,7 +76,7 @@ impl SqlxStaffRepository {
     fn push_filters<'a>(qb: &mut QueryBuilder<'a, sqlx::MySql>, cond: &'a Condition) {
         if let Some(kw) = &cond.keyword {
             if !kw.is_empty() {
-                let like = format!("%{}%", kw);
+                let like = format!("%{}%", escape_like_keyword(kw));
                 qb.push(" AND (name LIKE ");
                 qb.push_bind(like.clone());
                 qb.push(" OR email LIKE ");
