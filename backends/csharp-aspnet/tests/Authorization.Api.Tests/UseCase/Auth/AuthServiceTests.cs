@@ -75,7 +75,7 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_SaveFails_DoesNotConsumeInvitationToken()
+    public async Task LoginAsync_SaveFails_DoesNotRemoveInvitationToken()
     {
         var staffRepo      = new FakeStaffRepository { SaveFails = true };
         var invitationRepo = new FakeInvitationAuthRepository().Add("tok-1", StaffRole.Member);
