@@ -60,7 +60,7 @@ func (r *OrmStaffRepository) FindByCondition(cond domstaff.Condition) ([]*domsta
 
 func (r *OrmStaffRepository) applyFilters(qs orm.QuerySeter, cond domstaff.Condition) orm.QuerySeter {
 	if cond.Keyword != nil && *cond.Keyword != "" {
-		kw := *cond.Keyword
+		kw := escapeLikeKeywordForContains(*cond.Keyword)
 		kwCond := orm.NewCondition().And("name__contains", kw).Or("email__contains", kw)
 		qs = qs.SetCond(kwCond)
 	}
