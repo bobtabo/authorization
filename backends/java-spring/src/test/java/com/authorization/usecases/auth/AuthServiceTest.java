@@ -101,11 +101,11 @@ class AuthServiceTest {
     }
 
     /**
-     * 未登録スタッフが有効な招待トークンでログインした場合、トークンを消費して新規登録し、
+     * 未登録スタッフが有効な招待トークンでログインした場合、トークンを削除して新規登録し、
      * 招待ロールをスタッフ権限へ設定することを確認します。
      */
     @Test
-    void loginConsumesTokenAndRegistersNewStaffWithRole() {
+    void loginRemovesTokenAndRegistersNewStaffWithRole() {
         FakeInvitationAuthRepository invitationAuthRepository =
                 new FakeInvitationAuthRepository().put("valid-token", StaffRole.Administrator.value());
         FakeStaffRepository staffRepository = new FakeStaffRepository();
@@ -126,11 +126,11 @@ class AuthServiceTest {
     }
 
     /**
-     * DB保存が失敗した場合、招待トークンが消費されないことを確認します
-     * （消費が先だとトークンだけ失われ、招待された本人が再ログインできなくなるため）。
+     * DB保存が失敗した場合、招待トークンが削除されないことを確認します
+     * （保存が先に失敗してもトークンを再利用できる必要があるため）。
      */
     @Test
-    void loginDoesNotConsumeInvitationTokenWhenStaffPersistFails() {
+    void loginDoesNotRemoveInvitationTokenWhenStaffPersistFails() {
         FakeInvitationAuthRepository invitationAuthRepository =
                 new FakeInvitationAuthRepository().put("valid-token", StaffRole.Member.value());
         FakeStaffRepository staffRepository = new FakeStaffRepository().failOnPersist();
