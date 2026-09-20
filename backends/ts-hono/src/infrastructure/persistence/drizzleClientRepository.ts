@@ -3,7 +3,7 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { and, eq, inArray, isNull, like, or, asc, desc, sql, count as drizzleCount } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, asc, desc, sql, count as drizzleCount } from "drizzle-orm";
 import { clients } from "../model/schema.js";
 import type { ClientRepository, FindAllOptions } from "../../domain/client/repository.js";
 import type { Client } from "../../domain/client/entity.js";
@@ -18,7 +18,10 @@ export class DrizzleClientRepository implements ClientRepository {
     const conds = [];
     if (keyword) {
       const like_ = `%${escapeLikeKeyword(keyword)}%`;
-      conds.push(or(like(clients.name, like_), like(clients.identifier, like_))!);
+      conds.push(or(
+        sql`${clients.name} LIKE ${like_} ESCAPE '\\'`,
+        sql`${clients.identifier} LIKE ${like_} ESCAPE '\\'`,
+      )!);
     }
     if (statuses && statuses.length > 0) conds.push(inArray(clients.status, statuses));
     return conds.length ? and(...conds) : undefined;
