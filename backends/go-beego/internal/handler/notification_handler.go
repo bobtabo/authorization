@@ -88,13 +88,18 @@ func (h *NotificationHandler) ReadAll(ctx *beecontext.Context) {
 }
 
 func (h *NotificationHandler) Read(ctx *beecontext.Context) {
+	staffID := staffIDFromCookie(ctx)
+	if staffID == 0 {
+		writeError(ctx, apperror.Unauthorized("unauthenticated"))
+		return
+	}
 	id, err := strconv.ParseInt(ctx.Input.Param(":id"), 10, 64)
 	if err != nil || id <= 0 {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
-		return h.newNotifUC(tx).MarkRead(unotification.MarkReadDto{ID: id})
+		return h.newNotifUC(tx).MarkRead(unotification.MarkReadDto{StaffID: staffID, ID: id})
 	}); txErr != nil {
 		writeError(ctx, txErr)
 		return

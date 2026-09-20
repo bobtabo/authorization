@@ -41,6 +41,11 @@ interface Repository {
     suspend fun bulkMarkRead(staffId: Long, ids: List<Long>, all: Boolean): Long
 
     /**
+     * スタッフが所有する通知の存在を確認します。
+     */
+    suspend fun existsForStaff(staffId: Long, id: Long): Boolean
+
+    /**
      * 通知を保存します。
      *
      * @param staffId 宛先スタッフ ID

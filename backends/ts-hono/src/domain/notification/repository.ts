@@ -29,6 +29,9 @@ export interface NotificationRepository {
    */
   bulkMarkRead(executorId: number, ids: number[], allFlag: boolean): Promise<number>;
 
+  /** スタッフが所有する通知の存在を返します。 */
+  existsForStaff(staffId: number, id: number): Promise<boolean>;
+
   /**
    * 通知を新規登録します。
    * @param data - 通知データ

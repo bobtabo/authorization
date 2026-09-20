@@ -47,9 +47,11 @@ module UseCase
         nil
       end
 
-      def mark_read(id)
-        @repo.patch(id, { "read" => true })
-        nil
+      def mark_read(staff_id, id)
+        updated = @repo.bulk_mark_read(staff_id, [id], false)
+        return updated unless updated.zero?
+
+        @repo.exists_for_staff?(staff_id, id) ? 1 : 0
       end
     end
   end

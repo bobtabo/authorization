@@ -6,6 +6,7 @@
 package com.authorization.handler
 
 import com.authorization.config.Config
+import com.authorization.support.AppException
 import com.authorization.usecase.notification.Interactor as NotificationUC
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -100,9 +101,18 @@ class NotificationHandler(
      * @param call アプリケーションコール
      */
     suspend fun read(call: ApplicationCall) {
+        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        if (staffId == 0L) {
+            call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
+            return
+        }
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
-        newSuspendedTransaction { notificationUC.markRead(id) }
-        call.respond(buildJsonObject { put("id", id) })
+        try {
+            newSuspendedTransaction { notificationUC.markRead(staffId, id) }
+            call.respond(buildJsonObject { put("id", id) })
+        } catch (e: AppException) {
+            call.respond(HttpStatusCode.fromValue(e.statusCode), buildJsonObject { put("error", e.message) })
+        }
     }
 }

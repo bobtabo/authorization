@@ -8,6 +8,8 @@ type Repository interface {
 	Counts(staffID uint) (unread, total int64, err error)
 	// BulkMarkRead は条件に一致する通知を既読にして更新件数を返します。
 	BulkMarkRead(staffID int64, ids []int64, all bool) (int64, error)
+	// ExistsForStaff はスタッフが所有する通知の存在を返します。
+	ExistsForStaff(staffID int64, id int64) (bool, error)
 	// Store は新規通知を1件保存します。
 	Store(staffID uint, messageType int, title, message string, createdBy uint, url ...string) error
 	// Patch は通知を部分更新します。更新があった場合 true を返します。

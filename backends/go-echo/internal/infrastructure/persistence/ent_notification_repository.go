@@ -96,6 +96,12 @@ func (r *EntNotificationRepository) BulkMarkRead(staffID int64, ids []int64, all
 	return int64(n), err
 }
 
+func (r *EntNotificationRepository) ExistsForStaff(staffID int64, id int64) (bool, error) {
+	return r.db.Notification.Query().
+		Where(notification.IDEQ(uint64(id)), notification.StaffIDEQ(uint(staffID)), notification.DeletedAtIsNil()).
+		Exist(context.Background())
+}
+
 func (r *EntNotificationRepository) Store(staffID uint, messageType int, title, message string, createdBy uint, url ...string) error {
 	now := time.Now()
 	q := r.db.Notification.Create().

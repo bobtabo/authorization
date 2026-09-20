@@ -61,10 +61,35 @@ RSpec.describe "Notifications", type: :request do
     it "既読にして id を返す" do
       staff = create_staff
       notif = create_notification(staff.id, "通知1")
-      patch "/api/notifications/#{notif.id}"
+      patch "/api/notifications/#{notif.id}",
+            headers: { "Cookie" => "staff_id=#{staff.id}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["id"]).to eq(notif.id)
+    end
+
+    it "既読済みの自分の通知は200を返す" do
+      staff = create_staff
+      notif = create_notification(staff.id, "既読済み通知", read: true)
+      patch "/api/notifications/#{notif.id}",
+            headers: { "Cookie" => "staff_id=#{staff.id}" }
+      expect(response).to have_http_status(200)
+    end
+
+    it "未認証で401を返す" do
+      staff = create_staff
+      notif = create_notification(staff.id, "通知1")
+      patch "/api/notifications/#{notif.id}"
+      expect(response).to have_http_status(401)
+    end
+
+    it "他staffの通知は404を返す" do
+      staff = create_staff
+      other = create_staff
+      notif = create_notification(other.id, "通知1")
+      patch "/api/notifications/#{notif.id}",
+            headers: { "Cookie" => "staff_id=#{staff.id}" }
+      expect(response).to have_http_status(404)
     end
   end
 end
