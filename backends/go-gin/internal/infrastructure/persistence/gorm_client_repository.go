@@ -26,7 +26,7 @@ func NewGormClientRepository(db *gorm.DB) *GormClientRepository {
 // applyFilters は共通のフィルタ条件をクエリに適用します。
 func (r *GormClientRepository) applyFilters(q *gorm.DB, cond domclient.Condition) *gorm.DB {
 	if cond.Keyword != nil && *cond.Keyword != "" {
-		q = q.Where("name LIKE ?", "%"+*cond.Keyword+"%")
+		q = q.Where("name LIKE ?", "%"+escapeLikeKeyword(*cond.Keyword)+"%")
 	}
 	if cond.StartFrom != nil {
 		q = q.Where("start_at >= ?", cond.StartFrom)

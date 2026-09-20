@@ -37,6 +37,22 @@ func TestStaff_Index(t *testing.T) {
 			t.Errorf("want empty data, got %v", body["data"])
 		}
 	})
+
+	t.Run("keywordの_はワイルドカードとして解釈されない", func(t *testing.T) {
+		truncateTables(t)
+		createStaff(t, map[string]interface{}{"email": "a_b@example.com", "name": "アンダースコア"})
+		createStaff(t, map[string]interface{}{"email": "axb@example.com", "name": "エックス"})
+
+		w := do(http.MethodGet, "/api/staffs?keyword=a_b", nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		data, _ := body["data"].([]interface{})
+		if len(data) != 1 {
+			t.Errorf("want 1 result (literal \"a_b\" match only), got %d: %s", len(data), w.Body.String())
+		}
+	})
 }
 
 func TestStaff_UpdateRole(t *testing.T) {
