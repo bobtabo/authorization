@@ -86,7 +86,13 @@ func (uc *Interactor) MarkRead(staffID uint, id int64) error {
 		return err
 	}
 	if updated == 0 {
-		return apperror.NotFound("notification_not_found")
+		exists, err := uc.repo.ExistsForStaff(int64(staffID), id)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return apperror.NotFound("notification_not_found")
+		}
 	}
 	return nil
 }

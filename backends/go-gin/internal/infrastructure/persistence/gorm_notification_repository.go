@@ -80,6 +80,13 @@ func (r *GormNotificationRepository) BulkMarkRead(staffID int64, ids []int64, al
 	return result.RowsAffected, result.Error
 }
 
+// ExistsForStaff は指定スタッフの通知が存在するか返します。
+func (r *GormNotificationRepository) ExistsForStaff(staffID int64, id int64) (bool, error) {
+	var notification model.Notification
+	result := r.db.Where("id = ? AND staff_id = ?", id, staffID).Limit(1).Find(&notification)
+	return result.RowsAffected > 0, result.Error
+}
+
 // Store は新規通知を1件保存します。
 func (r *GormNotificationRepository) Store(staffID uint, messageType int, title, message string, createdBy uint, url ...string) error {
 	now := time.Now()
