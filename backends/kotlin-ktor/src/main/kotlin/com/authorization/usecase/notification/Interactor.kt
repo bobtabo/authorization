@@ -75,7 +75,7 @@ class Interactor(
      */
     suspend fun markRead(staffId: Long, id: Long) {
         val updated = repo.bulkMarkRead(staffId, listOf(id), false)
-        if (updated == 0L) {
+        if (updated == 0L && !repo.existsForStaff(staffId, id)) {
             throw AppException.notFound("notification_not_found")
         }
     }

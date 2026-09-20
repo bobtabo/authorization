@@ -94,6 +94,17 @@ class NotificationIntegrationTest {
     }
 
     @Test
+    fun `PATCH api notifications id succeeds for already read own notification`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff = TestHelper.createStaff()
+        val notif = TestHelper.createNotification(staff.id, "通知1", read = true)
+        val response = client.patch("/api/notifications/${notif.id}") {
+            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
     fun `PATCH api notifications id returns 401 when unauthenticated`() = testApplication {
         application { module(TestHelper.cfg) }
         val staff = TestHelper.createStaff()

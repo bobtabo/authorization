@@ -39,6 +39,7 @@ class InteractorTest {
         override suspend fun listPage(staffId: Long, cursor: String?, limit: Int) = page
         override suspend fun counts(staffId: Long)                                 = counts
         override suspend fun bulkMarkRead(staffId: Long, ids: List<Long>, all: Boolean) = 0L
+        override suspend fun existsForStaff(staffId: Long, id: Long) = false
         override suspend fun store(staffId: Long, messageType: Int, title: String, message: String, createdBy: Long, url: String?) = Unit
         override suspend fun patch(id: Long, attrs: Map<String, Any?>)            = true
     }
@@ -109,6 +110,14 @@ class InteractorTest {
             Interactor(repo, mockStaffRepo()).markRead(10L, 7L)
         }
         Unit
+    }
+
+    @Test
+    fun `markRead succeeds when notification is already read`() = runBlocking {
+        val repo = object : Repository by mockNotifRepo() {
+            override suspend fun existsForStaff(staffId: Long, id: Long): Boolean = true
+        }
+        Interactor(repo, mockStaffRepo()).markRead(10L, 7L)
     }
 
     @Test
