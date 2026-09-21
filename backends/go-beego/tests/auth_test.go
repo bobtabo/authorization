@@ -97,6 +97,9 @@ func TestAuth_OAuthState(t *testing.T) {
 				if !c.HttpOnly {
 					t.Error("oauth_state cookie must be HttpOnly")
 				}
+				if c.SameSite != http.SameSiteLaxMode {
+					t.Errorf("oauth_state cookie SameSite: want Lax, got %v", c.SameSite)
+				}
 			}
 		}
 		if nonce == "" {
@@ -135,6 +138,23 @@ func TestAuth_OAuthState(t *testing.T) {
 			withCookie("oauth_state", "abc"))
 		if loc := w.Header().Get("Location"); !strings.HasSuffix(loc, "/error?code=400") {
 			t.Errorf("want redirect to /error?code=400, got %s", loc)
+		}
+	})
+
+	t.Run("nonce一致後にcodeが空でもnonceクッキーを破棄する", func(t *testing.T) {
+		w := do(http.MethodGet, "/auth/google/callback?state=go-beego%7Cabc", nil,
+			withCookie("oauth_state", "abc"))
+		if loc := w.Header().Get("Location"); !strings.HasSuffix(loc, "/error?code=500") {
+			t.Errorf("want redirect to /error?code=500, got %s", loc)
+		}
+		cleared := false
+		for _, c := range w.Result().Cookies() {
+			if c.Name == "oauth_state" && c.Value == "" && c.MaxAge < 0 {
+				cleared = true
+			}
+		}
+		if !cleared {
+			t.Error("oauth_state cookie must be cleared")
 		}
 	})
 }

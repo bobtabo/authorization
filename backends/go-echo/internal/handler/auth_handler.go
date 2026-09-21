@@ -114,13 +114,13 @@ func (h *AuthHandler) GoogleRedirect(c echo.Context) error {
 }
 
 func (h *AuthHandler) GoogleCallback(c echo.Context) error {
-	code := c.QueryParam("code")
-	if code == "" {
-		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
-	}
 	invitationToken, ok, err := h.consumeOAuthState(c)
 	if !ok {
 		return err
+	}
+	code := c.QueryParam("code")
+	if code == "" {
+		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
 	oauthToken, err := h.oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
@@ -166,13 +166,13 @@ func (h *AuthHandler) GithubRedirect(c echo.Context) error {
 }
 
 func (h *AuthHandler) GithubCallback(c echo.Context) error {
-	code := c.QueryParam("code")
-	if code == "" {
-		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
-	}
 	invitationToken, ok, err := h.consumeOAuthState(c)
 	if !ok {
 		return err
+	}
+	code := c.QueryParam("code")
+	if code == "" {
+		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
 	oauthToken, err := h.githubOauthConfig.Exchange(context.Background(), code)
 	if err != nil {

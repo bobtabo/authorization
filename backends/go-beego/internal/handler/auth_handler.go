@@ -133,13 +133,13 @@ func (h *AuthHandler) GoogleRedirect(ctx *beecontext.Context) {
 }
 
 func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
+	invitationToken, ok := h.consumeOAuthState(ctx)
+	if !ok {
+		return
+	}
 	code := ctx.Input.Query("code")
 	if code == "" {
 		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
-		return
-	}
-	invitationToken, ok := h.consumeOAuthState(ctx)
-	if !ok {
 		return
 	}
 
@@ -200,13 +200,13 @@ func (h *AuthHandler) GithubRedirect(ctx *beecontext.Context) {
 }
 
 func (h *AuthHandler) GithubCallback(ctx *beecontext.Context) {
+	invitationToken, ok := h.consumeOAuthState(ctx)
+	if !ok {
+		return
+	}
 	code := ctx.Input.Query("code")
 	if code == "" {
 		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
-		return
-	}
-	invitationToken, ok := h.consumeOAuthState(ctx)
-	if !ok {
 		return
 	}
 
@@ -369,7 +369,7 @@ func (h *AuthHandler) issueOAuthState(ctx *beecontext.Context) (string, bool) {
 		return "", false
 	}
 	secure := h.cfg.App.Env == "production"
-	ctx.SetCookie(oauthStateCookieName, nonce, oauthStateCookieMaxAge, "/", "", secure, true)
+	ctx.SetCookie(oauthStateCookieName, nonce, oauthStateCookieMaxAge, "/", "", secure, true, "Lax")
 	return buildOAuthState(h.cfg.OAuth.Runtime, nonce, ctx.Input.Query("token")), true
 }
 
@@ -378,7 +378,7 @@ func (h *AuthHandler) issueOAuthState(ctx *beecontext.Context) (string, bool) {
 func (h *AuthHandler) consumeOAuthState(ctx *beecontext.Context) (string, bool) {
 	secure := h.cfg.App.Env == "production"
 	saved := ctx.GetCookie(oauthStateCookieName)
-	ctx.SetCookie(oauthStateCookieName, "", -1, "/", "", secure, true)
+	ctx.SetCookie(oauthStateCookieName, "", -1, "/", "", secure, true, "Lax")
 
 	nonce, invitationToken, ok := parseOAuthState(ctx.Input.Query("state"))
 	if !ok || !verifyOAuthNonce(saved, nonce) {

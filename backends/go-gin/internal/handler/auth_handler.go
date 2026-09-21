@@ -152,13 +152,13 @@ func (h *AuthHandler) GoogleRedirect(c *gin.Context) {
 // GoogleCallback は Google OAuth コールバックを処理し、スタッフを作成または更新してセッションを発行します。
 // GET /auth/google/callback
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
+	invitationToken, ok := h.consumeOAuthState(c)
+	if !ok {
+		return
+	}
 	code := c.Query("code")
 	if code == "" {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
-		return
-	}
-	invitationToken, ok := h.consumeOAuthState(c)
-	if !ok {
 		return
 	}
 
@@ -223,13 +223,13 @@ func (h *AuthHandler) GithubRedirect(c *gin.Context) {
 // GithubCallback は GitHub OAuth コールバックを処理し、スタッフを作成または更新してセッションを発行します。
 // GET /auth/github/callback
 func (h *AuthHandler) GithubCallback(c *gin.Context) {
+	invitationToken, ok := h.consumeOAuthState(c)
+	if !ok {
+		return
+	}
 	code := c.Query("code")
 	if code == "" {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
-		return
-	}
-	invitationToken, ok := h.consumeOAuthState(c)
-	if !ok {
 		return
 	}
 
@@ -291,6 +291,7 @@ func (h *AuthHandler) issueOAuthState(c *gin.Context) (string, bool) {
 		return "", false
 	}
 	secure := h.cfg.App.Env == "production"
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(oauthStateCookieName, nonce, oauthStateCookieMaxAge, "/", "", secure, true)
 	return buildOAuthState(h.cfg.OAuth.Runtime, nonce, c.Query("token")), true
 }
@@ -300,6 +301,7 @@ func (h *AuthHandler) issueOAuthState(c *gin.Context) (string, bool) {
 func (h *AuthHandler) consumeOAuthState(c *gin.Context) (string, bool) {
 	secure := h.cfg.App.Env == "production"
 	saved, _ := c.Cookie(oauthStateCookieName)
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(oauthStateCookieName, "", -1, "/", "", secure, true)
 
 	nonce, invitationToken, ok := parseOAuthState(c.Query("state"))

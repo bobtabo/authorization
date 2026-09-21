@@ -4,12 +4,13 @@
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 import secrets
+from collections.abc import Callable
 
 import httpx
 from fastapi import APIRouter, Depends, Response, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from app.config.settings import Settings, get_settings
-from app.exceptions import unauthorized, bad_request, forbidden
+from app.exceptions import AppError, unauthorized, bad_request, forbidden
 from app.routers.deps import (
     get_auth_interactor, get_invitation_interactor, get_staff_id_from_cookie,
 )
@@ -53,7 +54,7 @@ def _consume_oauth_state(request: Request, state: str) -> tuple[str | None, bool
     saved = request.cookies.get(OAUTH_STATE_COOKIE, "")
     parts = state.split("|", 2)
     nonce = parts[1] if len(parts) >= 2 else ""
-    if not saved or not nonce or not secrets.compare_digest(saved, nonce):
+    if not saved or not nonce or not secrets.compare_digest(saved.encode(), nonce.encode()):
         return None, False
     invitation_token = parts[2] if len(parts) == 3 and parts[2] else None
     return invitation_token, True
@@ -61,6 +62,16 @@ def _consume_oauth_state(request: Request, state: str) -> tuple[str | None, bool
 
 def _clear_oauth_state(response: Response) -> None:
     response.delete_cookie(OAUTH_STATE_COOKIE)
+
+
+def _with_oauth_state_cleared(flow: Callable[[], Response]) -> Response:
+    """コールバックの成否を問わず oauth_state クッキーを破棄する。"""
+    try:
+        response = flow()
+    except AppError as e:
+        response = JSONResponse(status_code=e.status_code, content={"message": e.message})
+    _clear_oauth_state(response)
+    return response
 
 
 @router.get("/auth/me")
@@ -126,11 +137,19 @@ def google_callback(
     settings: Settings = Depends(get_settings),
     interactor: AuthInteractor = Depends(get_auth_interactor),
 ):
+    return _with_oauth_state_cleared(lambda: _google_callback(request, code, state, settings, interactor))
+
+
+def _google_callback(
+    request: Request,
+    code: str,
+    state: str,
+    settings: Settings,
+    interactor: AuthInteractor,
+) -> Response:
     invitation_token, valid = _consume_oauth_state(request, state)
     if not valid:
-        redirect = RedirectResponse(url=f"{settings.frontend_url}/error?code=400", status_code=302)
-        _clear_oauth_state(redirect)
-        return redirect
+        return RedirectResponse(url=f"{settings.frontend_url}/error?code=400", status_code=302)
     if not code:
         raise bad_request("code_required")
 
@@ -162,15 +181,12 @@ def google_callback(
         staff = interactor.login(dto)
     except Exception as e:
         if hasattr(e, "status_code") and e.status_code == 403:
-            redirect = RedirectResponse(url=f"{settings.frontend_url}/error?code=403", status_code=302)
-            _clear_oauth_state(redirect)
-            return redirect
+            return RedirectResponse(url=f"{settings.frontend_url}/error?code=403", status_code=302)
         raise
 
     max_age = settings.staff_cookie_lifetime * 60
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
     redirect.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
-    _clear_oauth_state(redirect)
     return redirect
 
 
@@ -197,11 +213,19 @@ def github_callback(
     settings: Settings = Depends(get_settings),
     interactor: AuthInteractor = Depends(get_auth_interactor),
 ):
+    return _with_oauth_state_cleared(lambda: _github_callback(request, code, state, settings, interactor))
+
+
+def _github_callback(
+    request: Request,
+    code: str,
+    state: str,
+    settings: Settings,
+    interactor: AuthInteractor,
+) -> Response:
     invitation_token, valid = _consume_oauth_state(request, state)
     if not valid:
-        redirect = RedirectResponse(url=f"{settings.frontend_url}/error?code=400", status_code=302)
-        _clear_oauth_state(redirect)
-        return redirect
+        return RedirectResponse(url=f"{settings.frontend_url}/error?code=400", status_code=302)
     if not code:
         return RedirectResponse(url=f"{settings.frontend_url}/error?code=500", status_code=302)
 
@@ -247,12 +271,9 @@ def github_callback(
         staff = interactor.login(dto)
     except Exception as e:
         code_ = 403 if hasattr(e, "status_code") and e.status_code == 403 else 500
-        redirect = RedirectResponse(url=f"{settings.frontend_url}/error?code={code_}", status_code=302)
-        _clear_oauth_state(redirect)
-        return redirect
+        return RedirectResponse(url=f"{settings.frontend_url}/error?code={code_}", status_code=302)
 
     max_age = settings.staff_cookie_lifetime * 60
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
     redirect.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
-    _clear_oauth_state(redirect)
     return redirect
