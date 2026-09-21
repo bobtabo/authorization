@@ -27,6 +27,59 @@ const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 const GITHUB_USER_URL: &str = "https://api.github.com/user";
 const GITHUB_EMAILS_URL: &str = "https://api.github.com/user/emails";
 
+/// OAuth 認可開始時に発行する nonce を保持するクッキー名。
+const OAUTH_STATE_COOKIE: &str = "oauth_state";
+/// nonce クッキーの有効期間（秒）。
+const OAUTH_STATE_COOKIE_MAX_AGE: i64 = 600;
+
+/// nonce を生成してクッキーに保存し、state（"{runtime}|{nonce}" または "{runtime}|{nonce}|{token}"）を返します。
+fn issue_oauth_state(
+    cfg: &crate::config::Config,
+    jar: CookieJar,
+    token: Option<&str>,
+) -> (CookieJar, String) {
+    let nonce = hex::encode(rand::random::<[u8; 16]>());
+    let cookie = Cookie::build((OAUTH_STATE_COOKIE, nonce.clone()))
+        .path("/")
+        .http_only(true)
+        .max_age(time::Duration::seconds(OAUTH_STATE_COOKIE_MAX_AGE))
+        .same_site(SameSite::Lax)
+        .secure(cfg.app.env == "production")
+        .build();
+    let oauth_state = match token.filter(|t| !t.is_empty()) {
+        Some(token) => format!("{}|{}|{}", cfg.app.runtime, nonce, token),
+        None => format!("{}|{}", cfg.app.runtime, nonce),
+    };
+    (jar.add(cookie), oauth_state)
+}
+
+/// state の nonce をクッキーと照合してクッキーを破棄し、招待トークンを返します。
+/// 照合に失敗した場合は `None` を返します。
+fn consume_oauth_state(jar: CookieJar, state: Option<&str>) -> (CookieJar, Option<Option<String>>) {
+    let saved = jar
+        .get(OAUTH_STATE_COOKIE)
+        .map(|c| c.value().to_string())
+        .unwrap_or_default();
+    let jar = jar.remove(Cookie::build(OAUTH_STATE_COOKIE).path("/").build());
+
+    let mut parts = state.unwrap_or_default().splitn(3, '|');
+    let _runtime = parts.next();
+    let nonce = parts.next().unwrap_or_default();
+    if saved.is_empty() || nonce.is_empty() || !constant_time_eq(saved.as_bytes(), nonce.as_bytes()) {
+        return (jar, None);
+    }
+    let invitation_token = parts.next().filter(|t| !t.is_empty()).map(|t| t.to_string());
+    (jar, Some(invitation_token))
+}
+
+/// 定数時間でバイト列を比較します。
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
+}
+
 #[derive(Deserialize)]
 pub struct GoogleRedirectQuery {
     token: Option<String>,
@@ -80,19 +133,17 @@ struct GithubEmail {
 /// Google OAuth リダイレクト URL へ転送します。
 pub async fn google_redirect(
     State(state): State<AppState>,
+    jar: CookieJar,
     Query(params): Query<GoogleRedirectQuery>,
-) -> Redirect {
-    let oauth_state = match params.token.as_deref().filter(|t| !t.is_empty()) {
-        Some(token) => format!("{}|{}", state.cfg.app.runtime, token),
-        None => state.cfg.app.runtime.clone(),
-    };
+) -> (CookieJar, Redirect) {
+    let (jar, oauth_state) = issue_oauth_state(&state.cfg, jar, params.token.as_deref());
     let url = format!(
         "https://accounts.google.com/o/oauth2/auth?client_id={}&redirect_uri={}&response_type=code&scope=email+profile&access_type=online&state={}",
         state.cfg.oauth.google_client_id,
         percent_encoding::utf8_percent_encode(&state.cfg.oauth.google_redirect_url, percent_encoding::NON_ALPHANUMERIC),
         percent_encoding::utf8_percent_encode(&oauth_state, percent_encoding::NON_ALPHANUMERIC),
     );
-    Redirect::temporary(&url)
+    (jar, Redirect::temporary(&url))
 }
 
 /// Google OAuth コールバックを処理してセッションを発行します。
@@ -104,6 +155,16 @@ pub async fn google_callback(
     let cfg = &state.cfg;
     let error_url = format!("{}/error?code=500", cfg.app.frontend_url);
 
+    let (jar, invitation_token) = match consume_oauth_state(jar, params.state.as_deref()) {
+        (jar, Some(token)) => (jar, token),
+        (jar, None) => {
+            return (
+                jar,
+                Redirect::temporary(&format!("{}/error?code=400", cfg.app.frontend_url)),
+            )
+                .into_response()
+        }
+    };
     let code = match params.code.filter(|c| !c.is_empty()) {
         Some(c) => c,
         None => {
@@ -114,10 +175,6 @@ pub async fn google_callback(
                 .into_response()
         }
     };
-    let invitation_token = params.state.and_then(|s| {
-        let parts: Vec<&str> = s.splitn(2, '|').collect();
-        parts.get(1).map(|t| t.to_string())
-    });
 
     let client = reqwest::Client::new();
 
@@ -212,12 +269,10 @@ pub async fn google_callback(
 /// GitHub OAuth リダイレクト URL へ転送します。
 pub async fn github_redirect(
     State(state): State<AppState>,
+    jar: CookieJar,
     Query(params): Query<GithubRedirectQuery>,
-) -> Redirect {
-    let oauth_state = match params.token.as_deref().filter(|t| !t.is_empty()) {
-        Some(token) => format!("{}|{}", state.cfg.app.runtime, token),
-        None => state.cfg.app.runtime.clone(),
-    };
+) -> (CookieJar, Redirect) {
+    let (jar, oauth_state) = issue_oauth_state(&state.cfg, jar, params.token.as_deref());
     let url = format!(
         "{}?client_id={}&redirect_uri={}&scope=user:email&state={}",
         GITHUB_AUTH_URL,
@@ -228,7 +283,7 @@ pub async fn github_redirect(
         ),
         percent_encoding::utf8_percent_encode(&oauth_state, percent_encoding::NON_ALPHANUMERIC),
     );
-    Redirect::temporary(&url)
+    (jar, Redirect::temporary(&url))
 }
 
 /// GitHub OAuth コールバックを処理してセッションを発行します。
@@ -240,6 +295,16 @@ pub async fn github_callback(
     let cfg = &state.cfg;
     let error_url = format!("{}/error?code=500", cfg.app.frontend_url);
 
+    let (jar, invitation_token) = match consume_oauth_state(jar, params.state.as_deref()) {
+        (jar, Some(token)) => (jar, token),
+        (jar, None) => {
+            return (
+                jar,
+                Redirect::temporary(&format!("{}/error?code=400", cfg.app.frontend_url)),
+            )
+                .into_response()
+        }
+    };
     let code = match params.code.filter(|c| !c.is_empty()) {
         Some(c) => c,
         None => {
@@ -250,10 +315,6 @@ pub async fn github_callback(
                 .into_response()
         }
     };
-    let invitation_token = params.state.and_then(|s| {
-        let parts: Vec<&str> = s.splitn(2, '|').collect();
-        parts.get(1).map(|t| t.to_string())
-    });
 
     let client = reqwest::Client::builder()
         .user_agent("authorization-app")

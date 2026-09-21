@@ -27,9 +27,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Cookie as CookieFacade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpFoundation\Cookie;
 
 /**
  * 認証Controllerクラスです。
@@ -39,6 +42,12 @@ use Laravel\Socialite\Facades\Socialite;
  */
 class AuthController extends Controller
 {
+    /** OAuth 認可開始時に発行する nonce を保持するクッキー名 */
+    private const OAUTH_STATE_COOKIE = 'oauth_state';
+
+    /** nonce クッキーの有効期間（分） */
+    private const OAUTH_STATE_COOKIE_LIFETIME = 10;
+
     /**
      * ログイン情報を返します（セッション／トークンで認証済みのユーザー）。
      *
@@ -92,12 +101,12 @@ class AuthController extends Controller
      */
     public function googleRedirect(Request $request
     ): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse {
-        $token = (string)$request->query('token', '');
-        $driver = Socialite::driver('google')->stateless();
-        if ($token !== '') {
-            $driver = $driver->with(['state' => $token]);
-        }
-        return $driver->redirect();
+        [$state, $cookie] = $this->issueOAuthState($request);
+        return Socialite::driver('google')
+            ->stateless()
+            ->with(['state' => $state])
+            ->redirect()
+            ->withCookie($cookie);
     }
 
     /**
@@ -110,6 +119,12 @@ class AuthController extends Controller
     {
         $appConfig = config('authorization.app');
 
+        [$invitationToken, $valid] = $this->consumeOAuthState($request);
+        if (!$valid) {
+            return redirect($appConfig['frontend_url'] . '/error?code=400')
+                ->withCookie($this->forgetOAuthStateCookie());
+        }
+
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
@@ -121,7 +136,7 @@ class AuthController extends Controller
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
-                'invitationToken' => (string)$request->query('state', '') ?: null
+                'invitationToken' => $invitationToken,
             ]);
 
             $vo = DB::transaction(function () use ($service, $dto) {
@@ -138,19 +153,22 @@ class AuthController extends Controller
                     null,
                     $secure,
                     true
-                );
+                )
+                ->withCookie($this->forgetOAuthStateCookie());
         } catch (AppException $e) {
-            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode());
+            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode())
+                ->withCookie($this->forgetOAuthStateCookie());
         } catch (Exception $e) {
             Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect($appConfig['frontend_url'] . '/error?code=500');
+            return redirect($appConfig['frontend_url'] . '/error?code=500')
+                ->withCookie($this->forgetOAuthStateCookie());
         }
     }
 
     /**
      * GitHub へリダイレクトします。
      *
-     * state に "{runtime}|{invitationToken}" を埋め込み、
+     * state に "{runtime}|{nonce}|{invitationToken}" を埋め込み、
      * コールバック dispatcher がバックエンドを識別できるようにします。
      *
      * @param Request $request HTTP リクエスト
@@ -158,21 +176,18 @@ class AuthController extends Controller
      */
     public function githubRedirect(Request $request
     ): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse {
-        $appConfig = config('authorization.app');
-        $token   = (string)$request->query('token', '');
-        $runtime = (string)$appConfig['runtime'];
-        $state   = $token !== '' ? "{$runtime}|{$token}" : $runtime;
-
+        [$state, $cookie] = $this->issueOAuthState($request);
         return Socialite::driver('github')
             ->stateless()
             ->with(['state' => $state])
-            ->redirect();
+            ->redirect()
+            ->withCookie($cookie);
     }
 
     /**
      * GitHub からのコールバックを処理します。
      *
-     * state フォーマット: "{runtime}" または "{runtime}|{invitationToken}"
+     * state フォーマット: "{runtime}|{nonce}" または "{runtime}|{nonce}|{invitationToken}"
      *
      * @param Request $request HTTP リクエスト
      * @param AuthService $service 認証Service
@@ -182,12 +197,14 @@ class AuthController extends Controller
     {
         $appConfig = config('authorization.app');
 
+        [$invitationToken, $valid] = $this->consumeOAuthState($request);
+        if (!$valid) {
+            return redirect($appConfig['frontend_url'] . '/error?code=400')
+                ->withCookie($this->forgetOAuthStateCookie());
+        }
+
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
-
-            $state = (string)$request->query('state', '');
-            $parts = explode('|', $state, 2);
-            $invitationToken = isset($parts[1]) && $parts[1] !== '' ? $parts[1] : null;
 
             $dto = new SocialDto();
             $dto->assign([
@@ -214,13 +231,77 @@ class AuthController extends Controller
                     null,
                     $secure,
                     true
-                );
+                )
+                ->withCookie($this->forgetOAuthStateCookie());
         } catch (AppException $e) {
-            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode());
+            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode())
+                ->withCookie($this->forgetOAuthStateCookie());
         } catch (Exception $e) {
             Log::error('githubCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect($appConfig['frontend_url'] . '/error?code=500');
+            return redirect($appConfig['frontend_url'] . '/error?code=500')
+                ->withCookie($this->forgetOAuthStateCookie());
         }
+    }
+
+    /**
+     * OAuth 認可開始時に nonce を生成し、state パラメータと nonce クッキーを返します。
+     *
+     * state フォーマット: "{runtime}|{nonce}" または "{runtime}|{nonce}|{invitationToken}"
+     *
+     * @param Request $request HTTP リクエスト
+     * @return array{0: string, 1: Cookie} [state, nonce クッキー]
+     */
+    private function issueOAuthState(Request $request): array
+    {
+        $appConfig = config('authorization.app');
+        $token   = (string)$request->query('token', '');
+        $runtime = (string)$appConfig['runtime'];
+        $nonce   = Str::random(32);
+        $state   = $token !== '' ? "{$runtime}|{$nonce}|{$token}" : "{$runtime}|{$nonce}";
+
+        $cookie = cookie(
+            self::OAUTH_STATE_COOKIE,
+            $nonce,
+            self::OAUTH_STATE_COOKIE_LIFETIME,
+            '/',
+            null,
+            config('app.env') === 'production',
+            true,
+            false,
+            'lax'
+        );
+
+        return [$state, $cookie];
+    }
+
+    /**
+     * コールバックで受信した state の nonce をクッキーと照合し、招待トークンを返します。
+     *
+     * @param Request $request HTTP リクエスト
+     * @return array{0: string|null, 1: bool} [招待トークン, 照合結果]
+     */
+    private function consumeOAuthState(Request $request): array
+    {
+        $saved = (string)$request->cookie(self::OAUTH_STATE_COOKIE, '');
+        $parts = explode('|', (string)$request->query('state', ''), 3);
+        $nonce = $parts[1] ?? '';
+
+        if ($saved === '' || $nonce === '' || !hash_equals($saved, $nonce)) {
+            return [null, false];
+        }
+
+        $invitationToken = isset($parts[2]) && $parts[2] !== '' ? $parts[2] : null;
+        return [$invitationToken, true];
+    }
+
+    /**
+     * nonce クッキーを破棄する Cookie を返します。
+     *
+     * @return Cookie
+     */
+    private function forgetOAuthStateCookie(): Cookie
+    {
+        return CookieFacade::forget(self::OAUTH_STATE_COOKIE);
     }
 
     /**

@@ -67,6 +67,45 @@ public class AuthIntegrationTests(IntegrationWebAppFactory factory) : Integratio
     }
 
     [Fact]
+    public async Task GithubRedirect_IssuesNonceCookieAndEmbedsItInState()
+    {
+        using var client = CreateNoRedirectClient();
+        var res = await client.GetAsync("/auth/github/redirect?token=inv-token");
+
+        Assert.Equal(HttpStatusCode.Redirect, res.StatusCode);
+        var cookie = res.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("oauth_state="));
+        var nonce  = System.Text.RegularExpressions.Regex.Match(cookie, "oauth_state=([0-9a-f]+)").Groups[1].Value;
+        Assert.NotEmpty(nonce);
+        Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
+        var location = res.Headers.Location!.OriginalString;
+        Assert.Contains($"state=csharp%7C{nonce}%7Cinv-token", location, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GithubCallback_WithoutNonceCookie_RedirectsTo400()
+    {
+        using var client = CreateNoRedirectClient();
+        var res = await client.GetAsync("/auth/github/callback?code=abc&state=csharp%7Cnonce123");
+
+        Assert.Equal(HttpStatusCode.Redirect, res.StatusCode);
+        Assert.EndsWith("/error?code=400", res.Headers.Location!.ToString());
+    }
+
+    [Fact]
+    public async Task GoogleCallback_WithMismatchedNonce_RedirectsTo400AndClearsCookie()
+    {
+        using var client = CreateNoRedirectClient();
+        var req = new HttpRequestMessage(HttpMethod.Get, "/auth/google/callback?code=abc&state=csharp%7Cwrong");
+        req.Headers.Add("Cookie", "oauth_state=right");
+        var res = await client.SendAsync(req);
+
+        Assert.Equal(HttpStatusCode.Redirect, res.StatusCode);
+        Assert.EndsWith("/error?code=400", res.Headers.Location!.ToString());
+        var cookie = res.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("oauth_state="));
+        Assert.Contains("max-age=0", cookie, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Invitation_ValidToken_ReturnsInvitation()
     {
         TestHelper.CreateInvitation(token: "valid-token");

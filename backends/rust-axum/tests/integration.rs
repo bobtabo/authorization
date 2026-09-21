@@ -40,6 +40,72 @@ async fn get_auth_me_returns_401_when_unauthenticated() {
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 }
 
+#[tokio::test]
+async fn oauth_redirect_issues_nonce_cookie_and_embeds_it_in_state() {
+    let (app, _pool) = common::build_test_app().await;
+
+    let req = Request::builder()
+        .uri("/auth/google/redirect?token=inv-token")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::TEMPORARY_REDIRECT);
+
+    let set_cookie = res
+        .headers()
+        .get(header::SET_COOKIE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    assert!(set_cookie.starts_with("oauth_state="), "set-cookie: {set_cookie}");
+    assert!(set_cookie.contains("HttpOnly"));
+    let nonce = set_cookie
+        .trim_start_matches("oauth_state=")
+        .split(';')
+        .next()
+        .unwrap();
+    assert!(!nonce.is_empty());
+
+    let location = res.headers().get(header::LOCATION).unwrap().to_str().unwrap();
+    let expected = percent_encoding::utf8_percent_encode(
+        &format!("rust|{nonce}|inv-token"),
+        percent_encoding::NON_ALPHANUMERIC,
+    )
+    .to_string();
+    assert!(location.ends_with(&format!("state={expected}")), "location: {location}");
+}
+
+#[tokio::test]
+async fn oauth_callback_without_nonce_cookie_redirects_to_400() {
+    let (app, _pool) = common::build_test_app().await;
+
+    let req = Request::builder()
+        .uri("/auth/google/callback?code=x&state=rust%7Cabc")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::TEMPORARY_REDIRECT);
+    let location = res.headers().get(header::LOCATION).unwrap().to_str().unwrap();
+    assert!(location.ends_with("/error?code=400"), "location: {location}");
+}
+
+#[tokio::test]
+async fn oauth_callback_with_mismatched_nonce_redirects_to_400() {
+    let (app, _pool) = common::build_test_app().await;
+
+    let req = Request::builder()
+        .uri("/auth/github/callback?code=x&state=rust%7Cabc")
+        .header(header::COOKIE, "oauth_state=xyz")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::TEMPORARY_REDIRECT);
+    let location = res.headers().get(header::LOCATION).unwrap().to_str().unwrap();
+    assert!(location.ends_with("/error?code=400"), "location: {location}");
+}
+
 // ── Clients ───────────────────────────────────────────────────────────────────
 
 #[tokio::test]

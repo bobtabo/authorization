@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -143,11 +141,11 @@ func (h *AuthHandler) Invitation(c *gin.Context) {
 // GoogleRedirect は Google OAuth 認証ページへリダイレクトします。
 // GET /auth/google/redirect
 func (h *AuthHandler) GoogleRedirect(c *gin.Context) {
-	oauthState := c.Query("token")
-	if oauthState == "" {
-		oauthState = "state"
+	state, ok := h.issueOAuthState(c)
+	if !ok {
+		return
 	}
-	url := h.oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
+	url := h.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -159,10 +157,9 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 		return
 	}
-	stateVal := c.Query("state")
-	invitationToken := ""
-	if stateVal != "" && stateVal != "state" {
-		invitationToken = stateVal
+	invitationToken, ok := h.consumeOAuthState(c)
+	if !ok {
+		return
 	}
 
 	oauthToken, err := h.oauthConfig.Exchange(context.Background(), code)
@@ -215,10 +212,9 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 // GithubRedirect は GitHub OAuth 認証ページへリダイレクトします。
 // GET /auth/github/redirect
 func (h *AuthHandler) GithubRedirect(c *gin.Context) {
-	token := c.Query("token")
-	state := h.cfg.OAuth.Runtime
-	if token != "" {
-		state = h.cfg.OAuth.Runtime + "|" + token
+	state, ok := h.issueOAuthState(c)
+	if !ok {
+		return
 	}
 	url := h.githubOauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
@@ -232,11 +228,9 @@ func (h *AuthHandler) GithubCallback(c *gin.Context) {
 		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 		return
 	}
-	stateVal := c.Query("state")
-	invitationToken := ""
-	parts := strings.SplitN(stateVal, "|", 2)
-	if len(parts) == 2 {
-		invitationToken = parts[1]
+	invitationToken, ok := h.consumeOAuthState(c)
+	if !ok {
+		return
 	}
 
 	oauthToken, err := h.githubOauthConfig.Exchange(context.Background(), code)
@@ -287,6 +281,34 @@ func (h *AuthHandler) GithubCallback(c *gin.Context) {
 }
 
 // ---------- プライベートヘルパー ----------
+
+// issueOAuthState は nonce を生成してクッキーに保存し、state パラメータを返します。
+// 生成に失敗した場合はエラーページへリダイレクトして ok=false を返します。
+func (h *AuthHandler) issueOAuthState(c *gin.Context) (string, bool) {
+	nonce, err := newOAuthNonce()
+	if err != nil {
+		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
+		return "", false
+	}
+	secure := h.cfg.App.Env == "production"
+	c.SetCookie(oauthStateCookieName, nonce, oauthStateCookieMaxAge, "/", "", secure, true)
+	return buildOAuthState(h.cfg.OAuth.Runtime, nonce, c.Query("token")), true
+}
+
+// consumeOAuthState は state パラメータの nonce をクッキーと照合し、招待トークンを返します。
+// 照合に失敗した場合はエラーページへリダイレクトして ok=false を返します。クッキーは常に破棄します。
+func (h *AuthHandler) consumeOAuthState(c *gin.Context) (string, bool) {
+	secure := h.cfg.App.Env == "production"
+	saved, _ := c.Cookie(oauthStateCookieName)
+	c.SetCookie(oauthStateCookieName, "", -1, "/", "", secure, true)
+
+	nonce, invitationToken, ok := parseOAuthState(c.Query("state"))
+	if !ok || !verifyOAuthNonce(saved, nonce) {
+		c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=400")
+		return "", false
+	}
+	return invitationToken, true
+}
 
 // fetchGoogleUserInfo は Google OAuth トークンからユーザー情報を取得します。
 func fetchGoogleUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]string, error) {

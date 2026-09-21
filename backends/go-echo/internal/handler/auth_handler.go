@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"strings"
-
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -107,11 +105,11 @@ func (h *AuthHandler) Invitation(c echo.Context) error {
 }
 
 func (h *AuthHandler) GoogleRedirect(c echo.Context) error {
-	oauthState := c.QueryParam("token")
-	if oauthState == "" {
-		oauthState = "state"
+	state, err := h.issueOAuthState(c)
+	if err != nil {
+		return err
 	}
-	url := h.oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
+	url := h.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	return c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -120,10 +118,9 @@ func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 	if code == "" {
 		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
-	stateVal := c.QueryParam("state")
-	invitationToken := ""
-	if stateVal != "" && stateVal != "state" {
-		invitationToken = stateVal
+	invitationToken, ok, err := h.consumeOAuthState(c)
+	if !ok {
+		return err
 	}
 	oauthToken, err := h.oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
@@ -160,10 +157,9 @@ func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 }
 
 func (h *AuthHandler) GithubRedirect(c echo.Context) error {
-	token := c.QueryParam("token")
-	state := h.cfg.OAuth.Runtime
-	if token != "" {
-		state = h.cfg.OAuth.Runtime + "|" + token
+	state, err := h.issueOAuthState(c)
+	if err != nil {
+		return err
 	}
 	url := h.githubOauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	return c.Redirect(http.StatusTemporaryRedirect, url)
@@ -174,11 +170,9 @@ func (h *AuthHandler) GithubCallback(c echo.Context) error {
 	if code == "" {
 		return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
 	}
-	stateVal := c.QueryParam("state")
-	invitationToken := ""
-	parts := strings.SplitN(stateVal, "|", 2)
-	if len(parts) == 2 {
-		invitationToken = parts[1]
+	invitationToken, ok, err := h.consumeOAuthState(c)
+	if !ok {
+		return err
 	}
 	oauthToken, err := h.githubOauthConfig.Exchange(context.Background(), code)
 	if err != nil {
@@ -308,4 +302,54 @@ func fetchGithubUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]st
 		"email":  email,
 		"avatar": avatar,
 	}, nil
+}
+
+// issueOAuthState は nonce を生成してクッキーに保存し、state パラメータを返します。
+func (h *AuthHandler) issueOAuthState(c echo.Context) (string, error) {
+	nonce, err := newOAuthNonce()
+	if err != nil {
+		return "", c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=500")
+	}
+	setOAuthStateCookie(c, nonce, h.cfg.App.Env == "production")
+	return buildOAuthState(h.cfg.OAuth.Runtime, nonce, c.QueryParam("token")), nil
+}
+
+// consumeOAuthState は state の nonce をクッキーと照合し、招待トークンを返します。
+// 照合に失敗した場合はエラーページへリダイレクトし ok=false を返します。クッキーは常に破棄します。
+func (h *AuthHandler) consumeOAuthState(c echo.Context) (invitationToken string, ok bool, err error) {
+	saved := ""
+	if cookie, cerr := c.Cookie(oauthStateCookieName); cerr == nil {
+		saved = cookie.Value
+	}
+	clearOAuthStateCookie(c, h.cfg.App.Env == "production")
+
+	nonce, invitationToken, parsed := parseOAuthState(c.QueryParam("state"))
+	if !parsed || !verifyOAuthNonce(saved, nonce) {
+		return "", false, c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/error?code=400")
+	}
+	return invitationToken, true, nil
+}
+
+func setOAuthStateCookie(c echo.Context, nonce string, secure bool) {
+	c.SetCookie(&http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    nonce,
+		MaxAge:   oauthStateCookieMaxAge,
+		Path:     "/",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearOAuthStateCookie(c echo.Context, secure bool) {
+	c.SetCookie(&http.Cookie{
+		Name:     oauthStateCookieName,
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
 }

@@ -21,6 +21,11 @@ import kotlinx.serialization.json.*
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.security.MessageDigest
+import java.security.SecureRandom
+
+private const val OAUTH_STATE_COOKIE = "oauth_state"
+private const val OAUTH_STATE_COOKIE_MAX_AGE = 600
 
 /**
  * 認証 API のハンドラーです。
@@ -39,8 +44,7 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun googleRedirect(call: ApplicationCall) {
-        val token = call.request.queryParameters["token"]
-        val oauthState = if (!token.isNullOrEmpty()) token else "state"
+        val oauthState = issueOAuthState(call)
         val url = "https://accounts.google.com/o/oauth2/auth" +
             "?client_id=${cfg.oauth.googleClientId}" +
             "&redirect_uri=${cfg.oauth.googleRedirectUrl}" +
@@ -50,18 +54,53 @@ class AuthHandler(
     }
 
     /**
+     * nonce を生成して HttpOnly クッキーに保存し、state（"{runtime}|{nonce}" または "{runtime}|{nonce}|{token}"）を返します。
+     */
+    private fun issueOAuthState(call: ApplicationCall): String {
+        val bytes = ByteArray(16).also { SecureRandom().nextBytes(it) }
+        val nonce = bytes.joinToString("") { "%02x".format(it) }
+        call.response.cookies.append(
+            Cookie(name = OAUTH_STATE_COOKIE, value = nonce, maxAge = OAUTH_STATE_COOKIE_MAX_AGE,
+                   path = "/", secure = cfg.app.env == "production", httpOnly = true,
+                   extensions = mapOf("SameSite" to "Lax"))
+        )
+        val token = call.request.queryParameters["token"]
+        return if (!token.isNullOrEmpty()) "${cfg.app.runtime}|$nonce|$token" else "${cfg.app.runtime}|$nonce"
+    }
+
+    /**
+     * state の nonce をクッキーと照合してクッキーを破棄し、招待トークンと照合結果を返します。
+     */
+    private fun consumeOAuthState(call: ApplicationCall): Pair<String?, Boolean> {
+        val saved = call.request.cookies[OAUTH_STATE_COOKIE] ?: ""
+        call.response.cookies.append(
+            Cookie(name = OAUTH_STATE_COOKIE, value = "", maxAge = 0, path = "/", httpOnly = true)
+        )
+        val parts = (call.request.queryParameters["state"] ?: "").split("|", limit = 3)
+        val nonce = parts.getOrNull(1) ?: ""
+        if (saved.isEmpty() || nonce.isEmpty() ||
+            !MessageDigest.isEqual(saved.toByteArray(), nonce.toByteArray())) {
+            return Pair(null, false)
+        }
+        return Pair(parts.getOrNull(2)?.ifEmpty { null }, true)
+    }
+
+    /**
      * Google OAuth コールバックを処理します。
      *
      * @param call アプリケーションコール
      */
     suspend fun googleCallback(call: ApplicationCall) {
+        val (invitationToken, valid) = consumeOAuthState(call)
+        if (!valid) {
+            call.respondRedirect(cfg.app.frontendUrl + "/error?code=400", permanent = false)
+            return
+        }
         val code = call.request.queryParameters["code"]
         if (code.isNullOrEmpty()) {
             call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
             return
         }
-        val stateVal = call.request.queryParameters["state"]
-        val invitationToken = if (!stateVal.isNullOrEmpty() && stateVal != "state") stateVal else null
 
         val accessToken = try {
             exchangeCodeForToken(code, cfg.oauth)
@@ -166,12 +205,7 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun githubRedirect(call: ApplicationCall) {
-        val token = call.request.queryParameters["token"]
-        val oauthState = if (!token.isNullOrEmpty()) {
-            URLEncoder.encode("${cfg.app.runtime}|$token", "UTF-8")
-        } else {
-            URLEncoder.encode(cfg.app.runtime, "UTF-8")
-        }
+        val oauthState = URLEncoder.encode(issueOAuthState(call), "UTF-8")
         val url = "https://github.com/login/oauth/authorize" +
             "?client_id=${cfg.oauth.githubClientId}" +
             "&redirect_uri=${URLEncoder.encode(cfg.oauth.githubRedirectUrl, "UTF-8")}" +
@@ -186,14 +220,16 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun githubCallback(call: ApplicationCall) {
+        val (invitationToken, valid) = consumeOAuthState(call)
+        if (!valid) {
+            call.respondRedirect(cfg.app.frontendUrl + "/error?code=400", permanent = false)
+            return
+        }
         val code = call.request.queryParameters["code"]
         if (code.isNullOrEmpty()) {
             call.respondRedirect(cfg.app.frontendUrl + "/error?code=500", permanent = false)
             return
         }
-        val stateVal = call.request.queryParameters["state"] ?: ""
-        val parts = stateVal.split("|", limit = 2)
-        val invitationToken = if (parts.size == 2) parts[1].ifEmpty { null } else null
 
         val accessToken = try {
             exchangeGithubCodeForToken(code, cfg.oauth)

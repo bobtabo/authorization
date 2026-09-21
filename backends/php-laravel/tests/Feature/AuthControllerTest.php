@@ -97,10 +97,12 @@ class AuthControllerTest extends TestCase
         $mockProvider->shouldReceive('user')->andReturn($abstractUser);
         Socialite::shouldReceive('driver')->with('google')->andReturn($mockProvider);
 
-        $response = $this->get('/auth/google/callback');
+        $response = $this->withUnencryptedCookie('oauth_state', 'nonce-1')
+            ->get('/auth/google/callback?state=php%7Cnonce-1');
 
         $frontendUrl = config('authorization.app.frontend_url');
         $response->assertRedirect($frontendUrl . '/clients');
+        $response->assertCookieExpired('oauth_state');
     }
 
     /**
@@ -126,7 +128,8 @@ class AuthControllerTest extends TestCase
         $mockProvider->shouldReceive('user')->andReturn($abstractUser);
         Socialite::shouldReceive('driver')->with('google')->andReturn($mockProvider);
 
-        $response = $this->get('/auth/google/callback?state=' . $token);
+        $response = $this->withUnencryptedCookie('oauth_state', 'nonce-1')
+            ->get('/auth/google/callback?state=php%7Cnonce-1%7C' . $token);
 
         $frontendUrl = config('authorization.app.frontend_url');
         $response->assertRedirect($frontendUrl . '/clients');
@@ -153,10 +156,60 @@ class AuthControllerTest extends TestCase
         $mockProvider->shouldReceive('user')->andReturn($abstractUser);
         Socialite::shouldReceive('driver')->with('google')->andReturn($mockProvider);
 
-        $response = $this->get('/auth/google/callback');
+        $response = $this->withUnencryptedCookie('oauth_state', 'nonce-1')
+            ->get('/auth/google/callback?state=php%7Cnonce-1');
 
         $frontendUrl = config('authorization.app.frontend_url');
         $response->assertRedirect($frontendUrl . '/error?code=403');
+    }
+
+    /**
+     * Google OAuth リダイレクトテストです。
+     * nonce クッキーを発行し、state に "{runtime}|{nonce}|{token}" を埋め込むことを確認します。
+     *
+     * @return void
+     */
+    public function testGoogleRedirectIssuesOAuthStateNonce(): void
+    {
+        $response = $this->get('/auth/google/redirect?token=inv-token');
+
+        $response->assertStatus(302);
+        $cookie = $response->getCookie('oauth_state', false);
+        $this->assertNotNull($cookie);
+        $this->assertTrue($cookie->isHttpOnly());
+        $nonce = $cookie->getValue();
+        $this->assertNotSame('', $nonce);
+
+        parse_str((string)parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        $runtime = config('authorization.app.runtime');
+        $this->assertSame("{$runtime}|{$nonce}|inv-token", $query['state']);
+    }
+
+    /**
+     * nonce クッキーが無いコールバックは 400 エラーページへリダイレクトすることを確認します。
+     *
+     * @return void
+     */
+    public function testGoogleCallbackWithoutNonceCookie(): void
+    {
+        $response = $this->get('/auth/google/callback?state=php%7Cnonce-1');
+
+        $frontendUrl = config('authorization.app.frontend_url');
+        $response->assertRedirect($frontendUrl . '/error?code=400');
+    }
+
+    /**
+     * nonce が一致しないコールバックは 400 エラーページへリダイレクトすることを確認します。
+     *
+     * @return void
+     */
+    public function testGithubCallbackWithMismatchedNonce(): void
+    {
+        $response = $this->withUnencryptedCookie('oauth_state', 'nonce-1')
+            ->get('/auth/github/callback?state=php%7Cother');
+
+        $frontendUrl = config('authorization.app.frontend_url');
+        $response->assertRedirect($frontendUrl . '/error?code=400');
     }
 
     /**

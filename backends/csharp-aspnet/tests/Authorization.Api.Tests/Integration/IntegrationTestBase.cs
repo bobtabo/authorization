@@ -46,6 +46,11 @@ public abstract class IntegrationTestBase(IntegrationWebAppFactory factory)
         return factory.CreateClient();
     }
 
+    /// <summary>リダイレクトを自動追跡しないHTTPクライアントを作成します。</summary>
+    /// <returns>HTTPクライアント</returns>
+    protected HttpClient CreateNoRedirectClient() =>
+        factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
     /// <summary>staff_id クッキーを付与したリクエストを送信します。</summary>
     /// <param name="method">HTTPメソッド</param>
     /// <param name="url">URL</param>

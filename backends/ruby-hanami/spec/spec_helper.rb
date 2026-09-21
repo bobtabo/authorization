@@ -45,6 +45,8 @@ APP_ROOT = File.expand_path("..", __dir__)
 TEST_APP = Hanami::Router.new do
   get  "/auth/google/redirect",                   to: Authorization::Actions::Auth::GoogleRedirect.new
   get  "/auth/google/callback",                   to: Authorization::Actions::Auth::GoogleCallback.new
+  get  "/auth/github/redirect",                   to: Authorization::Actions::Auth::GithubRedirect.new
+  get  "/auth/github/callback",                   to: Authorization::Actions::Auth::GithubCallback.new
   get  "/api/auth/me",                            to: Authorization::Actions::Auth::Me.new
   get  "/api/auth/login",                         to: Authorization::Actions::Auth::Login.new
   get  "/api/auth/logout",                        to: Authorization::Actions::Auth::Logout.new

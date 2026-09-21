@@ -21,13 +21,11 @@ module Authorization
         # @return [void]
         def handle(request, response)
           cfg  = container[:cfg]
+          invitation_token, valid = consume_oauth_state(request, response)
+          return response.redirect_to "#{cfg.app.frontend_url}/error?code=400" unless valid
+
           code = request.params[:code]
-
           return response.redirect_to "#{cfg.app.frontend_url}/error?code=400" if code.nil? || code.empty?
-
-          state_val        = request.params[:state].to_s
-          parts            = state_val.split("|", 2)
-          invitation_token = parts.length == 2 ? parts[1] : nil
 
           begin
             token_data   = exchange_code_for_token(code, cfg)
@@ -49,8 +47,10 @@ module Authorization
 
             max_age     = cfg.app.staff_cookie_lifetime * 60
             secure_flag = cfg.app.env == "production" ? "; Secure" : ""
-            response.headers["Set-Cookie"] =
-              "staff_id=#{vo.id}; Path=/; HttpOnly; Max-Age=#{max_age}#{secure_flag}; SameSite=Lax"
+            append_set_cookie(
+              response,
+              "staff_id=#{vo.id}; Path=/; HttpOnly; Max-Age=#{max_age}#{secure_flag}; SameSite=Lax",
+            )
 
             response.redirect_to "#{cfg.app.frontend_url}/clients"
           rescue ::Domain::ForbiddenError

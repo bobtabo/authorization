@@ -51,4 +51,29 @@ RSpec.describe "Auth", type: :request do
       expect(body["found"]).to be true
     end
   end
+
+  describe "OAuth state nonce" do
+    it "認可開始時にnonceクッキーを発行しstateに含める" do
+      get "/auth/google/redirect", params: { token: "inv-token" }
+      expect(response).to have_http_status(302)
+      nonce = cookies["oauth_state"]
+      expect(nonce).to be_present
+      expect(response.headers["Set-Cookie"].to_s).to match(/httponly/i)
+      state = CGI.parse(URI(response.location).query)["state"].first
+      expect(state).to eq("rb-rails|#{nonce}|inv-token")
+    end
+
+    it "nonceクッキーが無い場合は400エラーページへリダイレクトする" do
+      get "/auth/google/callback", params: { code: "x", state: "rb-rails|abc" }
+      expect(response).to have_http_status(302)
+      expect(response.location).to end_with("/error?code=400")
+    end
+
+    it "nonceが一致しない場合は400エラーページへリダイレクトする" do
+      get "/auth/github/callback", params: { code: "x", state: "rb-rails|abc" },
+                                   headers: { "Cookie" => "oauth_state=xyz" }
+      expect(response).to have_http_status(302)
+      expect(response.location).to end_with("/error?code=400")
+    end
+  end
 end

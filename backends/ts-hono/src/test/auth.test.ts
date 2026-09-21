@@ -39,4 +39,40 @@ describe("Auth", () => {
       expect(body.token).toBe(inv.token);
     });
   });
+
+  describe("OAuth state nonce", () => {
+    test("認可開始時にnonceクッキーを発行しstateに含める", async () => {
+      const res = await app.request("/auth/google/redirect?token=inv-token");
+      expect(res.status).toBe(302);
+      const setCookie = res.headers.get("set-cookie") ?? "";
+      const m = setCookie.match(/oauth_state=([^;]+)/);
+      expect(m).not.toBeNull();
+      expect(setCookie).toMatch(/HttpOnly/i);
+      const nonce = m![1];
+      const loc = new URL(res.headers.get("location") ?? "");
+      expect(loc.searchParams.get("state")).toBe(`ts|${nonce}|inv-token`);
+    });
+
+    test("nonceクッキーが無い場合は400エラーページへリダイレクトする", async () => {
+      const res = await app.request("/auth/google/callback?code=x&state=ts%7Cabc");
+      expect(res.status).toBe(302);
+      expect(res.headers.get("location")).toMatch(/\/error\?code=400$/);
+    });
+
+    test("nonceが一致しない場合は400エラーページへリダイレクトする", async () => {
+      const res = await app.request("/auth/github/callback?code=x&state=ts%7Cabc", {
+        headers: { Cookie: "oauth_state=xyz" },
+      });
+      expect(res.status).toBe(302);
+      expect(res.headers.get("location")).toMatch(/\/error\?code=400$/);
+    });
+
+    test("stateにnonceセグメントが無い場合は400エラーページへリダイレクトする", async () => {
+      const res = await app.request("/auth/github/callback?code=x&state=ts", {
+        headers: { Cookie: "oauth_state=abc" },
+      });
+      expect(res.status).toBe(302);
+      expect(res.headers.get("location")).toMatch(/\/error\?code=400$/);
+    });
+  });
 });

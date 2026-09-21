@@ -7,9 +7,9 @@ import { type NextRequest, NextResponse } from "next/server";
  * state の先頭セグメント（"{runtime}|..." の runtime 部分）を見て
  * /function/{runtime}/auth/github/callback へ転送する。
  *
- * state フォーマット:
- *   通常ログイン: "{runtime}"              例: "go-gin"
- *   招待ログイン: "{runtime}|{token}"      例: "go-gin|abc123..."
+ * state フォーマット（nonce はバックエンドが CSRF 対策として発行・検証する）:
+ *   通常ログイン: "{runtime}|{nonce}"          例: "go-gin|3f9a..."
+ *   招待ログイン: "{runtime}|{nonce}|{token}"  例: "go-gin|3f9a...|abc123..."
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);

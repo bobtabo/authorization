@@ -7,15 +7,20 @@
 require "net/http"
 require "json"
 require "cgi"
+require "securerandom"
 
 # 認証に関する API エンドポイントを提供するコントローラーです。
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 class Api::AuthController < Api::BaseController
+  # OAuth 認可開始時に発行する nonce を保持するクッキー名
+  OAUTH_STATE_COOKIE = "oauth_state"
+  # nonce クッキーの有効期間（秒）
+  OAUTH_STATE_COOKIE_MAX_AGE = 600
+
   # Google OAuth2 認可画面へリダイレクトします。
   def google_redirect
     cfg   = container[:cfg]
-    token = params[:token].presence
-    state = token ? "#{cfg.app.runtime}|#{token}" : cfg.app.runtime
+    state = issue_oauth_state(cfg)
     url = "https://accounts.google.com/o/oauth2/auth" \
           "?client_id=#{cfg.oauth.google_client_id}" \
           "&redirect_uri=#{CGI.escape(cfg.oauth.google_redirect_url)}" \
@@ -27,11 +32,11 @@ class Api::AuthController < Api::BaseController
   # Google OAuth2 コールバックを処理します。
   def google_callback
     cfg   = container[:cfg]
+    invitation_token, valid = consume_oauth_state
+    return redirect_to "#{cfg.app.frontend_url}/error?code=400", allow_other_host: true unless valid
+
     code  = params[:code]
     return redirect_to "#{cfg.app.frontend_url}/error?code=500", allow_other_host: true if code.blank?
-
-    parts            = params[:state].to_s.split("|", 2)
-    invitation_token = parts.length == 2 ? parts[1] : nil
 
     access_token = exchange_code_for_token(code, cfg.oauth)
     user_info    = fetch_google_user_info(access_token)
@@ -67,8 +72,7 @@ class Api::AuthController < Api::BaseController
   # GitHub OAuth 認可画面へリダイレクトします。
   def github_redirect
     cfg   = container[:cfg]
-    token = params[:token].presence
-    state = token ? "#{cfg.app.runtime}|#{token}" : cfg.app.runtime
+    state = issue_oauth_state(cfg)
     url = "https://github.com/login/oauth/authorize" \
           "?client_id=#{cfg.oauth.github_client_id}" \
           "&redirect_uri=#{CGI.escape(cfg.oauth.github_redirect_url)}" \
@@ -80,11 +84,11 @@ class Api::AuthController < Api::BaseController
   # GitHub OAuth コールバックを処理します。
   def github_callback
     cfg  = container[:cfg]
+    invitation_token, valid = consume_oauth_state
+    return redirect_to "#{cfg.app.frontend_url}/error?code=400", allow_other_host: true unless valid
+
     code = params[:code]
     return redirect_to "#{cfg.app.frontend_url}/error?code=400", allow_other_host: true if code.blank?
-
-    parts            = params[:state].to_s.split("|", 2)
-    invitation_token = parts.length == 2 ? parts[1] : nil
 
     access_token = exchange_github_code_for_token(code, cfg.oauth)
     user_info    = fetch_github_user_info(access_token)
@@ -152,6 +156,34 @@ class Api::AuthController < Api::BaseController
   end
 
   private
+
+  # nonce を生成してクッキーに保存し、state（"{runtime}|{nonce}" または "{runtime}|{nonce}|{token}"）を返します。
+  def issue_oauth_state(cfg)
+    nonce = SecureRandom.hex(16)
+    cookies[OAUTH_STATE_COOKIE] = {
+      value:     nonce,
+      max_age:   OAUTH_STATE_COOKIE_MAX_AGE,
+      path:      "/",
+      http_only: true,
+      same_site: :lax,
+      secure:    cfg.app.env == "production",
+    }
+    token = params[:token].presence
+    token ? "#{cfg.app.runtime}|#{nonce}|#{token}" : "#{cfg.app.runtime}|#{nonce}"
+  end
+
+  # state の nonce をクッキーと照合してクッキーを破棄し、[招待トークン, 照合結果] を返します。
+  def consume_oauth_state
+    saved = cookies[OAUTH_STATE_COOKIE].to_s
+    cookies.delete(OAUTH_STATE_COOKIE, path: "/")
+
+    parts = params[:state].to_s.split("|", 3)
+    nonce = parts[1].to_s
+    return [nil, false] if saved.empty? || nonce.empty?
+    return [nil, false] unless ActiveSupport::SecurityUtils.secure_compare(saved, nonce)
+
+    [parts[2].presence, true]
+  end
 
   def exchange_code_for_token(code, oauth_cfg)
     uri  = URI("https://oauth2.googleapis.com/token")
