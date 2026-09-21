@@ -46,7 +46,13 @@ func TestAuth_GetMyProfile(t *testing.T) {
 	t.Run("署名が不正なクッキーでは401が返る", func(t *testing.T) {
 		staff := createStaff(t, map[string]interface{}{"email": "forge-2@example.com"})
 		signed := handler.SignStaffID(staff.ID, testCfg.App.StaffCookieSecret)
-		tampered := signed[:len(signed)-1] + "0"
+		// 末尾の1文字を必ず異なる値に置き換える（元の値と偶然一致すると署名が
+		// 変わらずテストが不安定になるため）。
+		replacement := byte('0')
+		if signed[len(signed)-1] == replacement {
+			replacement = '1'
+		}
+		tampered := signed[:len(signed)-1] + string(replacement)
 		w := do(http.MethodGet, "/api/auth/me", nil, withCookie("staff_id", tampered))
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("want 401, got %d: %s", w.Code, w.Body.String())

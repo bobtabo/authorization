@@ -87,6 +87,20 @@ func TestStaff_UpdateRole(t *testing.T) {
 			t.Errorf("want 403, got %d: %s", w.Code, w.Body.String())
 		}
 	})
+
+	t.Run("無効化済みAdminの実行者では403が返る", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "target-deleted-admin@example.com", "role": 2})
+		executor := createStaff(t, map[string]interface{}{"email": "deleted-admin-executor@example.com", "role": 1})
+		// 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現する。
+		testDB.Exec("UPDATE staffs SET deleted_at = NOW() WHERE id = ?", executor.ID)
+		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
+			map[string]int{"role": 1},
+			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+		)
+		if w.Code != http.StatusForbidden {
+			t.Errorf("want 403, got %d: %s", w.Code, w.Body.String())
+		}
+	})
 }
 
 func TestStaff_Destroy(t *testing.T) {

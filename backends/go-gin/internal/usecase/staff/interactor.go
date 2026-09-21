@@ -54,7 +54,7 @@ func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
 	if err != nil {
 		return err
 	}
-	if executor == nil || executor.Role != domstaff.RoleAdmin {
+	if executor == nil || executor.DeletedAt != nil || executor.Role != domstaff.RoleAdmin {
 		return apperror.Forbidden("forbidden")
 	}
 	// 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
