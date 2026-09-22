@@ -105,7 +105,7 @@ func TestClient_Store(t *testing.T) {
 			"tel":        "0312345678",
 			"email":      "notif@example.com",
 		}
-		w := do(http.MethodPost, "/api/clients/store", payload, withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		w := do(http.MethodPost, "/api/clients/store", payload, withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusCreated {
 			t.Errorf("want 201, got %d: %s", w.Code, w.Body.String())
 		}

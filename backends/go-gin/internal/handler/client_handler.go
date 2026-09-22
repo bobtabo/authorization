@@ -17,12 +17,13 @@ import (
 
 // ClientHandler はクライアント関連のHTTPハンドラーを提供します。
 type ClientHandler struct {
-	db          *gorm.DB
-	newClientUC func(*gorm.DB) *uclient.Interactor
-	newNotifUC  func(*gorm.DB) *unotification.Interactor
-	mailer      *mail.Mailer
-	historyRepo domclient.JwtHistoryRepository
-	frontendURL string
+	db           *gorm.DB
+	newClientUC  func(*gorm.DB) *uclient.Interactor
+	newNotifUC   func(*gorm.DB) *unotification.Interactor
+	mailer       *mail.Mailer
+	historyRepo  domclient.JwtHistoryRepository
+	frontendURL  string
+	cookieSecret string
 }
 
 // NewClientHandler は ClientHandler を生成します。
@@ -33,6 +34,7 @@ type ClientHandler struct {
 // mailer: メール送信サービス
 // historyRepo: JWT 履歴リポジトリ
 // frontendURL: フロントエンド URL
+// cookieSecret: staff_id クッキー署名用シークレット
 func NewClientHandler(
 	db *gorm.DB,
 	newClientUC func(*gorm.DB) *uclient.Interactor,
@@ -40,14 +42,16 @@ func NewClientHandler(
 	mailer *mail.Mailer,
 	historyRepo domclient.JwtHistoryRepository,
 	frontendURL string,
+	cookieSecret string,
 ) *ClientHandler {
 	return &ClientHandler{
-		db:          db,
-		newClientUC: newClientUC,
-		newNotifUC:  newNotifUC,
-		mailer:      mailer,
-		historyRepo: historyRepo,
-		frontendURL: frontendURL,
+		db:           db,
+		newClientUC:  newClientUC,
+		newNotifUC:   newNotifUC,
+		mailer:       mailer,
+		historyRepo:  historyRepo,
+		frontendURL:  frontendURL,
+		cookieSecret: cookieSecret,
 	}
 }
 
@@ -140,7 +144,7 @@ func (h *ClientHandler) Store(c *gin.Context) {
 		return
 	}
 
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 
 	var storeVo *domclient.StoreVo
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
@@ -198,7 +202,7 @@ func (h *ClientHandler) Update(c *gin.Context) {
 		return
 	}
 
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 
 	var detailVo *domclient.DetailVo
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
@@ -295,7 +299,7 @@ func (h *ClientHandler) Destroy(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		return h.newClientUC(tx).Destroy(id, executorID)
 	}); txErr != nil {

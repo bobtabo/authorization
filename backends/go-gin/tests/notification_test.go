@@ -17,7 +17,7 @@ func TestNotification_Counts(t *testing.T) {
 		testDB.Model(n2).Update("read", true)
 
 		w := do(http.MethodGet, "/api/notifications/counts", nil,
-			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+			withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -47,7 +47,7 @@ func TestNotification_Index(t *testing.T) {
 		createNotification(t, staff.ID, "通知2")
 
 		w := do(http.MethodGet, "/api/notifications", nil,
-			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+			withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -62,7 +62,7 @@ func TestNotification_Index(t *testing.T) {
 		createNotification(t, staff.ID, "クライアント登録", map[string]interface{}{"url": "/clients/show?id=1"})
 
 		w := do(http.MethodGet, "/api/notifications", nil,
-			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+			withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -90,7 +90,7 @@ func TestNotification_ReadAll(t *testing.T) {
 		createNotification(t, staff.ID, "通知A")
 		createNotification(t, staff.ID, "通知B")
 
-		w := do(http.MethodPatch, "/api/notifications", nil, withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		w := do(http.MethodPatch, "/api/notifications", nil, withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
