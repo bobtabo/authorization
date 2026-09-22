@@ -23,7 +23,7 @@ func NewNotificationHandler(db *ent.Client, newNotifUC func(*ent.Client) *unotif
 }
 
 func (h *NotificationHandler) Counts(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -35,7 +35,7 @@ func (h *NotificationHandler) Counts(c echo.Context) error {
 }
 
 func (h *NotificationHandler) Index(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -59,7 +59,7 @@ func (h *NotificationHandler) Index(c echo.Context) error {
 }
 
 func (h *NotificationHandler) ReadAll(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -75,7 +75,7 @@ func (h *NotificationHandler) ReadAll(c echo.Context) error {
 }
 
 func (h *NotificationHandler) Read(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
