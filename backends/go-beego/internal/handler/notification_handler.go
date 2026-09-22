@@ -25,7 +25,7 @@ func NewNotificationHandler(ormer orm.Ormer, newNotifUC func(persistence.QueryOr
 }
 
 func (h *NotificationHandler) Counts(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
@@ -39,7 +39,7 @@ func (h *NotificationHandler) Counts(ctx *beecontext.Context) {
 }
 
 func (h *NotificationHandler) Index(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
@@ -70,7 +70,7 @@ func (h *NotificationHandler) Index(ctx *beecontext.Context) {
 }
 
 func (h *NotificationHandler) ReadAll(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
@@ -88,7 +88,7 @@ func (h *NotificationHandler) ReadAll(ctx *beecontext.Context) {
 }
 
 func (h *NotificationHandler) Read(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return

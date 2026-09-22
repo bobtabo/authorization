@@ -65,7 +65,7 @@ func NewAuthHandler(
 }
 
 func (h *AuthHandler) GetMyProfile(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
@@ -84,7 +84,7 @@ func (h *AuthHandler) GetMyProfile(ctx *beecontext.Context) {
 }
 
 func (h *AuthHandler) Login(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return
@@ -186,7 +186,7 @@ func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
 
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	setStaffCookie(ctx, staff.ID, maxAge, secure)
+	setStaffCookie(ctx, staff.ID, maxAge, secure, h.cfg.App.StaffCookieSecret)
 	http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/clients", http.StatusTemporaryRedirect)
 }
 
@@ -253,7 +253,7 @@ func (h *AuthHandler) GithubCallback(ctx *beecontext.Context) {
 
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	setStaffCookie(ctx, staff.ID, maxAge, secure)
+	setStaffCookie(ctx, staff.ID, maxAge, secure, h.cfg.App.StaffCookieSecret)
 	http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/clients", http.StatusTemporaryRedirect)
 }
 

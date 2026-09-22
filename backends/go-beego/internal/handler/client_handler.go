@@ -19,12 +19,13 @@ import (
 )
 
 type ClientHandler struct {
-	ormer       orm.Ormer
-	newClientUC func(persistence.QueryOrmer) *uclient.Interactor
-	newNotifUC  func(persistence.QueryOrmer) *unotification.Interactor
-	mailer      *mail.Mailer
-	historyRepo domclient.JwtHistoryRepository
-	frontendURL string
+	ormer        orm.Ormer
+	newClientUC  func(persistence.QueryOrmer) *uclient.Interactor
+	newNotifUC   func(persistence.QueryOrmer) *unotification.Interactor
+	mailer       *mail.Mailer
+	historyRepo  domclient.JwtHistoryRepository
+	frontendURL  string
+	cookieSecret string
 }
 
 func NewClientHandler(
@@ -34,14 +35,16 @@ func NewClientHandler(
 	mailer *mail.Mailer,
 	historyRepo domclient.JwtHistoryRepository,
 	frontendURL string,
+	cookieSecret string,
 ) *ClientHandler {
 	return &ClientHandler{
-		ormer:       ormer,
-		newClientUC: newClientUC,
-		newNotifUC:  newNotifUC,
-		mailer:      mailer,
-		historyRepo: historyRepo,
-		frontendURL: frontendURL,
+		ormer:        ormer,
+		newClientUC:  newClientUC,
+		newNotifUC:   newNotifUC,
+		mailer:       mailer,
+		historyRepo:  historyRepo,
+		frontendURL:  frontendURL,
+		cookieSecret: cookieSecret,
 	}
 }
 
@@ -128,7 +131,7 @@ func (h *ClientHandler) Store(ctx *beecontext.Context) {
 		return
 	}
 
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 
 	var storeVo *domclient.StoreVo
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
@@ -182,7 +185,7 @@ func (h *ClientHandler) Update(ctx *beecontext.Context) {
 		return
 	}
 
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 
 	var detailVo *domclient.DetailVo
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
@@ -269,7 +272,7 @@ func (h *ClientHandler) Destroy(ctx *beecontext.Context) {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newClientUC(tx).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID})
 	}); txErr != nil {

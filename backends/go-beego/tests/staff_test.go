@@ -63,7 +63,7 @@ func TestStaff_UpdateRole(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "executor@example.com", "role": 1})
 		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
 			map[string]int{"role": 1},
-			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
@@ -74,10 +74,48 @@ func TestStaff_UpdateRole(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "exec2@example.com"})
 		w := do(http.MethodPatch, "/api/staffs/99999/updateRole",
 			map[string]int{"role": 1},
-			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
+		}
+	})
+
+	t.Run("未認証で401が返る", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "target-unauth@example.com", "role": 2})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
+			map[string]int{"role": 1},
+		)
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("want 401, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("Admin以外の実行者では403が返る", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "target-member@example.com", "role": 2})
+		executor := createStaff(t, map[string]interface{}{"email": "member-executor@example.com", "role": 2})
+		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
+			map[string]int{"role": 1},
+			withCookie("staff_id", signStaffCookie(executor.ID)),
+		)
+		if w.Code != http.StatusForbidden {
+			t.Errorf("want 403, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("無効化済みAdminの実行者では403が返る", func(t *testing.T) {
+		staff := createStaff(t, map[string]interface{}{"email": "target-deleted-admin@example.com", "role": 2})
+		executor := createStaff(t, map[string]interface{}{"email": "deleted-admin-executor@example.com", "role": 1})
+		// 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現する。
+		if _, err := testOrmer.Raw("UPDATE staffs SET deleted_at = NOW() WHERE id = ?", executor.ID).Exec(); err != nil {
+			t.Fatalf("failed to soft-delete executor: %v", err)
+		}
+		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
+			map[string]int{"role": 1},
+			withCookie("staff_id", signStaffCookie(executor.ID)),
+		)
+		if w.Code != http.StatusForbidden {
+			t.Errorf("want 403, got %d: %s", w.Code, w.Body.String())
 		}
 	})
 }
@@ -89,7 +127,7 @@ func TestStaff_Destroy(t *testing.T) {
 		staff := createStaff(t, map[string]interface{}{"email": "del@example.com"})
 		executor := createStaff(t, map[string]interface{}{"email": "exec@example.com"})
 		w := do(http.MethodDelete, fmt.Sprintf("/api/staffs/%d/delete", staff.ID), nil,
-			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
@@ -99,7 +137,7 @@ func TestStaff_Destroy(t *testing.T) {
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "exec3@example.com"})
 		w := do(http.MethodDelete, "/api/staffs/99999/delete", nil,
-			withCookie("staff_id", fmt.Sprintf("%d", executor.ID)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
