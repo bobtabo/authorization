@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"authorization-go/internal/handler"
 	"fmt"
 	"net/http"
 	"testing"
@@ -48,7 +47,7 @@ func TestStaff_UpdateRole(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "executor@example.com", "role": 1})
 		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
 			map[string]int{"role": 1},
-			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
@@ -59,7 +58,7 @@ func TestStaff_UpdateRole(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "exec2@example.com"})
 		w := do(http.MethodPatch, "/api/staffs/99999/updateRole",
 			map[string]int{"role": 1},
-			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)
@@ -81,7 +80,7 @@ func TestStaff_UpdateRole(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "member-executor@example.com", "role": 2})
 		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
 			map[string]int{"role": 1},
-			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusForbidden {
 			t.Errorf("want 403, got %d: %s", w.Code, w.Body.String())
@@ -95,7 +94,7 @@ func TestStaff_UpdateRole(t *testing.T) {
 		testDB.Exec("UPDATE staffs SET deleted_at = NOW() WHERE id = ?", executor.ID)
 		w := do(http.MethodPatch, fmt.Sprintf("/api/staffs/%d/updateRole", staff.ID),
 			map[string]int{"role": 1},
-			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusForbidden {
 			t.Errorf("want 403, got %d: %s", w.Code, w.Body.String())
@@ -110,7 +109,7 @@ func TestStaff_Destroy(t *testing.T) {
 		staff := createStaff(t, map[string]interface{}{"email": "del@example.com"})
 		executor := createStaff(t, map[string]interface{}{"email": "exec@example.com"})
 		w := do(http.MethodDelete, fmt.Sprintf("/api/staffs/%d/delete", staff.ID), nil,
-			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
@@ -120,7 +119,7 @@ func TestStaff_Destroy(t *testing.T) {
 	t.Run("存在しないIDで404が返る", func(t *testing.T) {
 		executor := createStaff(t, map[string]interface{}{"email": "exec3@example.com"})
 		w := do(http.MethodDelete, "/api/staffs/99999/delete", nil,
-			withCookie("staff_id", handler.SignStaffID(executor.ID, testCfg.App.StaffCookieSecret)),
+			withCookie("staff_id", signStaffCookie(executor.ID)),
 		)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d", w.Code)

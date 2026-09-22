@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"strings"
 
@@ -208,7 +209,8 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	c.SetCookie("staff_id", SignStaffID(staff.ID, h.cfg.App.StaffCookieSecret), maxAge, "/", "", secure, true)
+	lifetime := time.Duration(maxAge) * time.Second
+	c.SetCookie("staff_id", SignStaffID(staff.ID, h.cfg.App.StaffCookieSecret, lifetime), maxAge, "/", "", secure, true)
 	c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 
@@ -282,7 +284,8 @@ func (h *AuthHandler) GithubCallback(c *gin.Context) {
 
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	c.SetCookie("staff_id", SignStaffID(staff.ID, h.cfg.App.StaffCookieSecret), maxAge, "/", "", secure, true)
+	lifetime := time.Duration(maxAge) * time.Second
+	c.SetCookie("staff_id", SignStaffID(staff.ID, h.cfg.App.StaffCookieSecret, lifetime), maxAge, "/", "", secure, true)
 	c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 

@@ -217,6 +217,11 @@ func withCookie(name, value string) func(*http.Request) {
 	}
 }
 
+// signStaffCookie はテスト用の署名済み staff_id クッキー値を組み立てます。
+func signStaffCookie(staffID uint) string {
+	return handler.SignStaffID(staffID, testCfg.App.StaffCookieSecret, time.Hour)
+}
+
 // withBearer はリクエストに Bearer トークンを追加するオプションです。
 func withBearer(token string) func(*http.Request) {
 	return func(req *http.Request) {
