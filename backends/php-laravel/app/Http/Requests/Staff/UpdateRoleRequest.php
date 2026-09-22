@@ -37,7 +37,7 @@ class UpdateRoleRequest extends AppRequest
     {
         return [
             'role' => ['required', 'integer'],
-            'executor_id' => ['required', 'integer'],
+            'executor_id' => ['nullable', 'integer'],
         ];
     }
 }
