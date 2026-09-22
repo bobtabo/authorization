@@ -69,7 +69,7 @@ class AuthIntegrationTest {
     fun `GET api auth github redirect issues nonce cookie and embeds it in state`() = testApplication {
         application { module(TestHelper.cfg) }
         val c = createClient { followRedirects = false }
-        val response = c.get("/api/auth/github/redirect?token=inv-token")
+        val response = c.get("/auth/github/redirect?token=inv-token")
         assertEquals(HttpStatusCode.Found, response.status)
         val setCookie = response.headers.getAll(HttpHeaders.SetCookie)!!.first { it.startsWith("oauth_state=") }
         val nonce = Regex("oauth_state=([0-9a-f]+)").find(setCookie)?.groupValues?.get(1)
@@ -83,7 +83,7 @@ class AuthIntegrationTest {
     fun `GET api auth github callback without nonce cookie redirects to 400`() = testApplication {
         application { module(TestHelper.cfg) }
         val c = createClient { followRedirects = false }
-        val response = c.get("/api/auth/github/callback?code=abc&state=kotlin%7Cnonce123")
+        val response = c.get("/auth/github/callback?code=abc&state=kotlin%7Cnonce123")
         assertEquals(HttpStatusCode.Found, response.status)
         assertTrue(response.headers[HttpHeaders.Location]!!.endsWith("/error?code=400"))
     }
@@ -92,7 +92,7 @@ class AuthIntegrationTest {
     fun `GET api auth google callback with mismatched nonce redirects to 400 and clears cookie`() = testApplication {
         application { module(TestHelper.cfg) }
         val c = createClient { followRedirects = false }
-        val response = c.get("/api/auth/google/callback?code=abc&state=kotlin%7Cwrong") {
+        val response = c.get("/auth/google/callback?code=abc&state=kotlin%7Cwrong") {
             header(HttpHeaders.Cookie, "oauth_state=right")
         }
         assertEquals(HttpStatusCode.Found, response.status)
