@@ -14,7 +14,7 @@ use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use super::staff_id_from_cookie;
+use super::{sign_staff_id, staff_id_from_cookie};
 use crate::{
     state::AppState, usecase::auth::dto::LoginDto, usecase::invitation::dto::FindByTokenDto,
 };
@@ -65,10 +65,14 @@ fn consume_oauth_state(jar: CookieJar, state: Option<&str>) -> (CookieJar, Optio
     let mut parts = state.unwrap_or_default().splitn(3, '|');
     let _runtime = parts.next();
     let nonce = parts.next().unwrap_or_default();
-    if saved.is_empty() || nonce.is_empty() || !constant_time_eq(saved.as_bytes(), nonce.as_bytes()) {
+    if saved.is_empty() || nonce.is_empty() || !constant_time_eq(saved.as_bytes(), nonce.as_bytes())
+    {
         return (jar, None);
     }
-    let invitation_token = parts.next().filter(|t| !t.is_empty()).map(|t| t.to_string());
+    let invitation_token = parts
+        .next()
+        .filter(|t| !t.is_empty())
+        .map(|t| t.to_string());
     (jar, Some(invitation_token))
 }
 
@@ -249,9 +253,11 @@ pub async fn google_callback(
         }
     };
 
-    let max_age = time::Duration::seconds(cfg.app.staff_cookie_lifetime * 60);
+    let lifetime_secs = cfg.app.staff_cookie_lifetime * 60;
+    let max_age = time::Duration::seconds(lifetime_secs);
     let secure = cfg.app.env == "production";
-    let cookie = Cookie::build(("staff_id", vo.id.to_string()))
+    let signed_staff_id = sign_staff_id(vo.id, &cfg.app.staff_cookie_secret, lifetime_secs);
+    let cookie = Cookie::build(("staff_id", signed_staff_id))
         .path("/")
         .http_only(true)
         .max_age(max_age)
@@ -424,9 +430,11 @@ pub async fn github_callback(
         }
     };
 
-    let max_age = time::Duration::seconds(cfg.app.staff_cookie_lifetime * 60);
+    let lifetime_secs = cfg.app.staff_cookie_lifetime * 60;
+    let max_age = time::Duration::seconds(lifetime_secs);
     let secure = cfg.app.env == "production";
-    let cookie = Cookie::build(("staff_id", vo.id.to_string()))
+    let signed_staff_id = sign_staff_id(vo.id, &cfg.app.staff_cookie_secret, lifetime_secs);
+    let cookie = Cookie::build(("staff_id", signed_staff_id))
         .path("/")
         .http_only(true)
         .max_age(max_age)
@@ -446,7 +454,7 @@ pub async fn get_my_profile(
     State(state): State<AppState>,
     jar: CookieJar,
 ) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,
@@ -469,7 +477,7 @@ pub async fn get_my_profile(
 
 /// ログイン中スタッフの情報を返します。
 pub async fn login(State(state): State<AppState>, jar: CookieJar) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,

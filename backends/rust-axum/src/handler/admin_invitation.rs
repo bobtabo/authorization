@@ -64,7 +64,7 @@ pub async fn issue(
     jar: CookieJar,
     Query(query): Query<InvitationQuery>,
 ) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,

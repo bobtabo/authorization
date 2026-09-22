@@ -128,7 +128,7 @@ pub async fn update_role(
     Path(id): Path<u32>,
     Json(body): Json<UpdateRoleBody>,
 ) -> (StatusCode, Json<Value>) {
-    let executor_id = staff_id_from_cookie(&jar);
+    let executor_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
 
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,
@@ -151,16 +151,21 @@ pub async fn update_role(
         .await
     {
         let _ = tx.rollback().await;
-        if e.to_string() == "optimistic_lock_conflict" {
-            return (
+        return match e.to_string().as_str() {
+            "optimistic_lock_conflict" => (
                 StatusCode::CONFLICT,
                 Json(json!({"error": "optimistic_lock_conflict"})),
-            );
-        }
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": "internal_error"})),
-        );
+            ),
+            "unauthenticated" => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error": "unauthenticated"})),
+            ),
+            "forbidden" => (StatusCode::FORBIDDEN, Json(json!({"error": "forbidden"}))),
+            _ => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "internal_error"})),
+            ),
+        };
     }
 
     if tx.commit().await.is_err() {
@@ -213,7 +218,7 @@ pub async fn destroy(
     Path(id): Path<u32>,
     Json(body): Json<DestroyBody>,
 ) -> (StatusCode, Json<Value>) {
-    let executor_id = staff_id_from_cookie(&jar);
+    let executor_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
 
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,

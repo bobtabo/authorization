@@ -25,6 +25,7 @@ pub struct AppConfig {
     pub staff_cookie_lifetime: i64,
     pub notification_default_limit: i64,
     pub cache_prefix: String,
+    pub staff_cookie_secret: String,
 }
 
 #[derive(Clone)]
@@ -92,6 +93,13 @@ impl Config {
             let _ = dotenvy::from_filename(".env");
         }
 
+        let staff_cookie_secret = env::var("STAFF_COOKIE_SECRET").unwrap_or_default();
+        if staff_cookie_secret.is_empty() {
+            // 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
+            // staff_id クッキーの署名検証が無意味になるため起動時に止める。
+            panic!("STAFF_COOKIE_SECRET must be set");
+        }
+
         Config {
             app: AppConfig {
                 env: get_env("APP_ENV", "local"),
@@ -101,6 +109,7 @@ impl Config {
                 staff_cookie_lifetime: get_env_i64("STAFF_COOKIE_LIFETIME", 60),
                 notification_default_limit: get_env_i64("NOTIFICATION_DEFAULT_LIMIT", 10),
                 cache_prefix: get_env("CACHE_PREFIX", ""),
+                staff_cookie_secret,
             },
             db: DbConfig { dsn: build_dsn() },
             redis: RedisConfig {

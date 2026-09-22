@@ -32,8 +32,20 @@ impl Interactor {
         Ok((staffs.into_iter().map(to_list_item).collect(), count))
     }
 
-    /// スタッフのロールを更新します。楽観排他エラーまたは未存在の場合は Err を返します。
+    /// スタッフのロールを更新します。未認証・実行者がAdmin以外・楽観排他エラー・
+    /// 未存在の場合は Err を返します。
     pub async fn update_role(&self, dto: UpdateRoleDto) -> Result<(), UseCaseError> {
+        if dto.executor_id == 0 {
+            return Err("unauthenticated".to_string().into());
+        }
+        // find_by_id は論理削除済みを除外するため、無効化(削除)済みAdminも
+        // None として弾かれる（forbiddenと同じ扱いになる）。
+        let executor = self.repo.find_by_id(dto.executor_id).await?;
+        match executor {
+            Some(e) if e.role == 1 => {}
+            _ => return Err("forbidden".to_string().into()),
+        }
+
         self.repo
             .update_role(dto.id, dto.role, dto.executor_id, dto.version)
             .await?;
@@ -85,6 +97,10 @@ mod tests {
 
     struct MockRepo {
         find_by_condition: Mutex<Option<Vec<Staff>>>,
+        // update_role の実行者チェックで参照するAdminロール値。None は「未存在または
+        // 論理削除済み」を表す（実際のリポジトリの find_by_id も論理削除済みを除外して
+        // Noneを返すため、同じ意味で扱える）。デフォルトは有効なAdmin。
+        find_by_id_role: Mutex<Option<i32>>,
         update_role_ok: Mutex<bool>,
         restore_ok: Mutex<bool>,
         soft_delete_ok: Mutex<bool>,
@@ -94,6 +110,7 @@ mod tests {
         fn new() -> Self {
             Self {
                 find_by_condition: Mutex::new(None),
+                find_by_id_role: Mutex::new(Some(1)),
                 update_role_ok: Mutex::new(true),
                 restore_ok: Mutex::new(true),
                 soft_delete_ok: Mutex::new(true),
@@ -142,7 +159,10 @@ mod tests {
                 .unwrap_or_default())
         }
         async fn find_by_id(&self, id: u32) -> Result<Option<Staff>, DomainError> {
-            Ok(Some(make_staff(id, false)))
+            Ok(self.find_by_id_role.lock().unwrap().map(|role| Staff {
+                role,
+                ..make_staff(id, false)
+            }))
         }
         async fn find_by_provider(&self, _: i32, _: &str) -> Result<Option<Staff>, DomainError> {
             Ok(None)
@@ -226,6 +246,52 @@ mod tests {
             version: 0,
         };
         assert!(uc.update_role(dto).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_update_role_unauthenticated() {
+        let mock = Arc::new(MockRepo::new());
+        let uc = Interactor::new(mock);
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 0,
+            version: 0,
+        };
+        let err = uc.update_role(dto).await.unwrap_err();
+        assert_eq!(err.to_string(), "unauthenticated");
+    }
+
+    #[tokio::test]
+    async fn test_update_role_non_admin_executor_forbidden() {
+        let mock = Arc::new(MockRepo::new());
+        *mock.find_by_id_role.lock().unwrap() = Some(2); // Member
+        let uc = Interactor::new(mock);
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 99,
+            version: 0,
+        };
+        let err = uc.update_role(dto).await.unwrap_err();
+        assert_eq!(err.to_string(), "forbidden");
+    }
+
+    #[tokio::test]
+    async fn test_update_role_deleted_admin_executor_forbidden() {
+        // find_by_id は論理削除済みを除外するため None を返す状況を再現する
+        // （署名済みクッキーは有効だが実行者は無効化されている状態に相当）。
+        let mock = Arc::new(MockRepo::new());
+        *mock.find_by_id_role.lock().unwrap() = None;
+        let uc = Interactor::new(mock);
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 99,
+            version: 0,
+        };
+        let err = uc.update_role(dto).await.unwrap_err();
+        assert_eq!(err.to_string(), "forbidden");
     }
 
     #[tokio::test]
