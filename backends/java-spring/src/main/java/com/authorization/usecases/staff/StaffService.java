@@ -7,6 +7,7 @@ package com.authorization.usecases.staff;
 
 import com.authorization.domain.staff.condition.StaffCondition;
 import com.authorization.domain.staff.entities.Staff;
+import com.authorization.domain.staff.enums.StaffRole;
 import com.authorization.domain.staff.mappers.StaffApiMapper;
 import com.authorization.domain.staff.mappers.StaffConditionMapper;
 import com.authorization.domain.staff.repositories.StaffRepository;
@@ -97,10 +98,21 @@ public class StaffService extends AbstractService {
      * @return スタッフ権限更新ValueObject
      */
     public StaffMutationVo updateRole(StaffDto dto) {
+        if (dto.getExecutorId() == null || dto.getExecutorId() == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         if (dto.getRole() == null) {
             throw AppException.badRequest("role_invalid");
         }
 
+        StaffCondition executorCondition = new StaffCondition();
+        executorCondition.setId(dto.getExecutorId());
+        Staff executor = repository.findById(executorCondition);
+        if (executor == null || executor.getDeletedAt() != null || executor.getRole() != StaffRole.Administrator) {
+            throw AppException.forbidden("forbidden");
+        }
+
+        // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         StaffCondition condition = conditionMapper.toCondition(dto);
         Staff entity = repository.findById(condition);
         if (entity == null) {

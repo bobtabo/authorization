@@ -27,6 +27,13 @@ public class ConfigLoader {
         String envFile = System.getenv("ENV_FILE") != null ? System.getenv("ENV_FILE") : ".env";
         Dotenv env = Dotenv.configure().filename(envFile).ignoreIfMissing().load();
 
+        String staffCookieSecret = str(env, "STAFF_COOKIE_SECRET", "");
+        if (staffCookieSecret.isEmpty()) {
+            // 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
+            // staff_id クッキーの署名検証が無意味になるため起動時に止める。
+            throw new IllegalStateException("STAFF_COOKIE_SECRET must be set");
+        }
+
         return new AppConfig(
                 new AppConfig.App(
                         str(env, "APP_ENV", "local"),
@@ -35,7 +42,8 @@ public class ConfigLoader {
                         longVal(env, "STAFF_COOKIE_LIFETIME", 60),
                         longVal(env, "NOTIFICATION_DEFAULT_LIMIT", 10),
                         str(env, "CACHE_PREFIX", ""),
-                        str(env, "APP_RUNTIME", "java")),
+                        str(env, "APP_RUNTIME", "java"),
+                        staffCookieSecret),
                 new AppConfig.Db(
                         str(env, "DB_HOST", "localhost"),
                         intVal(env, "DB_PORT", 3306),

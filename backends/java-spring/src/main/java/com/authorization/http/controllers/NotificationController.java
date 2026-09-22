@@ -11,6 +11,7 @@ import com.authorization.domain.notification.valueobjects.NotificationCountsVo;
 import com.authorization.domain.notification.valueobjects.NotificationListVo;
 import com.authorization.domain.notification.valueobjects.NotificationSaveVo;
 import com.authorization.support.exceptions.AppException;
+import com.authorization.support.http.StaffSession;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.notification.NotificationService;
 import com.authorization.usecases.notification.dtos.NotificationDto;
@@ -62,10 +63,10 @@ public class NotificationController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> index(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String staffIdCookie,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) Integer limit) {
-        requireStaffId(staffId);
+        long staffId = requireStaffId(resolveStaffId(staffIdCookie));
 
         NotificationDto dto = new NotificationDto();
         dto.setStaffId(staffId);
@@ -89,8 +90,8 @@ public class NotificationController {
      */
     @PatchMapping
     public ResponseEntity<Map<String, Object>> readAll(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId) {
-        requireStaffId(staffId);
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String staffIdCookie) {
+        long staffId = requireStaffId(resolveStaffId(staffIdCookie));
 
         NotificationDto dto = new NotificationDto();
         dto.setStaffId(staffId);
@@ -108,8 +109,8 @@ public class NotificationController {
      */
     @GetMapping("/counts")
     public ResponseEntity<Map<String, Object>> counts(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId) {
-        requireStaffId(staffId);
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String staffIdCookie) {
+        long staffId = requireStaffId(resolveStaffId(staffIdCookie));
 
         NotificationDto dto = new NotificationDto();
         dto.setStaffId(staffId);
@@ -131,8 +132,8 @@ public class NotificationController {
     @PatchMapping("/{id}")
     public ResponseEntity<Map<String, Object>> read(
             @PathVariable long id,
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId) {
-        requireStaffId(staffId);
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String staffIdCookie) {
+        long staffId = requireStaffId(resolveStaffId(staffIdCookie));
 
         NotificationDto dto = new NotificationDto();
         dto.setStaffId(staffId);
@@ -153,6 +154,16 @@ public class NotificationController {
             throw AppException.unauthorized("unauthenticated");
         }
         return staffId;
+    }
+
+    /**
+     * 署名済み staff_id クッキーの値を検証し、スタッフIDを返します。
+     *
+     * @param staffIdCookie staff_id クッキーの値（署名済み）
+     * @return スタッフID、無効な場合は0
+     */
+    private long resolveStaffId(String staffIdCookie) {
+        return StaffSession.verifyStaffId(staffIdCookie, cfg.app().staffCookieSecret());
     }
 
     /**

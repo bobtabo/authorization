@@ -9,6 +9,7 @@ import com.authorization.config.AppConfig;
 import com.authorization.domain.staff.enums.Provider;
 import com.authorization.domain.staff.valueobjects.StaffVo;
 import com.authorization.support.exceptions.AppException;
+import com.authorization.support.http.StaffSession;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.auth.AuthService;
 import com.authorization.usecases.auth.dtos.AuthUserDto;
@@ -80,12 +81,13 @@ public class AuthController {
     /**
      * ログイン情報を返します（staff_id クッキーで認証済みのユーザー）。
      *
-     * @param staffId staff_id クッキーの値
+     * @param staffIdCookie staff_id クッキーの値（署名済み）
      * @return JSON レスポンス
      */
     @GetMapping("/api/auth/login")
     public ResponseEntity<Map<String, Object>> login(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId) {
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String staffIdCookie) {
+        long staffId = StaffSession.verifyStaffId(staffIdCookie, cfg.app().staffCookieSecret());
         if (staffId == 0L) {
             throw AppException.unauthorized("unauthenticated");
         }
@@ -291,12 +293,13 @@ public class AuthController {
     /**
      * 自分自身のプロフィールを返します（staff_id クッキーで認証済みのユーザー）。
      *
-     * @param staffId staff_id クッキーの値
+     * @param staffIdCookie staff_id クッキーの値（署名済み）
      * @return JSON レスポンス
      */
     @GetMapping("/api/auth/me")
     public ResponseEntity<Map<String, Object>> getMyProfile(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long staffId) {
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String staffIdCookie) {
+        long staffId = StaffSession.verifyStaffId(staffIdCookie, cfg.app().staffCookieSecret());
         if (staffId == 0L) {
             throw AppException.unauthorized("unauthenticated");
         }
@@ -333,12 +336,13 @@ public class AuthController {
      */
     private ResponseEntity<Void> redirectWithStaffCookie(long staffId) {
         boolean secure = "production".equals(cfg.app().env());
-        int maxAge = (int) (cfg.app().staffCookieLifetime() * 60);
-        ResponseCookie cookie = ResponseCookie.from("staff_id", String.valueOf(staffId))
+        long maxAgeSeconds = cfg.app().staffCookieLifetime() * 60;
+        String signed = StaffSession.signStaffId(staffId, cfg.app().staffCookieSecret(), maxAgeSeconds);
+        ResponseCookie cookie = ResponseCookie.from("staff_id", signed)
                 .path("/")
                 .httpOnly(true)
                 .secure(secure)
-                .maxAge(maxAge)
+                .maxAge(maxAgeSeconds)
                 .build();
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header("Set-Cookie", cookie.toString())

@@ -47,7 +47,7 @@ class NotificationIntegrationTest {
 
         EntityExchangeResult<Map> result = client.get()
                 .uri("/api/notifications/counts")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();
@@ -78,7 +78,7 @@ class NotificationIntegrationTest {
 
         EntityExchangeResult<Map> result = client.get()
                 .uri("/api/notifications?limit=10")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();
@@ -106,7 +106,7 @@ class NotificationIntegrationTest {
 
         EntityExchangeResult<Map> result = client.patch()
                 .uri("/api/notifications")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();
@@ -137,7 +137,7 @@ class NotificationIntegrationTest {
 
         EntityExchangeResult<Map> result = client.patch()
                 .uri("/api/notifications/" + notif.id())
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();

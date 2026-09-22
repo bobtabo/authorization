@@ -5,8 +5,10 @@
  */
 package com.authorization.http.controllers;
 
+import com.authorization.config.AppConfig;
 import com.authorization.domain.invitation.valueobjects.InvitationVo;
 import com.authorization.support.exceptions.AppException;
+import com.authorization.support.http.StaffSession;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.invitation.InvitationService;
 import com.authorization.usecases.invitation.dtos.InvitationDto;
@@ -34,14 +36,17 @@ public class AdminInvitationController {
             new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 
     private final InvitationService service;
+    private final AppConfig cfg;
 
     /**
      * コンストラクタ。
      *
      * @param service 招待Service
+     * @param cfg アプリケーション設定
      */
-    public AdminInvitationController(InvitationService service) {
+    public AdminInvitationController(InvitationService service, AppConfig cfg) {
         this.service = service;
+        this.cfg = cfg;
     }
 
     /**
@@ -62,14 +67,15 @@ public class AdminInvitationController {
     /**
      * 招待 URL を発行します。
      *
-     * @param executorId staff_id クッキーの値
+     * @param executorIdCookie staff_id クッキーの値（署名済み）
      * @param role 権限（1=管理者, 2=メンバー。省略時は2）
      * @return JSON レスポンス
      */
     @GetMapping("/issue")
     public ResponseEntity<Map<String, Object>> issue(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long executorId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestParam(required = false) String role) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
         if (executorId == 0L) {
             throw AppException.unauthorized("unauthenticated");
         }

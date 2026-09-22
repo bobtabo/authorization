@@ -96,7 +96,7 @@ class ClientIntegrationTest {
 
         EntityExchangeResult<Map> result = client.post()
                 .uri("/api/clients/store")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of(
                         "name", "新規クライアント株式会社",
@@ -121,7 +121,7 @@ class ClientIntegrationTest {
 
         EntityExchangeResult<Map> result = client.put()
                 .uri("/api/clients/" + c.id() + "/update")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("name", "更新後クライアント名", "version", c.version()))
                 .exchange()
@@ -139,7 +139,7 @@ class ClientIntegrationTest {
 
         EntityExchangeResult<Map> result = client.method(org.springframework.http.HttpMethod.DELETE)
                 .uri("/api/clients/" + c.id() + "/delete")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("version", c.version()))
                 .exchange()
