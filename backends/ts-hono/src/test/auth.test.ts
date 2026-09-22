@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 import { createApp } from "../app.js";
-import { makeStaff, makeInvitation } from "./helpers.js";
+import { makeStaff, makeInvitation, signStaffCookie } from "./helpers.js";
+import { signStaffId } from "../lib/staffSession.js";
 
 const app = createApp();
 
@@ -9,7 +10,7 @@ describe("Auth", () => {
     test("認証済みでプロフィールが取得できる", async () => {
       const staff = await makeStaff();
       const res = await app.request("/api/auth/me", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as Record<string, unknown>;
@@ -19,6 +20,44 @@ describe("Auth", () => {
 
     test("未認証で401が返る", async () => {
       const res = await app.request("/api/auth/me");
+      expect(res.status).toBe(401);
+    });
+
+    test("署名の無い改ざんクッキーでは401が返る", async () => {
+      const staff = await makeStaff();
+      const res = await app.request("/api/auth/me", {
+        headers: { Cookie: `staff_id=${staff.id}` },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    test("署名部分が改ざんされたクッキーでは401が返る", async () => {
+      const staff = await makeStaff();
+      const signed = signStaffCookie(staff.id);
+      const [idPart, expPart, sig] = signed.split(".");
+      const tampered = `${idPart}.${expPart}.${sig.slice(0, -1)}${sig.at(-1) === "0" ? "1" : "0"}`;
+      const res = await app.request("/api/auth/me", {
+        headers: { Cookie: `staff_id=${tampered}` },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    test("別のシークレットで署名されたクッキーでは401が返る", async () => {
+      const staff = await makeStaff();
+      const forged = signStaffId(staff.id, "wrong-secret", 3600);
+      const res = await app.request("/api/auth/me", {
+        headers: { Cookie: `staff_id=${forged}` },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    test("有効期限切れのクッキーでは401が返る", async () => {
+      const staff = await makeStaff();
+      const secret = process.env.STAFF_COOKIE_SECRET ?? "test-staff-cookie-secret";
+      const expired = signStaffId(staff.id, secret, -1);
+      const res = await app.request("/api/auth/me", {
+        headers: { Cookie: `staff_id=${expired}` },
+      });
       expect(res.status).toBe(401);
     });
   });

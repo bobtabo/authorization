@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { createApp } from "../app.js";
-import { makeStaff, makeNotification } from "./helpers.js";
+import { makeStaff, makeNotification, signStaffCookie } from "./helpers.js";
 
 const app = createApp();
 
@@ -11,7 +11,7 @@ describe("Notifications", () => {
       await makeNotification(staff.id, "通知1");
       await makeNotification(staff.id, "通知2");
       const res = await app.request("/api/notifications/counts", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as Record<string, number>;
@@ -29,7 +29,7 @@ describe("Notifications", () => {
       const staff = await makeStaff();
       await makeNotification(staff.id, "通知A");
       const res = await app.request("/api/notifications", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as { items: Array<Record<string, unknown>> };
@@ -42,7 +42,7 @@ describe("Notifications", () => {
       await makeNotification(staff.id, "古い通知");
       await makeNotification(staff.id, "新しい通知");
       const res = await app.request("/api/notifications", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as { items: Array<Record<string, unknown>> };
@@ -53,7 +53,7 @@ describe("Notifications", () => {
       const staff = await makeStaff({ email: `url-notif-${Date.now()}@example.com` });
       await makeNotification(staff.id, "クライアント登録", "/clients/show?id=1");
       const res = await app.request("/api/notifications", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as { items: Array<Record<string, unknown>> };
@@ -73,7 +73,7 @@ describe("Notifications", () => {
       await makeNotification(staff.id, "通知B");
       const res = await app.request("/api/notifications", {
         method: "PATCH",
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const data = await res.json() as { updated: number };
@@ -87,7 +87,7 @@ describe("Notifications", () => {
       const n = await makeNotification(staff.id);
       const res = await app.request(`/api/notifications/${n.id}`, {
         method: "PATCH",
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
     });
@@ -97,7 +97,7 @@ describe("Notifications", () => {
       const n = await makeNotification(staff.id, "既読済み通知", undefined, true);
       const res = await app.request(`/api/notifications/${n.id}`, {
         method: "PATCH",
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
     });
@@ -117,7 +117,7 @@ describe("Notifications", () => {
       const n = await makeNotification(other.id);
       const res = await app.request(`/api/notifications/${n.id}`, {
         method: "PATCH",
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(404);
     });

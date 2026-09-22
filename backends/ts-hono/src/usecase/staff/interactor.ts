@@ -3,7 +3,7 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { badRequest, notFound } from "../../lib/errors.js";
+import { badRequest, forbidden, notFound, unauthorized } from "../../lib/errors.js";
 import type { StaffRepository } from "../../domain/staff/repository.js";
 import type { StaffListItem } from "../../domain/staff/valueObjects.js";
 import { mapper } from "../../support/mapper.js";
@@ -39,6 +39,10 @@ export class StaffInteractor {
    * @throws AppError 自分自身のロール更新、またはスタッフが存在しない場合
    */
   async updateRole(staffId: number, role: number, version: number, executorId: number): Promise<void> {
+    if (!executorId) throw unauthorized();
+    // 無効化（論理削除）はログイン可否にのみ影響するため、実行者チェックも無効スタッフを含めて見る。
+    const executor = await this.repo.findByIdUnscoped(executorId);
+    if (!executor || executor.deletedAt !== null || executor.role !== 1) throw forbidden();
     if (staffId === executorId) throw badRequest("cannot_update_own_role");
     // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
     const staff = await this.repo.findByIdUnscoped(staffId);

@@ -5,17 +5,17 @@
  */
 import type { Context } from "hono";
 import { getCookie } from "hono/cookie";
+import { config } from "../config.js";
+import { verifyStaffId } from "./staffSession.js";
 
 /**
- * Cookie からスタッフ ID を取得します。
+ * Cookie から署名済みスタッフ ID を取得します。
  * @param c - Hono コンテキスト
- * @returns スタッフ ID（未設定または不正値の場合は 0）
+ * @returns 検証済みのスタッフ ID（未設定・不正値・期限切れの場合は 0）
  */
 export function getStaffIdFromCookie(c: Context): number {
   const raw = getCookie(c, "staff_id");
-  if (!raw) return 0;
-  const n = parseInt(raw, 10);
-  return isNaN(n) ? 0 : n;
+  return verifyStaffId(raw, config.app.staffCookieSecret);
 }
 
 /**
