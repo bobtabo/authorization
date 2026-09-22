@@ -1,6 +1,8 @@
 // This is a program developed by BobTabo.
 //
 // Copyright (c) 2026 BobTabo. All Rights Reserved.
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Authorization.Api.Config;
 using Authorization.Api.Domain.Staff;
@@ -183,6 +185,43 @@ public sealed class AuthHandler(
 {
     private const string GoogleAuthUrl = "https://accounts.google.com/o/oauth2/auth";
     private const string GithubAuthorizeUrl = "https://github.com/login/oauth/authorize";
+    private const string OAuthStateCookie = "oauth_state";
+    private static readonly TimeSpan OAuthStateCookieMaxAge = TimeSpan.FromMinutes(10);
+
+    /// <summary>nonce を生成して HttpOnly クッキーに保存し、state（`runtime|nonce` または `runtime|nonce|招待トークン`）を返します。</summary>
+    /// <param name="req">HTTPリクエスト（招待トークンをtokenクエリから取得）</param>
+    /// <returns>stateパラメータ</returns>
+    private string IssueOAuthState(HttpRequest req)
+    {
+        var nonce = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
+        req.HttpContext.Response.Cookies.Append(OAuthStateCookie, nonce, new CookieOptions
+        {
+            MaxAge   = OAuthStateCookieMaxAge,
+            Path     = "/",
+            Secure   = cfg.App.Env == "production",
+            HttpOnly = true,
+            SameSite = SameSiteMode.Lax,
+        });
+        var token = Query(req, "token");
+        return string.IsNullOrEmpty(token) ? $"{cfg.App.Runtime}|{nonce}" : $"{cfg.App.Runtime}|{nonce}|{token}";
+    }
+
+    /// <summary>state の nonce をクッキーと照合してクッキーを破棄し、招待トークンと照合結果を返します。</summary>
+    /// <param name="req">HTTPリクエスト（state クエリと oauth_state クッキーを使用）</param>
+    /// <returns>招待トークン（無ければnull）と照合結果</returns>
+    private static (string? InvitationToken, bool Valid) ConsumeOAuthState(HttpRequest req)
+    {
+        var saved = req.Cookies[OAuthStateCookie] ?? "";
+        req.HttpContext.Response.Cookies.Append(OAuthStateCookie, "", new CookieOptions { MaxAge = TimeSpan.Zero, Path = "/", HttpOnly = true });
+
+        var parts = (Query(req, "state") ?? "").Split('|', 3);
+        var nonce = parts.Length >= 2 ? parts[1] : "";
+        if (saved.Length == 0 || nonce.Length == 0) return (null, false);
+        if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(saved), Encoding.UTF8.GetBytes(nonce))) return (null, false);
+
+        var invitationToken = parts.Length == 3 && parts[2].Length > 0 ? parts[2] : null;
+        return (invitationToken, true);
+    }
 
     /// <summary>フロントエンドのエラーページURLを組み立てます。</summary>
     /// <param name="code">エラーコード（表示用）</param>
@@ -194,8 +233,7 @@ public sealed class AuthHandler(
     /// <returns>Google認可画面へのリダイレクト</returns>
     public IResult GoogleRedirect(HttpRequest req)
     {
-        var token = Query(req, "token");
-        var state = string.IsNullOrEmpty(token) ? "state" : token;
+        var state = IssueOAuthState(req);
         var url = QueryHelpers.AddQueryString(GoogleAuthUrl, new Dictionary<string, string?>
         {
             ["client_id"] = cfg.OAuth.GoogleClientId,
@@ -214,11 +252,11 @@ public sealed class AuthHandler(
     /// <returns>クッキー付与済みのフロントエンドへのリダイレクト、失敗時はエラーページへのリダイレクト</returns>
     public async Task<IResult> GoogleCallbackAsync(HttpRequest req, CancellationToken ct)
     {
+        var (invitationToken, valid) = ConsumeOAuthState(req);
+        if (!valid) return Results.Redirect(ErrorUrl(400));
+
         var code = Query(req, "code");
         if (string.IsNullOrEmpty(code)) return Results.Redirect(ErrorUrl(500));
-
-        var state = Query(req, "state");
-        var invitationToken = !string.IsNullOrEmpty(state) && state != "state" ? state : null;
 
         OAuthUserInfo info;
         try
@@ -240,8 +278,7 @@ public sealed class AuthHandler(
     /// <returns>GitHub認可画面へのリダイレクト</returns>
     public IResult GithubRedirect(HttpRequest req)
     {
-        var token = Query(req, "token");
-        var state = string.IsNullOrEmpty(token) ? cfg.App.Runtime : $"{cfg.App.Runtime}|{token}";
+        var state = IssueOAuthState(req);
         var url = QueryHelpers.AddQueryString(GithubAuthorizeUrl, new Dictionary<string, string?>
         {
             ["client_id"] = cfg.OAuth.GithubClientId,
@@ -253,16 +290,16 @@ public sealed class AuthHandler(
     }
 
     /// <summary>GitHub OAuth のコールバックを処理し、ログインしてクッキーを付与しリダイレクトします。</summary>
-    /// <param name="req">HTTPリクエスト（code/stateクエリを使用。stateは`runtime|招待トークン`形式）</param>
+    /// <param name="req">HTTPリクエスト（code/stateクエリを使用。stateは`runtime|nonce|招待トークン`形式）</param>
     /// <param name="ct">キャンセレーショントークン</param>
     /// <returns>クッキー付与済みのフロントエンドへのリダイレクト、失敗時はエラーページへのリダイレクト</returns>
     public async Task<IResult> GithubCallbackAsync(HttpRequest req, CancellationToken ct)
     {
+        var (invitationToken, valid) = ConsumeOAuthState(req);
+        if (!valid) return Results.Redirect(ErrorUrl(400));
+
         var code = Query(req, "code");
         if (string.IsNullOrEmpty(code)) return Results.Redirect(ErrorUrl(500));
-
-        var parts = (Query(req, "state") ?? "").Split('|', 2);
-        var invitationToken = parts.Length == 2 && parts[1].Length > 0 ? parts[1] : null;
 
         OAuthUserInfo info;
         try

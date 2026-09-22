@@ -3,8 +3,10 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { Hono } from "hono";
-import { setCookie, deleteCookie } from "hono/cookie";
+import { getCookie, setCookie, deleteCookie } from "hono/cookie";
+import type { Context } from "hono";
 import { config } from "../config.js";
 import { AppError } from "../lib/errors.js";
 import { badRequest, unauthorized } from "../lib/errors.js";
@@ -32,6 +34,43 @@ const GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
 const GITHUB_USER_URL = "https://api.github.com/user";
 const GITHUB_EMAILS_URL = "https://api.github.com/user/emails";
 
+// OAuth 認可開始時に発行する nonce を保持するクッキー名と有効期間（秒）
+const OAUTH_STATE_COOKIE = "oauth_state";
+const OAUTH_STATE_COOKIE_MAX_AGE = 600;
+
+/**
+ * nonce を生成してクッキーに保存し、state（"{runtime}|{nonce}" または "{runtime}|{nonce}|{token}"）を返します。
+ */
+function issueOAuthState(c: Context): string {
+  const nonce = randomBytes(16).toString("hex");
+  setCookie(c, OAUTH_STATE_COOKIE, nonce, {
+    maxAge: OAUTH_STATE_COOKIE_MAX_AGE,
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: config.app.env === "production",
+    path: "/",
+  });
+  const token = c.req.query("token");
+  return token ? `${config.app.runtime}|${nonce}|${token}` : `${config.app.runtime}|${nonce}`;
+}
+
+/**
+ * state の nonce をクッキーと照合し、クッキーを破棄します。
+ * 照合に失敗した場合は ok=false を返します。
+ */
+function consumeOAuthState(c: Context): { ok: boolean; invitationToken?: string } {
+  const saved = getCookie(c, OAUTH_STATE_COOKIE) ?? "";
+  deleteCookie(c, OAUTH_STATE_COOKIE, { path: "/" });
+
+  const [, nonce = "", invitation = ""] = (c.req.query("state") ?? "").split("|", 3);
+  if (!saved || !nonce) return { ok: false };
+  const a = Buffer.from(saved);
+  const b = Buffer.from(nonce);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return { ok: false };
+
+  return { ok: true, invitationToken: invitation || undefined };
+}
+
 app.get("/auth/me", async (c) => {
   const staffId = getStaffIdFromCookie(c);
   if (!staffId) throw unauthorized("unauthenticated");
@@ -58,8 +97,7 @@ app.get("/auth/invitation/:token", async (c) => {
 });
 
 oauthApp.get("/auth/google/redirect", (c) => {
-  const token = c.req.query("token");
-  const oauthState = token ? `${config.app.runtime}|${token}` : config.app.runtime;
+  const oauthState = issueOAuthState(c);
   const params = new URLSearchParams({
     client_id: config.oauth.googleClientId,
     redirect_uri: config.oauth.googleRedirectUrl,
@@ -72,10 +110,10 @@ oauthApp.get("/auth/google/redirect", (c) => {
 });
 
 oauthApp.get("/auth/google/callback", async (c) => {
+  const { ok, invitationToken } = consumeOAuthState(c);
+  if (!ok) return c.redirect(`${config.app.frontendUrl}/error?code=400`, 302);
   const code = c.req.query("code");
   if (!code) throw badRequest("code_required");
-  const stateVal = c.req.query("state");
-  const invitationToken = stateVal?.includes("|") ? stateVal.split("|")[1] : undefined;
 
   const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
@@ -116,8 +154,7 @@ oauthApp.get("/auth/google/callback", async (c) => {
 });
 
 oauthApp.get("/auth/github/redirect", (c) => {
-  const token = c.req.query("token");
-  const oauthState = token ? `${config.app.runtime}|${token}` : config.app.runtime;
+  const oauthState = issueOAuthState(c);
   const params = new URLSearchParams({
     client_id: config.oauth.githubClientId,
     redirect_uri: config.oauth.githubRedirectUrl,
@@ -128,10 +165,10 @@ oauthApp.get("/auth/github/redirect", (c) => {
 });
 
 oauthApp.get("/auth/github/callback", async (c) => {
+  const { ok, invitationToken } = consumeOAuthState(c);
+  if (!ok) return c.redirect(`${config.app.frontendUrl}/error?code=400`, 302);
   const code = c.req.query("code");
   if (!code) throw badRequest("code_required");
-  const stateVal = c.req.query("state");
-  const invitationToken = stateVal?.includes("|") ? stateVal.split("|")[1] : undefined;
 
   const tokenRes = await fetch(GITHUB_TOKEN_URL, {
     method: "POST",

@@ -4,11 +4,18 @@
 #
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
+require "securerandom"
+
 module Authorization
   module Actions
     # アクション共通の処理を提供するモジュールです。
     module Base
       TIME_FORMAT = "%Y-%m-%d %H:%M"
+
+      # OAuth 認可開始時に発行する nonce を保持するクッキー名
+      OAUTH_STATE_COOKIE = "oauth_state"
+      # nonce クッキーの有効期間（秒）
+      OAUTH_STATE_COOKIE_MAX_AGE = 600
 
       # @return [AppContainer] DI コンテナのインスタンス
       def container
@@ -51,6 +58,51 @@ module Authorization
         response.status = status
         response.format = :json
         response.body   = data.to_json
+      end
+
+      # nonce を生成してクッキーに保存し、state（"{runtime}|{nonce}" または "{runtime}|{nonce}|{token}"）を返します。
+      #
+      # @param request [Hanami::Action::Request] リクエストオブジェクト
+      # @param response [Hanami::Action::Response] レスポンスオブジェクト
+      # @param cfg [AppConfig] アプリ設定
+      # @return [String] state パラメータ
+      def issue_oauth_state(request, response, cfg)
+        nonce       = SecureRandom.hex(16)
+        secure_flag = cfg.app.env == "production" ? "; Secure" : ""
+        append_set_cookie(
+          response,
+          "#{OAUTH_STATE_COOKIE}=#{nonce}; Path=/; HttpOnly; Max-Age=#{OAUTH_STATE_COOKIE_MAX_AGE}#{secure_flag}; SameSite=Lax",
+        )
+        token = request.params[:token].to_s
+        token.empty? ? "#{cfg.app.runtime}|#{nonce}" : "#{cfg.app.runtime}|#{nonce}|#{token}"
+      end
+
+      # state の nonce をクッキーと照合してクッキーを破棄し、[招待トークン, 照合結果] を返します。
+      #
+      # @param request [Hanami::Action::Request] リクエストオブジェクト
+      # @param response [Hanami::Action::Response] レスポンスオブジェクト
+      # @return [Array(String, Boolean)] 招待トークン（無ければ nil）と照合結果
+      def consume_oauth_state(request, response)
+        saved = request.cookies[OAUTH_STATE_COOKIE].to_s
+        append_set_cookie(response, "#{OAUTH_STATE_COOKIE}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax")
+
+        parts = request.params[:state].to_s.split("|", 3)
+        nonce = parts[1].to_s
+        return [nil, false] if saved.empty? || nonce.empty?
+        return [nil, false] unless Rack::Utils.secure_compare(saved, nonce)
+
+        invitation_token = parts[2].to_s
+        [invitation_token.empty? ? nil : invitation_token, true]
+      end
+
+      # Set-Cookie ヘッダーを追記します（Rack 3 の配列ヘッダー対応）。
+      #
+      # @param response [Hanami::Action::Response] レスポンスオブジェクト
+      # @param cookie [String] Set-Cookie 値
+      # @return [void]
+      def append_set_cookie(response, cookie)
+        current = response.headers["Set-Cookie"]
+        response.headers["Set-Cookie"] = current.nil? ? cookie : Array(current) + [cookie]
       end
 
       # ROM トランザクションを実行します。

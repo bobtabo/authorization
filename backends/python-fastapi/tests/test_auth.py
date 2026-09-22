@@ -39,3 +39,61 @@ class TestInvitation:
         assert res.status_code == 200
         data = res.json()
         assert data["token"] == inv.token
+
+
+class TestOAuthState:
+    def test_認可開始時にnonceクッキーを発行しstateに含める(self, client):
+        res = client.get("/auth/google/redirect?token=inv-token", follow_redirects=False)
+        assert res.status_code == 302
+        nonce = res.cookies.get("oauth_state")
+        assert nonce
+        assert "httponly" in res.headers["set-cookie"].lower()
+        assert f"state=python%7C{nonce}%7Cinv-token" in res.headers["location"]
+
+    def test_nonceクッキーが無い場合は400エラーページへリダイレクトする(self, client):
+        res = client.get("/auth/google/callback?code=x&state=python%7Cabc", follow_redirects=False)
+        assert res.status_code == 302
+        assert res.headers["location"].endswith("/error?code=400")
+
+    def test_nonceが一致しない場合は400エラーページへリダイレクトする(self, client):
+        res = client.get(
+            "/auth/github/callback?code=x&state=python%7Cabc",
+            cookies={"oauth_state": "xyz"}, follow_redirects=False,
+        )
+        assert res.status_code == 302
+        assert res.headers["location"].endswith("/error?code=400")
+
+    def test_stateにnonceセグメントが無い場合は400エラーページへリダイレクトする(self, client):
+        res = client.get(
+            "/auth/github/callback?code=x&state=python",
+            cookies={"oauth_state": "abc"}, follow_redirects=False,
+        )
+        assert res.status_code == 302
+        assert res.headers["location"].endswith("/error?code=400")
+
+    def test_非ASCIIのnonceでも500にならず400エラーページへリダイレクトする(self, client):
+        res = client.get(
+            "/auth/github/callback?code=x&state=python%7C%E3%81%82",
+            cookies={"oauth_state": "abc"}, follow_redirects=False,
+        )
+        assert res.status_code == 302
+        assert res.headers["location"].endswith("/error?code=400")
+        assert 'oauth_state=""' in res.headers["set-cookie"]
+
+    def test_nonce一致後にcodeが空でもnonceクッキーを破棄する(self, client):
+        res = client.get(
+            "/auth/google/callback?state=python%7Cabc",
+            cookies={"oauth_state": "abc"}, follow_redirects=False,
+        )
+        assert res.status_code == 400
+        assert res.json()["message"] == "code_required"
+        assert 'oauth_state=""' in res.headers["set-cookie"]
+
+    def test_nonce一致後にトークン交換で失敗してもnonceクッキーを破棄する(self, client):
+        res = client.get(
+            "/auth/github/callback?code=invalid&state=python%7Cabc",
+            cookies={"oauth_state": "abc"}, follow_redirects=False,
+        )
+        assert res.status_code == 302
+        assert res.headers["location"].endswith("/error?code=500")
+        assert 'oauth_state=""' in res.headers["set-cookie"]

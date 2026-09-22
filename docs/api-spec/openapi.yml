@@ -113,7 +113,10 @@ paths:
     get:
       operationId: googleRedirect
       summary: Googleログインページへリダイレクトします
-      description: ブラウザリダイレクトのため /api 外に配置
+      description: |
+        ブラウザリダイレクトのため /api 外に配置。
+        CSRF 対策として暗号学的に安全な nonce を生成し、HttpOnly クッキー `oauth_state`（有効期限 10 分）に保存したうえで
+        state パラメータ（`{runtime}|{nonce}` または招待時 `{runtime}|{nonce}|{token}`）に埋め込む。
       tags:
         - auth
       security: []
@@ -160,13 +163,17 @@ paths:
     get:
       operationId: googleCallback
       summary: Googleログインからのコールバックを受け取ります
-      description: ブラウザリダイレクトのため /api 外に配置
+      description: |
+        ブラウザリダイレクトのため /api 外に配置。
+        state に含まれる nonce と `oauth_state` クッキーの値を定数時間比較で検証し、
+        クッキー欠落・state 不正・nonce 不一致の場合は /error?code=400 へリダイレクトする。
+        検証後は成否を問わず `oauth_state` クッキーを破棄する。
       tags:
         - auth
       security: []
       responses:
         '302':
-          description: ログイン成功後フロントエンドへリダイレクト
+          description: ログイン成功後フロントエンドへリダイレクト（state 検証失敗時は /error?code=400 へリダイレクト）
         '403':
           description: 招待フローで招待トークンが無効な場合
         '500':
@@ -211,6 +218,8 @@ paths:
         ブラウザリダイレクトのため /api 外に配置。
         state パラメータにバックエンド識別子（例: go-gin）を含め、
         GitHub からのコールバックを正しいバックエンドへ振り分けるために使用する。
+        あわせて CSRF 対策として暗号学的に安全な nonce を生成し、HttpOnly クッキー `oauth_state`（有効期限 10 分）に保存したうえで
+        state（`{runtime}|{nonce}` または招待時 `{runtime}|{nonce}|{token}`）に埋め込む。
       tags:
         - auth
       security: []
@@ -269,6 +278,9 @@ paths:
         GitHub は redirect_uri を1つしか登録できないため、フロントエンドの
         /auth/github/callback（Next.js ディスパッチャー）が state を読み取り、
         /function/{backend}/auth/github/callback へ転送してからこのエンドポイントに到達する。
+        state に含まれる nonce と `oauth_state` クッキーの値を定数時間比較で検証し、
+        クッキー欠落・state 不正・nonce 不一致の場合は /error?code=400 へリダイレクトする。
+        検証後は成否を問わず `oauth_state` クッキーを破棄する。
       tags:
         - auth
       security: []
@@ -284,10 +296,10 @@ paths:
           required: true
           schema:
             type: string
-          description: "バックエンド識別子（例: go-gin）。ディスパッチャーがルーティングに使用する"
+          description: "`{runtime}|{nonce}` または `{runtime}|{nonce}|{token}`。先頭のバックエンド識別子（例: go-gin）をディスパッチャーがルーティングに使用し、nonce を CSRF 検証に使用する"
       responses:
         '302':
-          description: ログイン成功後フロントエンドへリダイレクト
+          description: ログイン成功後フロントエンドへリダイレクト（state 検証失敗時は /error?code=400 へリダイレクト）
         '403':
           description: 招待フローで招待トークンが無効な場合
         '500':

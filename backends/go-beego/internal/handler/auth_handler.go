@@ -15,8 +15,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"strings"
-
 	beecontext "github.com/beego/beego/v2/server/web/context"
 	"github.com/beego/beego/v2/client/orm"
 	"golang.org/x/oauth2"
@@ -126,24 +124,23 @@ func (h *AuthHandler) Invitation(ctx *beecontext.Context) {
 }
 
 func (h *AuthHandler) GoogleRedirect(ctx *beecontext.Context) {
-	oauthState := ctx.Input.Query("token")
-	if oauthState == "" {
-		oauthState = "state"
+	state, ok := h.issueOAuthState(ctx)
+	if !ok {
+		return
 	}
-	url := h.oauthConfig.AuthCodeURL(oauthState, oauth2.AccessTypeOnline)
+	url := h.oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	http.Redirect(ctx.ResponseWriter, ctx.Request, url, http.StatusTemporaryRedirect)
 }
 
 func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
+	invitationToken, ok := h.consumeOAuthState(ctx)
+	if !ok {
+		return
+	}
 	code := ctx.Input.Query("code")
 	if code == "" {
 		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
 		return
-	}
-	stateVal := ctx.Input.Query("state")
-	invitationToken := ""
-	if stateVal != "" && stateVal != "state" {
-		invitationToken = stateVal
 	}
 
 	oauthToken, err := h.oauthConfig.Exchange(context.Background(), code)
@@ -194,26 +191,23 @@ func (h *AuthHandler) GoogleCallback(ctx *beecontext.Context) {
 }
 
 func (h *AuthHandler) GithubRedirect(ctx *beecontext.Context) {
-	token := ctx.Input.Query("token")
-	state := h.cfg.OAuth.Runtime
-	if token != "" {
-		state = h.cfg.OAuth.Runtime + "|" + token
+	state, ok := h.issueOAuthState(ctx)
+	if !ok {
+		return
 	}
 	url := h.githubOauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	http.Redirect(ctx.ResponseWriter, ctx.Request, url, http.StatusTemporaryRedirect)
 }
 
 func (h *AuthHandler) GithubCallback(ctx *beecontext.Context) {
+	invitationToken, ok := h.consumeOAuthState(ctx)
+	if !ok {
+		return
+	}
 	code := ctx.Input.Query("code")
 	if code == "" {
 		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
 		return
-	}
-	stateVal := ctx.Input.Query("state")
-	invitationToken := ""
-	parts := strings.SplitN(stateVal, "|", 2)
-	if len(parts) == 2 {
-		invitationToken = parts[1]
 	}
 
 	oauthToken, err := h.githubOauthConfig.Exchange(context.Background(), code)
@@ -364,4 +358,32 @@ func fetchGithubUserInfo(cfg *oauth2.Config, token *oauth2.Token) (map[string]st
 		"email":  email,
 		"avatar": avatar,
 	}, nil
+}
+
+// issueOAuthState は nonce を生成してクッキーに保存し、state パラメータを返します。
+// 生成に失敗した場合はエラーページへリダイレクトして ok=false を返します。
+func (h *AuthHandler) issueOAuthState(ctx *beecontext.Context) (string, bool) {
+	nonce, err := newOAuthNonce()
+	if err != nil {
+		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=500", http.StatusTemporaryRedirect)
+		return "", false
+	}
+	secure := h.cfg.App.Env == "production"
+	ctx.SetCookie(oauthStateCookieName, nonce, oauthStateCookieMaxAge, "/", "", secure, true, "Lax")
+	return buildOAuthState(h.cfg.OAuth.Runtime, nonce, ctx.Input.Query("token")), true
+}
+
+// consumeOAuthState は state の nonce をクッキーと照合し、招待トークンを返します。
+// 照合に失敗した場合はエラーページへリダイレクトして ok=false を返します。クッキーは常に破棄します。
+func (h *AuthHandler) consumeOAuthState(ctx *beecontext.Context) (string, bool) {
+	secure := h.cfg.App.Env == "production"
+	saved := ctx.GetCookie(oauthStateCookieName)
+	ctx.SetCookie(oauthStateCookieName, "", -1, "/", "", secure, true, "Lax")
+
+	nonce, invitationToken, ok := parseOAuthState(ctx.Input.Query("state"))
+	if !ok || !verifyOAuthNonce(saved, nonce) {
+		http.Redirect(ctx.ResponseWriter, ctx.Request, h.cfg.App.FrontendURL+"/error?code=400", http.StatusTemporaryRedirect)
+		return "", false
+	}
+	return invitationToken, true
 }

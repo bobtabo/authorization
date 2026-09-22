@@ -43,6 +43,36 @@ RSpec.describe "Auth" do
     end
   end
 
+  describe "OAuth state nonce" do
+    it "リダイレクト時に nonce を含む state と oauth_state クッキーを発行する" do
+      get "/auth/github/redirect?token=inv-token"
+      expect(last_response.status).to eq(302)
+      cookie = Array(last_response.headers["Set-Cookie"]).join("\n")
+      nonce = cookie[/oauth_state=([0-9a-f]+)/, 1]
+      expect(nonce).not_to be_nil
+      expect(cookie).to include("HttpOnly")
+      expect(last_response.headers["Location"]).to include(CGI.escape("rb-hanami|#{nonce}|inv-token"))
+    end
+
+    it "oauth_state クッキーが無いコールバックを 400 にする" do
+      get "/auth/github/callback?code=abc&state=hanami%7Cnonce123"
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers["Location"]).to include("/error?code=400")
+    end
+
+    it "nonce が一致しないコールバックを 400 にしクッキーを破棄する" do
+      get "/auth/google/callback?code=abc&state=hanami%7Cwrong", {}, { "HTTP_COOKIE" => "oauth_state=right" }
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers["Location"]).to include("/error?code=400")
+      expect(Array(last_response.headers["Set-Cookie"]).join("\n")).to include("oauth_state=; Path=/; HttpOnly; Max-Age=0")
+    end
+
+    it "state に nonce セグメントが無いコールバックを 400 にする" do
+      get "/auth/github/callback?code=abc&state=hanami", {}, { "HTTP_COOKIE" => "oauth_state=nonce123" }
+      expect(last_response.headers["Location"]).to include("/error?code=400")
+    end
+  end
+
   describe "GET /api/auth/invitation/:token" do
     it "有効なトークンで招待情報を返す" do
       inv = create_invitation("test-token-xyz")

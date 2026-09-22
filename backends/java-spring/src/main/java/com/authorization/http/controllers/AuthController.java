@@ -25,7 +25,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -53,6 +56,9 @@ public class AuthController {
             new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
     private static final String GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/auth";
     private static final String GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
+    private static final String OAUTH_STATE_COOKIE = "oauth_state";
+    private static final int OAUTH_STATE_COOKIE_MAX_AGE = 600;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final AuthService authService;
     private final InvitationService invitationService;
@@ -114,7 +120,8 @@ public class AuthController {
      */
     @GetMapping("/auth/google/redirect")
     public ResponseEntity<Void> googleRedirect(@RequestParam(required = false) String token) {
-        String state = (token != null && !token.isEmpty()) ? token : "state";
+        String nonce = newNonce();
+        String state = buildOAuthState(nonce, token);
         String url = UriComponentsBuilder.fromUriString(GOOGLE_AUTH_URL)
                 .queryParam("client_id", cfg.oauth().googleClientId())
                 .queryParam("redirect_uri", cfg.oauth().googleRedirectUrl())
@@ -124,23 +131,28 @@ public class AuthController {
                 .queryParam("state", state)
                 .encode()
                 .toUriString();
-        return redirect(url);
+        return redirectWithOAuthStateCookie(url, nonce);
     }
 
     /**
      * Google からのコールバックを処理します。
      *
      * @param code 認可コード
-     * @param state 招待トークン（招待フロー経由の場合のみ、"state" 固定値以外）
+     * @param state "{runtime}|{nonce}" または "{runtime}|{nonce}|{invitationToken}"
+     * @param savedNonce oauth_state クッキーの値
      * @return リダイレクト応答
      */
     @GetMapping("/auth/google/callback")
     public ResponseEntity<Void> googleCallback(
-            @RequestParam(required = false) String code, @RequestParam(required = false) String state) {
-        if (code == null || code.isEmpty()) {
-            return errorRedirect(500);
+            @RequestParam(required = false) String code, @RequestParam(required = false) String state,
+            @CookieValue(name = OAUTH_STATE_COOKIE, required = false, defaultValue = "") String savedNonce) {
+        if (!verifyOAuthState(state, savedNonce)) {
+            return errorRedirectClearingOAuthState(400);
         }
-        String invitationToken = (state != null && !state.isEmpty() && !"state".equals(state)) ? state : null;
+        if (code == null || code.isEmpty()) {
+            return errorRedirectClearingOAuthState(500);
+        }
+        String invitationToken = invitationTokenFromState(state);
 
         try {
             String accessToken = exchangeGoogleCodeForToken(code);
@@ -157,23 +169,22 @@ public class AuthController {
             StaffVo staff = authService.login(dto);
             return redirectWithStaffCookie(staff.getId());
         } catch (AppException e) {
-            return errorRedirect(e.getStatusCode());
+            return errorRedirectClearingOAuthState(e.getStatusCode());
         } catch (Exception e) {
-            return errorRedirect(500);
+            return errorRedirectClearingOAuthState(500);
         }
     }
 
     /**
-     * GitHub へリダイレクトします。state に "{runtime}|{invitationToken}" を埋め込みます。
+     * GitHub へリダイレクトします。state に "{runtime}|{nonce}|{invitationToken}" を埋め込みます。
      *
      * @param token 招待トークン（招待フロー経由の場合のみ）
      * @return リダイレクト応答
      */
     @GetMapping("/auth/github/redirect")
     public ResponseEntity<Void> githubRedirect(@RequestParam(required = false) String token) {
-        String state = (token != null && !token.isEmpty())
-                ? cfg.app().runtime() + "|" + token
-                : cfg.app().runtime();
+        String nonce = newNonce();
+        String state = buildOAuthState(nonce, token);
         String url = UriComponentsBuilder.fromUriString(GITHUB_AUTHORIZE_URL)
                 .queryParam("client_id", cfg.oauth().githubClientId())
                 .queryParam("redirect_uri", cfg.oauth().githubRedirectUrl())
@@ -181,26 +192,29 @@ public class AuthController {
                 .queryParam("state", state)
                 .encode()
                 .toUriString();
-        return redirect(url);
+        return redirectWithOAuthStateCookie(url, nonce);
     }
 
     /**
-     * GitHub からのコールバックを処理します。state フォーマット: "{runtime}" または
-     * "{runtime}|{invitationToken}"。
+     * GitHub からのコールバックを処理します。state フォーマット: "{runtime}|{nonce}" または
+     * "{runtime}|{nonce}|{invitationToken}"。
      *
      * @param code 認可コード
-     * @param state ランタイム識別子＋招待トークン
+     * @param state ランタイム識別子＋nonce＋招待トークン
+     * @param savedNonce oauth_state クッキーの値
      * @return リダイレクト応答
      */
     @GetMapping("/auth/github/callback")
     public ResponseEntity<Void> githubCallback(
-            @RequestParam(required = false) String code, @RequestParam(required = false) String state) {
-        if (code == null || code.isEmpty()) {
-            return errorRedirect(500);
+            @RequestParam(required = false) String code, @RequestParam(required = false) String state,
+            @CookieValue(name = OAUTH_STATE_COOKIE, required = false, defaultValue = "") String savedNonce) {
+        if (!verifyOAuthState(state, savedNonce)) {
+            return errorRedirectClearingOAuthState(400);
         }
-        String stateVal = state != null ? state : "";
-        String[] parts = stateVal.split("\\|", 2);
-        String invitationToken = parts.length == 2 && !parts[1].isEmpty() ? parts[1] : null;
+        if (code == null || code.isEmpty()) {
+            return errorRedirectClearingOAuthState(500);
+        }
+        String invitationToken = invitationTokenFromState(state);
 
         try {
             String accessToken = exchangeGithubCodeForToken(code);
@@ -217,10 +231,61 @@ public class AuthController {
             StaffVo staff = authService.login(dto);
             return redirectWithStaffCookie(staff.getId());
         } catch (AppException e) {
-            return errorRedirect(e.getStatusCode());
+            return errorRedirectClearingOAuthState(e.getStatusCode());
         } catch (Exception e) {
-            return errorRedirect(500);
+            return errorRedirectClearingOAuthState(500);
         }
+    }
+
+    private static String newNonce() {
+        byte[] bytes = new byte[16];
+        RANDOM.nextBytes(bytes);
+        return HexFormat.of().formatHex(bytes);
+    }
+
+    private String buildOAuthState(String nonce, String token) {
+        String base = cfg.app().runtime() + "|" + nonce;
+        return (token != null && !token.isEmpty()) ? base + "|" + token : base;
+    }
+
+    private static boolean verifyOAuthState(String state, String savedNonce) {
+        String[] parts = (state != null ? state : "").split("\\|", 3);
+        String nonce = parts.length >= 2 ? parts[1] : "";
+        if (savedNonce.isEmpty() || nonce.isEmpty()) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                savedNonce.getBytes(StandardCharsets.UTF_8), nonce.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String invitationTokenFromState(String state) {
+        String[] parts = state.split("\\|", 3);
+        return parts.length == 3 && !parts[2].isEmpty() ? parts[2] : null;
+    }
+
+    private ResponseEntity<Void> redirectWithOAuthStateCookie(String url, String nonce) {
+        ResponseCookie cookie = ResponseCookie.from(OAUTH_STATE_COOKIE, nonce)
+                .path("/")
+                .httpOnly(true)
+                .secure("production".equals(cfg.app().env()))
+                .sameSite("Lax")
+                .maxAge(OAUTH_STATE_COOKIE_MAX_AGE)
+                .build();
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Set-Cookie", cookie.toString())
+                .header("Location", url)
+                .build();
+    }
+
+    private ResponseEntity<Void> errorRedirectClearingOAuthState(int code) {
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Set-Cookie", clearOAuthStateCookie().toString())
+                .header("Location", cfg.app().frontendUrl() + "/error?code=" + code)
+                .build();
+    }
+
+    private static ResponseCookie clearOAuthStateCookie() {
+        return ResponseCookie.from(OAUTH_STATE_COOKIE, "").path("/").httpOnly(true).maxAge(0).build();
     }
 
     /**
@@ -277,6 +342,7 @@ public class AuthController {
                 .build();
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header("Set-Cookie", cookie.toString())
+                .header("Set-Cookie", clearOAuthStateCookie().toString())
                 .header("Location", cfg.app().frontendUrl() + "/clients")
                 .build();
     }
