@@ -9,7 +9,7 @@ from app.domain.staff.entity import Staff
 from app.domain.staff.condition import StaffCondition
 from app.domain.staff.repository import StaffRepository
 from app.domain.staff.value_objects import StaffListItem
-from app.exceptions import not_found, bad_request
+from app.exceptions import not_found, bad_request, unauthorized, forbidden
 from app.usecase.staff.dto import StaffUpdateRoleDto, StaffDestroyDto
 
 
@@ -94,10 +94,19 @@ class StaffInteractor:
             dto: ロール更新 Dto
 
         Raises:
-            AppException: 自分自身のロール更新、またはスタッフが存在しない場合
+            AppException: 未認証・実行者がAdmin以外・自分自身のロール更新、またはスタッフが存在しない場合
         """
+        if dto.executor_id == 0:
+            raise unauthorized("unauthenticated")
         if dto.staff_id == dto.executor_id:
             raise bad_request("cannot_update_own_role")
+
+        # role の実際の値は 1=Admin, 2=Member（domain.staff.enums の ROLE_* 定数は
+        # どこからも参照されておらず値が実態と一致していないため使用しない）。
+        executor = self.repository.find_staff_by_id_include_deleted(dto.executor_id)
+        if executor is None or executor.deleted_at is not None or executor.role != 1:
+            raise forbidden("forbidden")
+
         # 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         staff = self.repository.find_staff_by_id_include_deleted(dto.staff_id)
         if staff is None:

@@ -1,6 +1,8 @@
 """スタッフエンドポイントのテスト。"""
 
-from tests.conftest import make_staff
+from datetime import datetime
+
+from tests.conftest import make_staff, sign_staff_cookie
 
 
 class TestIndex:
@@ -45,7 +47,7 @@ class TestUpdateRole:
         res = client.patch(
             f"/api/staffs/{staff.id}/updateRole",
             json={"role": 1, "version": staff.version},
-            cookies={"staff_id": str(executor.id)},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
         )
         assert res.status_code == 200
         assert res.json()["id"] == staff.id
@@ -55,9 +57,38 @@ class TestUpdateRole:
         res = client.patch(
             "/api/staffs/99999/updateRole",
             json={"role": 1},
-            cookies={"staff_id": str(executor.id)},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
         )
         assert res.status_code == 404
+
+    def test_未認証で401が返る(self, client, db_session):
+        staff = make_staff(db_session, email="target-unauth@example.com", role=2)
+        res = client.patch(
+            f"/api/staffs/{staff.id}/updateRole",
+            json={"role": 1, "version": staff.version},
+        )
+        assert res.status_code == 401
+
+    def test_Admin以外の実行者では403が返る(self, client, db_session):
+        staff = make_staff(db_session, email="target-member@example.com", role=2)
+        executor = make_staff(db_session, email="member-executor@example.com", role=2)
+        res = client.patch(
+            f"/api/staffs/{staff.id}/updateRole",
+            json={"role": 1, "version": staff.version},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
+        )
+        assert res.status_code == 403
+
+    def test_無効化済みAdminの実行者では403が返る(self, client, db_session):
+        staff = make_staff(db_session, email="target-deleted-admin@example.com", role=2)
+        # 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現する。
+        executor = make_staff(db_session, email="deleted-admin-executor@example.com", role=1, deleted_at=datetime.now())
+        res = client.patch(
+            f"/api/staffs/{staff.id}/updateRole",
+            json={"role": 1, "version": staff.version},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
+        )
+        assert res.status_code == 403
 
 
 class TestDestroy:
@@ -68,7 +99,7 @@ class TestDestroy:
             "DELETE",
             f"/api/staffs/{staff.id}/delete",
             json={"version": staff.version},
-            cookies={"staff_id": str(executor.id)},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
         )
         assert res.status_code == 200
         assert res.json()["id"] == staff.id
@@ -77,6 +108,6 @@ class TestDestroy:
         executor = make_staff(db_session)
         res = client.delete(
             "/api/staffs/99999/delete",
-            cookies={"staff_id": str(executor.id)},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
         )
         assert res.status_code == 404

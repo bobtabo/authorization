@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     app_port: int = 8000
     frontend_url: str = "http://localhost:3000"
     staff_cookie_lifetime: int = 60          # 分
+    # staff_id クッキーのHMAC署名シークレット。空シークレットでのHMAC署名は誰でも同じ署名を
+    # 再現できてしまい検証が無意味になるため、デフォルト値を与えず未設定時は起動時に止める。
+    staff_cookie_secret: str
     notification_default_limit: int = 10
     cache_prefix: str = ""
 
