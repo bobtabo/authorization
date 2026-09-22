@@ -1,6 +1,7 @@
 // This is a program developed by BobTabo.
 //
 // Copyright (c) 2026 BobTabo. All Rights Reserved.
+using Authorization.Api.Config;
 using Authorization.Api.Domain.Staff;
 using Authorization.Api.Support;
 using Authorization.Api.UseCase.Staff;
@@ -10,7 +11,8 @@ namespace Authorization.Api.Handler;
 
 /// <summary>スタッフハンドラーです。</summary>
 /// <param name="staffUC">スタッフService</param>
-public sealed class StaffHandler(StaffService staffUC)
+/// <param name="app">アプリ設定</param>
+public sealed class StaffHandler(StaffService staffUC, AppSettings app)
 {
     /// <summary>スタッフ一覧を返します。</summary>
     /// <param name="req">HTTPリクエスト（keyword/roles/limit/page/sort/sort_typeを使用）</param>
@@ -76,7 +78,7 @@ public sealed class StaffHandler(StaffService staffUC)
         var role = body.Int("role");
         if (role is null) return Error(400, "role_required");
 
-        await staffUC.UpdateRoleAsync(new StaffUpdateRoleDto(staffId, role.Value, StaffId(req)), ct);
+        await staffUC.UpdateRoleAsync(new StaffUpdateRoleDto(staffId, role.Value, StaffId(req, app.StaffCookieSecret)), ct);
         return Results.Json(new Dictionary<string, object?> { ["id"] = staffId });
     }
 
@@ -101,7 +103,7 @@ public sealed class StaffHandler(StaffService staffUC)
     public async Task<IResult> DestroyAsync(string id, HttpRequest req, CancellationToken ct)
     {
         if (!long.TryParse(id, out var staffId)) return InvalidId();
-        await staffUC.DestroyAsync(new StaffDestroyDto(staffId, StaffId(req)), ct);
+        await staffUC.DestroyAsync(new StaffDestroyDto(staffId, StaffId(req, app.StaffCookieSecret)), ct);
         return Results.Json(new Dictionary<string, object?> { ["id"] = staffId });
     }
 }

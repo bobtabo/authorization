@@ -14,7 +14,8 @@ namespace Authorization.Api.Handler;
 
 /// <summary>管理者向け招待ハンドラーです。</summary>
 /// <param name="invitationUC">招待Service</param>
-public sealed class AdminInvitationHandler(InvitationService invitationUC)
+/// <param name="app">アプリ設定</param>
+public sealed class AdminInvitationHandler(InvitationService invitationUC, AppSettings app)
 {
     /// <summary>指定ロールの現在の招待を返します。</summary>
     /// <param name="req">HTTPリクエスト（roleクエリ。未指定はメンバー）</param>
@@ -35,7 +36,7 @@ public sealed class AdminInvitationHandler(InvitationService invitationUC)
     /// <returns>招待情報のJSON、未認証の場合は401、roleが不正な場合は400</returns>
     public async Task<IResult> IssueAsync(HttpRequest req, CancellationToken ct)
     {
-        if (StaffId(req) == 0) return Unauthenticated();
+        if (StaffId(req, app.StaffCookieSecret) == 0) return Unauthenticated();
         var (role, error) = ResolveRole(req);
         if (error is not null) return error;
         var v = await invitationUC.IssueAsync(role, ct);
@@ -103,7 +104,7 @@ public sealed class NotificationHandler(NotificationService notificationUC, AppS
     /// <returns>未読件数・総件数のJSON、未認証の場合は401</returns>
     public async Task<IResult> CountsAsync(HttpRequest req, CancellationToken ct)
     {
-        var staffId = StaffId(req);
+        var staffId = StaffId(req, app.StaffCookieSecret);
         if (staffId == 0) return Unauthenticated();
         var vo = await notificationUC.CountsAsync(staffId, ct);
         return Results.Json(new Dictionary<string, object?> { ["unread"] = vo.Unread, ["total"] = vo.Total });
@@ -115,7 +116,7 @@ public sealed class NotificationHandler(NotificationService notificationUC, AppS
     /// <returns>通知一覧と次カーソルのJSON、未認証の場合は401</returns>
     public async Task<IResult> IndexAsync(HttpRequest req, CancellationToken ct)
     {
-        var staffId = StaffId(req);
+        var staffId = StaffId(req, app.StaffCookieSecret);
         if (staffId == 0) return Unauthenticated();
 
         var limit = QueryInt(req, "limit") ?? app.NotificationDefaultLimit;
@@ -134,7 +135,7 @@ public sealed class NotificationHandler(NotificationService notificationUC, AppS
     /// <returns>空レスポンス、未認証の場合は401</returns>
     public async Task<IResult> ReadAllAsync(HttpRequest req, CancellationToken ct)
     {
-        var staffId = StaffId(req);
+        var staffId = StaffId(req, app.StaffCookieSecret);
         if (staffId == 0) return Unauthenticated();
         await notificationUC.BulkMarkReadAsync(staffId, ct);
         return Empty();
@@ -147,7 +148,7 @@ public sealed class NotificationHandler(NotificationService notificationUC, AppS
     /// <returns>更新した通知IDのJSON、IDが不正な場合は400、未認証の場合は401</returns>
     public async Task<IResult> ReadAsync(string id, HttpRequest req, CancellationToken ct)
     {
-        var staffId = StaffId(req);
+        var staffId = StaffId(req, app.StaffCookieSecret);
         if (staffId == 0) return Unauthenticated();
         if (!long.TryParse(id, out var notificationId)) return InvalidId();
         await notificationUC.MarkReadAsync(notificationId, staffId, ct);

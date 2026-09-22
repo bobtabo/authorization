@@ -9,11 +9,12 @@ namespace Authorization.Api.Handler;
 /// <summary>ハンドラー共通のリクエスト/レスポンス補助です。</summary>
 public static class HttpHelpers
 {
-    /// <summary>staff_id クッキーを読み取ります。無い・不正な場合は 0。</summary>
+    /// <summary>署名済み staff_id クッキーを読み取り検証します。無い・不正・署名が無効な場合は 0。</summary>
     /// <param name="req">HTTPリクエスト</param>
+    /// <param name="secret">署名検証用シークレット</param>
     /// <returns>スタッフID、無い・不正な場合は0</returns>
-    public static long StaffId(HttpRequest req) =>
-        req.Cookies.TryGetValue("staff_id", out var v) && long.TryParse(v, out var id) ? id : 0;
+    public static long StaffId(HttpRequest req, string secret) =>
+        req.Cookies.TryGetValue("staff_id", out var v) && !string.IsNullOrEmpty(v) ? StaffSession.VerifyStaffId(v, secret) : 0;
 
     /// <summary>クエリ文字列を取得します（無ければ null）。</summary>
     /// <param name="req">HTTPリクエスト</param>

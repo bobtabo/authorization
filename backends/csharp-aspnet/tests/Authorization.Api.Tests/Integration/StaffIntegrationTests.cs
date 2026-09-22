@@ -61,6 +61,38 @@ public class StaffIntegrationTests(IntegrationWebAppFactory factory) : Integrati
     }
 
     [Fact]
+    public async Task UpdateRole_Unauthenticated_Returns401()
+    {
+        var targetId = TestHelper.CreateStaff(name: "Target", email: "target-unauth@example.com", providerId: "google-target-unauth", role: StaffRole.Member);
+
+        var res = await SendAsync(HttpMethod.Patch, $"/api/staffs/{targetId}/updateRole", staffId: null, new { role = StaffRole.Admin });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateRole_NonAdminExecutor_Returns403()
+    {
+        var executorId = TestHelper.CreateStaff(name: "Member Executor", email: "member-executor@example.com", providerId: "google-member-executor", role: StaffRole.Member);
+        var targetId   = TestHelper.CreateStaff(name: "Target", email: "target-member@example.com", providerId: "google-target-member", role: StaffRole.Member);
+
+        var res = await SendAsync(HttpMethod.Patch, $"/api/staffs/{targetId}/updateRole", executorId, new { role = StaffRole.Admin });
+
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateRole_DeletedAdminExecutor_Returns403()
+    {
+        var executorId = TestHelper.CreateStaff(name: "Deleted Admin", email: "deleted-admin-executor@example.com", providerId: "google-deleted-admin", deleted: true);
+        var targetId   = TestHelper.CreateStaff(name: "Target", email: "target-deleted-admin@example.com", providerId: "google-target-deleted-admin", role: StaffRole.Member);
+
+        var res = await SendAsync(HttpMethod.Patch, $"/api/staffs/{targetId}/updateRole", executorId, new { role = StaffRole.Admin });
+
+        Assert.Equal(HttpStatusCode.Forbidden, res.StatusCode);
+    }
+
+    [Fact]
     public async Task Restore_Deleted_ClearsDeletedAt()
     {
         var id = TestHelper.CreateStaff(deleted: true);
