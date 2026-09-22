@@ -51,14 +51,15 @@ jobs:
           php-version: '8.5'
           extensions: pdo, pdo_mysql
 
+      # .env ファイルをコピー（composer install の post-autoload-dump スクリプト
+      # が artisan package:discover でアプリをブートするため、.env 生成を先に行う）
+      - name: Generate .env
+        run: cp .env.testing .env
+        working-directory: backends/php-laravel
+
       # Composer 依存関係をインストール
       - name: Install dependencies
         run: composer install
-        working-directory: backends/php-laravel
-
-      # .env ファイルをコピー
-      - name: Generate .env
-        run: cp .env.testing .env
         working-directory: backends/php-laravel
 
       # 環境準備スクリプトを実行
