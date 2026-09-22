@@ -10,6 +10,7 @@ data class AppConfig(
     val notificationDefaultLimit: Long,
     val cachePrefix: String,
     val runtime: String,
+    val staffCookieSecret: String,
 )
 
 data class DbConfig(
@@ -87,6 +88,13 @@ object ConfigLoader {
         val dbName = str("DB_DATABASE", "authorization")
         val dsn = "jdbc:mysql://$dbHost:$dbPort/$dbName?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo"
 
+        val staffCookieSecret = str("STAFF_COOKIE_SECRET", "")
+        if (staffCookieSecret.isEmpty()) {
+            // 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
+            // staff_id クッキーの署名検証が無意味になるため起動時に止める。
+            error("STAFF_COOKIE_SECRET must be set")
+        }
+
         return Config(
             app = AppConfig(
                 env                      = str("APP_ENV", "local"),
@@ -96,6 +104,7 @@ object ConfigLoader {
                 notificationDefaultLimit = long("NOTIFICATION_DEFAULT_LIMIT", 10),
                 cachePrefix              = str("CACHE_PREFIX", ""),
                 runtime                  = str("APP_RUNTIME", "kotlin"),
+                staffCookieSecret        = staffCookieSecret,
             ),
             db = DbConfig(
                 dsn      = dsn,

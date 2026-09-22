@@ -2,6 +2,7 @@ package com.authorization.integration
 
 import com.authorization.config.ConfigLoader
 import com.authorization.domain.client.ClientStatus
+import com.authorization.handler.signStaffId
 import com.authorization.infrastructure.cache.newRedisPool
 import com.authorization.infrastructure.db.initDatabase
 import com.authorization.infrastructure.model.*
@@ -43,6 +44,9 @@ object TestHelper {
         database
     }
     private val jedisPool by lazy { newRedisPool(cfg) }
+
+    /** テスト用シークレットで署名済みの staff_id クッキー値を組み立てます。 */
+    fun signStaffCookie(staffId: Long): String = signStaffId(staffId, cfg.app.staffCookieSecret, 3600)
 
     fun truncateTables() {
         transaction(db) {

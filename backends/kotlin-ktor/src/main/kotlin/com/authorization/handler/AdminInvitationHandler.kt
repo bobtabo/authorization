@@ -17,7 +17,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-class AdminInvitationHandler(private val invitationUC: InvitationUC) {
+class AdminInvitationHandler(private val invitationUC: InvitationUC, private val cookieSecret: String) {
 
     /**
      * 現在有効な招待トークンを取得します。
@@ -44,7 +44,7 @@ class AdminInvitationHandler(private val invitationUC: InvitationUC) {
      * @param call アプリケーションコール
      */
     suspend fun issue(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return

@@ -45,6 +45,7 @@ class ClientHandler(
     private val mailer: Mailer,
     private val jwtHistoryRepo: JwtHistoryRepository,
     private val frontendUrl: String,
+    private val cookieSecret: String,
 ) {
 
     /**
@@ -129,7 +130,7 @@ class ClientHandler(
      * @param call アプリケーションコール
      */
     suspend fun store(call: ApplicationCall) {
-        val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
         val body = call.receive<JsonObject>()
         val storeBody = StoreClientBody(
             name     = body["name"]?.jsonPrimitive?.content ?: "",
@@ -182,7 +183,7 @@ class ClientHandler(
     suspend fun update(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
-        val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
         val body = call.receive<JsonObject>()
         val updateBody = UpdateClientBody(
             name     = body["name"]?.jsonPrimitive?.contentOrNull,
@@ -314,7 +315,7 @@ class ClientHandler(
     suspend fun destroy(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
-        val executorId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
         newSuspendedTransaction { clientUC.destroy(id, executorId) }
         call.respond(HttpStatusCode.OK, buildJsonObject {})
     }

@@ -8,6 +8,7 @@ package com.authorization.usecase.staff
 import com.authorization.domain.staff.Condition
 import com.authorization.domain.staff.ListItem
 import com.authorization.domain.staff.Repository
+import com.authorization.domain.staff.StaffRole
 import com.authorization.support.AppException
 
 /**
@@ -46,7 +47,22 @@ class Interactor(private val repo: Repository) {
      * @param dto ロール更新 DTO
      */
     suspend fun updateRole(dto: UpdateRoleDto) {
-        repo.updateRole(dto.id, dto.role, dto.executorId)
+        if (dto.executorId == 0L) {
+            throw AppException(401, "unauthenticated")
+        }
+        if (dto.role != StaffRole.ADMIN && dto.role != StaffRole.MEMBER) {
+            throw AppException(400, "role_invalid")
+        }
+        val executor = repo.findById(dto.executorId)
+        if (executor == null || executor.deletedAt != null || executor.role != StaffRole.ADMIN) {
+            throw AppException(403, "forbidden")
+        }
+        // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
+        repo.findById(dto.id) ?: throw AppException(404, "staff_not_found")
+        val ok = repo.updateRole(dto.id, dto.role, dto.executorId)
+        if (!ok) {
+            throw AppException(404, "staff_not_found")
+        }
     }
 
     /**

@@ -73,7 +73,7 @@ class ClientIntegrationTest {
         val staff = TestHelper.createStaff()
         val response = client.post("/api/clients/store") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
             setBody(buildJsonObject {
                 put("name",      "新規クライアント株式会社")
                 put("post_code", "100-0001")
@@ -96,7 +96,7 @@ class ClientIntegrationTest {
         val c      = TestHelper.createClient()
         val response = client.put("/api/clients/${c.id}/update") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
             setBody(buildJsonObject { put("name", "更新後クライアント名"); put("version", c.version) }.toString())
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -110,7 +110,7 @@ class ClientIntegrationTest {
         val staff  = TestHelper.createStaff()
         val c      = TestHelper.createClient()
         val response = client.delete("/api/clients/${c.id}/delete") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
     }

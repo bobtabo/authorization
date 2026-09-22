@@ -61,12 +61,56 @@ class StaffIntegrationTest {
         val executor = TestHelper.createStaff(email = "exec@example.com", role = 1)
         val response = client.patch("/api/staffs/${target.id}/updateRole") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Cookie, "staff_id=${executor.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
             setBody(buildJsonObject { put("role", 1) }.toString())
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
         assertEquals(target.id, body["id"]!!.jsonPrimitive.long)
+    }
+
+    @Test
+    fun `PATCH api staffs id updateRole unauthenticated returns 401`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val target = TestHelper.createStaff(email = "target-unauth@example.com", role = 2)
+        val response = client.patch("/api/staffs/${target.id}/updateRole") {
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject { put("role", 1) }.toString())
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `PATCH api staffs id updateRole non-admin executor returns 403`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val target   = TestHelper.createStaff(email = "target-member@example.com", role = 2)
+        val executor = TestHelper.createStaff(email = "member-executor@example.com", role = 2)
+        val response = client.patch("/api/staffs/${target.id}/updateRole") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+            setBody(buildJsonObject { put("role", 1) }.toString())
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+    }
+
+    @Test
+    fun `PATCH api staffs id updateRole deleted admin executor returns 403`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val target   = TestHelper.createStaff(email = "target-deleted-admin@example.com", role = 2)
+        val executor = TestHelper.createStaff(email = "deleted-admin-executor@example.com", role = 1)
+        // 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現する。
+        transaction(TestHelper.db) {
+            Staffs.update({ Staffs.id eq executor.id }) {
+                it[Staffs.deletedAt] = LocalDateTime.now()
+                it[Staffs.updatedAt] = LocalDateTime.now()
+            }
+        }
+        val response = client.patch("/api/staffs/${target.id}/updateRole") {
+            contentType(ContentType.Application.Json)
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+            setBody(buildJsonObject { put("role", 1) }.toString())
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
     }
 
     @Test
@@ -91,7 +135,7 @@ class StaffIntegrationTest {
         val executor = TestHelper.createStaff(email = "exec@example.com")
         val target   = TestHelper.createStaff(email = "target@example.com")
         val response = client.delete("/api/staffs/${target.id}/delete") {
-            header(HttpHeaders.Cookie, "staff_id=${executor.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject

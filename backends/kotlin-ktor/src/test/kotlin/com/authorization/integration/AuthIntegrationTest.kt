@@ -1,6 +1,7 @@
 package com.authorization.integration
 
 import com.authorization.module
+import com.authorization.handler.signStaffId
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -25,7 +26,7 @@ class AuthIntegrationTest {
         application { module(TestHelper.cfg) }
         val staff = TestHelper.createStaff()
         val response = client.get("/api/auth/me") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
@@ -40,11 +41,61 @@ class AuthIntegrationTest {
     }
 
     @Test
+    fun `GET api auth me unsigned forged cookie returns 401`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff = TestHelper.createStaff(email = "forge-1@example.com")
+        // 署名を付けず staff_id をそのまま設定した「偽造」クッキー。
+        val response = client.get("/api/auth/me") {
+            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `GET api auth me tampered signature returns 401`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff = TestHelper.createStaff(email = "forge-2@example.com")
+        val signed = TestHelper.signStaffCookie(staff.id)
+        // 末尾の1文字を必ず異なる値に置き換える（元の値と偶然一致すると署名が
+        // 変わらずテストが不安定になるため）。
+        val replacement = if (signed.last() == '0') '1' else '0'
+        val tampered = signed.dropLast(1) + replacement
+        val response = client.get("/api/auth/me") {
+            header(HttpHeaders.Cookie, "staff_id=$tampered")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `GET api auth me signed with another secret returns 401`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff = TestHelper.createStaff(email = "forge-3@example.com")
+        val forged = signStaffId(staff.id, "attacker-controlled-secret", 3600)
+        val response = client.get("/api/auth/me") {
+            header(HttpHeaders.Cookie, "staff_id=$forged")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `GET api auth me expired signed cookie returns 401`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff = TestHelper.createStaff(email = "forge-4@example.com")
+        // 署名自体は正しいが、Max-Ageが切れた後に手動でCookieヘッダーを
+        // 再送した状況を再現する（署名対象に有効期限を含めていないと防げない）。
+        val expired = signStaffId(staff.id, TestHelper.cfg.app.staffCookieSecret, -3600)
+        val response = client.get("/api/auth/me") {
+            header(HttpHeaders.Cookie, "staff_id=$expired")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
     fun `GET api auth login returns info when authenticated`() = testApplication {
         application { module(TestHelper.cfg) }
         val staff = TestHelper.createStaff()
         val response = client.get("/api/auth/login") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
