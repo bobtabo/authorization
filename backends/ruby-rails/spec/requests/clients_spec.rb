@@ -60,7 +60,7 @@ RSpec.describe "Clients", type: :request do
       }
       post "/api/clients/store",
            params: payload.to_json,
-           headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{staff.id}" }
+           headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}" }
       expect(response).to have_http_status(201)
       body = JSON.parse(response.body)
       expect(body["id"]).not_to be_nil
@@ -73,7 +73,7 @@ RSpec.describe "Clients", type: :request do
       client = create_client
       put "/api/clients/#{client.id}/update",
           params: { name: "更新後クライアント名", version: 1 }.to_json,
-          headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{staff.id}" }
+          headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["name"]).to eq("更新後クライアント名")
@@ -86,7 +86,7 @@ RSpec.describe "Clients", type: :request do
       client = create_client
       delete "/api/clients/#{client.id}/delete",
              params:  { version: 1 }.to_json,
-             headers: { "Cookie" => "staff_id=#{staff.id}", "Content-Type" => "application/json" }
+             headers: { "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}", "Content-Type" => "application/json" }
       expect(response).to have_http_status(200)
     end
   end

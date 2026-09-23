@@ -53,7 +53,7 @@ class Api::AuthController < Api::BaseController
 
     lifetime = cfg.app.staff_cookie_lifetime * 60
     cookies[:staff_id] = {
-      value:     staff.id.to_s,
+      value:     Support::StaffSession.sign(staff.id, cfg.app.staff_cookie_secret, lifetime),
       max_age:   lifetime,
       path:      "/",
       http_only: true,
@@ -107,7 +107,7 @@ class Api::AuthController < Api::BaseController
 
     lifetime = cfg.app.staff_cookie_lifetime * 60
     cookies[:staff_id] = {
-      value:     staff.id.to_s,
+      value:     Support::StaffSession.sign(staff.id, cfg.app.staff_cookie_secret, lifetime),
       max_age:   lifetime,
       path:      "/",
       http_only: true,

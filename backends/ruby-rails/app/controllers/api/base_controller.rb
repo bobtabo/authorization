@@ -14,8 +14,8 @@ class Api::BaseController < ApplicationController
   # @return [AppContainer] DI コンテナのインスタンス
   def container            = AppContainer.instance
 
-  # @return [Integer] Cookie から取得したスタッフ ID
-  def staff_id_from_cookie = cookies[:staff_id].to_i
+  # @return [Integer] Cookie から取得した検証済みスタッフ ID
+  def staff_id_from_cookie = Support::StaffSession.verify(cookies[:staff_id], container[:cfg].app.staff_cookie_secret)
 
   # クエリ文字列から配列パラメータを取得します。
   #

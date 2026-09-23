@@ -21,6 +21,12 @@ module UseCase
       end
 
       def update_role(dto)
+        raise Domain::UnauthorizedError if dto.executor_id.zero?
+
+        # 無効化（論理削除）はログイン可否にのみ影響するため、実行者チェックも無効スタッフを含めて見る。
+        executor = @repo.find_by_id(dto.executor_id)
+        raise Domain::ForbiddenError if executor.nil? || !executor.deleted_at.nil? || executor.role != Domain::Staff::Role::ADMIN
+
         @repo.update_role(dto.id, dto.role, dto.executor_id)
         nil
       end

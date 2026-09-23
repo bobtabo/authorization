@@ -104,6 +104,11 @@ RSpec.configure do |config|
       )
     end
 
+    def sign_staff_cookie(staff_id)
+      secret = ENV.fetch("STAFF_COOKIE_SECRET", "test-staff-cookie-secret")
+      Support::StaffSession.sign(staff_id, secret, 3600)
+    end
+
     def create_notification(staff_id, title, overrides = {})
       now = Time.current
       Infrastructure::Model::Notification.create!({
