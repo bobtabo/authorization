@@ -61,7 +61,7 @@ RSpec.describe "Clients" do
         email:     "new-client@example.com",
       }
       post "/api/clients/store", payload.to_json,
-           { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+           { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(201)
       body = JSON.parse(last_response.body)
       expect(body["id"]).not_to be_nil
@@ -74,7 +74,7 @@ RSpec.describe "Clients" do
       client = create_client
       put "/api/clients/#{client[:id]}/update",
           { name: "更新後クライアント名", version: client[:version] }.to_json,
-          { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+          { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["name"]).to eq("更新後クライアント名")
@@ -87,7 +87,7 @@ RSpec.describe "Clients" do
       client = create_client
       delete "/api/clients/#{client[:id]}/delete",
              { version: client[:version] }.to_json,
-             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
     end
   end

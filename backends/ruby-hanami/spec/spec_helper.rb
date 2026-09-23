@@ -108,6 +108,11 @@ end
 
 # ---------- テストデータ生成ヘルパー ----------
 
+def sign_staff_cookie(staff_id)
+  secret = ENV.fetch("STAFF_COOKIE_SECRET", "test-staff-cookie-secret")
+  Support::StaffSession.sign(staff_id, secret, 3600)
+end
+
 def create_staff(overrides = {})
   now = Time.now
   attrs = {

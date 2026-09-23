@@ -44,9 +44,10 @@ module Authorization
 
             max_age     = cfg.app.staff_cookie_lifetime * 60
             secure_flag = cfg.app.env == "production" ? "; Secure" : ""
+            signed_staff_id = Support::StaffSession.sign(vo.id, cfg.app.staff_cookie_secret, max_age)
             append_set_cookie(
               response,
-              "staff_id=#{vo.id}; Path=/; HttpOnly; Max-Age=#{max_age}#{secure_flag}; SameSite=Lax",
+              "staff_id=#{signed_staff_id}; Path=/; HttpOnly; Max-Age=#{max_age}#{secure_flag}; SameSite=Lax",
             )
 
             response.redirect_to "#{cfg.app.frontend_url}/clients"

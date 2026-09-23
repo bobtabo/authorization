@@ -23,9 +23,9 @@ module Authorization
       end
 
       # @param request [Hanami::Action::Request] リクエストオブジェクト
-      # @return [Integer] Cookie から取得したスタッフ ID
+      # @return [Integer] Cookie から取得した検証済みスタッフ ID
       def staff_id_from_cookie(request)
-        request.cookies["staff_id"].to_i
+        Support::StaffSession.verify(request.cookies["staff_id"], container[:cfg].app.staff_cookie_secret)
       end
 
       # クエリ文字列から配列パラメータを取得します。

@@ -40,10 +40,37 @@ RSpec.describe "Staffs" do
       executor = create_staff(email: "exec@example.com",   role: 1)
       patch "/api/staffs/#{target[:id]}/updateRole",
             { role: 1, version: target[:version] }.to_json,
-            { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{executor[:id]}" }
+            { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(executor[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["id"]).to eq(target[:id])
+    end
+
+    it "未認証の場合401を返す" do
+      target = create_staff(email: "target-unauth@example.com", role: 2)
+      patch "/api/staffs/#{target[:id]}/updateRole",
+            { role: 1, version: target[:version] }.to_json,
+            { "CONTENT_TYPE" => "application/json" }
+      expect(last_response.status).to eq(401)
+    end
+
+    it "実行者がAdmin以外の場合403を返す" do
+      target   = create_staff(email: "target-nonadmin@example.com", role: 2)
+      executor = create_staff(email: "exec-nonadmin@example.com",   role: 2)
+      patch "/api/staffs/#{target[:id]}/updateRole",
+            { role: 1, version: target[:version] }.to_json,
+            { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(executor[:id])}" }
+      expect(last_response.status).to eq(403)
+    end
+
+    it "実行者が無効化済みAdminの場合403を返す" do
+      target   = create_staff(email: "target-deletedadmin@example.com", role: 2)
+      executor = create_staff(email: "exec-deletedadmin@example.com",   role: 1)
+      db[:staffs].where(id: executor[:id]).update(deleted_at: Time.now, updated_at: Time.now)
+      patch "/api/staffs/#{target[:id]}/updateRole",
+            { role: 1, version: target[:version] }.to_json,
+            { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(executor[:id])}" }
+      expect(last_response.status).to eq(403)
     end
   end
 
@@ -67,7 +94,7 @@ RSpec.describe "Staffs" do
       target   = create_staff(email: "target@example.com")
       delete "/api/staffs/#{target[:id]}/delete",
              { version: target[:version] }.to_json,
-             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{executor[:id]}" }
+             { "CONTENT_TYPE" => "application/json", "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(executor[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["id"]).to eq(target[:id])
