@@ -16,12 +16,13 @@ import (
 )
 
 type StaffHandler struct {
-	ormer      orm.Ormer
-	newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor
+	ormer        orm.Ormer
+	newStaffUC   func(persistence.QueryOrmer) *ustaff.Interactor
+	cookieSecret string
 }
 
-func NewStaffHandler(ormer orm.Ormer, newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{ormer: ormer, newStaffUC: newStaffUC}
+func NewStaffHandler(ormer orm.Ormer, newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor, cookieSecret string) *StaffHandler {
+	return &StaffHandler{ormer: ormer, newStaffUC: newStaffUC, cookieSecret: cookieSecret}
 }
 
 func (h *StaffHandler) Index(ctx *beecontext.Context) {
@@ -89,7 +90,7 @@ func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 		return
 	}
 
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
@@ -125,7 +126,7 @@ func (h *StaffHandler) Destroy(ctx *beecontext.Context) {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).Destroy(ustaff.DestroyDto{
 			ID:         id,

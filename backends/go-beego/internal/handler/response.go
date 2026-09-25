@@ -3,7 +3,6 @@ package handler
 import (
 	"authorization-go-beego/pkg/apperror"
 	"net/http"
-	"strconv"
 	"time"
 
 	beecontext "github.com/beego/beego/v2/server/web/context"
@@ -11,20 +10,16 @@ import (
 
 const timeFormat = "2006-01-02 15:04"
 
-func staffIDFromCookie(ctx *beecontext.Context) uint {
+func staffIDFromCookie(ctx *beecontext.Context, secret string) uint {
 	v := ctx.GetCookie("staff_id")
 	if v == "" {
 		return 0
 	}
-	id, err := strconv.ParseUint(v, 10, 32)
-	if err != nil {
-		return 0
-	}
-	return uint(id)
+	return verifyStaffID(v, secret)
 }
 
-func setStaffCookie(ctx *beecontext.Context, staffID uint, maxAge int, secure bool) {
-	ctx.SetCookie("staff_id", strconv.Itoa(int(staffID)), maxAge, "/", "", secure, true)
+func setStaffCookie(ctx *beecontext.Context, staffID uint, maxAge int, secure bool, secret string) {
+	ctx.SetCookie("staff_id", SignStaffID(staffID, secret, time.Duration(maxAge)*time.Second), maxAge, "/", "", secure, true)
 }
 
 func clearStaffCookie(ctx *beecontext.Context, secure bool) {
