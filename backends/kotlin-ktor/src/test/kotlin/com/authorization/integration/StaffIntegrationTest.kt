@@ -116,6 +116,7 @@ class StaffIntegrationTest {
     @Test
     fun `PATCH api staffs id restore restores deleted staff and returns id`() = testApplication {
         application { module(TestHelper.cfg) }
+        val executor = TestHelper.createStaff(email = "restore-exec@example.com", role = 1)
         val staff = TestHelper.createStaff()
         transaction(TestHelper.db) {
             Staffs.update({ Staffs.id eq staff.id }) {
@@ -123,10 +124,84 @@ class StaffIntegrationTest {
                 it[Staffs.updatedAt] = LocalDateTime.now()
             }
         }
-        val response = client.patch("/api/staffs/${staff.id}/restore")
+        val response = client.patch("/api/staffs/${staff.id}/restore") {
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+        }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
         assertEquals(staff.id, body["id"]!!.jsonPrimitive.long)
+    }
+
+    @Test
+    fun `PATCH api staffs id restore returns 401 when unauthenticated`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff = TestHelper.createStaff()
+        val response = client.patch("/api/staffs/${staff.id}/restore")
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `PATCH api staffs id restore non-admin executor returns 403`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff    = TestHelper.createStaff()
+        val executor = TestHelper.createStaff(email = "restore-member-exec@example.com", role = 2)
+        val response = client.patch("/api/staffs/${staff.id}/restore") {
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+    }
+
+    @Test
+    fun `PATCH api staffs id restore deleted admin executor returns 403`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val staff    = TestHelper.createStaff()
+        val executor = TestHelper.createStaff(email = "restore-deleted-admin-exec@example.com", role = 1)
+        transaction(TestHelper.db) {
+            Staffs.update({ Staffs.id eq executor.id }) {
+                it[Staffs.deletedAt] = LocalDateTime.now()
+                it[Staffs.updatedAt] = LocalDateTime.now()
+            }
+        }
+        val response = client.patch("/api/staffs/${staff.id}/restore") {
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+    }
+
+    @Test
+    fun `DELETE api staffs id delete returns 401 when unauthenticated`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val target = TestHelper.createStaff(email = "target-unauth-destroy@example.com")
+        val response = client.delete("/api/staffs/${target.id}/delete")
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `DELETE api staffs id delete non-admin executor returns 403`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val target   = TestHelper.createStaff(email = "target-nonadmin-destroy@example.com")
+        val executor = TestHelper.createStaff(email = "destroy-member-exec@example.com", role = 2)
+        val response = client.delete("/api/staffs/${target.id}/delete") {
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+    }
+
+    @Test
+    fun `DELETE api staffs id delete deleted admin executor returns 403`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val target   = TestHelper.createStaff(email = "target-deletedadmin-destroy@example.com")
+        val executor = TestHelper.createStaff(email = "destroy-deleted-admin-exec@example.com", role = 1)
+        transaction(TestHelper.db) {
+            Staffs.update({ Staffs.id eq executor.id }) {
+                it[Staffs.deletedAt] = LocalDateTime.now()
+                it[Staffs.updatedAt] = LocalDateTime.now()
+            }
+        }
+        val response = client.delete("/api/staffs/${target.id}/delete") {
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(executor.id)}")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
     }
 
     @Test

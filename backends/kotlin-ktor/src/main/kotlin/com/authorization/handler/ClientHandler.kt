@@ -131,6 +131,9 @@ class ClientHandler(
      */
     suspend fun store(call: ApplicationCall) {
         val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
+        if (executorId == 0L) {
+            return call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
+        }
         val body = call.receive<JsonObject>()
         val storeBody = StoreClientBody(
             name     = body["name"]?.jsonPrimitive?.content ?: "",
@@ -184,6 +187,9 @@ class ClientHandler(
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
         val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
+        if (executorId == 0L) {
+            return call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
+        }
         val body = call.receive<JsonObject>()
         val updateBody = UpdateClientBody(
             name     = body["name"]?.jsonPrimitive?.contentOrNull,
@@ -316,6 +322,9 @@ class ClientHandler(
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
         val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
+        if (executorId == 0L) {
+            return call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
+        }
         newSuspendedTransaction { clientUC.destroy(id, executorId) }
         call.respond(HttpStatusCode.OK, buildJsonObject {})
     }

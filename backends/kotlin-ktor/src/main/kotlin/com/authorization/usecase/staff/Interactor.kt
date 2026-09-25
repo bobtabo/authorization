@@ -47,15 +47,9 @@ class Interactor(private val repo: Repository) {
      * @param dto ロール更新 DTO
      */
     suspend fun updateRole(dto: UpdateRoleDto) {
-        if (dto.executorId == 0L) {
-            throw AppException(401, "unauthenticated")
-        }
+        authorizeAdminExecutor(dto.executorId)
         if (dto.role != StaffRole.ADMIN && dto.role != StaffRole.MEMBER) {
             throw AppException(400, "role_invalid")
-        }
-        val executor = repo.findById(dto.executorId)
-        if (executor == null || executor.deletedAt != null || executor.role != StaffRole.ADMIN) {
-            throw AppException(403, "forbidden")
         }
         // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         repo.findById(dto.id) ?: throw AppException(404, "staff_not_found")
@@ -68,10 +62,11 @@ class Interactor(private val repo: Repository) {
     /**
      * 論理削除されたスタッフを復元します。
      *
-     * @param id スタッフ ID
+     * @param dto 復元 DTO
      */
-    suspend fun restore(id: Long) {
-        repo.restore(id)
+    suspend fun restore(dto: RestoreDto) {
+        authorizeAdminExecutor(dto.executorId)
+        repo.restore(dto.id)
     }
 
     /**
@@ -80,7 +75,24 @@ class Interactor(private val repo: Repository) {
      * @param dto 削除 DTO
      */
     suspend fun destroy(dto: DestroyDto) {
+        authorizeAdminExecutor(dto.executorId)
         val staff = repo.findById(dto.id) ?: throw AppException(404, "staff_not_found")
         repo.softDelete(dto.id, dto.executorId, staff.version)
+    }
+
+    /**
+     * 実行者が有効なAdminであることを検証します。
+     * 未認証の場合は401、Admin以外または無効化済みの場合は403を発生させます。
+     *
+     * @param executorId 実行者スタッフ ID
+     */
+    private suspend fun authorizeAdminExecutor(executorId: Long) {
+        if (executorId == 0L) {
+            throw AppException(401, "unauthenticated")
+        }
+        val executor = repo.findById(executorId)
+        if (executor == null || executor.deletedAt != null || executor.role != StaffRole.ADMIN) {
+            throw AppException(403, "forbidden")
+        }
     }
 }

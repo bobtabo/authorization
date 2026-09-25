@@ -97,7 +97,8 @@ class InteractorTest {
     @Test
     fun `destroy delegates softDelete to repository`() = runBlocking {
         var deletedId = 0L
-        val repo = object : Repository by mockRepo(listOf(makeStaff(3L))) {
+        val executor = makeStaff(9L, role = StaffRole.ADMIN)
+        val repo = object : Repository by mockRepo(listOf(makeStaff(3L), executor)) {
             override suspend fun softDelete(id: Long, deletedBy: Long, version: Int): Boolean {
                 deletedId = id; return true
             }
@@ -107,12 +108,51 @@ class InteractorTest {
     }
 
     @Test
+    fun `destroy throws unauthorized when executorId is missing`() = runBlocking {
+        val repo = mockRepo(listOf(makeStaff(3L)))
+        val ex = assertFailsWith<AppException> {
+            Interactor(repo).destroy(DestroyDto(id = 3L, executorId = 0L))
+        }
+        assertEquals(401, ex.statusCode)
+    }
+
+    @Test
+    fun `destroy throws forbidden when executor is not admin`() = runBlocking {
+        val executor = makeStaff(9L, role = StaffRole.MEMBER)
+        val repo = mockRepo(listOf(makeStaff(3L), executor))
+        val ex = assertFailsWith<AppException> {
+            Interactor(repo).destroy(DestroyDto(id = 3L, executorId = 9L))
+        }
+        assertEquals(403, ex.statusCode)
+    }
+
+    @Test
     fun `restore delegates to repository`() = runBlocking {
         var restoredId = 0L
-        val repo = object : Repository by mockRepo() {
+        val executor = makeStaff(9L, role = StaffRole.ADMIN)
+        val repo = object : Repository by mockRepo(listOf(executor)) {
             override suspend fun restore(id: Long): Boolean { restoredId = id; return true }
         }
-        Interactor(repo).restore(5L)
+        Interactor(repo).restore(RestoreDto(id = 5L, executorId = 9L))
         assertEquals(5L, restoredId)
+    }
+
+    @Test
+    fun `restore throws unauthorized when executorId is missing`() = runBlocking {
+        val repo = mockRepo()
+        val ex = assertFailsWith<AppException> {
+            Interactor(repo).restore(RestoreDto(id = 5L, executorId = 0L))
+        }
+        assertEquals(401, ex.statusCode)
+    }
+
+    @Test
+    fun `restore throws forbidden when executor is not admin`() = runBlocking {
+        val executor = makeStaff(9L, role = StaffRole.MEMBER)
+        val repo = mockRepo(listOf(executor))
+        val ex = assertFailsWith<AppException> {
+            Interactor(repo).restore(RestoreDto(id = 5L, executorId = 9L))
+        }
+        assertEquals(403, ex.statusCode)
     }
 }

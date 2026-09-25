@@ -9,6 +9,7 @@ import com.authorization.domain.staff.Condition
 import com.authorization.support.AppException
 import com.authorization.usecase.staff.DestroyDto
 import com.authorization.usecase.staff.Interactor as StaffUC
+import com.authorization.usecase.staff.RestoreDto
 import com.authorization.usecase.staff.UpdateRoleDto
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -121,7 +122,8 @@ class StaffHandler(private val staffUC: StaffUC, private val cookieSecret: Strin
     suspend fun restore(call: ApplicationCall) {
         val id = call.parameters["id"]?.toLongOrNull()
             ?: return call.respond(HttpStatusCode.BadRequest, buildJsonObject { put("error", "invalid_id") })
-        call.respondOrAppError(id) { staffUC.restore(id) }
+        val executorId = verifyStaffId(call.request.cookies["staff_id"], cookieSecret)
+        call.respondOrAppError(id) { staffUC.restore(RestoreDto(id = id, executorId = executorId)) }
     }
 
     /**

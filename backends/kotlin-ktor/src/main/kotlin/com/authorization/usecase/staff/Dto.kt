@@ -25,3 +25,13 @@ data class DestroyDto(
     val id:         Long,
     val executorId: Long,
 )
+
+/**
+ * スタッフ復元 DTO です。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+data class RestoreDto(
+    val id:         Long,
+    val executorId: Long,
+)
