@@ -16,12 +16,13 @@ import (
 )
 
 type ClientHandler struct {
-	db          *ent.Client
-	newClientUC func(*ent.Client) *uclient.Interactor
-	newNotifUC  func(*ent.Client) *unotification.Interactor
-	mailer      *mail.Mailer
-	historyRepo domclient.JwtHistoryRepository
-	frontendURL string
+	db           *ent.Client
+	newClientUC  func(*ent.Client) *uclient.Interactor
+	newNotifUC   func(*ent.Client) *unotification.Interactor
+	mailer       *mail.Mailer
+	historyRepo  domclient.JwtHistoryRepository
+	frontendURL  string
+	cookieSecret string
 }
 
 func NewClientHandler(
@@ -31,8 +32,9 @@ func NewClientHandler(
 	mailer *mail.Mailer,
 	historyRepo domclient.JwtHistoryRepository,
 	frontendURL string,
+	cookieSecret string,
 ) *ClientHandler {
-	return &ClientHandler{db: db, newClientUC: newClientUC, newNotifUC: newNotifUC, mailer: mailer, historyRepo: historyRepo, frontendURL: frontendURL}
+	return &ClientHandler{db: db, newClientUC: newClientUC, newNotifUC: newNotifUC, mailer: mailer, historyRepo: historyRepo, frontendURL: frontendURL, cookieSecret: cookieSecret}
 }
 
 func (h *ClientHandler) Index(c echo.Context) error {
@@ -110,7 +112,7 @@ func (h *ClientHandler) Store(c echo.Context) error {
 	if err := validateStruct(&body); err != nil {
 		return err
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	var storeVo *domclient.StoreVo
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		var e error
@@ -145,7 +147,7 @@ func (h *ClientHandler) Update(c echo.Context) error {
 	if err = validateStruct(&body); err != nil {
 		return err
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	var detailVo *domclient.DetailVo
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		var e error
@@ -223,7 +225,7 @@ func (h *ClientHandler) Destroy(c echo.Context) error {
 	if err = c.Bind(&body); err != nil {
 		return apperror.BadRequest("validation_error")
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		return h.newClientUC(tx.Client()).Destroy(uclient.DestroyDto{ID: id, ExecutorID: executorID, Version: body.Version})
 	}); txErr != nil {

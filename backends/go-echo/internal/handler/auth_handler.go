@@ -60,7 +60,7 @@ func NewAuthHandler(
 }
 
 func (h *AuthHandler) GetMyProfile(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -74,7 +74,7 @@ func (h *AuthHandler) GetMyProfile(c echo.Context) error {
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -152,7 +152,7 @@ func (h *AuthHandler) GoogleCallback(c echo.Context) error {
 	}
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	setStaffCookie(c, staff.ID, maxAge, secure)
+	setStaffCookie(c, staff.ID, maxAge, secure, h.cfg.App.StaffCookieSecret)
 	return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 
@@ -204,7 +204,7 @@ func (h *AuthHandler) GithubCallback(c echo.Context) error {
 	}
 	secure := h.cfg.App.Env == "production"
 	maxAge := h.cfg.App.StaffCookieLifetime * 60
-	setStaffCookie(c, staff.ID, maxAge, secure)
+	setStaffCookie(c, staff.ID, maxAge, secure, h.cfg.App.StaffCookieSecret)
 	return c.Redirect(http.StatusTemporaryRedirect, h.cfg.App.FrontendURL+"/clients")
 }
 

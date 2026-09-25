@@ -13,12 +13,13 @@ import (
 )
 
 type StaffHandler struct {
-	db         *ent.Client
-	newStaffUC func(*ent.Client) *ustaff.Interactor
+	db           *ent.Client
+	newStaffUC   func(*ent.Client) *ustaff.Interactor
+	cookieSecret string
 }
 
-func NewStaffHandler(db *ent.Client, newStaffUC func(*ent.Client) *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{db: db, newStaffUC: newStaffUC}
+func NewStaffHandler(db *ent.Client, newStaffUC func(*ent.Client) *ustaff.Interactor, cookieSecret string) *StaffHandler {
+	return &StaffHandler{db: db, newStaffUC: newStaffUC, cookieSecret: cookieSecret}
 }
 
 func (h *StaffHandler) Index(c echo.Context) error {
@@ -79,7 +80,7 @@ func (h *StaffHandler) UpdateRole(c echo.Context) error {
 	if err = c.Bind(&body); err != nil || body.Role == 0 {
 		return apperror.BadRequest("validation_error")
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		return h.newStaffUC(tx.Client()).UpdateRole(ustaff.UpdateRoleDto{
 			ID: id, Role: body.Role, ExecutorID: executorID, Version: body.Version,
@@ -114,7 +115,7 @@ func (h *StaffHandler) Destroy(c echo.Context) error {
 	if err = c.Bind(&body); err != nil {
 		return apperror.BadRequest("validation_error")
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
 		return h.newStaffUC(tx.Client()).Destroy(ustaff.DestroyDto{ID: id, ExecutorID: executorID, Version: body.Version})
 	}); txErr != nil {
