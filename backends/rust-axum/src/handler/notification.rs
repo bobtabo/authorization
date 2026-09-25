@@ -24,7 +24,7 @@ pub struct IndexQuery {
 
 /// スタッフの未読・全件数を返します。
 pub async fn counts(State(state): State<AppState>, jar: CookieJar) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,
@@ -49,7 +49,7 @@ pub async fn index(
     jar: CookieJar,
     Query(q): Query<IndexQuery>,
 ) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,
@@ -94,7 +94,7 @@ pub async fn index(
 
 /// スタッフの全通知を一括既読にします。トランザクション内で処理します。
 pub async fn read_all(State(state): State<AppState>, jar: CookieJar) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,
@@ -139,7 +139,7 @@ pub async fn read(
     jar: CookieJar,
     Path(id): Path<i64>,
 ) -> (StatusCode, Json<Value>) {
-    let staff_id = staff_id_from_cookie(&jar);
+    let staff_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     if staff_id == 0 {
         return (
             StatusCode::UNAUTHORIZED,

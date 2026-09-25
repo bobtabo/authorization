@@ -212,7 +212,7 @@ pub async fn store(
             Json(json!({"error": "validation_error"})),
         );
     }
-    let executor_id = staff_id_from_cookie(&jar);
+    let executor_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     let dto = StoreDto {
         name: body.name,
         post_code: body.post_code,
@@ -292,7 +292,7 @@ pub async fn update(
             Json(json!({"error": "validation_error"})),
         );
     }
-    let executor_id = staff_id_from_cookie(&jar);
+    let executor_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
     let dto = UpdateDto {
         id,
         name: body.name,
@@ -371,7 +371,7 @@ pub async fn destroy(
     Path(id): Path<u64>,
     Json(body): Json<DestroyBody>,
 ) -> (StatusCode, Json<Value>) {
-    let executor_id = staff_id_from_cookie(&jar);
+    let executor_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
 
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,

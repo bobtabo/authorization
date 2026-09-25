@@ -233,6 +233,7 @@ mod tests {
                 staff_cookie_lifetime: 60,
                 notification_default_limit: 10,
                 cache_prefix: "test".to_string(),
+                staff_cookie_secret: "test-secret".to_string(),
             },
             db: DbConfig {
                 dsn: "".to_string(),

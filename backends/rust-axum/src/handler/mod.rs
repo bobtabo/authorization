@@ -12,13 +12,75 @@ pub mod notification;
 pub mod staff;
 
 use axum_extra::extract::CookieJar;
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub const TIME_FORMAT: &str = "%Y-%m-%d %H:%M";
 
-/// Cookie からスタッフ ID を取得します。未設定または不正値の場合は 0 を返します。
-pub fn staff_id_from_cookie(jar: &CookieJar) -> u32 {
+/// staff_id クッキーの値を "{staffId}.{有効期限のUnix秒}.{HMAC-SHA256署名}" 形式で署名します。
+/// secretを知らない第三者は staffId や有効期限を改ざんしても正しい署名を作成できないため、
+/// クッキー値の改ざん（なりすまし）を防げます。有効期限も署名対象に含めることで、
+/// Max-Age（クライアント側の自己申告に過ぎない）が切れた後の値を手動のCookieヘッダーで
+/// 再送しても拒否できます。
+pub fn sign_staff_id(staff_id: u32, secret: &str, lifetime_secs: i64) -> String {
+    let expires_at = now_unix() + lifetime_secs;
+    let payload = format!("{staff_id}.{expires_at}");
+    format!("{payload}.{}", hmac_hex(&payload, secret))
+}
+
+/// 署名済み staff_id クッキーの値を検証し、staff_id を返します。
+/// 署名が不正・形式不正・有効期限切れの場合は 0（未認証）を返します。
+fn verify_staff_id(value: &str, secret: &str) -> u32 {
+    let mut parts = value.splitn(3, '.');
+    let (Some(id_part), Some(exp_part), Some(sig)) = (parts.next(), parts.next(), parts.next())
+    else {
+        return 0;
+    };
+    if id_part.is_empty() || exp_part.is_empty() || sig.is_empty() {
+        return 0;
+    }
+
+    let payload = format!("{id_part}.{exp_part}");
+    let Ok(mut mac) = Hmac::<Sha256>::new_from_slice(secret.as_bytes()) else {
+        return 0;
+    };
+    mac.update(payload.as_bytes());
+    let Ok(sig_bytes) = hex::decode(sig) else {
+        return 0;
+    };
+    if mac.verify_slice(&sig_bytes).is_err() {
+        return 0;
+    }
+
+    let (Ok(id), Ok(expires_at)) = (id_part.parse::<u32>(), exp_part.parse::<i64>()) else {
+        return 0;
+    };
+    if now_unix() > expires_at {
+        return 0;
+    }
+
+    id
+}
+
+fn hmac_hex(payload: &str, secret: &str) -> String {
+    let mut mac =
+        Hmac::<Sha256>::new_from_slice(secret.as_bytes()).expect("HMAC accepts keys of any size");
+    mac.update(payload.as_bytes());
+    hex::encode(mac.finalize().into_bytes())
+}
+
+fn now_unix() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// Cookie から署名済みスタッフ ID を検証して取得します。未設定・署名不正・有効期限切れの場合は 0 を返します。
+pub fn staff_id_from_cookie(jar: &CookieJar, secret: &str) -> u32 {
     jar.get("staff_id")
-        .and_then(|c| c.value().parse::<u32>().ok())
+        .map(|c| verify_staff_id(c.value(), secret))
         .unwrap_or(0)
 }
 

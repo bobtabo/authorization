@@ -181,6 +181,14 @@ pub async fn truncate_tables(pool: &MySqlPool) {
         .unwrap();
 }
 
+/// テスト用の STAFF_COOKIE_SECRET で staff_id を署名する。
+/// build_test_app() が Config::load() を通して環境変数を読み込んだ後に呼ぶこと。
+pub fn sign_staff_cookie(staff_id: u32) -> String {
+    let secret = std::env::var("STAFF_COOKIE_SECRET")
+        .unwrap_or_else(|_| "test-staff-cookie-secret".to_string());
+    authorization::handler::sign_staff_id(staff_id, &secret, 3600)
+}
+
 pub async fn create_staff(pool: &MySqlPool) -> u32 {
     let email = format!("staff-{}@example.com", uuid::Uuid::new_v4().simple());
     create_staff_with_name_email(pool, "テストスタッフ", &email).await

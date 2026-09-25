@@ -242,18 +242,36 @@ impl Repository for SqlxStaffRepository {
     ) -> Result<bool, DomainError> {
         let now = chrono::Utc::now();
         // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
+        // 実行者が有効なAdminであることをUPDATE文中のEXISTSサブクエリで再検証し、
+        // find_by_idでの認可チェックから書き込みまでの間に実行者の権限が取り消される
+        // TOCTOUを防ぐ。
+        // MySQLは「UPDATE対象と同じテーブルをFROM句のサブクエリで参照できない」ため
+        // （エラー1093）、導出テーブルに包んで最適化バリアを作り回避する。
         let result = sqlx::query(
             "UPDATE staffs SET role = ?, updated_at = ?, updated_by = ?, version = version + 1 \
-             WHERE id = ? AND version = ?",
+             WHERE id = ? AND version = ? \
+             AND EXISTS ( \
+                 SELECT 1 FROM (SELECT id, deleted_at, role FROM staffs WHERE id = ?) AS executor \
+                 WHERE executor.deleted_at IS NULL AND executor.role = 1 \
+             )",
         )
         .bind(role)
         .bind(now)
         .bind(updated_by)
         .bind(id)
         .bind(version)
+        .bind(updated_by)
         .execute(&self.pool)
         .await?;
         if result.rows_affected() == 0 {
+            // 0件だった理由が楽観排他の競合か実行者の権限失効かを切り分ける。
+            let executor_still_admin = self
+                .find_by_id(updated_by)
+                .await?
+                .is_some_and(|e| e.role == 1);
+            if !executor_still_admin {
+                return Err("forbidden".to_string().into());
+            }
             return Err("optimistic_lock_conflict".to_string().into());
         }
         Ok(true)
