@@ -98,14 +98,15 @@ class StaffInteractor:
         """
         if dto.executor_id == 0:
             raise unauthorized("unauthenticated")
-        if dto.staff_id == dto.executor_id:
-            raise bad_request("cannot_update_own_role")
 
         # role の実際の値は 1=Admin, 2=Member（domain.staff.enums の ROLE_* 定数は
         # どこからも参照されておらず値が実態と一致していないため使用しない）。
         executor = self.repository.find_staff_by_id_include_deleted(dto.executor_id)
         if executor is None or executor.deleted_at is not None or executor.role != 1:
             raise forbidden("forbidden")
+
+        if dto.staff_id == dto.executor_id:
+            raise bad_request("cannot_update_own_role")
 
         # 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         staff = self.repository.find_staff_by_id_include_deleted(dto.staff_id)

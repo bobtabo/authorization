@@ -90,6 +90,25 @@ class TestUpdateRole:
         )
         assert res.status_code == 403
 
+    def test_Admin以外の実行者が自分自身を更新しても403が返る(self, client, db_session):
+        # 自分自身の更新チェック（400）より先にAdmin検証（403）が行われることを確認する。
+        executor = make_staff(db_session, email="self-update-member@example.com", role=2)
+        res = client.patch(
+            f"/api/staffs/{executor.id}/updateRole",
+            json={"role": 1, "version": executor.version},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
+        )
+        assert res.status_code == 403
+
+    def test_Adminが自分自身を更新すると400が返る(self, client, db_session):
+        executor = make_staff(db_session, email="self-update-admin@example.com", role=1)
+        res = client.patch(
+            f"/api/staffs/{executor.id}/updateRole",
+            json={"role": 2, "version": executor.version},
+            cookies={"staff_id": sign_staff_cookie(executor.id)},
+        )
+        assert res.status_code == 400
+
 
 class TestDestroy:
     def test_スタッフが削除できる(self, client, db_session):
