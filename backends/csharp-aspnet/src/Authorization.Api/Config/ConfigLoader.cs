@@ -40,10 +40,11 @@ public static class ConfigLoader
         var appEnv  = Str("APP_ENV", "local");
 
         var staffCookieSecret = Str("STAFF_COOKIE_SECRET", "");
-        if (staffCookieSecret.Length == 0)
+        if (string.IsNullOrWhiteSpace(staffCookieSecret) ||
+            string.Equals(staffCookieSecret, "your-staff-cookie-secret", StringComparison.OrdinalIgnoreCase))
         {
-            // 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
-            // staff_id クッキーの署名検証が無意味になるため起動時に止める。
+            // 空・空白のみのシークレットや公開済みのサンプル値でのHMAC署名は誰でも同じ署名を
+            // 再現できてしまい、staff_id クッキーの署名検証が無意味になるため起動時に止める。
             throw new InvalidOperationException("STAFF_COOKIE_SECRET must be set");
         }
 
