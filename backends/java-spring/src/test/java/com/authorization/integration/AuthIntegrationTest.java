@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 import com.authorization.Application;
+import com.authorization.support.http.StaffSession;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
@@ -50,7 +51,7 @@ class AuthIntegrationTest {
 
         EntityExchangeResult<Map> result = client.get()
                 .uri("/api/auth/me")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();
@@ -76,7 +77,7 @@ class AuthIntegrationTest {
 
         EntityExchangeResult<Map> result = client.get()
                 .uri("/api/auth/login")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();
@@ -106,6 +107,71 @@ class AuthIntegrationTest {
                 .returnResult();
 
         assertThat(result.getStatus().value()).isEqualTo(200);
+    }
+
+    @Test
+    void meUnsignedForgedCookieReturns401() {
+        var staff = TestHelper.createStaff("forge-1@example.com", 1);
+        // 署名を付けず staff_id をそのまま設定した「偽造」クッキー。
+        EntityExchangeResult<Map> result = client.get()
+                .uri("/api/auth/me")
+                .header("Cookie", "staff_id=" + staff.id())
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
+
+    @Test
+    void meTamperedSignatureReturns401() {
+        var staff = TestHelper.createStaff("forge-2@example.com", 1);
+        String signed = TestHelper.signStaffCookie(staff.id());
+        // 末尾の1文字を必ず異なる値に置き換える（元の値と偶然一致すると署名が
+        // 変わらずテストが不安定になるため）。
+        char replacement = signed.charAt(signed.length() - 1) == '0' ? '1' : '0';
+        String tampered = signed.substring(0, signed.length() - 1) + replacement;
+
+        EntityExchangeResult<Map> result = client.get()
+                .uri("/api/auth/me")
+                .header("Cookie", "staff_id=" + tampered)
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
+
+    @Test
+    void meSignedWithAnotherSecretReturns401() {
+        var staff = TestHelper.createStaff("forge-3@example.com", 1);
+        String forged = StaffSession.signStaffId(staff.id(), "attacker-controlled-secret", 3600);
+
+        EntityExchangeResult<Map> result = client.get()
+                .uri("/api/auth/me")
+                .header("Cookie", "staff_id=" + forged)
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
+
+    @Test
+    void meExpiredSignedCookieReturns401() {
+        var staff = TestHelper.createStaff("forge-4@example.com", 1);
+        // 署名自体は正しいが、Max-Ageが切れた後に手動でCookieヘッダーを
+        // 再送した状況を再現する（署名対象に有効期限を含めていないと防げない）。
+        String expired = StaffSession.signStaffId(staff.id(), TestHelper.CFG.app().staffCookieSecret(), -3600);
+
+        EntityExchangeResult<Map> result = client.get()
+                .uri("/api/auth/me")
+                .header("Cookie", "staff_id=" + expired)
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
     }
 
     private RestTestClient noRedirectClient() {

@@ -30,6 +30,7 @@ public record AppConfig(
      * @param notificationDefaultLimit 通知一覧のデフォルト取得件数
      * @param cachePrefix キャッシュキーのプレフィックス
      * @param runtime ランタイム識別子（OAuthのstateに埋め込む）
+     * @param staffCookieSecret staff_id クッキーのHMAC署名シークレット
      */
     public record App(
             String env,
@@ -38,7 +39,8 @@ public record AppConfig(
             long staffCookieLifetime,
             long notificationDefaultLimit,
             String cachePrefix,
-            String runtime) {
+            String runtime,
+            String staffCookieSecret) {
     }
 
     /**

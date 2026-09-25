@@ -5,11 +5,14 @@
  */
 package com.authorization.http.controllers;
 
+import com.authorization.config.AppConfig;
 import com.authorization.domain.staff.enums.StaffRole;
 import com.authorization.domain.staff.valueobjects.StaffListVo;
 import com.authorization.domain.staff.valueobjects.StaffMutationVo;
 import com.authorization.domain.staff.valueobjects.StaffRemoveVo;
 import com.authorization.domain.staff.valueobjects.StaffResourceVo;
+import com.authorization.support.exceptions.AppException;
+import com.authorization.support.http.StaffSession;
 import com.authorization.support.http.responses.Pager;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.staff.StaffService;
@@ -41,14 +44,17 @@ public class StaffController {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final StaffService service;
+    private final AppConfig cfg;
 
     /**
      * コンストラクタ。
      *
      * @param service スタッフService
+     * @param cfg アプリケーション設定
      */
-    public StaffController(StaffService service) {
+    public StaffController(StaffService service, AppConfig cfg) {
         this.service = service;
+        this.cfg = cfg;
     }
 
     /**
@@ -89,15 +95,16 @@ public class StaffController {
      * スタッフの権限を更新します。
      *
      * @param id スタッフID
-     * @param executorId 操作を実行したスタッフID（クッキーから取得）
+     * @param executorIdCookie 操作を実行したスタッフIDのstaff_idクッキー値（署名済み）
      * @param body リクエストボディ
      * @return JSON レスポンス
      */
     @PatchMapping("/{id}/updateRole")
     public ResponseEntity<Map<String, Object>> updateRole(
             @PathVariable long id,
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long executorId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
         StaffDto dto = new StaffDto();
         dto.setId(id);
         dto.setExecutorId(executorId);
@@ -129,15 +136,19 @@ public class StaffController {
      * スタッフを論理削除します。
      *
      * @param id スタッフID
-     * @param executorId 操作を実行したスタッフID（クッキーから取得）
+     * @param executorIdCookie 操作を実行したスタッフIDのstaff_idクッキー値（署名済み）
      * @param body リクエストボディ（version を含む）
      * @return JSON レスポンス
      */
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Map<String, Object>> destroy(
             @PathVariable long id,
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long executorId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         StaffDto dto = new StaffDto();
         dto.setId(id);
         dto.setExecutorId(executorId);

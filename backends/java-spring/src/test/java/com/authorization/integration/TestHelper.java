@@ -14,6 +14,7 @@ import com.authorization.config.AppConfig;
 import com.authorization.config.ConfigLoader;
 import com.authorization.config.DbConfig;
 import com.authorization.infrastructure.cache.RedisConfig;
+import com.authorization.support.http.StaffSession;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -253,6 +254,16 @@ public final class TestHelper {
      */
     public static NotificationRow createNotification(long staffId, String title) {
         return createNotification(staffId, title, false);
+    }
+
+    /**
+     * テスト用シークレットで署名済みの staff_id クッキー値を組み立てます。
+     *
+     * @param staffId スタッフID
+     * @return 署名済みクッキー値
+     */
+    public static String signStaffCookie(long staffId) {
+        return StaffSession.signStaffId(staffId, CFG.app().staffCookieSecret(), 3600);
     }
 
     /**

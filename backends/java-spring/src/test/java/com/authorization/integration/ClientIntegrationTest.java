@@ -96,7 +96,7 @@ class ClientIntegrationTest {
 
         EntityExchangeResult<Map> result = client.post()
                 .uri("/api/clients/store")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of(
                         "name", "新規クライアント株式会社",
@@ -121,7 +121,7 @@ class ClientIntegrationTest {
 
         EntityExchangeResult<Map> result = client.put()
                 .uri("/api/clients/" + c.id() + "/update")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("name", "更新後クライアント名", "version", c.version()))
                 .exchange()
@@ -139,7 +139,7 @@ class ClientIntegrationTest {
 
         EntityExchangeResult<Map> result = client.method(org.springframework.http.HttpMethod.DELETE)
                 .uri("/api/clients/" + c.id() + "/delete")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("version", c.version()))
                 .exchange()
@@ -147,6 +147,56 @@ class ClientIntegrationTest {
                 .returnResult();
 
         assertThat(result.getStatus().value()).isEqualTo(200);
+    }
+
+    @Test
+    void storeReturns401WhenUnauthenticated() {
+        EntityExchangeResult<Map> result = client.post()
+                .uri("/api/clients/store")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(
+                        "name", "無認証クライアント株式会社",
+                        "post_code", "100-0001",
+                        "pref", "東京都",
+                        "city", "千代田区",
+                        "address", "千代田1-1",
+                        "tel", "0312345678",
+                        "email", "unauth-client@example.com"))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
+
+    @Test
+    void updateReturns401WhenUnauthenticated() {
+        var c = TestHelper.createClient();
+
+        EntityExchangeResult<Map> result = client.put()
+                .uri("/api/clients/" + c.id() + "/update")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("name", "更新後クライアント名", "version", c.version()))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
+
+    @Test
+    void destroyReturns401WhenUnauthenticated() {
+        var c = TestHelper.createClient();
+
+        EntityExchangeResult<Map> result = client.method(org.springframework.http.HttpMethod.DELETE)
+                .uri("/api/clients/" + c.id() + "/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("version", c.version()))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
     }
 
     // --- スマホ連携 API ---

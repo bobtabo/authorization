@@ -19,6 +19,7 @@ import com.authorization.http.responses.client.ShowResponse;
 import com.authorization.http.responses.client.StoreResponse;
 import com.authorization.infrastructure.mail.Mailer;
 import com.authorization.support.exceptions.AppException;
+import com.authorization.support.http.StaffSession;
 import com.authorization.support.http.responses.Pager;
 import com.authorization.support.http.responses.ResponseHelper;
 import com.authorization.usecases.client.ClientService;
@@ -163,8 +164,12 @@ public class ClientController {
      */
     @PostMapping("/store")
     public ResponseEntity<Map<String, Object>> store(
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long executorId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         String name = str(body, "name");
         String postCode = str(body, "post_code");
         String pref = str(body, "pref");
@@ -221,8 +226,12 @@ public class ClientController {
     @PutMapping("/{id}/update")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable long id,
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long executorId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         String name = (String) body.get("name");
         String postCode = (String) body.get("post_code");
         String pref = (String) body.get("pref");
@@ -365,8 +374,12 @@ public class ClientController {
     @DeleteMapping("/{id}/delete")
     public ResponseEntity<Map<String, Object>> destroy(
             @PathVariable long id,
-            @CookieValue(name = "staff_id", required = false, defaultValue = "0") long executorId,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         ClientDto dto = new ClientDto();
         dto.setId(id);
         dto.setExecutorId(executorId);

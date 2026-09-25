@@ -80,7 +80,7 @@ class StaffIntegrationTest {
 
         EntityExchangeResult<Map> result = client.patch()
                 .uri("/api/staffs/" + target.id() + "/updateRole")
-                .header("Cookie", "staff_id=" + executor.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(executor.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("role", 1))
                 .exchange()
@@ -92,6 +92,60 @@ class StaffIntegrationTest {
         Long persistedRole = TestHelper.dsl().select(STAFFS.ROLE).from(STAFFS)
                 .where(STAFFS.ID.eq(target.id())).fetchOne(STAFFS.ROLE);
         assertThat(persistedRole).isEqualTo(1L);
+    }
+
+    @Test
+    void updateRoleUnauthenticatedReturns401() {
+        var target = TestHelper.createStaff("target-unauth@example.com", 2);
+
+        EntityExchangeResult<Map> result = client.patch()
+                .uri("/api/staffs/" + target.id() + "/updateRole")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("role", 1))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
+
+    @Test
+    void updateRoleNonAdminExecutorReturns403() {
+        var target = TestHelper.createStaff("target-member@example.com", 2);
+        var executor = TestHelper.createStaff("member-executor@example.com", 2);
+
+        EntityExchangeResult<Map> result = client.patch()
+                .uri("/api/staffs/" + target.id() + "/updateRole")
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(executor.id()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("role", 1))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(403);
+    }
+
+    @Test
+    void updateRoleDeletedAdminExecutorReturns403() {
+        var target = TestHelper.createStaff("target-deleted-admin@example.com", 2);
+        var executor = TestHelper.createStaff("deleted-admin-executor@example.com", 1);
+        // 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現する。
+        TestHelper.dsl().update(STAFFS)
+                .set(STAFFS.DELETED_AT, LocalDateTime.now())
+                .where(STAFFS.ID.eq(executor.id()))
+                .execute();
+
+        EntityExchangeResult<Map> result = client.patch()
+                .uri("/api/staffs/" + target.id() + "/updateRole")
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(executor.id()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("role", 1))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(403);
     }
 
     @Test
@@ -122,7 +176,7 @@ class StaffIntegrationTest {
 
         EntityExchangeResult<Map> result = client.method(org.springframework.http.HttpMethod.DELETE)
                 .uri("/api/staffs/" + target.id() + "/delete")
-                .header("Cookie", "staff_id=" + executor.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(executor.id()))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("version", 1))
                 .exchange()
@@ -134,5 +188,20 @@ class StaffIntegrationTest {
         LocalDateTime deletedAt = TestHelper.dsl().select(STAFFS.DELETED_AT).from(STAFFS)
                 .where(STAFFS.ID.eq(target.id())).fetchOne(STAFFS.DELETED_AT);
         assertThat(deletedAt).isNotNull();
+    }
+
+    @Test
+    void destroyReturns401WhenUnauthenticated() {
+        var target = TestHelper.createStaff("target-unauth@example.com", 2);
+
+        EntityExchangeResult<Map> result = client.method(org.springframework.http.HttpMethod.DELETE)
+                .uri("/api/staffs/" + target.id() + "/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("version", 1))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
     }
 }

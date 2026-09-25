@@ -80,7 +80,7 @@ class StaffServiceTest {
      */
     @Test
     void updateRoleThrowsNotFoundWhenStaffDoesNotExist() {
-        StaffService service = newService(new FakeStaffRepository());
+        StaffService service = newService(new FakeStaffRepository().add(makeStaff(9L, StaffRole.Administrator)));
 
         StaffDto dto = dto(99L);
         dto.setRole(StaffRole.Administrator);
@@ -94,7 +94,9 @@ class StaffServiceTest {
      */
     @Test
     void updateRoleUpdatesRoleAndReturnsOk() {
-        FakeStaffRepository repository = new FakeStaffRepository().add(makeStaff(1L, StaffRole.Member));
+        FakeStaffRepository repository = new FakeStaffRepository()
+                .add(makeStaff(1L, StaffRole.Member))
+                .add(makeStaff(9L, StaffRole.Administrator));
         StaffService service = newService(repository);
 
         StaffDto dto = dto(1L);
@@ -106,6 +108,58 @@ class StaffServiceTest {
         StaffCondition condition = new StaffCondition();
         condition.setId(1L);
         assertEquals(StaffRole.Administrator, repository.findById(condition).getRole());
+    }
+
+    /**
+     * 実行者が未認証（executorId未設定）の場合、401（unauthenticated）を投げることを確認します。
+     */
+    @Test
+    void updateRoleThrowsUnauthorizedWhenExecutorIdIsMissing() {
+        StaffService service = newService(new FakeStaffRepository().add(makeStaff(1L, StaffRole.Member)));
+
+        StaffDto dto = dto(1L);
+        dto.setExecutorId(0L);
+        dto.setRole(StaffRole.Administrator);
+        AppException exception = assertThrows(AppException.class, () -> service.updateRole(dto));
+
+        assertEquals(401, exception.getStatusCode());
+    }
+
+    /**
+     * 実行者がAdmin以外の場合、403（forbidden）を投げることを確認します。
+     */
+    @Test
+    void updateRoleThrowsForbiddenWhenExecutorIsNotAdmin() {
+        FakeStaffRepository repository = new FakeStaffRepository()
+                .add(makeStaff(1L, StaffRole.Member))
+                .add(makeStaff(9L, StaffRole.Member));
+        StaffService service = newService(repository);
+
+        StaffDto dto = dto(1L);
+        dto.setRole(StaffRole.Administrator);
+        AppException exception = assertThrows(AppException.class, () -> service.updateRole(dto));
+
+        assertEquals(403, exception.getStatusCode());
+    }
+
+    /**
+     * 実行者が無効化（論理削除）済みAdminの場合、403（forbidden）を投げることを確認します。
+     * 署名済みクッキーは有効だが、実行者は既に無効化されている状態を再現します。
+     */
+    @Test
+    void updateRoleThrowsForbiddenWhenExecutorIsDeletedAdmin() {
+        Staff deletedAdmin = makeStaff(9L, StaffRole.Administrator);
+        deletedAdmin.setDeletedAt(LocalDateTime.now());
+        FakeStaffRepository repository = new FakeStaffRepository()
+                .add(makeStaff(1L, StaffRole.Member))
+                .add(deletedAdmin);
+        StaffService service = newService(repository);
+
+        StaffDto dto = dto(1L);
+        dto.setRole(StaffRole.Administrator);
+        AppException exception = assertThrows(AppException.class, () -> service.updateRole(dto));
+
+        assertEquals(403, exception.getStatusCode());
     }
 
     /**

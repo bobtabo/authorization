@@ -27,6 +27,15 @@ public class ConfigLoader {
         String envFile = System.getenv("ENV_FILE") != null ? System.getenv("ENV_FILE") : ".env";
         Dotenv env = Dotenv.configure().filename(envFile).ignoreIfMissing().load();
 
+        String staffCookieSecret = str(env, "STAFF_COOKIE_SECRET", "");
+        if (staffCookieSecret.isEmpty()
+                || "your-staff-cookie-secret".equals(staffCookieSecret)
+                || staffCookieSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8).length < 32) {
+            // 空シークレット・公開済みのサンプル値・短すぎる値でのHMAC署名は
+            // 総当たりや既知の値での偽造を許してしまうため起動時に止める。
+            throw new IllegalStateException("STAFF_COOKIE_SECRET must be set to a random value of at least 32 bytes");
+        }
+
         return new AppConfig(
                 new AppConfig.App(
                         str(env, "APP_ENV", "local"),
@@ -35,7 +44,8 @@ public class ConfigLoader {
                         longVal(env, "STAFF_COOKIE_LIFETIME", 60),
                         longVal(env, "NOTIFICATION_DEFAULT_LIMIT", 10),
                         str(env, "CACHE_PREFIX", ""),
-                        str(env, "APP_RUNTIME", "java")),
+                        str(env, "APP_RUNTIME", "java"),
+                        staffCookieSecret),
                 new AppConfig.Db(
                         str(env, "DB_HOST", "localhost"),
                         intVal(env, "DB_PORT", 3306),

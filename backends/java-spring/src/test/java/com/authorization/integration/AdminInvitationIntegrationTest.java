@@ -61,7 +61,7 @@ class AdminInvitationIntegrationTest {
 
         EntityExchangeResult<Map> result = client.get()
                 .uri("/api/admin/invitation/issue?role=2")
-                .header("Cookie", "staff_id=" + staff.id())
+                .header("Cookie", "staff_id=" + TestHelper.signStaffCookie(staff.id()))
                 .exchange()
                 .expectBody(Map.class)
                 .returnResult();
