@@ -81,8 +81,8 @@ func Load() *Config {
 	_ = godotenv.Load(envFile)
 
 	staffCookieSecret := getEnv("STAFF_COOKIE_SECRET", "")
-	if staffCookieSecret == "" {
-		// 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
+	if staffCookieSecret == "" || staffCookieSecret == "your-staff-cookie-secret" {
+		// 空シークレットや公開済みのサンプル値でのHMAC署名は誰でも同じ署名を再現できてしまい、
 		// staff_id クッキーの署名検証が無意味になるため起動時に止める。
 		log.Fatal("STAFF_COOKIE_SECRET must be set")
 	}
