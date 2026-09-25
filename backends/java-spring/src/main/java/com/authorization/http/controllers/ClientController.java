@@ -167,6 +167,9 @@ public class ClientController {
             @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
         long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         String name = str(body, "name");
         String postCode = str(body, "post_code");
         String pref = str(body, "pref");
@@ -226,6 +229,9 @@ public class ClientController {
             @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
         long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         String name = (String) body.get("name");
         String postCode = (String) body.get("post_code");
         String pref = (String) body.get("pref");
@@ -371,6 +377,9 @@ public class ClientController {
             @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
         long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         ClientDto dto = new ClientDto();
         dto.setId(id);
         dto.setExecutorId(executorId);

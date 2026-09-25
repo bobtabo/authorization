@@ -11,6 +11,7 @@ import com.authorization.domain.staff.valueobjects.StaffListVo;
 import com.authorization.domain.staff.valueobjects.StaffMutationVo;
 import com.authorization.domain.staff.valueobjects.StaffRemoveVo;
 import com.authorization.domain.staff.valueobjects.StaffResourceVo;
+import com.authorization.support.exceptions.AppException;
 import com.authorization.support.http.StaffSession;
 import com.authorization.support.http.responses.Pager;
 import com.authorization.support.http.responses.ResponseHelper;
@@ -145,6 +146,9 @@ public class StaffController {
             @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
             @RequestBody Map<String, Object> body) {
         long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
         StaffDto dto = new StaffDto();
         dto.setId(id);
         dto.setExecutorId(executorId);

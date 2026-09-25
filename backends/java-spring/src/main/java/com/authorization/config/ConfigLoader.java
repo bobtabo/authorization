@@ -28,10 +28,12 @@ public class ConfigLoader {
         Dotenv env = Dotenv.configure().filename(envFile).ignoreIfMissing().load();
 
         String staffCookieSecret = str(env, "STAFF_COOKIE_SECRET", "");
-        if (staffCookieSecret.isEmpty()) {
-            // 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
-            // staff_id クッキーの署名検証が無意味になるため起動時に止める。
-            throw new IllegalStateException("STAFF_COOKIE_SECRET must be set");
+        if (staffCookieSecret.isEmpty()
+                || "your-staff-cookie-secret".equals(staffCookieSecret)
+                || staffCookieSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8).length < 32) {
+            // 空シークレット・公開済みのサンプル値・短すぎる値でのHMAC署名は
+            // 総当たりや既知の値での偽造を許してしまうため起動時に止める。
+            throw new IllegalStateException("STAFF_COOKIE_SECRET must be set to a random value of at least 32 bytes");
         }
 
         return new AppConfig(

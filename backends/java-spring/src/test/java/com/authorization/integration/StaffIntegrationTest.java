@@ -189,4 +189,19 @@ class StaffIntegrationTest {
                 .where(STAFFS.ID.eq(target.id())).fetchOne(STAFFS.DELETED_AT);
         assertThat(deletedAt).isNotNull();
     }
+
+    @Test
+    void destroyReturns401WhenUnauthenticated() {
+        var target = TestHelper.createStaff("target-unauth@example.com", 2);
+
+        EntityExchangeResult<Map> result = client.method(org.springframework.http.HttpMethod.DELETE)
+                .uri("/api/staffs/" + target.id() + "/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("version", 1))
+                .exchange()
+                .expectBody(Map.class)
+                .returnResult();
+
+        assertThat(result.getStatus().value()).isEqualTo(401);
+    }
 }
