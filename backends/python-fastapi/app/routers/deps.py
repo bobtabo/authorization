@@ -8,6 +8,7 @@ from fastapi import Cookie, Depends, Header
 from sqlalchemy.orm import Session
 from app.config.settings import get_settings, Settings
 from app.exceptions import unauthorized
+from app.support.staff_session import verify_staff_id
 from app.infrastructure.db import get_db
 from app.infrastructure.redis_client import get_redis
 from app.infrastructure.persistence.sqlalchemy_client_repository import SqlAlchemyClientRepository
@@ -89,13 +90,11 @@ def get_notification_interactor(
     return NotificationInteractor(notif_repo, staff_repo)
 
 
-def get_staff_id_from_cookie(cookie_sid: Optional[str] = Cookie(default=None, alias="staff_id")) -> int:
-    if not cookie_sid:
-        return 0
-    try:
-        return int(cookie_sid)
-    except ValueError:
-        return 0
+def get_staff_id_from_cookie(
+    cookie_sid: Optional[str] = Cookie(default=None, alias="staff_id"),
+    settings: Settings = Depends(get_settings),
+) -> int:
+    return verify_staff_id(cookie_sid, settings.staff_cookie_secret)
 
 
 def require_staff_id(staff_id: int = Depends(get_staff_id_from_cookie)) -> int:

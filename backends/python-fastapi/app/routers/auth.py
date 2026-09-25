@@ -14,6 +14,7 @@ from app.exceptions import AppError, unauthorized, bad_request, forbidden
 from app.routers.deps import (
     get_auth_interactor, get_invitation_interactor, get_staff_id_from_cookie,
 )
+from app.support.staff_session import sign_staff_id
 from app.usecase.auth.interactor import AuthInteractor
 from app.usecase.auth.dto import AuthLoginDto
 from app.usecase.invitation.interactor import InvitationInteractor
@@ -185,8 +186,9 @@ def _google_callback(
         raise
 
     max_age = settings.staff_cookie_lifetime * 60
+    signed_staff_id = sign_staff_id(staff.id, settings.staff_cookie_secret, max_age)
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
-    redirect.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
+    redirect.set_cookie("staff_id", signed_staff_id, max_age=max_age, httponly=True, samesite="lax")
     return redirect
 
 
@@ -274,6 +276,7 @@ def _github_callback(
         return RedirectResponse(url=f"{settings.frontend_url}/error?code={code_}", status_code=302)
 
     max_age = settings.staff_cookie_lifetime * 60
+    signed_staff_id = sign_staff_id(staff.id, settings.staff_cookie_secret, max_age)
     redirect = RedirectResponse(url=f"{settings.frontend_url}/clients", status_code=302)
-    redirect.set_cookie("staff_id", str(staff.id), max_age=max_age, httponly=True, samesite="lax")
+    redirect.set_cookie("staff_id", signed_staff_id, max_age=max_age, httponly=True, samesite="lax")
     return redirect

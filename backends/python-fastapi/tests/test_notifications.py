@@ -1,6 +1,6 @@
 """通知エンドポイントのテスト。"""
 
-from tests.conftest import make_notification, make_staff
+from tests.conftest import make_notification, make_staff, sign_staff_cookie
 
 
 class TestCounts:
@@ -8,7 +8,7 @@ class TestCounts:
         staff = make_staff(db_session)
         make_notification(db_session, staff_id=staff.id)
         make_notification(db_session, staff_id=staff.id, read=True)
-        res = client.get("/api/notifications/counts", cookies={"staff_id": str(staff.id)})
+        res = client.get("/api/notifications/counts", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         data = res.json()
         assert "unread" in data
@@ -26,7 +26,7 @@ class TestIndex:
         staff = make_staff(db_session)
         make_notification(db_session, staff_id=staff.id, title="通知1")
         make_notification(db_session, staff_id=staff.id, title="通知2")
-        res = client.get("/api/notifications", cookies={"staff_id": str(staff.id)})
+        res = client.get("/api/notifications", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         data = res.json()
         assert "items" in data
@@ -35,7 +35,7 @@ class TestIndex:
     def test_url付き通知がレスポンスに含まれる(self, client, db_session):
         staff = make_staff(db_session)
         make_notification(db_session, staff_id=staff.id, title="クライアント登録", url="/clients/show?id=1")
-        res = client.get("/api/notifications", cookies={"staff_id": str(staff.id)})
+        res = client.get("/api/notifications", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         item = res.json()["items"][0]
         assert item["url"] == "/clients/show?id=1"
@@ -52,7 +52,7 @@ class TestBulkRead:
         make_notification(db_session, staff_id=staff.id)
         res = client.patch(
             "/api/notifications",
-            cookies={"staff_id": str(staff.id)},
+            cookies={"staff_id": sign_staff_cookie(staff.id)},
         )
         assert res.status_code == 200
         assert "updated" in res.json()
@@ -62,14 +62,14 @@ class TestRead:
     def test_単一通知が既読になる(self, client, db_session):
         staff = make_staff(db_session)
         n = make_notification(db_session, staff_id=staff.id)
-        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": str(staff.id)})
+        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         assert res.json()["id"] == n.id
 
     def test_既読済みの自分の通知は200が返る(self, client, db_session):
         staff = make_staff(db_session)
         n = make_notification(db_session, staff_id=staff.id, read=True)
-        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": str(staff.id)})
+        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         assert res.json()["id"] == n.id
 
@@ -83,5 +83,5 @@ class TestRead:
         staff = make_staff(db_session, email="read-404-self@example.com")
         other = make_staff(db_session, email="read-404-other@example.com")
         n = make_notification(db_session, staff_id=other.id)
-        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": str(staff.id)})
+        res = client.patch(f"/api/notifications/{n.id}", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 404

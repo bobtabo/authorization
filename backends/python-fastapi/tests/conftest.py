@@ -22,10 +22,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
 
+from app.config.settings import get_settings
 from app.infrastructure.db import get_db
 from app.main import app
 from app.infrastructure.model.model import Base, ClientModel, InvitationModel, NotificationModel, StaffModel
 from app.routers.deps import get_redis_client
+from app.support.staff_session import sign_staff_id
 
 # ---------------------------------------------------------------------------
 # テスト用 DB エンジン
@@ -131,6 +133,11 @@ def db_session():
 # ---------------------------------------------------------------------------
 # テストデータ生成ヘルパー
 # ---------------------------------------------------------------------------
+def sign_staff_cookie(staff_id: int) -> str:
+    """テスト用シークレットで署名済みの staff_id クッキー値を組み立てます。"""
+    return sign_staff_id(staff_id, get_settings().staff_cookie_secret, 3600)
+
+
 def make_staff(db, **kwargs) -> StaffModel:
     defaults = {
         "name": "テストスタッフ",

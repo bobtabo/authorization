@@ -1,6 +1,6 @@
 """管理招待エンドポイントのテスト。"""
 
-from tests.conftest import make_invitation, make_staff
+from tests.conftest import make_invitation, make_staff, sign_staff_cookie
 
 
 class TestAdminInvitationIndex:
@@ -27,7 +27,7 @@ class TestAdminInvitationIndex:
 class TestAdminInvitationIssue:
     def test_招待URLが発行できる(self, client, db_session):
         staff = make_staff(db_session)
-        res = client.get("/api/admin/invitation/issue?role=2", cookies={"staff_id": str(staff.id)})
+        res = client.get("/api/admin/invitation/issue?role=2", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         data = res.json()
         assert "url" in data
@@ -36,7 +36,7 @@ class TestAdminInvitationIssue:
     def test_再発行で新しいトークンが返る(self, client, db_session):
         staff = make_staff(db_session)
         make_invitation(db_session, token="old-token", role=2)
-        res = client.get("/api/admin/invitation/issue?role=2", cookies={"staff_id": str(staff.id)})
+        res = client.get("/api/admin/invitation/issue?role=2", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 200
         data = res.json()
         assert data["token"] != "old-token"
@@ -47,5 +47,5 @@ class TestAdminInvitationIssue:
 
     def test_roleパラメータが不正な場合400が返る(self, client, db_session):
         staff = make_staff(db_session)
-        res = client.get("/api/admin/invitation/issue?role=3", cookies={"staff_id": str(staff.id)})
+        res = client.get("/api/admin/invitation/issue?role=3", cookies={"staff_id": sign_staff_cookie(staff.id)})
         assert res.status_code == 400
