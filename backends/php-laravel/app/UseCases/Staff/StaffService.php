@@ -12,6 +12,7 @@ namespace App\UseCases\Staff;
 
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff;
+use App\Domain\Staff\Enums\StaffRole;
 use App\Domain\Staff\Mappers\StaffApiMapper;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Domain\Staff\ValueObjects\StaffListVo;
@@ -23,6 +24,7 @@ use App\Support\Mappers\SimpleMapper;
 use App\Support\Repositories\Conditions\Option;
 use App\Support\Services\AbstractService;
 use App\UseCases\Staff\Dtos\StaffDto;
+use AutoMapperPlus\Exception\UnregisteredMappingException;
 use Illuminate\Database\QueryException;
 
 /**
@@ -34,28 +36,27 @@ use Illuminate\Database\QueryException;
 class StaffService extends AbstractService
 {
     /**
-     * @param StaffRepository $repository スタッフRepository
+     * @param  StaffRepository  $repository  スタッフRepository
      */
     public function __construct(
         private readonly StaffRepository $repository,
-    ) {
-    }
+    ) {}
 
     /**
      * ID でスタッフを1件取得します。
      *
-     * @param StaffDto $dto スタッフDTO
+     * @param  StaffDto  $dto  スタッフDTO
      * @return StaffResourceVo スタッフリソースValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function find(StaffDto $dto): StaffResourceVo
     {
-        $vo = new StaffResourceVo();
+        $vo = new StaffResourceVo;
         if ($dto->id === null) {
             return $vo;
         }
 
-        $condition = new StaffCondition();
+        $condition = new StaffCondition;
         $condition->id = $dto->id;
 
         $entity = $this->repository->findById($condition);
@@ -71,13 +72,13 @@ class StaffService extends AbstractService
     /**
      * 条件でスタッフ一覧を取得します。
      *
-     * @param StaffDto $dto スタッフDTO
+     * @param  StaffDto  $dto  スタッフDTO
      * @return StaffListVo スタッフ一覧ValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function index(StaffDto $dto): StaffListVo
     {
-        $condition = new StaffCondition();
+        $condition = new StaffCondition;
         $condition->keyword = $dto->keyword;
         $condition->roles = $dto->roles;
         $condition->statuses = $dto->statuses;
@@ -86,7 +87,7 @@ class StaffService extends AbstractService
         $count = $this->repository->countByCondition($condition);
         $list = $this->repository->findByCondition($condition);
 
-        $vo = new StaffListVo();
+        $vo = new StaffListVo;
         $vo->assignStaff($list);
         $vo->setCount($count);
         $vo->setPaging($dto->offset, $dto->limit, $dto->sort, $dto->sortType);
@@ -97,16 +98,18 @@ class StaffService extends AbstractService
     /**
      * 権限を更新します。
      *
-     * @param StaffDto $dto スタッフDTO
+     * @param  StaffDto  $dto  スタッフDTO
      * @return StaffMutationVo スタッフ権限更新ValueObject
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     * @throws UnregisteredMappingException マッピング例外
      */
     public function updateRole(StaffDto $dto): StaffMutationVo
     {
+        $this->authorizeAdministrator($dto->executorId);
         if ($dto->role === null) {
             throw AppException::badRequest('role_invalid');
         }
 
+        // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         $condition = SimpleMapper::map($dto, StaffCondition::class);
         $entity = $this->repository->findById($condition);
 
@@ -120,19 +123,21 @@ class StaffService extends AbstractService
 
         return new StaffMutationVo()->assign([
             'ok' => true,
-            'id' => $saved->id
+            'id' => $saved->id,
         ]);
     }
 
     /**
      * スタッフを論理削除します。
      *
-     * @param StaffDto $dto スタッフDTO
+     * @param  StaffDto  $dto  スタッフDTO
      * @return StaffRemoveVo スタッフ削除ValueObject
-     * @throws \AutoMapperPlus\Exception\UnregisteredMappingException マッピング例外
+     * @throws UnregisteredMappingException マッピング例外
      */
     public function destroy(StaffDto $dto): StaffRemoveVo
     {
+        $this->authorizeAdministrator($dto->executorId);
+
         /** @var Staff $entity */
         $entity = SimpleMapper::map($dto, Staff::class);
         $entity->assignDeleted($dto->executorId);
@@ -143,19 +148,21 @@ class StaffService extends AbstractService
 
         return new StaffRemoveVo()->assign([
             'ok' => true,
-            'id' => $dto->id
+            'id' => $dto->id,
         ]);
     }
 
     /**
      * スタッフの論理削除を復元します。
      *
-     * @param StaffDto $dto スタッフDTO
+     * @param  StaffDto  $dto  スタッフDTO
      * @return StaffRemoveVo スタッフ復元ValueObject
      * @throws QueryException 永続化層のクエリに失敗した場合
      */
     public function restore(StaffDto $dto): StaffRemoveVo
     {
+        $this->authorizeAdministrator($dto->executorId);
+
         /** @var Staff $entity */
         $entity = SimpleMapper::map($dto, Staff::class);
         $result = $this->repository->restoreById($entity);
@@ -163,6 +170,27 @@ class StaffService extends AbstractService
             throw AppException::notFound('staff_not_found');
         }
 
-        return (new StaffRemoveVo())->assign(['ok' => true, 'id' => $dto->id]);
+        return (new StaffRemoveVo)->assign(['ok' => true, 'id' => $dto->id]);
+    }
+
+    /**
+     * 実行者が有効なAdministratorであることを検証します。
+     * 未認証の場合は401、Administrator以外または無効化済みの場合は403を発生させます。
+     *
+     * @param  int|null  $executorId  実行者スタッフID
+     */
+    private function authorizeAdministrator(?int $executorId): void
+    {
+        if ($executorId === null) {
+            throw AppException::unauthorized('unauthenticated');
+        }
+
+        $condition = new StaffCondition;
+        $condition->id = $executorId;
+        $executor = $this->repository->findById($condition);
+
+        if ($executor === null || $executor->deletedAt !== null || $executor->role !== StaffRole::Administrator) {
+            throw AppException::forbidden('forbidden');
+        }
     }
 }

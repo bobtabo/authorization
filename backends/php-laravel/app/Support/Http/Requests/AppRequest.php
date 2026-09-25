@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\Support\Http\Requests;
 
+use App\Support\Http\StaffSession;
 use App\Support\Http\Validators\AppValidator;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -106,7 +107,7 @@ class AppRequest extends FormRequest
             }
             [$rawKey, $rawValue] = array_pad(explode('=', $pair, 2), 2, '');
             $decodedKey = urldecode($rawKey);
-            if ($decodedKey === $key || $decodedKey === $key . '[]') {
+            if ($decodedKey === $key || $decodedKey === $key.'[]') {
                 $values[] = urldecode($rawValue);
             }
         }
@@ -135,7 +136,7 @@ class AppRequest extends FormRequest
      */
     protected function getExtendValue(): array
     {
-        $agent = new Agent();
+        $agent = new Agent;
         $result = [
             'device' => $agent->device(),
             'platform' => $agent->platform(),
@@ -151,8 +152,10 @@ class AppRequest extends FormRequest
             $result['identifier'] = $this->route('identifier');
         }
 
-        $value = $this->header('X-Executor-Id');
-        $result['executor_id'] = ($value !== null && $value !== '') ? (int) $value : null;
+        $result['executor_id'] = StaffSession::verify(
+            $this->cookie('staff_id'),
+            config('authorization.app.staff_cookie_secret'),
+        );
 
         return $result;
     }

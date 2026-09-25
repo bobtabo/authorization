@@ -57,9 +57,10 @@ class StaffControllerTest extends TestCase
     public function test_update_role(): void
     {
         $staff = Staff::factory()->create();
+        $executor = Staff::factory()->create();
         $params = $this->getRequestParams('Staff/updateRole.json');
         $id = $staff->id;
-        $response = $this->withHeader('X-Executor-Id', '1')
+        $response = $this->withStaffCookie($executor->id)
             ->patch("/api/staffs/{$id}/updateRole", $params);
         $data = $this->getResponseData('Staff/updateRole.json');
         $response
@@ -68,17 +69,150 @@ class StaffControllerTest extends TestCase
     }
 
     /**
+     * 未認証でスタッフ権限更新すると401が返ることのテストです。
+     */
+    public function test_update_role_unauthenticated_returns_401(): void
+    {
+        $staff = Staff::factory()->create();
+        $params = $this->getRequestParams('Staff/updateRole.json');
+        $response = $this->patch("/api/staffs/{$staff->id}/updateRole", $params);
+        $response->assertStatus(401);
+    }
+
+    /**
+     * Admin以外の実行者でスタッフ権限更新すると403が返ることのテストです。
+     */
+    public function test_update_role_non_admin_executor_returns_403(): void
+    {
+        $staff = Staff::factory()->create();
+        $executor = Staff::factory()->create(['role' => 2]);
+        $params = $this->getRequestParams('Staff/updateRole.json');
+        $response = $this->withStaffCookie($executor->id)
+            ->patch("/api/staffs/{$staff->id}/updateRole", $params);
+        $response->assertStatus(403);
+    }
+
+    /**
+     * 無効化済みAdminの実行者でスタッフ権限更新すると403が返ることのテストです。
+     * 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現します。
+     */
+    public function test_update_role_deleted_admin_executor_returns_403(): void
+    {
+        $staff = Staff::factory()->create();
+        $executor = Staff::factory()->create();
+        $executor->delete();
+        $params = $this->getRequestParams('Staff/updateRole.json');
+        $response = $this->withStaffCookie($executor->id)
+            ->patch("/api/staffs/{$staff->id}/updateRole", $params);
+        $response->assertStatus(403);
+    }
+
+    /**
      * スタッフ削除テストです。
      */
     public function test_destroy(): void
     {
         $staff = Staff::factory()->create();
+        $executor = Staff::factory()->create();
         $id = $staff->id;
-        $response = $this->withHeader('X-Executor-Id', '1')
+        $response = $this->withStaffCookie($executor->id)
             ->delete("/api/staffs/{$id}/delete");
         $data = $this->getResponseData('Staff/destroy.json');
         $response
             ->assertStatus(200)
             ->assertJson($data);
+    }
+
+    /**
+     * 未認証でスタッフ削除すると401が返ることのテストです。
+     */
+    public function test_destroy_unauthenticated_returns_401(): void
+    {
+        $staff = Staff::factory()->create();
+        $response = $this->delete("/api/staffs/{$staff->id}/delete");
+        $response->assertStatus(401);
+    }
+
+    /**
+     * Admin以外の実行者でスタッフ削除すると403が返ることのテストです。
+     */
+    public function test_destroy_non_admin_executor_returns_403(): void
+    {
+        $staff = Staff::factory()->create();
+        $executor = Staff::factory()->create(['role' => 2]);
+        $response = $this->withStaffCookie($executor->id)
+            ->delete("/api/staffs/{$staff->id}/delete");
+        $response->assertStatus(403);
+    }
+
+    /**
+     * 無効化済みAdminの実行者でスタッフ削除すると403が返ることのテストです。
+     */
+    public function test_destroy_deleted_admin_executor_returns_403(): void
+    {
+        $staff = Staff::factory()->create();
+        $executor = Staff::factory()->create();
+        $executor->delete();
+        $response = $this->withStaffCookie($executor->id)
+            ->delete("/api/staffs/{$staff->id}/delete");
+        $response->assertStatus(403);
+    }
+
+    /**
+     * スタッフ復元テストです。
+     */
+    public function test_restore(): void
+    {
+        $staff = Staff::factory()->create();
+        $staff->delete();
+        $executor = Staff::factory()->create();
+        $params = $this->getRequestParams('Staff/restore.json');
+        $response = $this->withStaffCookie($executor->id)
+            ->patch("/api/staffs/{$staff->id}/restore", $params);
+        $data = $this->getResponseData('Staff/restore.json');
+        $response
+            ->assertStatus(200)
+            ->assertJson($data);
+    }
+
+    /**
+     * 未認証でスタッフ復元すると401が返ることのテストです。
+     */
+    public function test_restore_unauthenticated_returns_401(): void
+    {
+        $staff = Staff::factory()->create();
+        $staff->delete();
+        $params = $this->getRequestParams('Staff/restore.json');
+        $response = $this->patch("/api/staffs/{$staff->id}/restore", $params);
+        $response->assertStatus(401);
+    }
+
+    /**
+     * Admin以外の実行者でスタッフ復元すると403が返ることのテストです。
+     */
+    public function test_restore_non_admin_executor_returns_403(): void
+    {
+        $staff = Staff::factory()->create();
+        $staff->delete();
+        $executor = Staff::factory()->create(['role' => 2]);
+        $params = $this->getRequestParams('Staff/restore.json');
+        $response = $this->withStaffCookie($executor->id)
+            ->patch("/api/staffs/{$staff->id}/restore", $params);
+        $response->assertStatus(403);
+    }
+
+    /**
+     * 無効化済みAdminの実行者でスタッフ復元すると403が返ることのテストです。
+     */
+    public function test_restore_deleted_admin_executor_returns_403(): void
+    {
+        $staff = Staff::factory()->create();
+        $staff->delete();
+        $executor = Staff::factory()->create();
+        $executor->delete();
+        $params = $this->getRequestParams('Staff/restore.json');
+        $response = $this->withStaffCookie($executor->id)
+            ->patch("/api/staffs/{$staff->id}/restore", $params);
+        $response->assertStatus(403);
     }
 }

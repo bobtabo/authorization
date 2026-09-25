@@ -13,6 +13,7 @@ namespace Tests\Feature;
 use App\Domain\Invitation\Repositories\InvitationAuthRepository;
 use App\Infrastructure\Models\Invitation;
 use App\Infrastructure\Models\Staff;
+use App\Support\Http\StaffSession;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Socialite\Facades\Socialite;
 use Mockery;
@@ -30,10 +31,8 @@ class AuthControllerTest extends TestCase
 
     /**
      * ログイン情報取得テストです。
-     *
-     * @return void
      */
-    public function testLogin(): void
+    public function test_login(): void
     {
         $staff = Staff::factory()->create();
         $response = $this->withStaffCookie($staff->id)
@@ -44,11 +43,83 @@ class AuthControllerTest extends TestCase
     }
 
     /**
-     * 招待トークン検証テストです。
-     *
-     * @return void
+     * 未認証でログイン情報を取得すると401が返ることのテストです。
      */
-    public function testInvitation(): void
+    public function test_login_unauthenticated_returns401(): void
+    {
+        $response = $this->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 署名の無い偽造クッキーでは401が返ることのテストです。
+     */
+    public function test_login_unsigned_forged_cookie_returns401(): void
+    {
+        $staff = Staff::factory()->create();
+        $response = $this->withUnencryptedCookies(['staff_id' => (string) $staff->id])
+            ->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 署名が不正なクッキーでは401が返ることのテストです。
+     */
+    public function test_login_tampered_signature_returns401(): void
+    {
+        $staff = Staff::factory()->create();
+        $signed = StaffSession::sign($staff->id, config('authorization.app.staff_cookie_secret'), 3600);
+        // 末尾の1文字を必ず異なる値に置き換える（元の値と偶然一致すると署名が
+        // 変わらずテストが不安定になるため）。
+        $replacement = $signed[-1] === '0' ? '1' : '0';
+        $tampered = substr($signed, 0, -1).$replacement;
+        $response = $this->withUnencryptedCookies(['staff_id' => $tampered])
+            ->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 別のシークレットで署名されたクッキーでは401が返ることのテストです。
+     */
+    public function test_login_signed_with_another_secret_returns401(): void
+    {
+        $staff = Staff::factory()->create();
+        $forged = StaffSession::sign($staff->id, 'attacker-controlled-secret', 3600);
+        $response = $this->withUnencryptedCookies(['staff_id' => $forged])
+            ->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 有効期限切れの署名済みクッキーでは401が返ることのテストです。
+     * 署名自体は正しいが、Max-Ageが切れた後に手動でCookieヘッダーを再送した状況を
+     * 再現する（署名対象に有効期限を含めていないと防げない）。
+     */
+    public function test_login_expired_signed_cookie_returns401(): void
+    {
+        $staff = Staff::factory()->create();
+        $expired = StaffSession::sign($staff->id, config('authorization.app.staff_cookie_secret'), -3600);
+        $response = $this->withUnencryptedCookies(['staff_id' => $expired])
+            ->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 配列形式のクッキー値（staff_id[]=...）では500ではなく401が返ることのテストです。
+     * Laravel の cookie() は配列を返すことがあるため、StaffSession::verify が
+     * TypeError で500を返さず未認証として扱えることを確認します。
+     */
+    public function test_login_array_cookie_value_returns401(): void
+    {
+        $response = $this->withUnencryptedCookies(['staff_id' => ['0' => '1']])
+            ->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
+     * 招待トークン検証テストです。
+     */
+    public function test_invitation(): void
     {
         $invitation = Invitation::factory()->create([
             'token' => 'dummy-token',
@@ -64,10 +135,8 @@ class AuthControllerTest extends TestCase
 
     /**
      * Google OAuth リダイレクトテストです。
-     *
-     * @return void
      */
-    public function testGoogleRedirect(): void
+    public function test_google_redirect(): void
     {
         $this->markTestSkipped('Requires valid Google OAuth config');
     }
@@ -75,13 +144,11 @@ class AuthControllerTest extends TestCase
     /**
      * Google OAuth コールバック（既存ユーザー）テストです。
      * 招待トークン不要でログインできることを確認します。
-     *
-     * @return void
      */
-    public function testGoogleCallback(): void
+    public function test_google_callback(): void
     {
         Staff::factory()->create([
-            'provider'    => 1,
+            'provider' => 1,
             'provider_id' => '123456789',
         ]);
 
@@ -101,17 +168,15 @@ class AuthControllerTest extends TestCase
             ->get('/auth/google/callback?state=php%7Cnonce-1');
 
         $frontendUrl = config('authorization.app.frontend_url');
-        $response->assertRedirect($frontendUrl . '/clients');
+        $response->assertRedirect($frontendUrl.'/clients');
         $response->assertCookieExpired('oauth_state');
     }
 
     /**
      * Google OAuth コールバック（新規ユーザー・招待トークンあり）テストです。
      * 有効な招待トークンがある場合に新規登録できることを確認します。
-     *
-     * @return void
      */
-    public function testGoogleCallbackNewUserWithInvitation(): void
+    public function test_google_callback_new_user_with_invitation(): void
     {
         $token = 'valid-invitation-token';
         $this->app->make(InvitationAuthRepository::class)->store($token, 2, 600);
@@ -129,20 +194,18 @@ class AuthControllerTest extends TestCase
         Socialite::shouldReceive('driver')->with('google')->andReturn($mockProvider);
 
         $response = $this->withUnencryptedCookie('oauth_state', 'nonce-1')
-            ->get('/auth/google/callback?state=php%7Cnonce-1%7C' . $token);
+            ->get('/auth/google/callback?state=php%7Cnonce-1%7C'.$token);
 
         $frontendUrl = config('authorization.app.frontend_url');
-        $response->assertRedirect($frontendUrl . '/clients');
+        $response->assertRedirect($frontendUrl.'/clients');
         $this->assertNull($this->app->make(InvitationAuthRepository::class)->find($token));
     }
 
     /**
      * Google OAuth コールバック（新規ユーザー・招待トークンなし）テストです。
      * 招待トークンなしで新規登録しようとした場合に 403 エラーページへリダイレクトすることを確認します。
-     *
-     * @return void
      */
-    public function testGoogleCallbackNewUserWithoutInvitation(): void
+    public function test_google_callback_new_user_without_invitation(): void
     {
         $abstractUser = Mockery::mock('Laravel\Socialite\Two\User');
         $abstractUser->shouldReceive('getId')->andReturn('new-user-888');
@@ -160,16 +223,14 @@ class AuthControllerTest extends TestCase
             ->get('/auth/google/callback?state=php%7Cnonce-1');
 
         $frontendUrl = config('authorization.app.frontend_url');
-        $response->assertRedirect($frontendUrl . '/error?code=403');
+        $response->assertRedirect($frontendUrl.'/error?code=403');
     }
 
     /**
      * Google OAuth リダイレクトテストです。
      * nonce クッキーを発行し、state に "{runtime}|{nonce}|{token}" を埋め込むことを確認します。
-     *
-     * @return void
      */
-    public function testGoogleRedirectIssuesOAuthStateNonce(): void
+    public function test_google_redirect_issues_o_auth_state_nonce(): void
     {
         $response = $this->get('/auth/google/redirect?token=inv-token');
 
@@ -180,44 +241,38 @@ class AuthControllerTest extends TestCase
         $nonce = $cookie->getValue();
         $this->assertNotSame('', $nonce);
 
-        parse_str((string)parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+        parse_str((string) parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
         $runtime = config('authorization.app.runtime');
         $this->assertSame("{$runtime}|{$nonce}|inv-token", $query['state']);
     }
 
     /**
      * nonce クッキーが無いコールバックは 400 エラーページへリダイレクトすることを確認します。
-     *
-     * @return void
      */
-    public function testGoogleCallbackWithoutNonceCookie(): void
+    public function test_google_callback_without_nonce_cookie(): void
     {
         $response = $this->get('/auth/google/callback?state=php%7Cnonce-1');
 
         $frontendUrl = config('authorization.app.frontend_url');
-        $response->assertRedirect($frontendUrl . '/error?code=400');
+        $response->assertRedirect($frontendUrl.'/error?code=400');
     }
 
     /**
      * nonce が一致しないコールバックは 400 エラーページへリダイレクトすることを確認します。
-     *
-     * @return void
      */
-    public function testGithubCallbackWithMismatchedNonce(): void
+    public function test_github_callback_with_mismatched_nonce(): void
     {
         $response = $this->withUnencryptedCookie('oauth_state', 'nonce-1')
             ->get('/auth/github/callback?state=php%7Cother');
 
         $frontendUrl = config('authorization.app.frontend_url');
-        $response->assertRedirect($frontendUrl . '/error?code=400');
+        $response->assertRedirect($frontendUrl.'/error?code=400');
     }
 
     /**
      * ログアウトテストです。
-     *
-     * @return void
      */
-    public function testLogout(): void
+    public function test_logout(): void
     {
         $response = $this->get('/api/auth/logout');
         $data = $this->getResponseData('Auth/logout.json');

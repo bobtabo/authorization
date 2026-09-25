@@ -17,6 +17,7 @@ use App\Http\Responses\Auth\AuthLoginResponse;
 use App\Http\Responses\Auth\AuthMeResponse;
 use App\Support\Exceptions\AppException;
 use App\Support\Http\Requests\AppRequest;
+use App\Support\Http\StaffSession;
 use App\UseCases\Auth\AuthService;
 use App\UseCases\Auth\Dtos\AuthUserDto;
 use App\UseCases\Auth\Dtos\SocialDto;
@@ -51,8 +52,8 @@ class AuthController extends Controller
     /**
      * ログイン情報を返します（セッション／トークンで認証済みのユーザー）。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param AuthService $service 認証Service
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  AuthService  $service  認証Service
      * @return JsonResponse JSON レスポンス
      */
     public function login(Request $request, AuthService $service): JsonResponse
@@ -62,12 +63,12 @@ class AuthController extends Controller
             throw AppException::unauthorized('unauthenticated');
         }
 
-        $dto = new AuthUserDto();
+        $dto = new AuthUserDto;
         $dto->id = $staffId;
 
         $vo = $service->findUser($dto);
 
-        $response = new AuthLoginResponse();
+        $response = new AuthLoginResponse;
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
@@ -76,19 +77,19 @@ class AuthController extends Controller
     /**
      * 招待トークンを検証し、招待情報を返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param InvitationService $service 招待Service
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  InvitationService  $service  招待Service
      * @return JsonResponse JSON レスポンス
      */
     public function invitation(AppRequest $request, InvitationService $service): JsonResponse
     {
-        $dto = new InvitationDto();
+        $dto = new InvitationDto;
         $dto->assign($request->input());
         $dto->token = $request->route('token');
 
         $vo = $service->findByToken($dto);
 
-        $response = new AuthInvitationResponse();
+        $response = new AuthInvitationResponse;
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
@@ -96,12 +97,11 @@ class AuthController extends Controller
 
     /**
      * Google へリダイレクトします。
-     *
-     * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
     public function googleRedirect(Request $request
     ): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse {
         [$state, $cookie] = $this->issueOAuthState($request);
+
         return Socialite::driver('google')
             ->stateless()
             ->with(['state' => $state])
@@ -112,8 +112,7 @@ class AuthController extends Controller
     /**
      * Google からのコールバックを処理します。
      *
-     * @param AuthService $service 認証Service
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     * @param  AuthService  $service  認証Service
      */
     public function googleCallback(Request $request, AuthService $service): RedirectResponse|Redirector
     {
@@ -121,17 +120,17 @@ class AuthController extends Controller
 
         [$invitationToken, $valid] = $this->consumeOAuthState($request);
         if (!$valid) {
-            return redirect($appConfig['frontend_url'] . '/error?code=400')
+            return redirect($appConfig['frontend_url'].'/error?code=400')
                 ->withCookie($this->forgetOAuthStateCookie());
         }
 
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
 
-            $dto = new SocialDto();
+            $dto = new SocialDto;
             $dto->assign([
                 'provider' => Provider::Google,
-                'providerId' => (string)$googleUser->getId(),
+                'providerId' => (string) $googleUser->getId(),
                 'nickname' => $googleUser->getNickname(),
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
@@ -144,11 +143,14 @@ class AuthController extends Controller
             });
 
             $secure = config('app.env') === 'production';
-            return redirect($appConfig['frontend_url'] . '/clients')
+            $lifetimeMinutes = $appConfig['staff_cookie_lifetime'];
+            $signedStaffId = StaffSession::sign((int) $vo->getId(), config('authorization.app.staff_cookie_secret'), $lifetimeMinutes * 60);
+
+            return redirect($appConfig['frontend_url'].'/clients')
                 ->cookie(
                     'staff_id',
-                    (string)$vo->getId(),
-                    $appConfig['staff_cookie_lifetime'],
+                    $signedStaffId,
+                    $lifetimeMinutes,
                     '/',
                     null,
                     $secure,
@@ -156,11 +158,12 @@ class AuthController extends Controller
                 )
                 ->withCookie($this->forgetOAuthStateCookie());
         } catch (AppException $e) {
-            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode())
+            return redirect($appConfig['frontend_url'].'/error?code='.$e->getCode())
                 ->withCookie($this->forgetOAuthStateCookie());
         } catch (Exception $e) {
-            Log::error('googleCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect($appConfig['frontend_url'] . '/error?code=500')
+            Log::error('googleCallback error: '.$e->getMessage(), ['exception' => $e]);
+
+            return redirect($appConfig['frontend_url'].'/error?code=500')
                 ->withCookie($this->forgetOAuthStateCookie());
         }
     }
@@ -171,12 +174,12 @@ class AuthController extends Controller
      * state に "{runtime}|{nonce}|{invitationToken}" を埋め込み、
      * コールバック dispatcher がバックエンドを識別できるようにします。
      *
-     * @param Request $request HTTP リクエスト
-     * @return \Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     * @param  Request  $request  HTTP リクエスト
      */
     public function githubRedirect(Request $request
     ): RedirectResponse|\Symfony\Component\HttpFoundation\RedirectResponse {
         [$state, $cookie] = $this->issueOAuthState($request);
+
         return Socialite::driver('github')
             ->stateless()
             ->with(['state' => $state])
@@ -189,9 +192,8 @@ class AuthController extends Controller
      *
      * state フォーマット: "{runtime}|{nonce}" または "{runtime}|{nonce}|{invitationToken}"
      *
-     * @param Request $request HTTP リクエスト
-     * @param AuthService $service 認証Service
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     * @param  Request  $request  HTTP リクエスト
+     * @param  AuthService  $service  認証Service
      */
     public function githubCallback(Request $request, AuthService $service): RedirectResponse|Redirector
     {
@@ -199,21 +201,21 @@ class AuthController extends Controller
 
         [$invitationToken, $valid] = $this->consumeOAuthState($request);
         if (!$valid) {
-            return redirect($appConfig['frontend_url'] . '/error?code=400')
+            return redirect($appConfig['frontend_url'].'/error?code=400')
                 ->withCookie($this->forgetOAuthStateCookie());
         }
 
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
 
-            $dto = new SocialDto();
+            $dto = new SocialDto;
             $dto->assign([
-                'provider'        => Provider::Github,
-                'providerId'      => (string)(int)$githubUser->getId(),
-                'nickname'        => $githubUser->getNickname(),
-                'name'            => $githubUser->getName() ?? $githubUser->getNickname(),
-                'email'           => $githubUser->getEmail(),
-                'avatar'          => $githubUser->getAvatar(),
+                'provider' => Provider::Github,
+                'providerId' => (string) (int) $githubUser->getId(),
+                'nickname' => $githubUser->getNickname(),
+                'name' => $githubUser->getName() ?? $githubUser->getNickname(),
+                'email' => $githubUser->getEmail(),
+                'avatar' => $githubUser->getAvatar(),
                 'invitationToken' => $invitationToken,
             ]);
 
@@ -222,11 +224,14 @@ class AuthController extends Controller
             });
 
             $secure = config('app.env') === 'production';
-            return redirect($appConfig['frontend_url'] . '/clients')
+            $lifetimeMinutes = $appConfig['staff_cookie_lifetime'];
+            $signedStaffId = StaffSession::sign((int) $vo->getId(), config('authorization.app.staff_cookie_secret'), $lifetimeMinutes * 60);
+
+            return redirect($appConfig['frontend_url'].'/clients')
                 ->cookie(
                     'staff_id',
-                    (string)$vo->getId(),
-                    $appConfig['staff_cookie_lifetime'],
+                    $signedStaffId,
+                    $lifetimeMinutes,
                     '/',
                     null,
                     $secure,
@@ -234,11 +239,12 @@ class AuthController extends Controller
                 )
                 ->withCookie($this->forgetOAuthStateCookie());
         } catch (AppException $e) {
-            return redirect($appConfig['frontend_url'] . '/error?code=' . $e->getCode())
+            return redirect($appConfig['frontend_url'].'/error?code='.$e->getCode())
                 ->withCookie($this->forgetOAuthStateCookie());
         } catch (Exception $e) {
-            Log::error('githubCallback error: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect($appConfig['frontend_url'] . '/error?code=500')
+            Log::error('githubCallback error: '.$e->getMessage(), ['exception' => $e]);
+
+            return redirect($appConfig['frontend_url'].'/error?code=500')
                 ->withCookie($this->forgetOAuthStateCookie());
         }
     }
@@ -248,16 +254,16 @@ class AuthController extends Controller
      *
      * state フォーマット: "{runtime}|{nonce}" または "{runtime}|{nonce}|{invitationToken}"
      *
-     * @param Request $request HTTP リクエスト
+     * @param  Request  $request  HTTP リクエスト
      * @return array{0: string, 1: Cookie} [state, nonce クッキー]
      */
     private function issueOAuthState(Request $request): array
     {
         $appConfig = config('authorization.app');
-        $token   = (string)$request->query('token', '');
-        $runtime = (string)$appConfig['runtime'];
-        $nonce   = Str::random(32);
-        $state   = $token !== '' ? "{$runtime}|{$nonce}|{$token}" : "{$runtime}|{$nonce}";
+        $token = (string) $request->query('token', '');
+        $runtime = (string) $appConfig['runtime'];
+        $nonce = Str::random(32);
+        $state = $token !== '' ? "{$runtime}|{$nonce}|{$token}" : "{$runtime}|{$nonce}";
 
         $cookie = cookie(
             self::OAUTH_STATE_COOKIE,
@@ -277,13 +283,13 @@ class AuthController extends Controller
     /**
      * コールバックで受信した state の nonce をクッキーと照合し、招待トークンを返します。
      *
-     * @param Request $request HTTP リクエスト
+     * @param  Request  $request  HTTP リクエスト
      * @return array{0: string|null, 1: bool} [招待トークン, 照合結果]
      */
     private function consumeOAuthState(Request $request): array
     {
-        $saved = (string)$request->cookie(self::OAUTH_STATE_COOKIE, '');
-        $parts = explode('|', (string)$request->query('state', ''), 3);
+        $saved = (string) $request->cookie(self::OAUTH_STATE_COOKIE, '');
+        $parts = explode('|', (string) $request->query('state', ''), 3);
         $nonce = $parts[1] ?? '';
 
         if ($saved === '' || $nonce === '' || !hash_equals($saved, $nonce)) {
@@ -291,13 +297,12 @@ class AuthController extends Controller
         }
 
         $invitationToken = isset($parts[2]) && $parts[2] !== '' ? $parts[2] : null;
+
         return [$invitationToken, true];
     }
 
     /**
      * nonce クッキーを破棄する Cookie を返します。
-     *
-     * @return Cookie
      */
     private function forgetOAuthStateCookie(): Cookie
     {
@@ -307,8 +312,8 @@ class AuthController extends Controller
     /**
      * 自分自身のプロフィールを返します（staff_id クッキーで認証済みのユーザー）。
      *
-     * @param Request $request HTTP リクエスト
-     * @param AuthService $auth 認証Service
+     * @param  Request  $request  HTTP リクエスト
+     * @param  AuthService  $auth  認証Service
      * @return JsonResponse JSON レスポンス
      */
     public function getMyProfile(Request $request, AuthService $auth): JsonResponse
@@ -318,12 +323,12 @@ class AuthController extends Controller
             throw AppException::unauthorized('unauthenticated');
         }
 
-        $dto = new AuthUserDto();
+        $dto = new AuthUserDto;
         $dto->id = $staffId;
 
         $vo = $auth->findUser($dto);
 
-        $response = new AuthMeResponse();
+        $response = new AuthMeResponse;
         $response->assign([
             'staff_id' => $vo->getId(),
             'name' => $vo->getName(),
@@ -337,7 +342,7 @@ class AuthController extends Controller
     /**
      * ログアウト処理の応答を返します。
      *
-     * @param Request $request HTTP リクエスト
+     * @param  Request  $request  HTTP リクエスト
      * @return JsonResponse JSON レスポンス
      */
     public function logout(Request $request): JsonResponse
