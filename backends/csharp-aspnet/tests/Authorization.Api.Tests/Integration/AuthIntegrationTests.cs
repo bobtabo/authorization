@@ -2,6 +2,7 @@
 //
 // Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Net;
+using Authorization.Api.Handler;
 
 namespace Authorization.Api.Tests.Integration;
 
@@ -25,6 +26,60 @@ public class AuthIntegrationTests(IntegrationWebAppFactory factory) : Integratio
     public async Task Me_Unauthenticated_Returns401()
     {
         var res = await SendAsync(HttpMethod.Get, "/api/auth/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Me_UnsignedForgedCookie_Returns401()
+    {
+        var staffId = TestHelper.CreateStaff(email: "forge-1@example.com");
+        // 署名を付けず staff_id をそのまま設定した「偽造」クッキー。
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+        req.Headers.Add("Cookie", $"staff_id={staffId}");
+        var res = await Client.SendAsync(req);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Me_TamperedSignature_Returns401()
+    {
+        var staffId = TestHelper.CreateStaff(email: "forge-2@example.com");
+        var signed  = SignStaffCookie(staffId);
+        // 末尾の1文字を必ず異なる値に置き換える（元の値と偶然一致すると署名が
+        // 変わらずテストが不安定になるため）。
+        var replacement = signed[^1] == '0' ? '1' : '0';
+        var tampered = signed[..^1] + replacement;
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+        req.Headers.Add("Cookie", $"staff_id={tampered}");
+        var res = await Client.SendAsync(req);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Me_SignedWithAnotherSecret_Returns401()
+    {
+        var staffId = TestHelper.CreateStaff(email: "forge-3@example.com");
+        var forged  = StaffSession.SignStaffId(staffId, "attacker-controlled-secret", TimeSpan.FromHours(1));
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+        req.Headers.Add("Cookie", $"staff_id={forged}");
+        var res = await Client.SendAsync(req);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
+    }
+
+    [Fact]
+    public async Task Me_ExpiredSignedCookie_Returns401()
+    {
+        var staffId = TestHelper.CreateStaff(email: "forge-4@example.com");
+        // 署名自体は正しいが、Max-Ageが切れた後に手動でCookieヘッダーを
+        // 再送した状況を再現する（署名対象に有効期限を含めていないと防げない）。
+        var expired = StaffSession.SignStaffId(staffId, TestHelper.Config.App.StaffCookieSecret, TimeSpan.FromHours(-1));
+        var req = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+        req.Headers.Add("Cookie", $"staff_id={expired}");
+        var res = await Client.SendAsync(req);
 
         Assert.Equal(HttpStatusCode.Unauthorized, res.StatusCode);
     }

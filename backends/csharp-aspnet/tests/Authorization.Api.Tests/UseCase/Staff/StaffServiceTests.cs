@@ -31,9 +31,22 @@ public class StaffServiceTests
     }
 
     [Fact]
-    public async Task UpdateRoleAsync_InvalidRole_ThrowsBadRequest()
+    public async Task UpdateRoleAsync_Unauthenticated_ThrowsUnauthorized()
     {
         var repo = new FakeStaffRepository().Add(MakeStaff(1));
+        var uc   = new StaffService(repo);
+
+        var ex = await Assert.ThrowsAsync<AppException>(() =>
+            uc.UpdateRoleAsync(new StaffUpdateRoleDto(1, Role: StaffRole.Admin, ExecutorId: 0)));
+
+        Assert.Equal(401, ex.StatusCode);
+        Assert.Equal(0, repo.UpdateRoleCallCount);
+    }
+
+    [Fact]
+    public async Task UpdateRoleAsync_InvalidRole_ThrowsBadRequest()
+    {
+        var repo = new FakeStaffRepository().Add(MakeStaff(1)).Add(MakeStaff(9, role: StaffRole.Admin));
         var uc   = new StaffService(repo);
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
@@ -44,9 +57,38 @@ public class StaffServiceTests
     }
 
     [Fact]
+    public async Task UpdateRoleAsync_NonAdminExecutor_ThrowsForbidden()
+    {
+        var repo = new FakeStaffRepository().Add(MakeStaff(1)).Add(MakeStaff(9, role: StaffRole.Member));
+        var uc   = new StaffService(repo);
+
+        var ex = await Assert.ThrowsAsync<AppException>(() =>
+            uc.UpdateRoleAsync(new StaffUpdateRoleDto(1, Role: StaffRole.Admin, ExecutorId: 9)));
+
+        Assert.Equal(403, ex.StatusCode);
+        Assert.Equal(0, repo.UpdateRoleCallCount);
+    }
+
+    [Fact]
+    public async Task UpdateRoleAsync_DeletedAdminExecutor_ThrowsForbidden()
+    {
+        // 署名済みクッキーは有効だが、実行者は既に無効化（論理削除）されている状態を再現する。
+        var repo = new FakeStaffRepository()
+            .Add(MakeStaff(1))
+            .Add(MakeStaff(9, role: StaffRole.Admin, deletedAt: DateTime.Now));
+        var uc = new StaffService(repo);
+
+        var ex = await Assert.ThrowsAsync<AppException>(() =>
+            uc.UpdateRoleAsync(new StaffUpdateRoleDto(1, Role: StaffRole.Admin, ExecutorId: 9)));
+
+        Assert.Equal(403, ex.StatusCode);
+        Assert.Equal(0, repo.UpdateRoleCallCount);
+    }
+
+    [Fact]
     public async Task UpdateRoleAsync_StaffNotFound_ThrowsNotFound()
     {
-        var repo = new FakeStaffRepository();
+        var repo = new FakeStaffRepository().Add(MakeStaff(9, role: StaffRole.Admin));
         var uc   = new StaffService(repo);
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
@@ -58,8 +100,10 @@ public class StaffServiceTests
     [Fact]
     public async Task UpdateRoleAsync_DeletedStaff_ThrowsNotFound()
     {
-        var repo = new FakeStaffRepository().Add(MakeStaff(1, deletedAt: DateTime.Now));
-        var uc   = new StaffService(repo);
+        var repo = new FakeStaffRepository()
+            .Add(MakeStaff(1, deletedAt: DateTime.Now))
+            .Add(MakeStaff(9, role: StaffRole.Admin));
+        var uc = new StaffService(repo);
 
         var ex = await Assert.ThrowsAsync<AppException>(() =>
             uc.UpdateRoleAsync(new StaffUpdateRoleDto(1, Role: StaffRole.Admin, ExecutorId: 9)));
@@ -71,7 +115,7 @@ public class StaffServiceTests
     [Fact]
     public async Task UpdateRoleAsync_ValidRequest_DelegatesToRepository()
     {
-        var repo = new FakeStaffRepository().Add(MakeStaff(1));
+        var repo = new FakeStaffRepository().Add(MakeStaff(1)).Add(MakeStaff(9, role: StaffRole.Admin));
         var uc   = new StaffService(repo);
 
         await uc.UpdateRoleAsync(new StaffUpdateRoleDto(1, Role: StaffRole.Admin, ExecutorId: 9));

@@ -15,7 +15,8 @@ public sealed record AppSettings(
     long StaffCookieLifetime,
     int NotificationDefaultLimit,
     string CachePrefix,
-    string Runtime
+    string Runtime,
+    string StaffCookieSecret
 );
 
 /// <summary>DB 接続設定です。</summary>

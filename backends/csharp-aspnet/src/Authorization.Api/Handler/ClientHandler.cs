@@ -146,7 +146,7 @@ public sealed class ClientHandler(
     /// <returns>登録したクライアントIDのJSON（201）、検証エラーの場合は422</returns>
     public async Task<IResult> StoreAsync(HttpRequest req, CancellationToken ct)
     {
-        var executorId = StaffId(req);
+        var executorId = StaffId(req, app.StaffCookieSecret);
         var body = await ReadJsonObjectAsync(req, ct);
 
         var name     = body.Str("name") ?? "";
@@ -188,7 +188,7 @@ public sealed class ClientHandler(
     public async Task<IResult> UpdateAsync(string id, HttpRequest req, CancellationToken ct)
     {
         if (!long.TryParse(id, out var clientId)) return InvalidId();
-        var executorId = StaffId(req);
+        var executorId = StaffId(req, app.StaffCookieSecret);
         var body = await ReadJsonObjectAsync(req, ct);
 
         var name     = body.Str("name");
@@ -277,7 +277,7 @@ public sealed class ClientHandler(
     {
         if (!long.TryParse(id, out var clientId)) return InvalidId();
         var body = await ReadJsonObjectAsync(req, ct);
-        await clientUC.DestroyAsync(clientId, StaffId(req), body.Int("version"), ct);
+        await clientUC.DestroyAsync(clientId, StaffId(req, app.StaffCookieSecret), body.Int("version"), ct);
         return Empty();
     }
 

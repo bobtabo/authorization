@@ -39,6 +39,15 @@ public static class ConfigLoader
         var appName = Str("APP_NAME", "Authorization Gateway");
         var appEnv  = Str("APP_ENV", "local");
 
+        var staffCookieSecret = Str("STAFF_COOKIE_SECRET", "");
+        if (string.IsNullOrWhiteSpace(staffCookieSecret) ||
+            string.Equals(staffCookieSecret, "your-staff-cookie-secret", StringComparison.OrdinalIgnoreCase))
+        {
+            // 空・空白のみのシークレットや公開済みのサンプル値でのHMAC署名は誰でも同じ署名を
+            // 再現できてしまい、staff_id クッキーの署名検証が無意味になるため起動時に止める。
+            throw new InvalidOperationException("STAFF_COOKIE_SECRET must be set");
+        }
+
         return new AppConfig(
             App: new AppSettings(
                 Name:                     appName,
@@ -49,7 +58,8 @@ public static class ConfigLoader
                 StaffCookieLifetime:      Long("STAFF_COOKIE_LIFETIME", 60),
                 NotificationDefaultLimit: Int("NOTIFICATION_DEFAULT_LIMIT", 10),
                 CachePrefix:              Str("CACHE_PREFIX", "authorization-gateway"),
-                Runtime:                  Str("APP_RUNTIME", "csharp")
+                Runtime:                  Str("APP_RUNTIME", "csharp"),
+                StaffCookieSecret:        staffCookieSecret
             ),
             Db: new DbSettings(
                 Host:     Str("DB_HOST", "127.0.0.1"),

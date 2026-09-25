@@ -33,10 +33,16 @@ public sealed class StaffService(IStaffRepository repo)
     /// <summary>権限を更新します。</summary>
     /// <param name="dto">更新対象ID・新しいロール・操作者ID</param>
     /// <param name="ct">キャンセレーショントークン</param>
-    /// <exception cref="AppException">ロール値が不正な場合（400）、存在しない場合（404）</exception>
+    /// <exception cref="AppException">未認証（401）、実行者がAdmin以外（403）、
+    /// ロール値が不正な場合（400）、存在しない場合（404）</exception>
     public async Task UpdateRoleAsync(StaffUpdateRoleDto dto, CancellationToken ct = default)
     {
+        if (dto.ExecutorId == 0) throw AppException.Unauthorized();
         if (!StaffRole.IsValid(dto.Role)) throw AppException.BadRequest("role_invalid");
+        var executor = await repo.FindByIdAsync(dto.ExecutorId, ct);
+        if (executor is null || executor.DeletedAt is not null || executor.Role != StaffRole.Admin)
+            throw AppException.Forbidden();
+        // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
         _ = await repo.FindByIdAsync(dto.Id, ct) ?? throw AppException.NotFound("staff_not_found");
         if (!await repo.UpdateRoleAsync(dto.Id, dto.Role, dto.ExecutorId, ct))
             throw AppException.NotFound("staff_not_found");

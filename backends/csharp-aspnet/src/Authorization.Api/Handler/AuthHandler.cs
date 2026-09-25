@@ -347,7 +347,7 @@ public sealed class AuthHandler(
     /// <exception cref="AppException">存在しない場合（404）</exception>
     public async Task<IResult> ProfileAsync(HttpRequest req, CancellationToken ct)
     {
-        var staffId = StaffId(req);
+        var staffId = StaffId(req, cfg.App.StaffCookieSecret);
         if (staffId == 0) return Unauthenticated();
 
         var s = await authUC.FindUserAsync(staffId, ct);
@@ -399,9 +399,10 @@ public sealed class AuthHandler(
         /// <returns>完了済みタスク</returns>
         public Task ExecuteAsync(HttpContext ctx)
         {
-            ctx.Response.Cookies.Append("staff_id", staffId.ToString(), new CookieOptions
+            var lifetime = TimeSpan.FromMinutes(app.StaffCookieLifetime);
+            ctx.Response.Cookies.Append("staff_id", StaffSession.SignStaffId(staffId, app.StaffCookieSecret, lifetime), new CookieOptions
             {
-                MaxAge   = TimeSpan.FromMinutes(app.StaffCookieLifetime),
+                MaxAge   = lifetime,
                 Path     = "/",
                 Secure   = app.Env == "production",
                 HttpOnly = true,

@@ -3,6 +3,7 @@
 // Copyright (c) 2026 BobTabo. All Rights Reserved.
 using System.Net.Http.Json;
 using System.Text.Json;
+using Authorization.Api.Handler;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Authorization.Api.Tests.Integration;
@@ -60,10 +61,16 @@ public abstract class IntegrationTestBase(IntegrationWebAppFactory factory)
     protected Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, long? staffId = null, object? body = null)
     {
         var req = new HttpRequestMessage(method, url);
-        if (staffId is not null) req.Headers.Add("Cookie", $"staff_id={staffId}");
+        if (staffId is not null) req.Headers.Add("Cookie", $"staff_id={SignStaffCookie(staffId.Value)}");
         if (body is not null) req.Content = JsonContent.Create(body);
         return Client.SendAsync(req);
     }
+
+    /// <summary>テスト用シークレットで署名済みの staff_id クッキー値を組み立てます。</summary>
+    /// <param name="staffId">スタッフID</param>
+    /// <returns>署名済みクッキー値</returns>
+    protected static string SignStaffCookie(long staffId) =>
+        StaffSession.SignStaffId(staffId, TestHelper.Config.App.StaffCookieSecret, TimeSpan.FromHours(1));
 
     /// <summary>レスポンスボディをJSONとして読み取ります。</summary>
     /// <param name="res">HTTPレスポンス</param>
