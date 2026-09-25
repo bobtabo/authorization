@@ -104,19 +104,9 @@ class StaffService extends AbstractService
      */
     public function updateRole(StaffDto $dto): StaffMutationVo
     {
-        if ($dto->executorId === null) {
-            throw AppException::unauthorized('unauthenticated');
-        }
+        $this->authorizeAdministrator($dto->executorId);
         if ($dto->role === null) {
             throw AppException::badRequest('role_invalid');
-        }
-
-        $executorCondition = new StaffCondition;
-        $executorCondition->id = $dto->executorId;
-        $executor = $this->repository->findById($executorCondition);
-
-        if ($executor === null || $executor->deletedAt !== null || $executor->role !== StaffRole::Administrator) {
-            throw AppException::forbidden('forbidden');
         }
 
         // 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
@@ -146,9 +136,11 @@ class StaffService extends AbstractService
      */
     public function destroy(StaffDto $dto): StaffRemoveVo
     {
+        $this->authorizeAdministrator($dto->executorId);
+
         /** @var Staff $entity */
         $entity = SimpleMapper::map($dto, Staff::class);
-        $entity->assignDeleted($dto->executorId ?? 0);
+        $entity->assignDeleted($dto->executorId);
         $result = $this->repository->deleteById($entity);
         if (!$result) {
             throw AppException::notFound('staff_not_found');
@@ -169,6 +161,8 @@ class StaffService extends AbstractService
      */
     public function restore(StaffDto $dto): StaffRemoveVo
     {
+        $this->authorizeAdministrator($dto->executorId);
+
         /** @var Staff $entity */
         $entity = SimpleMapper::map($dto, Staff::class);
         $result = $this->repository->restoreById($entity);
@@ -177,5 +171,26 @@ class StaffService extends AbstractService
         }
 
         return (new StaffRemoveVo)->assign(['ok' => true, 'id' => $dto->id]);
+    }
+
+    /**
+     * 実行者が有効なAdministratorであることを検証します。
+     * 未認証の場合は401、Administrator以外または無効化済みの場合は403を発生させます。
+     *
+     * @param  int|null  $executorId  実行者スタッフID
+     */
+    private function authorizeAdministrator(?int $executorId): void
+    {
+        if ($executorId === null) {
+            throw AppException::unauthorized('unauthenticated');
+        }
+
+        $condition = new StaffCondition;
+        $condition->id = $executorId;
+        $executor = $this->repository->findById($condition);
+
+        if ($executor === null || $executor->deletedAt !== null || $executor->role !== StaffRole::Administrator) {
+            throw AppException::forbidden('forbidden');
+        }
     }
 }

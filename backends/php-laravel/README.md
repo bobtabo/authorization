@@ -106,13 +106,7 @@ routes/
 
 ## :rocket: セットアップ
 
-### 1. 依存パッケージのインストール
-
-```bash
-composer install
-```
-
-### 2. 環境変数の設定
+### 1. 環境変数の設定
 
 ```bash
 cp .env.example .env
@@ -123,6 +117,12 @@ cp .env.example .env
 ```dotenv
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+### 2. 依存パッケージのインストール
+
+```bash
+composer install
 ```
 
 ### 3. マイグレーション

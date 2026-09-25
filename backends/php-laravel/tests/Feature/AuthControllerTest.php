@@ -105,6 +105,18 @@ class AuthControllerTest extends TestCase
     }
 
     /**
+     * 配列形式のクッキー値（staff_id[]=...）では500ではなく401が返ることのテストです。
+     * Laravel の cookie() は配列を返すことがあるため、StaffSession::verify が
+     * TypeError で500を返さず未認証として扱えることを確認します。
+     */
+    public function test_login_array_cookie_value_returns401(): void
+    {
+        $response = $this->withUnencryptedCookies(['staff_id' => ['0' => '1']])
+            ->get('/api/auth/login');
+        $response->assertStatus(401);
+    }
+
+    /**
      * 招待トークン検証テストです。
      */
     public function test_invitation(): void

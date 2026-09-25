@@ -41,14 +41,16 @@ class StaffSession
     /**
      * 署名済み staff_id クッキーの値を検証し、staffIdを返します。
      * 署名が不正・形式不正・有効期限切れの場合は null（未認証）を返します。
+     * Laravel の cookie() は配列を返すこともあるため、文字列以外は型エラーではなく
+     * 未認証として扱う。
      *
-     * @param  string|null  $value  クッキー値
+     * @param  mixed  $value  クッキー値
      * @param  string  $secret  署名用シークレット
      * @return int|null スタッフID、無効な場合はnull
      */
-    public static function verify(?string $value, string $secret): ?int
+    public static function verify(mixed $value, string $secret): ?int
     {
-        if ($value === null || $value === '') {
+        if (!is_string($value) || $value === '') {
             return null;
         }
 
