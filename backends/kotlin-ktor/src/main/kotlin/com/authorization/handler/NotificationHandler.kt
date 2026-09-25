@@ -30,7 +30,7 @@ class NotificationHandler(
      * @param call アプリケーションコール
      */
     suspend fun counts(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cfg.app.staffCookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return
@@ -48,7 +48,7 @@ class NotificationHandler(
      * @param call アプリケーションコール
      */
     suspend fun index(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cfg.app.staffCookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return
@@ -86,7 +86,7 @@ class NotificationHandler(
      * @param call アプリケーションコール
      */
     suspend fun readAll(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cfg.app.staffCookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return
@@ -101,7 +101,7 @@ class NotificationHandler(
      * @param call アプリケーションコール
      */
     suspend fun read(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cfg.app.staffCookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return

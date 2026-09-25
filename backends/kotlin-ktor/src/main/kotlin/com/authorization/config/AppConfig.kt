@@ -10,6 +10,7 @@ data class AppConfig(
     val notificationDefaultLimit: Long,
     val cachePrefix: String,
     val runtime: String,
+    val staffCookieSecret: String,
 )
 
 data class DbConfig(
@@ -87,6 +88,13 @@ object ConfigLoader {
         val dbName = str("DB_DATABASE", "authorization")
         val dsn = "jdbc:mysql://$dbHost:$dbPort/$dbName?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo"
 
+        val staffCookieSecret = str("STAFF_COOKIE_SECRET", "")
+        if (staffCookieSecret.toByteArray().size < 32 || staffCookieSecret == "your-staff-cookie-secret") {
+            // 空・短すぎるシークレットや公開済みのサンプル値でのHMAC署名は
+            // 総当たりや既知の値での偽造を許してしまうため起動時に止める。
+            error("STAFF_COOKIE_SECRET must be at least 32 bytes and must not be the placeholder")
+        }
+
         return Config(
             app = AppConfig(
                 env                      = str("APP_ENV", "local"),
@@ -96,6 +104,7 @@ object ConfigLoader {
                 notificationDefaultLimit = long("NOTIFICATION_DEFAULT_LIMIT", 10),
                 cachePrefix              = str("CACHE_PREFIX", ""),
                 runtime                  = str("APP_RUNTIME", "kotlin"),
+                staffCookieSecret        = staffCookieSecret,
             ),
             db = DbConfig(
                 dsn      = dsn,

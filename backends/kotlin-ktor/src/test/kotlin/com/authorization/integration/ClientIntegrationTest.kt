@@ -73,7 +73,7 @@ class ClientIntegrationTest {
         val staff = TestHelper.createStaff()
         val response = client.post("/api/clients/store") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
             setBody(buildJsonObject {
                 put("name",      "新規クライアント株式会社")
                 put("post_code", "100-0001")
@@ -96,7 +96,7 @@ class ClientIntegrationTest {
         val c      = TestHelper.createClient()
         val response = client.put("/api/clients/${c.id}/update") {
             contentType(ContentType.Application.Json)
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
             setBody(buildJsonObject { put("name", "更新後クライアント名"); put("version", c.version) }.toString())
         }
         assertEquals(HttpStatusCode.OK, response.status)
@@ -110,9 +110,46 @@ class ClientIntegrationTest {
         val staff  = TestHelper.createStaff()
         val c      = TestHelper.createClient()
         val response = client.delete("/api/clients/${c.id}/delete") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
+    fun `POST api clients store returns 401 when unauthenticated`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val response = client.post("/api/clients/store") {
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject {
+                put("name",      "無認証クライアント株式会社")
+                put("post_code", "100-0001")
+                put("pref",      "東京都")
+                put("city",      "千代田区")
+                put("address",   "千代田1-1")
+                put("tel",       "0312345678")
+                put("email",     "unauth-client@example.com")
+            }.toString())
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `PUT api clients id update returns 401 when unauthenticated`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val c = TestHelper.createClient()
+        val response = client.put("/api/clients/${c.id}/update") {
+            contentType(ContentType.Application.Json)
+            setBody(buildJsonObject { put("name", "更新後クライアント名"); put("version", c.version) }.toString())
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `DELETE api clients id delete returns 401 when unauthenticated`() = testApplication {
+        application { module(TestHelper.cfg) }
+        val c = TestHelper.createClient()
+        val response = client.delete("/api/clients/${c.id}/delete")
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
     }
 
     // --- スマホ連携 API ---

@@ -25,7 +25,7 @@ class NotificationIntegrationTest {
         TestHelper.createNotification(staff.id, "通知1")
         TestHelper.createNotification(staff.id, "通知2", read = true)
         val response = client.get("/api/notifications/counts") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
@@ -47,7 +47,7 @@ class NotificationIntegrationTest {
         TestHelper.createNotification(staff.id, "通知1")
         TestHelper.createNotification(staff.id, "通知2")
         val response = client.get("/api/notifications") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
@@ -68,7 +68,7 @@ class NotificationIntegrationTest {
         TestHelper.createNotification(staff.id, "通知1")
         TestHelper.createNotification(staff.id, "通知2")
         val response = client.patch("/api/notifications") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
     }
@@ -86,7 +86,7 @@ class NotificationIntegrationTest {
         val staff = TestHelper.createStaff()
         val notif = TestHelper.createNotification(staff.id, "通知1")
         val response = client.patch("/api/notifications/${notif.id}") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
@@ -99,7 +99,7 @@ class NotificationIntegrationTest {
         val staff = TestHelper.createStaff()
         val notif = TestHelper.createNotification(staff.id, "通知1", read = true)
         val response = client.patch("/api/notifications/${notif.id}") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
     }

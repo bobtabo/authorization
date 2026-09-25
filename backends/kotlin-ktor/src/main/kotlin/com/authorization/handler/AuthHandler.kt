@@ -139,9 +139,9 @@ class AuthHandler(
         }
 
         val secure = cfg.app.env == "production"
-        val maxAge = (cfg.app.staffCookieLifetime * 60).toInt()
+        val maxAgeSeconds = cfg.app.staffCookieLifetime * 60
         call.response.cookies.append(
-            Cookie(name = "staff_id", value = staff.id.toString(), maxAge = maxAge,
+            Cookie(name = "staff_id", value = signStaffId(staff.id, cfg.app.staffCookieSecret, maxAgeSeconds), maxAge = maxAgeSeconds.toInt(),
                    path = "/", secure = secure, httpOnly = true)
         )
         call.respondRedirect(cfg.app.frontendUrl + "/clients", permanent = false)
@@ -153,7 +153,7 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun getMyProfile(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cfg.app.staffCookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return
@@ -173,7 +173,7 @@ class AuthHandler(
      * @param call アプリケーションコール
      */
     suspend fun login(call: ApplicationCall) {
-        val staffId = call.request.cookies["staff_id"]?.toLongOrNull() ?: 0L
+        val staffId = verifyStaffId(call.request.cookies["staff_id"], cfg.app.staffCookieSecret)
         if (staffId == 0L) {
             call.respond(HttpStatusCode.Unauthorized, buildJsonObject { put("error", "unauthenticated") })
             return
@@ -268,9 +268,9 @@ class AuthHandler(
         }
 
         val secure = cfg.app.env == "production"
-        val maxAge = (cfg.app.staffCookieLifetime * 60).toInt()
+        val maxAgeSeconds = cfg.app.staffCookieLifetime * 60
         call.response.cookies.append(
-            Cookie(name = "staff_id", value = staff.id.toString(), maxAge = maxAge,
+            Cookie(name = "staff_id", value = signStaffId(staff.id, cfg.app.staffCookieSecret, maxAgeSeconds), maxAge = maxAgeSeconds.toInt(),
                    path = "/", secure = secure, httpOnly = true)
         )
         call.respondRedirect(cfg.app.frontendUrl + "/clients", permanent = false)
