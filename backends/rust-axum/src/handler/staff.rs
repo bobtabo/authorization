@@ -219,6 +219,12 @@ pub async fn destroy(
     Json(body): Json<DestroyBody>,
 ) -> (StatusCode, Json<Value>) {
     let executor_id = staff_id_from_cookie(&jar, &state.cfg.app.staff_cookie_secret);
+    if executor_id == 0 {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "unauthenticated"})),
+        );
+    }
 
     let tx = match state.pool.begin().await {
         Ok(tx) => tx,

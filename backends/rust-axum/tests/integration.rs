@@ -522,6 +522,23 @@ async fn delete_staffs_destroy_soft_deletes_staff() {
     assert_eq!(res.status(), StatusCode::OK);
 }
 
+#[tokio::test]
+async fn delete_staffs_destroy_returns_401_when_unauthenticated() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let target_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("/api/staffs/{}/delete", target_id))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"version":1}"#))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
 // ── Admin Invitation ──────────────────────────────────────────────────────────
 
 #[tokio::test]
