@@ -151,7 +151,13 @@ oauthApp.get("/auth/google/callback", async (c) => {
 
   const maxAge = config.app.staffCookieLifetime * 60;
   const signedStaffId = signStaffId(staffId, config.app.staffCookieSecret, maxAge);
-  setCookie(c, "staff_id", signedStaffId, { maxAge, httpOnly: true, sameSite: "Lax", path: "/" });
+  setCookie(c, "staff_id", signedStaffId, {
+    maxAge,
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: config.app.env === "production",
+    path: "/",
+  });
   return c.redirect(`${config.app.frontendUrl}/clients`, 302);
 });
 
@@ -225,7 +231,13 @@ oauthApp.get("/auth/github/callback", async (c) => {
 
   const maxAge = config.app.staffCookieLifetime * 60;
   const signedStaffId = signStaffId(staffId, config.app.staffCookieSecret, maxAge);
-  setCookie(c, "staff_id", signedStaffId, { maxAge, httpOnly: true, sameSite: "Lax", path: "/" });
+  setCookie(c, "staff_id", signedStaffId, {
+    maxAge,
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: config.app.env === "production",
+    path: "/",
+  });
   return c.redirect(`${config.app.frontendUrl}/clients`, 302);
 });
 
