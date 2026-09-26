@@ -10,7 +10,7 @@ RSpec.describe "Notifications" do
       staff = create_staff
       create_notification(staff[:id], "通知1")
       create_notification(staff[:id], "通知2", read: true)
-      get "/api/notifications/counts", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      get "/api/notifications/counts", {}, { "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["total"]).to eq(2)
@@ -28,7 +28,7 @@ RSpec.describe "Notifications" do
       staff = create_staff
       create_notification(staff[:id], "通知1")
       create_notification(staff[:id], "通知2")
-      get "/api/notifications", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      get "/api/notifications", {}, { "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["items"]).to be_an(Array)
@@ -46,7 +46,7 @@ RSpec.describe "Notifications" do
       staff = create_staff
       create_notification(staff[:id], "通知1")
       create_notification(staff[:id], "通知2")
-      patch "/api/notifications", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      patch "/api/notifications", {}, { "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["updated"]).to eq(2)
@@ -62,7 +62,7 @@ RSpec.describe "Notifications" do
     it "既読にして id を返す" do
       staff = create_staff
       notif = create_notification(staff[:id], "通知1")
-      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
       expect(body["id"]).to eq(notif[:id])
@@ -71,7 +71,7 @@ RSpec.describe "Notifications" do
     it "既読済みの自分の通知は200を返す" do
       staff = create_staff
       notif = create_notification(staff[:id], "既読済み通知", read: true)
-      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(200)
     end
 
@@ -86,7 +86,7 @@ RSpec.describe "Notifications" do
       staff = create_staff
       other = create_staff
       notif = create_notification(other[:id], "通知1")
-      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{staff[:id]}" }
+      patch "/api/notifications/#{notif[:id]}", {}, { "HTTP_COOKIE" => "staff_id=#{sign_staff_cookie(staff[:id])}" }
       expect(last_response.status).to eq(404)
     end
   end

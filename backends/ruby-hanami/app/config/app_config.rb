@@ -2,6 +2,7 @@
 
 AppConfig = Struct.new(
   :env, :port, :runtime, :frontend_url, :staff_cookie_lifetime, :notification_default_limit, :cache_prefix,
+  :staff_cookie_secret,
   keyword_init: true
 )
 
@@ -37,6 +38,9 @@ module ConfigLoader
           "@#{ENV.fetch('DB_HOST', 'localhost')}:#{ENV.fetch('DB_PORT', '3306')}"\
           "/#{ENV.fetch('DB_DATABASE', 'authorization')}"
 
+    staff_cookie_secret = ENV.fetch('STAFF_COOKIE_SECRET')
+    raise 'STAFF_COOKIE_SECRET must be set' if staff_cookie_secret.empty?
+
     Config.new(
       app: AppConfig.new(
         env:                        ENV.fetch('APP_ENV', 'local'),
@@ -46,6 +50,7 @@ module ConfigLoader
         staff_cookie_lifetime:      ENV.fetch('STAFF_COOKIE_LIFETIME', '60').to_i,
         notification_default_limit: ENV.fetch('NOTIFICATION_DEFAULT_LIMIT', '10').to_i,
         cache_prefix:               ENV.fetch('CACHE_PREFIX', ''),
+        staff_cookie_secret:        staff_cookie_secret,
       ),
       db: DbConfig.new(dsn: dsn),
       redis: RedisConfig.new(
