@@ -38,10 +38,37 @@ RSpec.describe "Staffs", type: :request do
       executor = create_staff(email: "exec@example.com",   role: 1)
       patch "/api/staffs/#{target.id}/updateRole",
             params: { role: 1 }.to_json,
-            headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{executor.id}" }
+            headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(executor.id)}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["id"]).to eq(target.id)
+    end
+
+    it "未認証の場合401を返す" do
+      target = create_staff(email: "target-unauth@example.com", role: 2)
+      patch "/api/staffs/#{target.id}/updateRole",
+            params: { role: 1 }.to_json,
+            headers: { "Content-Type" => "application/json" }
+      expect(response).to have_http_status(401)
+    end
+
+    it "実行者がAdmin以外の場合403を返す" do
+      target   = create_staff(email: "target-nonadmin@example.com", role: 2)
+      executor = create_staff(email: "exec-nonadmin@example.com",   role: 2)
+      patch "/api/staffs/#{target.id}/updateRole",
+            params: { role: 1 }.to_json,
+            headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(executor.id)}" }
+      expect(response).to have_http_status(403)
+    end
+
+    it "実行者が無効化済みAdminの場合403を返す" do
+      target   = create_staff(email: "target-deletedadmin@example.com", role: 2)
+      executor = create_staff(email: "exec-deletedadmin@example.com",   role: 1)
+      executor.update!(deleted_at: Time.current)
+      patch "/api/staffs/#{target.id}/updateRole",
+            params: { role: 1 }.to_json,
+            headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(executor.id)}" }
+      expect(response).to have_http_status(403)
     end
   end
 
@@ -62,7 +89,7 @@ RSpec.describe "Staffs", type: :request do
       target   = create_staff(email: "target@example.com")
       delete "/api/staffs/#{target.id}/delete",
              params:  { version: 1 }.to_json,
-             headers: { "Cookie" => "staff_id=#{executor.id}", "Content-Type" => "application/json" }
+             headers: { "Cookie" => "staff_id=#{sign_staff_cookie(executor.id)}", "Content-Type" => "application/json" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["id"]).to eq(target.id)
