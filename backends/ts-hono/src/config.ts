@@ -15,6 +15,11 @@ function envInt(key: string, fallback: number): number {
   const v = process.env[key];
   return v ? parseInt(v, 10) : fallback;
 }
+function requiredEnv(key: string): string {
+  const v = process.env[key];
+  if (!v) throw new Error(`${key} must be set`);
+  return v;
+}
 
 export const config = {
   app: {
@@ -25,6 +30,7 @@ export const config = {
     staffCookieLifetime: envInt("STAFF_COOKIE_LIFETIME", 60),
     notificationDefaultLimit: envInt("NOTIFICATION_DEFAULT_LIMIT", 10),
     cachePrefix: env("CACHE_PREFIX", ""),
+    staffCookieSecret: requiredEnv("STAFF_COOKIE_SECRET"),
   },
   db: {
     host: env("DB_HOST", "localhost"),

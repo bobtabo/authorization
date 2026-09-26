@@ -4,6 +4,7 @@
  */
 import { generateKeyPairSync, randomBytes } from "crypto";
 import * as mysql from "mysql2/promise";
+import { signStaffId } from "../lib/staffSession.js";
 
 // 2048-bit RSA 鍵生成は重いため、モジュール読み込み時に 1 回だけ生成して再利用する。
 const _cachedKeyPair = generateKeyPairSync("rsa", { modulusLength: 2048 });
@@ -22,6 +23,14 @@ const pool = mysql.createPool({
 async function q(sql: string, params: mysql.ExecuteValues = []) {
   const [rows] = await pool.execute(sql, params);
   return rows as mysql.RowDataPacket[];
+}
+
+/**
+ * テスト用の STAFF_COOKIE_SECRET で staff_id を署名する。
+ */
+export function signStaffCookie(staffId: number): string {
+  const secret = process.env.STAFF_COOKIE_SECRET ?? "test-staff-cookie-secret";
+  return signStaffId(staffId, secret, 3600);
 }
 
 export interface TestStaff {
@@ -96,6 +105,10 @@ export async function makeInvitation(tokenStr?: string, role = 2): Promise<TestI
     [tok, role],
   ) as mysql.ResultSetHeader[];
   return { id: result.insertId, token: tok, role };
+}
+
+export async function softDeleteStaff(id: number): Promise<void> {
+  await pool.execute("UPDATE staffs SET deleted_at = NOW() WHERE id = ?", [id]);
 }
 
 export async function makeNotification(staffId: number, title = "テスト通知", url?: string | null, read = false): Promise<TestNotification> {

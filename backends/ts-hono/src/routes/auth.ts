@@ -11,6 +11,7 @@ import { config } from "../config.js";
 import { AppError } from "../lib/errors.js";
 import { badRequest, unauthorized } from "../lib/errors.js";
 import { getStaffIdFromCookie } from "../lib/cookie.js";
+import { signStaffId } from "../lib/staffSession.js";
 import { db, asTx } from "../db/client.js";
 import { DrizzleStaffRepository } from "../infrastructure/persistence/drizzleStaffRepository.js";
 import { DrizzleInvitationRepository } from "../infrastructure/persistence/drizzleInvitationRepository.js";
@@ -149,7 +150,14 @@ oauthApp.get("/auth/google/callback", async (c) => {
   }
 
   const maxAge = config.app.staffCookieLifetime * 60;
-  setCookie(c, "staff_id", String(staffId), { maxAge, httpOnly: true, sameSite: "Lax", path: "/" });
+  const signedStaffId = signStaffId(staffId, config.app.staffCookieSecret, maxAge);
+  setCookie(c, "staff_id", signedStaffId, {
+    maxAge,
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: config.app.env === "production",
+    path: "/",
+  });
   return c.redirect(`${config.app.frontendUrl}/clients`, 302);
 });
 
@@ -222,7 +230,14 @@ oauthApp.get("/auth/github/callback", async (c) => {
   }
 
   const maxAge = config.app.staffCookieLifetime * 60;
-  setCookie(c, "staff_id", String(staffId), { maxAge, httpOnly: true, sameSite: "Lax", path: "/" });
+  const signedStaffId = signStaffId(staffId, config.app.staffCookieSecret, maxAge);
+  setCookie(c, "staff_id", signedStaffId, {
+    maxAge,
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: config.app.env === "production",
+    path: "/",
+  });
   return c.redirect(`${config.app.frontendUrl}/clients`, 302);
 });
 

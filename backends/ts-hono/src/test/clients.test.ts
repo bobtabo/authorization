@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { createApp } from "../app.js";
-import { makeClientRecord, makeStaff } from "./helpers.js";
+import { makeClientRecord, makeStaff, signStaffCookie } from "./helpers.js";
 
 const app = createApp();
 
@@ -83,7 +83,7 @@ describe("Clients", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Cookie: `staff_id=${staff.id}`,
+          Cookie: `staff_id=${signStaffCookie(staff.id)}`,
         },
         body: JSON.stringify({ name: "更新後クライアント名", version: 1 }),
       });

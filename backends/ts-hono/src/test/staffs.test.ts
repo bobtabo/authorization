@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { createApp } from "../app.js";
-import { makeStaff } from "./helpers.js";
+import { makeStaff, signStaffCookie, softDeleteStaff } from "./helpers.js";
 
 const app = createApp();
 
@@ -41,11 +41,50 @@ describe("Staffs", () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Cookie: `staff_id=${executor.id}`,
+          Cookie: `staff_id=${signStaffCookie(executor.id)}`,
         },
         body: JSON.stringify({ role: 1, version: 1 }),
       });
       expect(res.status).toBe(200);
+    });
+
+    test("未認証の場合401が返る", async () => {
+      const staff = await makeStaff({ role: 2 });
+      const res = await app.request(`/api/staffs/${staff.id}/updateRole`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: 1, version: 1 }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    test("実行者がAdmin以外の場合403が返る", async () => {
+      const staff = await makeStaff({ role: 2 });
+      const executor = await makeStaff({ email: "exec-non-admin@example.com", role: 2 });
+      const res = await app.request(`/api/staffs/${staff.id}/updateRole`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `staff_id=${signStaffCookie(executor.id)}`,
+        },
+        body: JSON.stringify({ role: 1, version: 1 }),
+      });
+      expect(res.status).toBe(403);
+    });
+
+    test("実行者が無効化済みAdminの場合403が返る", async () => {
+      const staff = await makeStaff({ role: 2 });
+      const executor = await makeStaff({ email: "exec-deleted-admin@example.com" });
+      await softDeleteStaff(executor.id);
+      const res = await app.request(`/api/staffs/${staff.id}/updateRole`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: `staff_id=${signStaffCookie(executor.id)}`,
+        },
+        body: JSON.stringify({ role: 1, version: 1 }),
+      });
+      expect(res.status).toBe(403);
     });
   });
 
@@ -55,7 +94,7 @@ describe("Staffs", () => {
       const executor = await makeStaff({ email: "exec2@example.com" });
       const res = await app.request(`/api/staffs/${staff.id}/delete`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", Cookie: `staff_id=${executor.id}` },
+        headers: { "Content-Type": "application/json", Cookie: `staff_id=${signStaffCookie(executor.id)}` },
         body: JSON.stringify({ version: 1 }),
       });
       expect(res.status).toBe(200);
@@ -65,7 +104,7 @@ describe("Staffs", () => {
       const executor = await makeStaff({ email: "exec3@example.com" });
       const res = await app.request("/api/staffs/99999/delete", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", Cookie: `staff_id=${executor.id}` },
+        headers: { "Content-Type": "application/json", Cookie: `staff_id=${signStaffCookie(executor.id)}` },
         body: JSON.stringify({ version: 1 }),
       });
       expect(res.status).toBe(404);

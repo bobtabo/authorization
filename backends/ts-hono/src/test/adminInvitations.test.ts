@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { createApp } from "../app.js";
-import { makeInvitation, makeStaff } from "./helpers.js";
+import { makeInvitation, makeStaff, signStaffCookie } from "./helpers.js";
 
 const app = createApp();
 
@@ -24,7 +24,7 @@ describe("AdminInvitations", () => {
     test("認証済みで招待URLが発行できる", async () => {
       const staff = await makeStaff();
       const res = await app.request("/api/admin/invitation/issue?role=2", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as Record<string, unknown>;
@@ -40,7 +40,7 @@ describe("AdminInvitations", () => {
     test("roleパラメータが不正な場合は400が返る", async () => {
       const staff = await makeStaff();
       const res = await app.request("/api/admin/invitation/issue?role=5", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(400);
     });
@@ -49,7 +49,7 @@ describe("AdminInvitations", () => {
       const staff = await makeStaff();
       await makeInvitation("old-token", 2);
       const res = await app.request("/api/admin/invitation/issue?role=2", {
-        headers: { Cookie: `staff_id=${staff.id}` },
+        headers: { Cookie: `staff_id=${signStaffCookie(staff.id)}` },
       });
       expect(res.status).toBe(200);
       const body = await res.json() as Record<string, unknown>;
