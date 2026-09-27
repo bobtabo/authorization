@@ -1,0 +1,92 @@
+# C# CI ワークフロー
+# developブランチのbackends/csharp-aspnet/**変更時にCIを実行
+name: C# CI
+
+on:
+  push:
+    branches-ignore:
+      - 'feature/issue-*'
+    paths:
+      - 'backends/csharp-aspnet/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    # Ubuntu ランナーを使用
+    runs-on: ubuntu-latest
+
+    # サービスコンテナ: MySQLとRedisをテスト用に起動
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'docker#DOCKER1234'
+          MYSQL_DATABASE: 'authorization'
+          MYSQL_USER: 'develop'
+          MYSQL_PASSWORD: 'docker#DOCKER1234'
+        options: --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    # CI実行ステップ
+    steps:
+      - uses: actions/checkout@v4
+
+      # .NET SDK をセットアップ
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # NuGet キャッシュ
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('backends/csharp-aspnet/**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      # テスト用DBを作成
+      - name: Create test database
+        run: |
+          mysql -h 127.0.0.1 -u root -p'docker#DOCKER1234' -e "
+            CREATE DATABASE IF NOT EXISTS authorization_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            GRANT ALL PRIVILEGES ON authorization_test.* TO 'develop'@'%';
+            FLUSH PRIVILEGES;
+          "
+
+      # ビルドを実行
+      - name: Build
+        run: dotnet build src/Authorization.Api/Authorization.Api.csproj
+        working-directory: backends/csharp-aspnet
+
+      # ユニットテストを実行
+      - name: Run unit tests
+        run: dotnet test tests/Authorization.Api.Tests/Authorization.Api.Tests.csproj
+        working-directory: backends/csharp-aspnet
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: authorization_test
+          DB_USERNAME: develop
+          DB_PASSWORD: "docker#DOCKER1234"
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+          REDIS_PASSWORD: ""
+          REDIS_DB: 0
+          APP_ENV: testing
+          CACHE_PREFIX: ""
+          GATE_JWT_CACHE_TTL: "1800"
+          FRONTEND_URL: "http://localhost:3000"

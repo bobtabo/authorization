@@ -64,9 +64,9 @@ func main() {
 	mailer := mail.NewMailer(cfg.Mail, cfg.AWS)
 
 	authH := handler.NewAuthHandler(ormer, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(ormer, newClientUC, newNotifUC, mailer, jwtHistoryRepo, cfg.App.FrontendURL)
-	staffH := handler.NewStaffHandler(ormer, newStaffUC)
-	adminInvitationH := handler.NewAdminInvitationHandler(ormer, newInviteUC)
+	clientH := handler.NewClientHandler(ormer, newClientUC, newNotifUC, mailer, jwtHistoryRepo, cfg.App.FrontendURL, cfg.App.StaffCookieSecret)
+	staffH := handler.NewStaffHandler(ormer, newStaffUC, cfg.App.StaffCookieSecret)
+	adminInvitationH := handler.NewAdminInvitationHandler(ormer, newInviteUC, cfg.App.StaffCookieSecret)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(ormer, newNotifUC, cfg)
 

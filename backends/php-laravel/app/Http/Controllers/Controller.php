@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Support\Http\StaffSession;
 use Illuminate\Http\Request;
 
 /**
@@ -21,20 +22,16 @@ use Illuminate\Http\Request;
 abstract class Controller
 {
     /**
-     * staff_id クッキーからスタッフIDを返します。
-     * クッキーがない・値が不正な場合は null を返します。
+     * 署名済み staff_id クッキーを検証し、スタッフIDを返します。
+     * クッキーがない・署名が不正・有効期限切れの場合は null を返します。
      *
-     * @param Request $request HTTP リクエスト
+     * @param  Request  $request  HTTP リクエスト
      * @return int|null スタッフID
      */
     protected function staffIdFromCookie(Request $request): ?int
     {
         $value = $request->cookie('staff_id');
-        if (empty($value)) {
-            return null;
-        }
 
-        $staffId = (int) $value;
-        return $staffId > 0 ? $staffId : null;
+        return StaffSession::verify($value, config('authorization.app.staff_cookie_secret'));
     }
 }

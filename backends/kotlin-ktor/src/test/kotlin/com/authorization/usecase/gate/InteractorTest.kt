@@ -42,6 +42,7 @@ class InteractorTest {
             staffCookieLifetime = 60L,
             notificationDefaultLimit = 10L,
             cachePrefix = "test",
+            staffCookieSecret = "test-staff-cookie-secret",
         ),
         db    = DbConfig(dsn = "", username = "", password = ""),
         redis = RedisConfig(host = "localhost", port = 6379, password = "", db = 0),

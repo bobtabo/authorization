@@ -16,8 +16,22 @@ module Infrastructure
       ALLOWED_SORT = %w[name role created_at].freeze
 
       def apply_filters(q, cond)
-        q = q.where("name LIKE ? OR email LIKE ?", "%#{cond.keyword}%", "%#{cond.keyword}%") if cond.keyword.present?
+        if cond.keyword.present?
+          like = "%#{ActiveRecord::Base.sanitize_sql_like(cond.keyword)}%"
+          q = q.where("name LIKE ? ESCAPE ? OR email LIKE ? ESCAPE ?", like, "\\", like, "\\")
+        end
         q = q.where(role: cond.roles) if cond.roles.present?
+        q = apply_status_filter(q, cond.statuses) if cond.statuses.present?
+        q
+      end
+
+      # staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+      def apply_status_filter(q, statuses)
+        active   = statuses.include?(1)
+        inactive = statuses.include?(0)
+        return q.where(deleted_at: nil) if active && !inactive
+        return q.where.not(deleted_at: nil) if inactive && !active
+
         q
       end
 
@@ -126,7 +140,8 @@ module Infrastructure
           name:       r.name,
           email:      r.email,
           role:       r.role,
-          status:     r.deleted_at ? :inactive : :active,
+          status:     r.deleted_at ? 0 : 1,
+          version:    r.version,
           created_at: r.created_at,
           updated_at: r.updated_at,
         )

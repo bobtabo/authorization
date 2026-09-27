@@ -1,0 +1,197 @@
+/**
+ * This is a program developed by BobTabo.
+ *
+ * Copyright (c) 2026 BobTabo. All Rights Reserved.
+ */
+package com.authorization.http.controllers;
+
+import com.authorization.config.AppConfig;
+import com.authorization.domain.staff.enums.StaffRole;
+import com.authorization.domain.staff.valueobjects.StaffListVo;
+import com.authorization.domain.staff.valueobjects.StaffMutationVo;
+import com.authorization.domain.staff.valueobjects.StaffRemoveVo;
+import com.authorization.domain.staff.valueobjects.StaffResourceVo;
+import com.authorization.support.exceptions.AppException;
+import com.authorization.support.http.StaffSession;
+import com.authorization.support.http.responses.Pager;
+import com.authorization.support.http.responses.ResponseHelper;
+import com.authorization.usecases.staff.StaffService;
+import com.authorization.usecases.staff.dtos.StaffDto;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * スタッフControllerクラスです。
+ *
+ * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
+ */
+@RestController
+@RequestMapping("/api/staffs")
+public class StaffController {
+
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    private final StaffService service;
+    private final AppConfig cfg;
+
+    /**
+     * コンストラクタ。
+     *
+     * @param service スタッフService
+     * @param cfg アプリケーション設定
+     */
+    public StaffController(StaffService service, AppConfig cfg) {
+        this.service = service;
+        this.cfg = cfg;
+    }
+
+    /**
+     * スタッフ一覧を返します。
+     *
+     * @param keyword 検索キーワード
+     * @param roles 権限フィルタ
+     * @param statuses 状態フィルタ
+     * @param sort ソート対象カラム
+     * @param sortType ソート順
+     * @param limit 取得件数
+     * @param page ページ番号
+     * @return JSON レスポンス
+     */
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> index(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) List<Integer> roles,
+            @RequestParam(required = false) List<Integer> statuses,
+            @RequestParam(required = false) String sort,
+            @RequestParam(name = "sort_type", required = false) String sortType,
+            @RequestParam(required = false, defaultValue = "10") int limit,
+            @RequestParam(required = false, defaultValue = "1") int page) {
+        StaffDto dto = new StaffDto();
+        dto.setKeyword(keyword);
+        dto.setRoles(roles == null ? List.of() : roles);
+        dto.setStatuses(statuses == null ? List.of() : statuses);
+        dto.setSort(sort == null ? "" : sort);
+        dto.setSortType(com.authorization.support.enums.SortType.fromValue(sortType));
+        dto.setLimit(limit);
+        dto.setPaging(page);
+
+        StaffListVo vo = service.index(dto);
+        return ResponseHelper.success(toIndexJson(vo));
+    }
+
+    /**
+     * スタッフの権限を更新します。
+     *
+     * @param id スタッフID
+     * @param executorIdCookie 操作を実行したスタッフIDのstaff_idクッキー値（署名済み）
+     * @param body リクエストボディ
+     * @return JSON レスポンス
+     */
+    @PatchMapping("/{id}/updateRole")
+    public ResponseEntity<Map<String, Object>> updateRole(
+            @PathVariable long id,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
+            @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        StaffDto dto = new StaffDto();
+        dto.setId(id);
+        dto.setExecutorId(executorId);
+        Object roleObj = body.get("role");
+        if (roleObj != null) {
+            dto.setRole(StaffRole.from(((Number) roleObj).intValue()));
+        }
+
+        StaffMutationVo vo = service.updateRole(dto);
+        return ResponseHelper.success(Map.of("id", vo.getId()));
+    }
+
+    /**
+     * スタッフの論理削除を復元します。
+     *
+     * @param id スタッフID
+     * @return JSON レスポンス
+     */
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<Map<String, Object>> restore(@PathVariable long id) {
+        StaffDto dto = new StaffDto();
+        dto.setId(id);
+
+        StaffRemoveVo vo = service.restore(dto);
+        return ResponseHelper.success(Map.of("id", vo.getId()));
+    }
+
+    /**
+     * スタッフを論理削除します。
+     *
+     * @param id スタッフID
+     * @param executorIdCookie 操作を実行したスタッフIDのstaff_idクッキー値（署名済み）
+     * @param body リクエストボディ（version を含む）
+     * @return JSON レスポンス
+     */
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<Map<String, Object>> destroy(
+            @PathVariable long id,
+            @CookieValue(name = "staff_id", required = false, defaultValue = "") String executorIdCookie,
+            @RequestBody Map<String, Object> body) {
+        long executorId = StaffSession.verifyStaffId(executorIdCookie, cfg.app().staffCookieSecret());
+        if (executorId == 0L) {
+            throw AppException.unauthorized("unauthenticated");
+        }
+        StaffDto dto = new StaffDto();
+        dto.setId(id);
+        dto.setExecutorId(executorId);
+        if (body.get("version") != null) {
+            dto.setVersion(((Number) body.get("version")).intValue());
+        }
+
+        StaffRemoveVo vo = service.destroy(dto);
+        return ResponseHelper.success(Map.of("id", vo.getId()));
+    }
+
+    /**
+     * スタッフ一覧 ValueObject を JSON（{@code data}/{@code pager}）へ変換します。
+     *
+     * @param vo スタッフ一覧ValueObject
+     * @return レスポンス本体
+     */
+    private static Map<String, Object> toIndexJson(StaffListVo vo) {
+        List<Map<String, Object>> data = vo.getItems().stream().map(StaffController::toJson).toList();
+        Pager pager = new Pager(vo.getCount(), vo.getOffset(), vo.getLimit(), data.size());
+
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("data", data);
+        res.put("pager", pager);
+        return res;
+    }
+
+    /**
+     * スタッフリソース ValueObject を JSON へ変換します。
+     *
+     * @param staff スタッフリソースValueObject
+     * @return レスポンス用マップ
+     */
+    private static Map<String, Object> toJson(StaffResourceVo staff) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", staff.getId());
+        data.put("name", staff.getName());
+        data.put("email", staff.getEmail());
+        data.put("role", staff.getRole());
+        data.put("status", staff.getStatus());
+        data.put("created_at", staff.getCreatedAt() != null ? staff.getCreatedAt().format(FMT) : null);
+        data.put("updated_at", staff.getUpdatedAt() != null ? staff.getUpdatedAt().format(FMT) : null);
+        data.put("version", staff.getVersion());
+        return data;
+    }
+}

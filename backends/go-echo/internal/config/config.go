@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 
@@ -25,6 +26,7 @@ type AppConfig struct {
 	StaffCookieLifetime      int
 	NotificationDefaultLimit int
 	CachePrefix              string
+	StaffCookieSecret        string
 }
 
 type DBConfig struct {
@@ -78,14 +80,29 @@ func Load() *Config {
 	}
 	_ = godotenv.Load(envFile)
 
+	staffCookieSecret := getEnv("STAFF_COOKIE_SECRET", "")
+	if staffCookieSecret == "" {
+		// 空シークレットでのHMAC署名は誰でも同じ署名を再現できてしまい、
+		// staff_id クッキーの署名検証が無意味になるため起動時に止める。
+		log.Fatal("STAFF_COOKIE_SECRET must be set")
+	}
+
+	staffCookieLifetime := getEnvInt("STAFF_COOKIE_LIFETIME", 60)
+	if staffCookieLifetime <= 0 {
+		// 0以下だと署名時に即時失効または削除扱いのクッキーになり、
+		// ログイン直後から401になってしまうため起動時に止める。
+		log.Fatal("STAFF_COOKIE_LIFETIME must be greater than 0")
+	}
+
 	return &Config{
 		App: AppConfig{
 			Env:                      getEnv("APP_ENV", "local"),
 			Port:                     getEnv("APP_PORT", "8080"),
 			FrontendURL:              getEnv("FRONTEND_URL", "http://localhost:3000"),
-			StaffCookieLifetime:      getEnvInt("STAFF_COOKIE_LIFETIME", 60),
+			StaffCookieLifetime:      staffCookieLifetime,
 			NotificationDefaultLimit: getEnvInt("NOTIFICATION_DEFAULT_LIMIT", 10),
 			CachePrefix:              getEnv("CACHE_PREFIX", ""),
+			StaffCookieSecret:        staffCookieSecret,
 		},
 		DB: DBConfig{
 			DSN: buildDSN(),

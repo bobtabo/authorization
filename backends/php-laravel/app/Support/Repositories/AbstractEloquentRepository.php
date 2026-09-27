@@ -22,7 +22,9 @@ use App\Support\Repositories\Traits\OptionBuilder;
 use App\Support\Repositories\Traits\QueryLog;
 use App\Support\Traits\EnumValue;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionClass;
 
 /**
@@ -42,9 +44,9 @@ abstract class AbstractEloquentRepository
     /**
      * 登録／更新します。
      *
-     * @param \App\Support\Entity $entity エンティティ
-     * @param bool $useGuarded $guarded値も含む場合 true を設定します
-     * @return \App\Support\Entity 登録／更新されたエンティティ
+     * @param  Entity  $entity  エンティティ
+     * @param  bool  $useGuarded  $guarded値も含む場合 true を設定します
+     * @return Entity 登録／更新されたエンティティ
      */
     public function save(Entity $entity, bool $useGuarded = false): Entity
     {
@@ -54,15 +56,21 @@ abstract class AbstractEloquentRepository
 
         $entity = $this->assignCommons($entity, [
             $model->getCreatedAtColumn(),
-            $model->getUpdatedAtColumn()
+            $model->getUpdatedAtColumn(),
         ]);
         $attributes = $entity->attributesBySnake();
         $query = $model->newQuery();
+        // SoftDeletes を使うモデルは論理削除済み行がデフォルトスコープで除外されるため、
+        // 既存行の有無判定では論理削除済みも含めて検索する（含めないと既存行を
+        // 見失い、誤って INSERT してユニーク制約違反になる）。
+        if (in_array(SoftDeletes::class, class_uses_recursive($model), true)) {
+            $query->withTrashed();
+        }
         $query->where($model->getKeyName(), $attributes[$model->getKeyName()]);
         $model = $query->first();
 
         if (empty($model)) {
-            //Insert
+            // Insert
             $model = $this->getModel();
             if ($useGuarded) {
                 $model = $this->assignWithGuarded($entity, $model);
@@ -70,7 +78,7 @@ abstract class AbstractEloquentRepository
                 $model = $model->fill($this->toValues($attributes));
             }
         } else {
-            //Update
+            // Update
             $attributes = $this->assignCommonsByModel($attributes, $model);
             $model = $model->fill($this->toValues($attributes));
         }
@@ -83,9 +91,9 @@ abstract class AbstractEloquentRepository
     /**
      * 論理削除します。
      *
-     * @param int $id プライマリキー値
-     * @param int|null $deletedBy 削除実行者ID
-     * @param string|null $column 検索カラム
+     * @param  int  $id  プライマリキー値
+     * @param  int|null  $deletedBy  削除実行者ID
+     * @param  string|null  $column  検索カラム
      * @return bool 処理結果
      */
     public function delete(int $id, ?int $deletedBy, ?string $column = null): bool
@@ -117,7 +125,7 @@ abstract class AbstractEloquentRepository
     /**
      * 物理削除します。
      *
-     * @param int $id プライマリキー値
+     * @param  int  $id  プライマリキー値
      * @return bool 処理結果
      */
     public function forceDelete(int $id): bool
@@ -140,8 +148,8 @@ abstract class AbstractEloquentRepository
     /**
      * 全件リストを取得します。
      *
-     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
-     * @return \Illuminate\Support\Collection エンティティのコレクション
+     * @param  Option|null  $option  検索オプション
+     * @return Collection エンティティのコレクション
      */
     public function all(?Option $option = null): Collection
     {
@@ -163,9 +171,9 @@ abstract class AbstractEloquentRepository
     /**
      * 指定リレーションを含んだ全件リストを取得します。
      *
-     * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
-     * @return \Illuminate\Support\Collection エンティティのコレクション
+     * @param  array<string, mixed>  $relations  リレーション=>リレーションクラスの連想配列
+     * @param  Option|null  $option  検索オプション
+     * @return Collection エンティティのコレクション
      */
     public function allWithRelation(array $relations, ?Option $option = null): Collection
     {
@@ -183,22 +191,23 @@ abstract class AbstractEloquentRepository
     /**
      * 件数を取得します。
      *
-     * @param \Illuminate\Contracts\Database\Query\Builder|null $query クエリー
+     * @param  \Illuminate\Contracts\Database\Query\Builder|null  $query  クエリー
      * @return int 件数
      */
     public function count(?Builder $query = null): int
     {
         $model = $this->getModel();
         $query = empty($query) ? $model->newQuery() : $query;
+
         return $query->count();
     }
 
     /**
      * プライマリキーで検索します。
      *
-     * @param int $id プライマリキー値
-     * @param \Illuminate\Contracts\Database\Query\Builder|null $query クエリー
-     * @return \App\Support\Entity|null エンティティ
+     * @param  int  $id  プライマリキー値
+     * @param  \Illuminate\Contracts\Database\Query\Builder|null  $query  クエリー
+     * @return Entity|null エンティティ
      */
     public function findByPk(int $id, ?Builder $query = null): ?Entity
     {
@@ -228,11 +237,11 @@ abstract class AbstractEloquentRepository
     /**
      * 複数値で検索します。
      *
-     * @param array $values 検索値の配列
-     * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @param \Illuminate\Contracts\Database\Query\Builder|null $query クエリー
-     * @param bool $not Not In で検索する場合 true を設定します
-     * @return \Illuminate\Support\Collection エンティティのコレクション
+     * @param  array  $values  検索値の配列
+     * @param  array<string, mixed>  $relations  リレーション=>リレーションクラスの連想配列
+     * @param  \Illuminate\Contracts\Database\Query\Builder|null  $query  クエリー
+     * @param  bool  $not  Not In で検索する場合 true を設定します
+     * @return Collection エンティティのコレクション
      */
     public function findByIn(
         array $values,
@@ -247,9 +256,9 @@ abstract class AbstractEloquentRepository
         }
 
         if ($not) {
-            $query->whereNotIn($model->getTable() . '.' . $column, $values);
+            $query->whereNotIn($model->getTable().'.'.$column, $values);
         } else {
-            $query->whereIn($model->getTable() . '.' . $column, $values);
+            $query->whereIn($model->getTable().'.'.$column, $values);
         }
 
         return $this->findByQuery($query, $relations);
@@ -258,10 +267,10 @@ abstract class AbstractEloquentRepository
     /**
      * マップで検索します。
      *
-     * @param array<string, mixed> $map カラム=>値の連想配列
-     * @param \Illuminate\Contracts\Database\Query\Builder|null $query クエリー
-     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
-     * @return \Illuminate\Support\Collection エンティティのコレクション
+     * @param  array<string, mixed>  $map  カラム=>値の連想配列
+     * @param  \Illuminate\Contracts\Database\Query\Builder|null  $query  クエリー
+     * @param  Option|null  $option  検索オプション
+     * @return Collection エンティティのコレクション
      */
     public function findByMap(array $map, ?Builder $query = null, ?Option $option = null): Collection
     {
@@ -289,10 +298,10 @@ abstract class AbstractEloquentRepository
     /**
      * 指定リレーションを含んだエンティティをプライマリキーで検索します。
      *
-     * @param int $id プライマリキー値
-     * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @param \Illuminate\Contracts\Database\Eloquent\Builder|null $query クエリー
-     * @return \App\Support\Entity|null エンティティ
+     * @param  int  $id  プライマリキー値
+     * @param  array<string, mixed>  $relations  リレーション=>リレーションクラスの連想配列
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder|null  $query  クエリー
+     * @return Entity|null エンティティ
      */
     public function findByPkWithRelation(int $id, array $relations, ?Builder $query = null): ?Entity
     {
@@ -307,11 +316,11 @@ abstract class AbstractEloquentRepository
     /**
      * 指定リレーションを含んだエンティティをマップで検索します。
      *
-     * @param array<string, mixed> $map カラム=>値の連想配列
-     * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @param \Illuminate\Contracts\Database\Eloquent\Builder|null $query クエリー
-     * @param \App\Support\Repositories\Conditions\Option|null $option 検索オプション
-     * @return \Illuminate\Support\Collection エンティティのコレクション
+     * @param  array<string, mixed>  $map  カラム=>値の連想配列
+     * @param  array<string, mixed>  $relations  リレーション=>リレーションクラスの連想配列
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder|null  $query  クエリー
+     * @param  Option|null  $option  検索オプション
+     * @return Collection エンティティのコレクション
      */
     public function findByMapWithRelation(
         array $map,
@@ -342,9 +351,9 @@ abstract class AbstractEloquentRepository
     /**
      * 指定クエリーで検索します。
      *
-     * @param \Illuminate\Contracts\Database\Eloquent\Builder $query クエリー
-     * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @return \Illuminate\Support\Collection エンティティのコレクション
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder  $query  クエリー
+     * @param  array<string, mixed>  $relations  リレーション=>リレーションクラスの連想配列
+     * @return Collection エンティティのコレクション
      */
     protected function findByQuery(Builder $query, array $relations = []): Collection
     {
@@ -371,9 +380,9 @@ abstract class AbstractEloquentRepository
     /**
      * 指定クエリーで削除します。
      *
-     * @param \Illuminate\Contracts\Database\Eloquent\Builder $query クエリー
+     * @param  \Illuminate\Contracts\Database\Eloquent\Builder  $query  クエリー
      * @return bool 処理結果
-     * @throws \Psr\SimpleCache\InvalidArgumentException キャッシュ例外
+     * @throws InvalidArgumentException キャッシュ例外
      */
     protected function deleteByQuery(Builder $query): bool
     {
@@ -391,9 +400,9 @@ abstract class AbstractEloquentRepository
     /**
      * モデルリストをエンティティのリストに変換します。
      *
-     * @param \Illuminate\Support\Collection $models モデルのリスト
-     * @param array<string> $excludes 除外項目
-     * @return \Illuminate\Support\Collection エンティティのリスト
+     * @param  Collection  $models  モデルのリスト
+     * @param  array<string>  $excludes  除外項目
+     * @return Collection エンティティのリスト
      */
     protected function assigns(Collection $models, array $excludes = []): Collection
     {
@@ -405,8 +414,8 @@ abstract class AbstractEloquentRepository
     /**
      * 対象モデルに $guarded を含むデータ設定します。
      *
-     * @param \App\Support\Entity $entity エンティティ
-     * @param AppModel|null $model 対象モデル
+     * @param  Entity  $entity  エンティティ
+     * @param  AppModel|null  $model  対象モデル
      * @return AppModel データ設定したモデル
      */
     protected function assignWithGuarded(Entity $entity, ?AppModel $model = null): AppModel
@@ -419,15 +428,16 @@ abstract class AbstractEloquentRepository
         foreach ($guardeds as $guarded) {
             $model->$guarded = $entity->attributesBySnake()[$guarded];
         }
+
         return $model;
     }
 
     /**
      * 対象エンティティにリレーションを設定します。
      *
-     * @param \App\Support\Entity $entity 対象エンティティ
-     * @param array<string, mixed> $relations リレーション=>リレーションクラスの連想配列
-     * @return \App\Support\Entity リレーション設定したエンティティ
+     * @param  Entity  $entity  対象エンティティ
+     * @param  array<string, mixed>  $relations  リレーション=>リレーションクラスの連想配列
+     * @return Entity リレーション設定したエンティティ
      */
     protected function assignWithRelation(Entity $entity, array $relations): Entity
     {
@@ -437,13 +447,14 @@ abstract class AbstractEloquentRepository
             /** @var Entity $relationEntity */
             if ($relationModel instanceof Collection) {
                 $relationEntities = $relationModel->map(function (AppModel $model) use ($relationClass) {
-                    $relationEntity = new $relationClass();
+                    $relationEntity = new $relationClass;
+
                     return $relationEntity->assign($model->toArray());
                 });
                 $entity->$relation = $relationEntities;
             } else {
                 if (!empty($relationModel)) {
-                    $relationEntity = new $relationClass();
+                    $relationEntity = new $relationClass;
                     $relationEntity->assignModel($relationModel);
                     $modelName = str((new ReflectionClass($relationModel))->getShortName())->camel()->value();
                     if ($modelName === $relation) {
@@ -454,6 +465,7 @@ abstract class AbstractEloquentRepository
                 }
             }
         }
+
         return $entity;
     }
 
@@ -467,7 +479,7 @@ abstract class AbstractEloquentRepository
     /**
      * エンティティを取得します。
      *
-     * @return \App\Support\Entity エンティティ
+     * @return Entity エンティティ
      */
     abstract protected function getEntity(): Entity;
 }

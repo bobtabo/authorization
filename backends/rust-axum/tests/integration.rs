@@ -1,6 +1,7 @@
 mod common;
 
-use axum::http::{Request, StatusCode, header};
+use authorization::handler::sign_staff_id;
+use axum::http::{header, Request, StatusCode};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
@@ -14,7 +15,10 @@ async fn get_auth_me_returns_profile_when_authenticated() {
 
     let req = Request::builder()
         .uri("/api/auth/me")
-        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -38,6 +42,176 @@ async fn get_auth_me_returns_401_when_unauthenticated() {
 
     let res = app.oneshot(req).await.unwrap();
     assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn get_auth_me_returns_401_when_cookie_is_forged_without_signature() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .uri("/api/auth/me")
+        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn get_auth_me_returns_401_when_signature_is_tampered() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+
+    let signed = common::sign_staff_cookie(staff_id);
+    let other_id = staff_id + 1;
+    let mut parts = signed.split('.');
+    let _old_id = parts.next().unwrap();
+    let rest: Vec<&str> = parts.collect();
+    let tampered = format!("{other_id}.{}", rest.join("."));
+
+    let req = Request::builder()
+        .uri("/api/auth/me")
+        .header(header::COOKIE, format!("staff_id={tampered}"))
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn get_auth_me_returns_401_when_signed_with_wrong_secret() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+
+    let forged = sign_staff_id(staff_id, "wrong-secret", 3600);
+
+    let req = Request::builder()
+        .uri("/api/auth/me")
+        .header(header::COOKIE, format!("staff_id={forged}"))
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn get_auth_me_returns_401_when_cookie_is_expired() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+
+    let secret = std::env::var("STAFF_COOKIE_SECRET")
+        .unwrap_or_else(|_| "test-staff-cookie-secret".to_string());
+    let expired = sign_staff_id(staff_id, &secret, -1);
+
+    let req = Request::builder()
+        .uri("/api/auth/me")
+        .header(header::COOKIE, format!("staff_id={expired}"))
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn oauth_redirect_issues_nonce_cookie_and_embeds_it_in_state() {
+    let (app, _pool) = common::build_test_app().await;
+
+    let req = Request::builder()
+        .uri("/auth/google/redirect?token=inv-token")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::TEMPORARY_REDIRECT);
+
+    let set_cookie = res
+        .headers()
+        .get(header::SET_COOKIE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    assert!(
+        set_cookie.starts_with("oauth_state="),
+        "set-cookie: {set_cookie}"
+    );
+    assert!(set_cookie.contains("HttpOnly"));
+    let nonce = set_cookie
+        .trim_start_matches("oauth_state=")
+        .split(';')
+        .next()
+        .unwrap();
+    assert!(!nonce.is_empty());
+
+    let location = res
+        .headers()
+        .get(header::LOCATION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    let expected = percent_encoding::utf8_percent_encode(
+        &format!("rust|{nonce}|inv-token"),
+        percent_encoding::NON_ALPHANUMERIC,
+    )
+    .to_string();
+    assert!(
+        location.ends_with(&format!("state={expected}")),
+        "location: {location}"
+    );
+}
+
+#[tokio::test]
+async fn oauth_callback_without_nonce_cookie_redirects_to_400() {
+    let (app, _pool) = common::build_test_app().await;
+
+    let req = Request::builder()
+        .uri("/auth/google/callback?code=x&state=rust%7Cabc")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::TEMPORARY_REDIRECT);
+    let location = res
+        .headers()
+        .get(header::LOCATION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(
+        location.ends_with("/error?code=400"),
+        "location: {location}"
+    );
+}
+
+#[tokio::test]
+async fn oauth_callback_with_mismatched_nonce_redirects_to_400() {
+    let (app, _pool) = common::build_test_app().await;
+
+    let req = Request::builder()
+        .uri("/auth/github/callback?code=x&state=rust%7Cabc")
+        .header(header::COOKIE, "oauth_state=xyz")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::TEMPORARY_REDIRECT);
+    let location = res
+        .headers()
+        .get(header::LOCATION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(
+        location.ends_with("/error?code=400"),
+        "location: {location}"
+    );
 }
 
 // ── Clients ───────────────────────────────────────────────────────────────────
@@ -64,6 +238,26 @@ async fn get_clients_returns_list() {
 }
 
 #[tokio::test]
+async fn get_clients_keyword_percent_is_not_treated_as_wildcard() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    common::create_client_with_name(&pool, "50%割引プラン").await;
+    common::create_client_with_name(&pool, "50個セット").await;
+
+    let req = Request::builder()
+        .uri("/api/clients?keyword=50%25")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let body = res.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(json["data"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
 async fn post_clients_store_creates_client() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
@@ -84,7 +278,10 @@ async fn post_clients_store_creates_client() {
         .method("POST")
         .uri("/api/clients/store")
         .header(header::CONTENT_TYPE, "application/json")
-        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::from(body.to_string()))
         .unwrap();
 
@@ -120,12 +317,15 @@ async fn delete_clients_destroy_soft_deletes_client() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
     let staff_id = common::create_staff(&pool).await;
-    let client   = common::create_client(&pool).await;
+    let client = common::create_client(&pool).await;
 
     let req = Request::builder()
         .method("DELETE")
         .uri(format!("/api/clients/{}/delete", client.id))
-        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .header(header::CONTENT_TYPE, "application/json")
         .body(axum::body::Body::from(r#"{"version":1}"#))
         .unwrap();
@@ -155,6 +355,121 @@ async fn get_staffs_returns_list() {
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["data"].as_array().unwrap().len(), 2);
     assert!(json["pager"].is_object());
+}
+
+#[tokio::test]
+async fn get_staffs_keyword_underscore_is_not_treated_as_wildcard() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    common::create_staff_with_name_email(&pool, "アンダースコア", "a_b@example.com").await;
+    common::create_staff_with_name_email(&pool, "エックス", "axb@example.com").await;
+
+    let req = Request::builder()
+        .uri("/api/staffs?keyword=a_b")
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+
+    let bytes = res.into_body().collect().await.unwrap().to_bytes();
+    let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(json["data"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn patch_staffs_update_role_succeeds_for_admin_executor() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let executor_id = common::create_staff(&pool).await;
+    let target_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/staffs/{}/updateRole", target_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(executor_id)),
+        )
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"role":2,"version":1}"#))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn patch_staffs_update_role_returns_401_when_unauthenticated() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let target_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/staffs/{}/updateRole", target_id))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"role":2,"version":1}"#))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn patch_staffs_update_role_returns_403_when_executor_is_not_admin() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let executor_id = common::create_staff(&pool).await;
+    sqlx::query("UPDATE staffs SET role = 2 WHERE id = ?")
+        .bind(executor_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let target_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/staffs/{}/updateRole", target_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(executor_id)),
+        )
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"role":2,"version":1}"#))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn patch_staffs_update_role_returns_403_when_executor_is_deleted_admin() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let executor_id = common::create_staff(&pool).await;
+    let now = chrono::Local::now().naive_local();
+    sqlx::query("UPDATE staffs SET deleted_at = ? WHERE id = ?")
+        .bind(now)
+        .bind(executor_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let target_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/staffs/{}/updateRole", target_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(executor_id)),
+        )
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"role":2,"version":1}"#))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]
@@ -190,18 +505,38 @@ async fn delete_staffs_destroy_soft_deletes_staff() {
     let (app, pool) = common::build_test_app().await;
     common::truncate_tables(&pool).await;
     let executor_id = common::create_staff(&pool).await;
-    let target_id   = common::create_staff(&pool).await;
+    let target_id = common::create_staff(&pool).await;
 
     let req = Request::builder()
         .method("DELETE")
         .uri(format!("/api/staffs/{}/delete", target_id))
-        .header(header::COOKIE, format!("staff_id={}", executor_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(executor_id)),
+        )
         .header(header::CONTENT_TYPE, "application/json")
         .body(axum::body::Body::from(r#"{"version":1}"#))
         .unwrap();
 
     let res = app.oneshot(req).await.unwrap();
     assert_eq!(res.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn delete_staffs_destroy_returns_401_when_unauthenticated() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let target_id = common::create_staff(&pool).await;
+
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("/api/staffs/{}/delete", target_id))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(axum::body::Body::from(r#"{"version":1}"#))
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 }
 
 // ── Admin Invitation ──────────────────────────────────────────────────────────
@@ -282,7 +617,10 @@ async fn get_admin_invitation_issue_creates_new_invitation() {
 
     let req = Request::builder()
         .uri("/api/admin/invitation/issue?role=2")
-        .header(axum::http::header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            axum::http::header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -305,7 +643,10 @@ async fn get_gate_issue_returns_jwt_token() {
 
     let req = Request::builder()
         .uri("/api/gate/issue?member=user-001")
-        .header(header::AUTHORIZATION, format!("Bearer {}", client.access_token))
+        .header(
+            header::AUTHORIZATION,
+            format!("Bearer {}", client.access_token),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -326,7 +667,10 @@ async fn get_gate_verify_returns_claims() {
     // issue
     let issue_req = Request::builder()
         .uri("/api/gate/issue?member=user-001")
-        .header(header::AUTHORIZATION, format!("Bearer {}", client.access_token))
+        .header(
+            header::AUTHORIZATION,
+            format!("Bearer {}", client.access_token),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
     let issue_res = app.clone().oneshot(issue_req).await.unwrap();
@@ -336,7 +680,10 @@ async fn get_gate_verify_returns_claims() {
 
     // verify
     let req = Request::builder()
-        .uri(format!("/api/gate/client/{}/verify?token={}", client.identifier, token))
+        .uri(format!(
+            "/api/gate/client/{}/verify?token={}",
+            client.identifier, token
+        ))
         .body(axum::body::Body::empty())
         .unwrap();
     let res = app.oneshot(req).await.unwrap();
@@ -359,7 +706,10 @@ async fn get_notifications_counts_returns_unread_and_total() {
 
     let req = Request::builder()
         .uri("/api/notifications/counts")
-        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -396,7 +746,10 @@ async fn get_notifications_returns_list() {
 
     let req = Request::builder()
         .uri("/api/notifications")
-        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -419,7 +772,10 @@ async fn patch_notifications_bulk_marks_all_read() {
     let req = Request::builder()
         .method("PATCH")
         .uri("/api/notifications")
-        .header(header::COOKIE, format!("staff_id={}", staff_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -441,6 +797,10 @@ async fn patch_notifications_id_marks_single_notification_as_read() {
     let req = Request::builder()
         .method("PATCH")
         .uri(format!("/api/notifications/{}", notif_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
         .body(axum::body::Body::empty())
         .unwrap();
 
@@ -450,4 +810,63 @@ async fn patch_notifications_id_marks_single_notification_as_read() {
     let bytes = res.into_body().collect().await.unwrap().to_bytes();
     let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(json["id"], notif_id);
+}
+
+#[tokio::test]
+async fn patch_notifications_id_returns_401_when_unauthenticated() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+    let notif_id = common::create_notification(&pool, staff_id, "通知1", false).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/notifications/{}", notif_id))
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
+async fn patch_notifications_id_returns_404_for_other_staff_notification() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+    let other_staff_id = common::create_staff(&pool).await;
+    let notif_id = common::create_notification(&pool, other_staff_id, "通知1", false).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/notifications/{}", notif_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
+        .body(axum::body::Body::empty())
+        .unwrap();
+
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn patch_notifications_id_succeeds_for_already_read_own_notification() {
+    let (app, pool) = common::build_test_app().await;
+    common::truncate_tables(&pool).await;
+    let staff_id = common::create_staff(&pool).await;
+    let notif_id = common::create_notification(&pool, staff_id, "通知1", true).await;
+
+    let req = Request::builder()
+        .method("PATCH")
+        .uri(format!("/api/notifications/{}", notif_id))
+        .header(
+            header::COOKIE,
+            format!("staff_id={}", common::sign_staff_cookie(staff_id)),
+        )
+        .body(axum::body::Body::empty())
+        .unwrap();
+    let res = app.oneshot(req).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
 }

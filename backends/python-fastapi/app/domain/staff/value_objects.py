@@ -17,6 +17,7 @@ class StaffListItem:
     email: str
     role: int
     status: int  # 0=削除済み, 1=有効
+    version: int
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 

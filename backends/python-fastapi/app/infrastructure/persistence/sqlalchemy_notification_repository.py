@@ -137,6 +137,18 @@ class SqlAlchemyNotificationRepository(NotificationRepository):
         self.db.flush()
         return count
 
+    def exists_for_staff(self, staff_id: int, nid: int) -> bool:
+        """スタッフが所有する通知の存在を返します。"""
+        return (
+            self.db.query(NotificationModel)
+            .filter(
+                NotificationModel.id == nid,
+                NotificationModel.staff_id == staff_id,
+            )
+            .first()
+            is not None
+        )
+
     def store(self, notification: Notification) -> Notification:
         """新規通知を保存して返します。
 

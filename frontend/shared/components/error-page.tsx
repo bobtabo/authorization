@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 
 import { RUNTIME_STORAGE_KEY } from "@/shared/api/client";
 import { getBackendConnectionDetail } from "@/shared/lib/backend-connection-hint";
+import { RUNTIME_LABEL } from "@/shared/lib/runtime-label";
 
 const ERROR_TITLE: Record<number | "default", string> = {
   400: "リクエストが不正です",
@@ -27,17 +28,6 @@ const ERROR_MESSAGE: Record<number | "default", string> = {
   500: "サーバーで予期しない問題が発生しました。時間をおいてから再度お試しください。",
   503: "現在メンテナンス中か、サーバーが高負荷状態です。しばらくお待ちください。",
   default: "しばらく時間をおいてから、もう一度お試しください。",
-};
-
-const RUNTIME_LABEL: Record<string, string> = {
-  go:       "Go",
-  kotlin:   "Kotlin",
-  php:      "PHP",
-  python:   "Python",
-  "rb-hanami": "Ruby (Hanami)",
-  "rb-rails":  "Ruby (Rails)",
-  rust:     "Rust",
-  ts:       "TypeScript",
 };
 
 export type ErrorPageProps = {

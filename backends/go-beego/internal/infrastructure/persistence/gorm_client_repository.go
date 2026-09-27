@@ -20,7 +20,7 @@ func NewOrmClientRepository(o QueryOrmer) *OrmClientRepository {
 
 func (r *OrmClientRepository) applyFilters(qs orm.QuerySeter, cond domclient.Condition) orm.QuerySeter {
 	if cond.Keyword != nil && *cond.Keyword != "" {
-		qs = qs.Filter("name__contains", *cond.Keyword)
+		qs = qs.Filter("name__contains", escapeLikeKeywordForContains(*cond.Keyword))
 	}
 	if cond.StartFrom != nil {
 		qs = qs.Filter("start_at__gte", cond.StartFrom)

@@ -36,7 +36,7 @@ class DestroyRequest extends AppRequest
     public function rules(): array
     {
         return [
-            'executor_id' => ['required', 'integer'],
+            'executor_id' => ['nullable', 'integer'],
         ];
     }
 }

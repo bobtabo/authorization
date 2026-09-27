@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'client.token' => ClientTokenAuth::class,
         ]);
         // 他バックエンドとクッキーを共有するため staff_id は暗号化しない
-        $middleware->encryptCookies(except: ['staff_id']);
+        $middleware->encryptCookies(except: ['staff_id', 'oauth_state']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontReport(AppException::class);

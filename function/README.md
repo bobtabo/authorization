@@ -23,7 +23,7 @@
 function/
 ├── cmd/main.go           # エントリ（lambda.Start・依存の組み立て）
 ├── internal/
-│   ├── handler/          # API Gateway HTTP API v2 向けハンドラ
+│   ├── handler/          # API Gateway REST API（v1）向けハンドラ
 │   ├── domain/           # ドメイン型・ビジネスロジック
 │   └── adapter/          # DynamoDB / 外部 API 等の境界（実装は随時追加）
 ├── go.mod

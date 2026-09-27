@@ -36,16 +36,32 @@ pub async fn issue(
 ) -> (StatusCode, Json<Value>) {
     let member = match q.member {
         Some(m) if !m.is_empty() => m,
-        _ => return (StatusCode::BAD_REQUEST, Json(json!({"error": "member_required"}))),
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": "member_required"})),
+            )
+        }
     };
-    let auth = headers.get(AUTHORIZATION)
+    let auth = headers
+        .get(AUTHORIZATION)
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
     let access_token = auth.strip_prefix("Bearer ").unwrap_or("").to_string();
 
-    match state.gate_uc.issue_token(IssueDto { access_token, member_id: member }).await {
-        Ok(vo)  => (StatusCode::OK, Json(json!({"token": vo.token}))),
-        Err(_)  => (StatusCode::UNAUTHORIZED, Json(json!({"error": "unauthorized"}))),
+    match state
+        .gate_uc
+        .issue_token(IssueDto {
+            access_token,
+            member_id: member,
+        })
+        .await
+    {
+        Ok(vo) => (StatusCode::OK, Json(json!({"token": vo.token}))),
+        Err(_) => (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "unauthorized"})),
+        ),
     }
 }
 
@@ -57,10 +73,18 @@ pub async fn verify(
 ) -> (StatusCode, Json<Value>) {
     let token = match q.token {
         Some(t) if !t.is_empty() => t,
-        _ => return (StatusCode::BAD_REQUEST, Json(json!({"error": "token_required"}))),
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": "token_required"})),
+            )
+        }
     };
     match state.gate_uc.verify(VerifyDto { identifier, token }).await {
-        Ok(vo)  => (StatusCode::OK, Json(vo.claims)),
-        Err(_)  => (StatusCode::UNAUTHORIZED, Json(json!({"error": "jwt_invalid"}))),
+        Ok(vo) => (StatusCode::OK, Json(vo.claims)),
+        Err(_) => (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "jwt_invalid"})),
+        ),
     }
 }

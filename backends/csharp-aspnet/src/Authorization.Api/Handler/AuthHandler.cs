@@ -1,0 +1,414 @@
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Authorization.Api.Config;
+using Authorization.Api.Domain.Staff;
+using Authorization.Api.Support;
+using Authorization.Api.UseCase.Auth;
+using Authorization.Api.UseCase.Invitation;
+using Microsoft.AspNetCore.WebUtilities;
+using static Authorization.Api.Handler.HttpHelpers;
+
+namespace Authorization.Api.Handler;
+
+/// <summary>OAuth プロバイダーから取得したユーザー情報です。</summary>
+public sealed record OAuthUserInfo(string Id, string Name, string Email, string? Avatar);
+
+/// <summary>OAuth プロバイダーとの HTTP 通信です。</summary>
+public interface IOAuthClient
+{
+    /// <summary>Google の認可コードをアクセストークンに交換します。</summary>
+    /// <param name="code">認可コード</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>アクセストークン</returns>
+    Task<string> ExchangeGoogleCodeAsync(string code, CancellationToken ct);
+
+    /// <summary>Google のアクセストークンでユーザー情報を取得します。</summary>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>ユーザー情報</returns>
+    Task<OAuthUserInfo> FetchGoogleUserInfoAsync(string accessToken, CancellationToken ct);
+
+    /// <summary>GitHub の認可コードをアクセストークンに交換します。</summary>
+    /// <param name="code">認可コード</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>アクセストークン</returns>
+    Task<string> ExchangeGithubCodeAsync(string code, CancellationToken ct);
+
+    /// <summary>GitHub のアクセストークンでユーザー情報を取得します（メールアドレス非公開の場合は別APIで補完）。</summary>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>ユーザー情報</returns>
+    Task<OAuthUserInfo> FetchGithubUserInfoAsync(string accessToken, CancellationToken ct);
+}
+
+/// <summary>HttpClient による OAuth クライアントです。</summary>
+/// <param name="http">HTTPクライアント</param>
+/// <param name="oauth">OAuth設定</param>
+public sealed class HttpOAuthClient(HttpClient http, OAuthSettings oauth) : IOAuthClient
+{
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    /// <exception cref="InvalidOperationException">レスポンスにaccess_tokenが含まれない場合</exception>
+    public async Task<string> ExchangeGoogleCodeAsync(string code, CancellationToken ct)
+    {
+        using var res = await http.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(
+        [
+            new("code",          code),
+            new("client_id",     oauth.GoogleClientId),
+            new("client_secret", oauth.GoogleClientSecret),
+            new("redirect_uri",  oauth.GoogleRedirectUrl),
+            new("grant_type",    "authorization_code"),
+        ]), ct);
+        res.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+        return doc.RootElement.TryGetProperty("access_token", out var t) && t.ValueKind == JsonValueKind.String
+            ? t.GetString()! : throw new InvalidOperationException("no access_token");
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    public async Task<OAuthUserInfo> FetchGoogleUserInfoAsync(string accessToken, CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, "https://www.googleapis.com/oauth2/v2/userinfo");
+        req.Headers.Authorization = new("Bearer", accessToken);
+        using var res = await http.SendAsync(req, ct);
+        res.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+        var root = doc.RootElement;
+        var picture = Prop(root, "picture");
+        return new OAuthUserInfo(Prop(root, "id"), Prop(root, "name"), Prop(root, "email"),
+            picture.Length == 0 ? null : picture);
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    /// <exception cref="InvalidOperationException">レスポンスにaccess_tokenが含まれない場合</exception>
+    public async Task<string> ExchangeGithubCodeAsync(string code, CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://github.com/login/oauth/access_token")
+        {
+            Content = new FormUrlEncodedContent(
+            [
+                new("client_id",     oauth.GithubClientId),
+                new("client_secret", oauth.GithubClientSecret),
+                new("code",          code),
+            ]),
+        };
+        req.Headers.Accept.Add(new("application/json"));
+        using var res = await http.SendAsync(req, ct);
+        res.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+        return doc.RootElement.TryGetProperty("access_token", out var t) && t.ValueKind == JsonValueKind.String
+            ? t.GetString()! : throw new InvalidOperationException("no access_token");
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    public async Task<OAuthUserInfo> FetchGithubUserInfoAsync(string accessToken, CancellationToken ct)
+    {
+        using var userDoc = await GetGithubJsonAsync("https://api.github.com/user", accessToken, ct);
+        var root  = userDoc.RootElement;
+        var name  = Prop(root, "name");
+        if (name.Length == 0) name = Prop(root, "login");
+        var id    = Prop(root, "id");
+        var email = Prop(root, "email");
+
+        if (email.Length == 0)
+        {
+            using var emailsDoc = await GetGithubJsonAsync("https://api.github.com/user/emails", accessToken, ct);
+            if (emailsDoc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var e in emailsDoc.RootElement.EnumerateArray())
+                {
+                    if (e.TryGetProperty("primary", out var p) && p.ValueKind == JsonValueKind.True)
+                    {
+                        email = Prop(e, "email");
+                        break;
+                    }
+                }
+            }
+        }
+
+        var avatar = Prop(root, "avatar_url");
+        return new OAuthUserInfo(id, name, email, avatar.Length == 0 ? null : avatar);
+    }
+
+    /// <summary>GitHub API を Bearer 認証で GET し、JSON をパースします。</summary>
+    /// <param name="url">GitHub APIのURL</param>
+    /// <param name="accessToken">アクセストークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>パース済みJSONドキュメント</returns>
+    /// <exception cref="HttpRequestException">HTTPリクエストが失敗した場合</exception>
+    private async Task<JsonDocument> GetGithubJsonAsync(string url, string accessToken, CancellationToken ct)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        req.Headers.Authorization = new("Bearer", accessToken);
+        req.Headers.Accept.Add(new("application/json"));
+        req.Headers.UserAgent.ParseAdd("authorization-csharp");
+        using var res = await http.SendAsync(req, ct);
+        res.EnsureSuccessStatusCode();
+        return JsonDocument.Parse(await res.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>JSON要素から文字列/数値プロパティを取り出します（無い場合は空文字）。</summary>
+    /// <param name="el">JSON要素</param>
+    /// <param name="key">プロパティ名</param>
+    /// <returns>プロパティの文字列表現。存在しない場合や文字列/数値以外の場合は空文字</returns>
+    private static string Prop(JsonElement el, string key)
+    {
+        if (!el.TryGetProperty(key, out var v)) return "";
+        return v.ValueKind switch
+        {
+            JsonValueKind.String => v.GetString() ?? "",
+            JsonValueKind.Number => v.GetRawText(),
+            _                    => "",
+        };
+    }
+}
+
+/// <summary>認証ハンドラーです。</summary>
+/// <param name="authUC">認証Service</param>
+/// <param name="invitationUC">招待Service</param>
+/// <param name="oauthClient">OAuthプロバイダークライアント</param>
+/// <param name="cfg">アプリケーション設定</param>
+/// <param name="logger">ロガー</param>
+public sealed class AuthHandler(
+    AuthService authUC,
+    InvitationService invitationUC,
+    IOAuthClient oauthClient,
+    AppConfig cfg,
+    ILogger<AuthHandler> logger)
+{
+    private const string GoogleAuthUrl = "https://accounts.google.com/o/oauth2/auth";
+    private const string GithubAuthorizeUrl = "https://github.com/login/oauth/authorize";
+    private const string OAuthStateCookie = "oauth_state";
+    private static readonly TimeSpan OAuthStateCookieMaxAge = TimeSpan.FromMinutes(10);
+
+    /// <summary>nonce を生成して HttpOnly クッキーに保存し、state（`runtime|nonce` または `runtime|nonce|招待トークン`）を返します。</summary>
+    /// <param name="req">HTTPリクエスト（招待トークンをtokenクエリから取得）</param>
+    /// <returns>stateパラメータ</returns>
+    private string IssueOAuthState(HttpRequest req)
+    {
+        var nonce = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
+        req.HttpContext.Response.Cookies.Append(OAuthStateCookie, nonce, new CookieOptions
+        {
+            MaxAge   = OAuthStateCookieMaxAge,
+            Path     = "/",
+            Secure   = cfg.App.Env == "production",
+            HttpOnly = true,
+            SameSite = SameSiteMode.Lax,
+        });
+        var token = Query(req, "token");
+        return string.IsNullOrEmpty(token) ? $"{cfg.App.Runtime}|{nonce}" : $"{cfg.App.Runtime}|{nonce}|{token}";
+    }
+
+    /// <summary>state の nonce をクッキーと照合してクッキーを破棄し、招待トークンと照合結果を返します。</summary>
+    /// <param name="req">HTTPリクエスト（state クエリと oauth_state クッキーを使用）</param>
+    /// <returns>招待トークン（無ければnull）と照合結果</returns>
+    private static (string? InvitationToken, bool Valid) ConsumeOAuthState(HttpRequest req)
+    {
+        var saved = req.Cookies[OAuthStateCookie] ?? "";
+        req.HttpContext.Response.Cookies.Append(OAuthStateCookie, "", new CookieOptions { MaxAge = TimeSpan.Zero, Path = "/", HttpOnly = true });
+
+        var parts = (Query(req, "state") ?? "").Split('|', 3);
+        var nonce = parts.Length >= 2 ? parts[1] : "";
+        if (saved.Length == 0 || nonce.Length == 0) return (null, false);
+        if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(saved), Encoding.UTF8.GetBytes(nonce))) return (null, false);
+
+        var invitationToken = parts.Length == 3 && parts[2].Length > 0 ? parts[2] : null;
+        return (invitationToken, true);
+    }
+
+    /// <summary>フロントエンドのエラーページURLを組み立てます。</summary>
+    /// <param name="code">エラーコード（表示用）</param>
+    /// <returns>エラーページURL</returns>
+    private string ErrorUrl(int code) => $"{cfg.App.FrontendUrl}/error?code={code}";
+
+    /// <summary>Google OAuth の認可画面へリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（招待トークンをtokenクエリから取得）</param>
+    /// <returns>Google認可画面へのリダイレクト</returns>
+    public IResult GoogleRedirect(HttpRequest req)
+    {
+        var state = IssueOAuthState(req);
+        var url = QueryHelpers.AddQueryString(GoogleAuthUrl, new Dictionary<string, string?>
+        {
+            ["client_id"] = cfg.OAuth.GoogleClientId,
+            ["redirect_uri"] = cfg.OAuth.GoogleRedirectUrl,
+            ["response_type"] = "code",
+            ["scope"] = "email profile",
+            ["access_type"] = "online",
+            ["state"] = state,
+        });
+        return Results.Redirect(url);
+    }
+
+    /// <summary>Google OAuth のコールバックを処理し、ログインしてクッキーを付与しリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（code/stateクエリを使用）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クッキー付与済みのフロントエンドへのリダイレクト、失敗時はエラーページへのリダイレクト</returns>
+    public async Task<IResult> GoogleCallbackAsync(HttpRequest req, CancellationToken ct)
+    {
+        var (invitationToken, valid) = ConsumeOAuthState(req);
+        if (!valid) return Results.Redirect(ErrorUrl(400));
+
+        var code = Query(req, "code");
+        if (string.IsNullOrEmpty(code)) return Results.Redirect(ErrorUrl(500));
+
+        OAuthUserInfo info;
+        try
+        {
+            var accessToken = await oauthClient.ExchangeGoogleCodeAsync(code, ct);
+            info = await oauthClient.FetchGoogleUserInfoAsync(accessToken, ct);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "google oauth failed");
+            return Results.Redirect(ErrorUrl(500));
+        }
+
+        return await LoginAndRedirectAsync(new LoginDto(StaffProvider.Google, info.Id, info.Name, info.Email, info.Avatar, invitationToken), ct);
+    }
+
+    /// <summary>GitHub OAuth の認可画面へリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（招待トークンをtokenクエリから取得）</param>
+    /// <returns>GitHub認可画面へのリダイレクト</returns>
+    public IResult GithubRedirect(HttpRequest req)
+    {
+        var state = IssueOAuthState(req);
+        var url = QueryHelpers.AddQueryString(GithubAuthorizeUrl, new Dictionary<string, string?>
+        {
+            ["client_id"] = cfg.OAuth.GithubClientId,
+            ["redirect_uri"] = cfg.OAuth.GithubRedirectUrl,
+            ["scope"] = "user:email",
+            ["state"] = state,
+        });
+        return Results.Redirect(url);
+    }
+
+    /// <summary>GitHub OAuth のコールバックを処理し、ログインしてクッキーを付与しリダイレクトします。</summary>
+    /// <param name="req">HTTPリクエスト（code/stateクエリを使用。stateは`runtime|nonce|招待トークン`形式）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>クッキー付与済みのフロントエンドへのリダイレクト、失敗時はエラーページへのリダイレクト</returns>
+    public async Task<IResult> GithubCallbackAsync(HttpRequest req, CancellationToken ct)
+    {
+        var (invitationToken, valid) = ConsumeOAuthState(req);
+        if (!valid) return Results.Redirect(ErrorUrl(400));
+
+        var code = Query(req, "code");
+        if (string.IsNullOrEmpty(code)) return Results.Redirect(ErrorUrl(500));
+
+        OAuthUserInfo info;
+        try
+        {
+            var accessToken = await oauthClient.ExchangeGithubCodeAsync(code, ct);
+            info = await oauthClient.FetchGithubUserInfoAsync(accessToken, ct);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "github oauth failed");
+            return Results.Redirect(ErrorUrl(500));
+        }
+
+        return await LoginAndRedirectAsync(new LoginDto(StaffProvider.Github, info.Id, info.Name, info.Email, info.Avatar, invitationToken), ct);
+    }
+
+    /// <summary>ログインを実行し、成功時はクッキーを付与してクライアント一覧へ、失敗時はエラーページへリダイレクトします。</summary>
+    /// <param name="dto">OAuthプロバイダー情報・招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>リダイレクト結果</returns>
+    private async Task<IResult> LoginAndRedirectAsync(LoginDto dto, CancellationToken ct)
+    {
+        Domain.Staff.Staff staff;
+        try
+        {
+            staff = await authUC.LoginAsync(dto, ct);
+        }
+        catch (AppException e)
+        {
+            return Results.Redirect(ErrorUrl(e.StatusCode == 403 ? 403 : 500));
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "login failed");
+            return Results.Redirect(ErrorUrl(500));
+        }
+
+        return new CookieRedirectResult(staff.Id, cfg.App, $"{cfg.App.FrontendUrl}/clients");
+    }
+
+    /// <summary>ログイン中スタッフのプロフィールを返します（/auth/me, /auth/login 共通）。</summary>
+    /// <param name="req">HTTPリクエスト（staff_idをクッキーから取得）</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>プロフィールのJSON、未認証の場合は401</returns>
+    /// <exception cref="AppException">存在しない場合（404）</exception>
+    public async Task<IResult> ProfileAsync(HttpRequest req, CancellationToken ct)
+    {
+        var staffId = StaffId(req, cfg.App.StaffCookieSecret);
+        if (staffId == 0) return Unauthenticated();
+
+        var s = await authUC.FindUserAsync(staffId, ct);
+        return Results.Json(new Dictionary<string, object?>
+        {
+            ["staff_id"] = s.Id,
+            ["name"]     = s.Name,
+            ["avatar"]   = s.Avatar,
+            ["role"]     = s.Role,
+        });
+    }
+
+    /// <summary>staff_id クッキーを削除してログアウトします。</summary>
+    /// <param name="res">HTTPレスポンス（クッキー削除先）</param>
+    /// <returns>空レスポンス</returns>
+    public IResult Logout(HttpResponse res)
+    {
+        res.Cookies.Append("staff_id", "", new CookieOptions { MaxAge = TimeSpan.Zero, Path = "/", HttpOnly = true });
+        return Empty();
+    }
+
+    /// <summary>招待トークンを確認します。</summary>
+    /// <param name="token">招待トークン</param>
+    /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns>招待情報のJSON</returns>
+    /// <exception cref="AppException">存在しない場合（404）</exception>
+    public async Task<IResult> InvitationAsync(string token, CancellationToken ct)
+    {
+        var v = await invitationUC.FindByTokenAsync(token, ct);
+        return Results.Json(InvitationJson(v));
+    }
+
+    /// <summary>招待レスポンス JSON を組み立てます。</summary>
+    /// <param name="v">招待</param>
+    /// <returns>JSON化用の辞書</returns>
+    public static Dictionary<string, object?> InvitationJson(Domain.Invitation.InvitationVo v) => new()
+    {
+        ["found"]       = true,
+        ["url"]         = v.Url,
+        ["display_url"] = v.DisplayUrl,
+        ["token"]       = v.Token,
+    };
+
+    /// <summary>staff_id クッキーを付与してリダイレクトする結果です。</summary>
+    private sealed class CookieRedirectResult(long staffId, AppSettings app, string location) : IResult
+    {
+        /// <summary>staff_id クッキーを付与してリダイレクトレスポンスを書き込みます。</summary>
+        /// <param name="ctx">HTTPコンテキスト</param>
+        /// <returns>完了済みタスク</returns>
+        public Task ExecuteAsync(HttpContext ctx)
+        {
+            var lifetime = TimeSpan.FromMinutes(app.StaffCookieLifetime);
+            ctx.Response.Cookies.Append("staff_id", StaffSession.SignStaffId(staffId, app.StaffCookieSecret, lifetime), new CookieOptions
+            {
+                MaxAge   = lifetime,
+                Path     = "/",
+                Secure   = app.Env == "production",
+                HttpOnly = true,
+            });
+            ctx.Response.Redirect(location);
+            return Task.CompletedTask;
+        }
+    }
+}

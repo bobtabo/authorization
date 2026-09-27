@@ -150,7 +150,7 @@ class NotificationService extends AbstractService
         ]);
 
         $result = $this->notificationRepository->updateRead($condition);
-        if (!$result) {
+        if (!$result && !$this->notificationRepository->existsForStaff($dto->staffId, $dto->notificationId)) {
             throw AppException::notFound('notification_not_found');
         }
 

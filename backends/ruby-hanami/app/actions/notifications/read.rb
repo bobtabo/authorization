@@ -16,8 +16,13 @@ module Authorization
         # @param response [Hanami::Action::Response] レスポンス
         # @return [void]
         def handle(request, response)
+          staff_id = staff_id_from_cookie(request)
+          return json_response(response, { error: "unauthenticated" }, status: 401) if staff_id == 0
+
           id = request.params[:id].to_i
-          transaction { container[:notification_uc].mark_read(id) }
+          updated = transaction { container[:notification_uc].mark_read(staff_id, id) }
+          return json_response(response, { error: "notification_not_found" }, status: 404) if updated.zero?
+
           json_response(response, { id: id })
         end
       end

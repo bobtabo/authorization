@@ -46,9 +46,11 @@ export default defineConfig({
         // ── 実バックエンド E2E（バックエンド起動＋ seed.sql 適用が前提）──────────
         // 実行例: npx playwright test --project=real-go-gin
         { name: "real-php",       grep: /\[PHP\]/,              use: { ...devices["Desktop Chrome"] } },
+        { name: "real-csharp",    grep: /\[C#\]/,               use: { ...devices["Desktop Chrome"] } },
         { name: "real-go-gin",    grep: /\[Go \(Gin\)\]/,       use: { ...devices["Desktop Chrome"] } },
         { name: "real-go-beego",  grep: /\[Go \(Beego\)\]/,     use: { ...devices["Desktop Chrome"] } },
         { name: "real-go-echo",   grep: /\[Go \(Echo\)\]/,      use: { ...devices["Desktop Chrome"] } },
+        { name: "real-java",      grep: /\[Java\]/,             use: { ...devices["Desktop Chrome"] } },
         { name: "real-kotlin",    grep: /\[Kotlin\]/,            use: { ...devices["Desktop Chrome"] } },
         { name: "real-python",    grep: /\[Python\]/,            use: { ...devices["Desktop Chrome"] } },
         { name: "real-rb-hanami", grep: /\[Ruby \(Hanami\)\]/,  use: { ...devices["Desktop Chrome"] } },

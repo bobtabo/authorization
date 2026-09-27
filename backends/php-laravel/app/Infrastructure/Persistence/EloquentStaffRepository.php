@@ -12,10 +12,12 @@ namespace App\Infrastructure\Persistence;
 
 use App\Domain\Staff\Condition\StaffCondition;
 use App\Domain\Staff\Entities\Staff as Entity;
+use App\Domain\Staff\Enums\StaffStatus;
 use App\Domain\Staff\Repositories\StaffRepository;
 use App\Infrastructure\Models\Staff as Model;
 use App\Support\Repositories\AbstractEloquentRepository;
 use App\Support\Repositories\Traits\OptionBuilder;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -63,16 +65,17 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
     /**
      * 検索フィルタをクエリに適用します。
      *
-     * @param \Illuminate\Contracts\Database\Eloquent\Builder $query クエリ
-     * @param StaffCondition $condition 検索条件
+     * @param  Builder  $query  クエリ
+     * @param  StaffCondition  $condition  検索条件
      */
     private function applyFilters($query, StaffCondition $condition): void
     {
         if (!empty($condition->keyword)) {
             $keyword = str($condition->keyword)->trim()->replace(' ', '')->value();
-            $query->where(function ($subQuery) use ($keyword) {
-                $subQuery->whereLike('staffs.name', "%{$keyword}%")
-                    ->orWhereLike('staffs.email', "%{$keyword}%");
+            $like = '%'.LikeEscaper::escape($keyword).'%';
+            $query->where(function ($subQuery) use ($like) {
+                $subQuery->whereRaw('staffs.name LIKE ? ESCAPE ?', [$like, '\\'])
+                    ->orWhereRaw('staffs.email LIKE ? ESCAPE ?', [$like, '\\']);
             });
         }
 
@@ -81,7 +84,14 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
         }
 
         if (!empty($condition->statuses)) {
-            $query->whereIn('staffs.status', $condition->statuses);
+            // staffs テーブルに status カラムは無く、deleted_at の有無で有効/無効を判定する。
+            $active = in_array(StaffStatus::Active->value, $condition->statuses, true);
+            $inactive = in_array(StaffStatus::Inactive->value, $condition->statuses, true);
+            if ($active && !$inactive) {
+                $query->whereNull('staffs.deleted_at');
+            } elseif ($inactive && !$active) {
+                $query->whereNotNull('staffs.deleted_at');
+            }
         }
     }
 
@@ -112,6 +122,7 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
 
         /** @var Entity|null $result */
         $result = $this->findByQuery($query)->first();
+
         return $result;
     }
 
@@ -123,6 +134,7 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
     {
         /** @var Entity $result */
         $result = $this->save($entity);
+
         return $result;
     }
 
@@ -145,6 +157,7 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
         if ($model === null || !$model->trashed()) {
             return false;
         }
+
         return $model->restore();
     }
 
@@ -165,7 +178,7 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
     #[\Override]
     protected function getModel(): Model
     {
-        return new Model();
+        return new Model;
     }
 
     /**
@@ -174,6 +187,6 @@ class EloquentStaffRepository extends AbstractEloquentRepository implements Staf
     #[\Override]
     protected function getEntity(): Entity
     {
-        return new Entity();
+        return new Entity;
     }
 }

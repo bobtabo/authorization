@@ -111,8 +111,8 @@ func buildRouter() *echo.Echo {
 
 	mailer := mail.NewMailer(testCfg.Mail, testCfg.AWS)
 	authH := handler.NewAuthHandler(testDB, newAuthUC, newInviteUC, testCfg)
-	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer, nil, "")
-	staffH := handler.NewStaffHandler(testDB, newStaffUC)
+	clientH := handler.NewClientHandler(testDB, newClientUC, newNotifUC, mailer, nil, "", testCfg.App.StaffCookieSecret)
+	staffH := handler.NewStaffHandler(testDB, newStaffUC, testCfg.App.StaffCookieSecret)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(testDB, newNotifUC, testCfg)
 	adminInvH := handler.NewAdminInvitationHandler(testDB, newInviteUC)
@@ -210,6 +210,10 @@ func withCookie(name, value string) func(*http.Request) {
 	return func(req *http.Request) {
 		req.AddCookie(&http.Cookie{Name: name, Value: value})
 	}
+}
+
+func signStaffCookie(staffID uint) string {
+	return handler.SignStaffID(staffID, testCfg.App.StaffCookieSecret, time.Hour)
 }
 
 func withBearer(token string) func(*http.Request) {

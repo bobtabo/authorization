@@ -42,18 +42,20 @@ class ClientController extends Controller
     /**
      * クライアント一覧を検索して返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function index(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
-        $dto->assign($request->input());
+        $dto = new ClientDto;
+        $values = $request->input();
+        $values['statuses'] = array_map('intval', $request->arrayQuery('statuses'));
+        $dto->assign($values);
 
         $value = $service->getClients($dto);
 
-        $response = new IndexResponse();
+        $response = new IndexResponse;
         $response->assign($value->attributes());
 
         return response()->json($response->attributes());
@@ -62,18 +64,18 @@ class ClientController extends Controller
     /**
      * クライアント詳細を返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function show(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
 
         $value = $service->show($dto);
 
-        $response = new ShowResponse();
+        $response = new ShowResponse;
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
@@ -87,9 +89,9 @@ class ClientController extends Controller
     /**
      * クライアントを登録します。
      *
-     * @param StoreClientRequest $request 登録内容
-     * @param ClientService $clientService クライアントService
-     * @param NotificationService $notificationService 通知Service
+     * @param  StoreClientRequest  $request  登録内容
+     * @param  ClientService  $clientService  クライアントService
+     * @param  NotificationService  $notificationService  通知Service
      * @return JsonResponse JSON レスポンス
      * @throws \Throwable 例外
      */
@@ -100,7 +102,7 @@ class ClientController extends Controller
     ): JsonResponse {
         $executorId = $this->staffIdFromCookie($request);
 
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
         $dto->executorId = $executorId;
 
@@ -108,12 +110,12 @@ class ClientController extends Controller
             $vo = $clientService->store($dto);
 
             // 全スタッフへ通知を配信
-            $notificationDto = new NotificationCreateDto();
+            $notificationDto = new NotificationCreateDto;
             $notificationDto->assign([
                 'messageType' => 1,
                 'title' => '新しいクライアントが登録されました',
                 'message' => $vo->getName() ?? '',
-                'url' => '/clients/show?id=' . $vo->getId(),
+                'url' => '/clients/show?id='.$vo->getId(),
                 'executorId' => $executorId ?? 0,
             ]);
             $notificationService->fanOut($notificationDto);
@@ -121,10 +123,10 @@ class ClientController extends Controller
             return $vo;
         });
 
-        $response = new StoreResponse();
+        $response = new StoreResponse;
         $response->assign($value->attributes());
 
-        //アクセストークンをメール送信します
+        // アクセストークンをメール送信します
         send_mail($value->getTo(), new DefaultMail($value));
 
         return response()->success($response->attributes(), 201);
@@ -133,13 +135,13 @@ class ClientController extends Controller
     /**
      * クライアントを更新します。
      *
-     * @param UpdateClientRequest $request 更新内容
-     * @param ClientService $service クライアントService
+     * @param  UpdateClientRequest  $request  更新内容
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function update(UpdateClientRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
         $dto->executorId = $this->staffIdFromCookie($request);
 
@@ -147,7 +149,7 @@ class ClientController extends Controller
             return $service->update($dto);
         });
 
-        $response = new StoreResponse();
+        $response = new StoreResponse;
         $response->assign($value->attributes(), [
             'startAt' => 'startAtCarbon',
             'stopAt' => 'stopAtCarbon',
@@ -161,18 +163,18 @@ class ClientController extends Controller
     /**
      * スマホアプリ連携用QRコードデータを返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function qr(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
 
         $vo = $service->getQr($dto);
 
-        $response = new QrResponse();
+        $response = new QrResponse;
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
@@ -181,20 +183,20 @@ class ClientController extends Controller
     /**
      * スマホアプリからの利用開始を処理し、アクセストークンを返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function start(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
 
         $vo = DB::transaction(function () use ($service, $dto) {
             return $service->start($dto);
         });
 
-        $response = new StartResponse();
+        $response = new StartResponse;
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
@@ -203,13 +205,13 @@ class ClientController extends Controller
     /**
      * スマホアプリからの利用停止を処理します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function stop(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
 
         DB::transaction(function () use ($service, $dto) {
@@ -222,17 +224,17 @@ class ClientController extends Controller
     /**
      * スマホアプリ向けにクライアント情報を返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function info(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
         $vo = $service->getInfo($dto);
 
-        $response = new InfoResponse();
+        $response = new InfoResponse;
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
@@ -241,19 +243,19 @@ class ClientController extends Controller
     /**
      * クライアントに紐づくJWT履歴一覧を返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param JwtHistoryService $service JWT履歴Service
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  JwtHistoryService  $service  JWT履歴Service
      * @return JsonResponse JSON レスポンス
      */
     public function jwtHistories(AppRequest $request, JwtHistoryService $service): JsonResponse
     {
-        $dto = new JwtHistoryDto();
+        $dto = new JwtHistoryDto;
         $dto->assign($request->input());
-        $dto->clientId = (int)$request->route('id');
+        $dto->clientId = (int) $request->route('id');
 
         $vo = $service->getHistories($dto);
 
-        $response = new JwtHistoryResponse();
+        $response = new JwtHistoryResponse;
         $response->assign($vo->attributes());
 
         return response()->json($response->attributes());
@@ -262,13 +264,13 @@ class ClientController extends Controller
     /**
      * クライアントを論理削除します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param ClientService $service クライアントService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  ClientService  $service  クライアントService
      * @return JsonResponse JSON レスポンス
      */
     public function destroy(AppRequest $request, ClientService $service): JsonResponse
     {
-        $dto = new ClientDto();
+        $dto = new ClientDto;
         $dto->assign($request->input());
         $dto->executorId = $this->staffIdFromCookie($request);
 

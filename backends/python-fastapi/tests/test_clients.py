@@ -27,6 +27,15 @@ class TestIndex:
         assert res.status_code == 200
         assert res.json()["data"] == []
 
+    def test_keywordの記号はワイルドカードとして解釈されない(self, client, db_session):
+        make_client_record(db_session, identifier="c-percent", name="50%割引プラン")
+        make_client_record(db_session, identifier="c-nomatch", name="50個セット", email="nomatch@example.com")
+        res = client.get("/api/clients", params={"keyword": "50%"})
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data["data"]) == 1
+        assert data["data"][0]["name"] == "50%割引プラン"
+
 
 class TestShow:
     def test_クライアント詳細が取得できる(self, client, db_session):

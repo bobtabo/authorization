@@ -23,7 +23,7 @@ func NewNotificationHandler(db *ent.Client, newNotifUC func(*ent.Client) *unotif
 }
 
 func (h *NotificationHandler) Counts(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -35,7 +35,7 @@ func (h *NotificationHandler) Counts(c echo.Context) error {
 }
 
 func (h *NotificationHandler) Index(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -59,7 +59,7 @@ func (h *NotificationHandler) Index(c echo.Context) error {
 }
 
 func (h *NotificationHandler) ReadAll(c echo.Context) error {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		return apperror.Unauthorized("unauthenticated")
 	}
@@ -75,12 +75,16 @@ func (h *NotificationHandler) ReadAll(c echo.Context) error {
 }
 
 func (h *NotificationHandler) Read(c echo.Context) error {
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
+	if staffID == 0 {
+		return apperror.Unauthorized("unauthenticated")
+	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		return apperror.BadRequest("invalid_id")
 	}
 	if txErr := withTx(c.Request().Context(), h.db, func(tx *ent.Tx) error {
-		return h.newNotifUC(tx.Client()).MarkRead(unotification.MarkReadDto{ID: id})
+		return h.newNotifUC(tx.Client()).MarkRead(unotification.MarkReadDto{StaffID: staffID, ID: id})
 	}); txErr != nil {
 		return txErr
 	}

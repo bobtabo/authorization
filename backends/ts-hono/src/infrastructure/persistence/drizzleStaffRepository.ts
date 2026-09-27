@@ -3,12 +3,13 @@
  *
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
-import { and, asc, count as drizzleCount, desc, eq, inArray, isNull, like, or } from "drizzle-orm";
+import { and, asc, count as drizzleCount, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { staffs } from "../model/schema.js";
 import type { StaffRepository, FindAllStaffOptions } from "../../domain/staff/repository.js";
 import type { Staff } from "../../domain/staff/entity.js";
 import type { DB } from "../../db/client.js";
 import { conflict } from "../../lib/errors.js";
+import { escapeLikeKeyword } from "./like.js";
 
 const _allowedSort: Record<string, any> = {
   name: staffs.name,
@@ -19,21 +20,34 @@ const _allowedSort: Record<string, any> = {
 export class DrizzleStaffRepository implements StaffRepository {
   constructor(private readonly db: DB) {}
 
-  private buildWhere(keyword?: string, roles?: number[]) {
+  private buildWhere(keyword?: string, roles?: number[], statuses?: number[]) {
     const conds = [];
-    if (keyword) conds.push(or(like(staffs.name, `%${keyword}%`), like(staffs.email, `%${keyword}%`))!);
+    if (keyword) {
+      const like_ = `%${escapeLikeKeyword(keyword)}%`;
+      conds.push(or(
+        sql`${staffs.name} LIKE ${like_} ESCAPE ${"\\"}`,
+        sql`${staffs.email} LIKE ${like_} ESCAPE ${"\\"}`,
+      )!);
+    }
     if (roles && roles.length > 0) conds.push(inArray(staffs.role, roles));
+    // staffs テーブルに status カラムは無く、deletedAt の有無で有効/無効を判定する。
+    if (statuses && statuses.length > 0) {
+      const active = statuses.includes(1);
+      const inactive = statuses.includes(0);
+      if (active && !inactive) conds.push(isNull(staffs.deletedAt));
+      else if (inactive && !active) conds.push(isNotNull(staffs.deletedAt));
+    }
     return conds.length ? and(...conds) : undefined;
   }
 
-  async countAll(keyword?: string, roles?: number[]): Promise<number> {
-    const where = this.buildWhere(keyword, roles);
+  async countAll(keyword?: string, roles?: number[], statuses?: number[]): Promise<number> {
+    const where = this.buildWhere(keyword, roles, statuses);
     const rows = await this.db.select({ value: drizzleCount(staffs.id) }).from(staffs).where(where);
     return rows[0]?.value ?? 0;
   }
 
-  async findAll(keyword?: string, roles?: number[], options?: FindAllStaffOptions): Promise<Staff[]> {
-    const where = this.buildWhere(keyword, roles);
+  async findAll(keyword?: string, roles?: number[], statuses?: number[], options?: FindAllStaffOptions): Promise<Staff[]> {
+    const where = this.buildWhere(keyword, roles, statuses);
     let q = this.db.select().from(staffs).where(where).$dynamic();
 
     const sortCol = options?.sort ? _allowedSort[options.sort] : undefined;

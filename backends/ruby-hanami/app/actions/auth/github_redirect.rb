@@ -19,8 +19,7 @@ module Authorization
         # @return [void]
         def handle(request, response)
           cfg   = container[:cfg]
-          token = request.params[:token]
-          state = (token && !token.empty?) ? "#{cfg.app.runtime}|#{token}" : cfg.app.runtime
+          state = issue_oauth_state(request, response, cfg)
           url = "https://github.com/login/oauth/authorize" \
                 "?client_id=#{cfg.oauth.github_client_id}" \
                 "&redirect_uri=#{CGI.escape(cfg.oauth.github_redirect_url)}" \

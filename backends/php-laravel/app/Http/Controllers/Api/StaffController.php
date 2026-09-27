@@ -32,18 +32,21 @@ class StaffController extends Controller
     /**
      * スタッフ一覧を返します。
      *
-     * @param AppRequest $request HTTP リクエスト
-     * @param StaffService $service スタッフService
+     * @param  AppRequest  $request  HTTP リクエスト
+     * @param  StaffService  $service  スタッフService
      * @return JsonResponse JSON レスポンス
      */
     public function index(AppRequest $request, StaffService $service): JsonResponse
     {
-        $dto = new StaffDto();
-        $dto->assign($request->input());
+        $dto = new StaffDto;
+        $values = $request->input();
+        $values['roles'] = array_map('intval', $request->arrayQuery('roles'));
+        $values['statuses'] = array_map('intval', $request->arrayQuery('statuses'));
+        $dto->assign($values);
 
         $vo = $service->index($dto);
 
-        $response = new StaffIndexResponse();
+        $response = new StaffIndexResponse;
         $response->assign($vo->attributes());
 
         return response()->success($response->attributes());
@@ -52,13 +55,13 @@ class StaffController extends Controller
     /**
      * スタッフの権限を更新します。
      *
-     * @param UpdateRoleRequest $request HTTP リクエスト
-     * @param StaffService $service スタッフService
+     * @param  UpdateRoleRequest  $request  HTTP リクエスト
+     * @param  StaffService  $service  スタッフService
      * @return JsonResponse JSON レスポンス
      */
     public function updateRole(UpdateRoleRequest $request, StaffService $service): JsonResponse
     {
-        $dto = new StaffDto();
+        $dto = new StaffDto;
         $dto->assign($request->input());
 
         $vo = DB::transaction(function () use ($service, $dto) {
@@ -71,13 +74,13 @@ class StaffController extends Controller
     /**
      * スタッフの論理削除を復元します。
      *
-     * @param RestoreRequest $request HTTP リクエスト
-     * @param StaffService $service スタッフService
+     * @param  RestoreRequest  $request  HTTP リクエスト
+     * @param  StaffService  $service  スタッフService
      * @return JsonResponse JSONレスポンス
      */
     public function restore(RestoreRequest $request, StaffService $service): JsonResponse
     {
-        $dto = new StaffDto();
+        $dto = new StaffDto;
         $dto->assign($request->input());
 
         $vo = DB::transaction(function () use ($service, $dto) {
@@ -90,13 +93,13 @@ class StaffController extends Controller
     /**
      * スタッフを論理削除します。
      *
-     * @param DestroyRequest $request HTTPリクエスト
-     * @param StaffService $service スタッフService
+     * @param  DestroyRequest  $request  HTTPリクエスト
+     * @param  StaffService  $service  スタッフService
      * @return JsonResponse JSONレスポンス
      */
     public function destroy(DestroyRequest $request, StaffService $service): JsonResponse
     {
-        $dto = new StaffDto();
+        $dto = new StaffDto;
         $dto->assign($request->input());
 
         $vo = DB::transaction(function () use ($service, $dto) {
@@ -105,5 +108,4 @@ class StaffController extends Controller
 
         return response()->success(['id' => $vo->getId()]);
     }
-
 }

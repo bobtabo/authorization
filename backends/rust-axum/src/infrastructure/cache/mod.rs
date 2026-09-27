@@ -3,13 +3,13 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use async_trait::async_trait;
-use redis::AsyncCommands;
 use crate::{
     config::Config,
     domain::gate::value_objects::{CacheRepository, DomainError},
     domain::invitation::auth_repository::AuthRepository,
 };
+use async_trait::async_trait;
+use redis::AsyncCommands;
 use redis::Client;
 
 /// 設定から Redis クライアントを生成します。
@@ -17,7 +17,10 @@ pub fn new(cfg: &Config) -> redis::RedisResult<Client> {
     let url = if cfg.redis.password.is_empty() {
         format!("redis://{}/{}", cfg.redis.addr, cfg.redis.db)
     } else {
-        format!("redis://:{}@{}/{}", cfg.redis.password, cfg.redis.addr, cfg.redis.db)
+        format!(
+            "redis://:{}@{}/{}",
+            cfg.redis.password, cfg.redis.addr, cfg.redis.db
+        )
     };
     Client::open(url)
 }
@@ -88,14 +91,24 @@ impl AuthRepository for RedisInvitationAuthRepository {
 
 #[async_trait]
 impl CacheRepository for RedisGateRepository {
-    async fn get_jwt(&self, identifier: &str, member_id: &str) -> Result<Option<String>, DomainError> {
+    async fn get_jwt(
+        &self,
+        identifier: &str,
+        member_id: &str,
+    ) -> Result<Option<String>, DomainError> {
         let key = self.cache_key(identifier, member_id);
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let val: Option<String> = conn.get(&key).await?;
         Ok(val)
     }
 
-    async fn put_jwt(&self, identifier: &str, member_id: &str, token: &str, ttl: i64) -> Result<(), DomainError> {
+    async fn put_jwt(
+        &self,
+        identifier: &str,
+        member_id: &str,
+        token: &str,
+        ttl: i64,
+    ) -> Result<(), DomainError> {
         let key = self.cache_key(identifier, member_id);
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let _: () = conn.set_ex(&key, token, ttl as u64).await?;

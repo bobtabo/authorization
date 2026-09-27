@@ -31,7 +31,7 @@ func NewNotificationHandler(db *gorm.DB, newNotifUC func(*gorm.DB) *unotificatio
 // Counts はスタッフの未読・全体通知数を返します。
 // GET /api/notifications/counts
 func (h *NotificationHandler) Counts(c *gin.Context) {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
@@ -47,7 +47,7 @@ func (h *NotificationHandler) Counts(c *gin.Context) {
 // Index はカーソルページングで通知一覧を返します。
 // GET /api/notifications
 func (h *NotificationHandler) Index(c *gin.Context) {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
@@ -77,7 +77,7 @@ func (h *NotificationHandler) Index(c *gin.Context) {
 // ReadAll はスタッフの全通知を既読にして更新件数を返します。
 // PATCH /api/notifications
 func (h *NotificationHandler) ReadAll(c *gin.Context) {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
@@ -97,13 +97,18 @@ func (h *NotificationHandler) ReadAll(c *gin.Context) {
 // Read は通知を既読にします。
 // PATCH /api/notifications/:id
 func (h *NotificationHandler) Read(c *gin.Context) {
+	staffID := staffIDFromCookie(c)
+	if staffID == 0 {
+		_ = c.Error(apperror.Unauthorized("unauthenticated"))
+		return
+	}
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		return h.newNotifUC(tx).MarkRead(id)
+		return h.newNotifUC(tx).MarkRead(staffID, id)
 	}); txErr != nil {
 		_ = c.Error(txErr)
 		return

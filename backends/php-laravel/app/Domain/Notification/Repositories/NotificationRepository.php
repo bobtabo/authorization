@@ -46,6 +46,8 @@ interface NotificationRepository
      */
     public function updateRead(NotificationCondition $condition): int;
 
+    public function existsForStaff(int $staffId, int $id): bool;
+
     /**
      * 通知を登録します。
      *

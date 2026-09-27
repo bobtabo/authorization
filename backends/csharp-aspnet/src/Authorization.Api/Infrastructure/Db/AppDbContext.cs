@@ -1,0 +1,28 @@
+// This is a program developed by BobTabo.
+//
+// Copyright (c) 2026 BobTabo. All Rights Reserved.
+using Authorization.Api.Infrastructure.Model;
+using Microsoft.EntityFrameworkCore;
+
+namespace Authorization.Api.Infrastructure.Db;
+
+/// <summary>アプリケーションの DbContext です。</summary>
+/// <param name="options">DbContextオプション</param>
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+{
+    public DbSet<ClientModel>       Clients       => Set<ClientModel>();
+    public DbSet<StaffModel>        Staffs        => Set<StaffModel>();
+    public DbSet<InvitationModel>   Invitations   => Set<InvitationModel>();
+    public DbSet<JwtHistoryModel>   JwtHistories  => Set<JwtHistoryModel>();
+    public DbSet<NotificationModel> Notifications => Set<NotificationModel>();
+
+    /// <summary>一意インデックス（identifier/access_token/email/token）を設定します。</summary>
+    /// <param name="modelBuilder">EF Coreのモデルビルダー</param>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ClientModel>().HasIndex(c => c.Identifier).IsUnique();
+        modelBuilder.Entity<ClientModel>().HasIndex(c => c.AccessToken).IsUnique();
+        modelBuilder.Entity<StaffModel>().HasIndex(s => s.Email).IsUnique();
+        modelBuilder.Entity<InvitationModel>().HasIndex(i => i.Token).IsUnique();
+    }
+}

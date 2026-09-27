@@ -4,6 +4,7 @@
 Author: Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 """
 from functools import lru_cache
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
@@ -17,6 +18,9 @@ class Settings(BaseSettings):
     app_port: int = 8000
     frontend_url: str = "http://localhost:3000"
     staff_cookie_lifetime: int = 60          # 分
+    # staff_id クッキーのHMAC署名シークレット。空シークレットでのHMAC署名は誰でも同じ署名を
+    # 再現できてしまい検証が無意味になるため、デフォルト値を与えず未設定時は起動時に止める。
+    staff_cookie_secret: str
     notification_default_limit: int = 10
     cache_prefix: str = ""
 
@@ -59,6 +63,14 @@ class Settings(BaseSettings):
     jwt_issuer: str = "authorization"
     jwt_algorithm: str = "RS256"
     jwt_ttl: int = 1800
+
+    @field_validator("staff_cookie_secret")
+    @classmethod
+    def validate_staff_cookie_secret(cls, v: str) -> str:
+        """空・公開済みサンプル値・32byte未満のシークレットを拒否します。"""
+        if len(v.encode("utf-8")) < 32 or v == "your-staff-cookie-secret":
+            raise ValueError("STAFF_COOKIE_SECRET must be at least 32 bytes and must not be the placeholder")
+        return v
 
     @property
     def db_url(self) -> str:

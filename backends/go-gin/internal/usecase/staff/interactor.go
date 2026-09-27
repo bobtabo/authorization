@@ -44,17 +44,28 @@ func (uc *Interactor) FindByCondition(cond domstaff.Condition) ([]*domstaff.List
 // dto: ロール更新 Dto
 // 戻り値: エラー
 func (uc *Interactor) UpdateRole(dto UpdateRoleDto) error {
+	if dto.ExecutorID == 0 {
+		return apperror.Unauthorized("unauthenticated")
+	}
 	if dto.Role != domstaff.RoleAdmin && dto.Role != domstaff.RoleMember {
 		return apperror.BadRequest("role_invalid")
 	}
+	executor, err := uc.repo.FindByID(dto.ExecutorID)
+	if err != nil {
+		return err
+	}
+	if executor == nil || executor.DeletedAt != nil || executor.Role != domstaff.RoleAdmin {
+		return apperror.Forbidden("forbidden")
+	}
+	// 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
 	s, err := uc.repo.FindByID(dto.ID)
 	if err != nil {
 		return err
 	}
-	if s == nil || s.DeletedAt != nil {
+	if s == nil {
 		return apperror.NotFound("staff_not_found")
 	}
-	ok, err := uc.repo.UpdateRole(dto.ID, dto.Role, dto.ExecutorID, s.Version)
+	ok, err := uc.repo.UpdateRole(dto.ID, dto.Role, dto.ExecutorID, dto.Version)
 	if err != nil {
 		return err
 	}
@@ -118,6 +129,7 @@ func staffToListItem(s *domstaff.Staff) *domstaff.ListItem {
 		Email:     s.Email,
 		Role:      s.Role,
 		Status:    staffStatus(s),
+		Version:   s.Version,
 		CreatedAt: s.CreatedAt,
 		UpdatedAt: s.UpdatedAt,
 	}

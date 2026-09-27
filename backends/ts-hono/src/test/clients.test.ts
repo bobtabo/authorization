@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { createApp } from "../app.js";
-import { makeClientRecord, makeStaff } from "./helpers.js";
+import { makeClientRecord, makeStaff, signStaffCookie } from "./helpers.js";
 
 const app = createApp();
 
@@ -20,6 +20,15 @@ describe("Clients", () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { data: unknown[] };
       expect(body.data).toEqual([]);
+    });
+
+    test("keywordの%はワイルドカードとして解釈されない", async () => {
+      await makeClientRecord({ identifier: "c-percent", name: "50%割引プラン", email: "percent@example.com" });
+      await makeClientRecord({ identifier: "c-nomatch", name: "50個セット", email: "nomatch@example.com" });
+      const res = await app.request(`/api/clients?keyword=${encodeURIComponent("50%")}`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as { data: unknown[] };
+      expect(body.data.length).toBe(1);
     });
   });
 
@@ -74,7 +83,7 @@ describe("Clients", () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Cookie: `staff_id=${staff.id}`,
+          Cookie: `staff_id=${signStaffCookie(staff.id)}`,
         },
         body: JSON.stringify({ name: "更新後クライアント名", version: 1 }),
       });

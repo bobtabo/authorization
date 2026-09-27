@@ -20,6 +20,7 @@ RSpec.describe UseCase::Notification::Interactor do
       list_page:      Domain::Notification::Page.new(items: [], next_cursor: nil),
       counts:         Domain::Notification::CountsVo.new(unread: 0, total: 0),
       bulk_mark_read: 0,
+      exists_for_staff?: false,
       store:          nil,
       patch:          true,
     )
@@ -76,10 +77,16 @@ RSpec.describe UseCase::Notification::Interactor do
   end
 
   describe "#mark_read" do
-    it "calls patch and returns nil" do
-      allow(stub_repo).to receive(:patch).with(5, { "read" => true }).and_return(true)
-      result = described_class.new(stub_repo, stub_staff_repo).mark_read(5)
-      expect(result).to be_nil
+    it "calls bulk_mark_read scoped to the staff and target id" do
+      allow(stub_repo).to receive(:bulk_mark_read).with(10, [5], false).and_return(1)
+      result = described_class.new(stub_repo, stub_staff_repo).mark_read(10, 5)
+      expect(result).to eq(1)
+    end
+
+    it "succeeds when notification is already read" do
+      allow(stub_repo).to receive(:bulk_mark_read).with(10, [5], false).and_return(0)
+      allow(stub_repo).to receive(:exists_for_staff?).with(10, 5).and_return(true)
+      expect(described_class.new(stub_repo, stub_staff_repo).mark_read(10, 5)).to eq(1)
     end
   end
 end

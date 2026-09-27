@@ -12,6 +12,7 @@ export interface StaffListItem {
   role: number;
   /** 0=削除済み, 1=有効 */
   status: number;
+  version: number;
   createdAt: Date | null;
   updatedAt: Date | null;
 }

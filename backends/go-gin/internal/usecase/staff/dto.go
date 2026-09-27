@@ -4,6 +4,7 @@ package staff
 type UpdateRoleDto struct {
 	ID         uint
 	Role       int
+	Version    int
 	ExecutorID uint
 }
 

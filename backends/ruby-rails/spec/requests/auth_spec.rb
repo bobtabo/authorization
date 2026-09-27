@@ -6,7 +6,7 @@ RSpec.describe "Auth", type: :request do
   describe "GET /api/auth/me" do
     it "認証済みでプロフィールを返す" do
       staff = create_staff
-      get "/api/auth/me", headers: { "Cookie" => "staff_id=#{staff.id}" }
+      get "/api/auth/me", headers: { "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["staff_id"]).to eq(staff.id)
@@ -17,12 +17,42 @@ RSpec.describe "Auth", type: :request do
       get "/api/auth/me"
       expect(response).to have_http_status(401)
     end
+
+    it "署名の無い改ざんクッキーでは401を返す" do
+      staff = create_staff
+      get "/api/auth/me", headers: { "Cookie" => "staff_id=#{staff.id}" }
+      expect(response).to have_http_status(401)
+    end
+
+    it "署名部分が改ざんされたクッキーでは401を返す" do
+      staff = create_staff
+      signed = sign_staff_cookie(staff.id)
+      id_part, exp_part, sig = signed.split(".", 3)
+      tampered_sig = "#{sig[0..-2]}#{sig[-1] == '0' ? '1' : '0'}"
+      get "/api/auth/me", headers: { "Cookie" => "staff_id=#{id_part}.#{exp_part}.#{tampered_sig}" }
+      expect(response).to have_http_status(401)
+    end
+
+    it "別のシークレットで署名されたクッキーでは401を返す" do
+      staff = create_staff
+      forged = Support::StaffSession.sign(staff.id, "wrong-secret", 3600)
+      get "/api/auth/me", headers: { "Cookie" => "staff_id=#{forged}" }
+      expect(response).to have_http_status(401)
+    end
+
+    it "有効期限切れのクッキーでは401を返す" do
+      staff = create_staff
+      secret = ENV.fetch("STAFF_COOKIE_SECRET", "test-staff-cookie-secret")
+      expired = Support::StaffSession.sign(staff.id, secret, -1)
+      get "/api/auth/me", headers: { "Cookie" => "staff_id=#{expired}" }
+      expect(response).to have_http_status(401)
+    end
   end
 
   describe "GET /api/auth/login" do
     it "認証済みでログイン情報を返す" do
       staff = create_staff
-      get "/api/auth/login", headers: { "Cookie" => "staff_id=#{staff.id}" }
+      get "/api/auth/login", headers: { "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["staff_id"]).to eq(staff.id)
@@ -49,6 +79,31 @@ RSpec.describe "Auth", type: :request do
       body = JSON.parse(response.body)
       expect(body["token"]).to eq(inv.token)
       expect(body["found"]).to be true
+    end
+  end
+
+  describe "OAuth state nonce" do
+    it "認可開始時にnonceクッキーを発行しstateに含める" do
+      get "/auth/google/redirect", params: { token: "inv-token" }
+      expect(response).to have_http_status(302)
+      nonce = cookies["oauth_state"]
+      expect(nonce).to be_present
+      expect(response.headers["Set-Cookie"].to_s).to match(/httponly/i)
+      state = CGI.parse(URI(response.location).query)["state"].first
+      expect(state).to eq("rb-rails|#{nonce}|inv-token")
+    end
+
+    it "nonceクッキーが無い場合は400エラーページへリダイレクトする" do
+      get "/auth/google/callback", params: { code: "x", state: "rb-rails|abc" }
+      expect(response).to have_http_status(302)
+      expect(response.location).to end_with("/error?code=400")
+    end
+
+    it "nonceが一致しない場合は400エラーページへリダイレクトする" do
+      get "/auth/github/callback", params: { code: "x", state: "rb-rails|abc" },
+                                   headers: { "Cookie" => "oauth_state=xyz" }
+      expect(response).to have_http_status(302)
+      expect(response.location).to end_with("/error?code=400")
     end
   end
 end

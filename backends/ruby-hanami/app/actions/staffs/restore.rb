@@ -18,12 +18,7 @@ module Authorization
         def handle(request, response)
           id = request.params[:id].to_i
           transaction do
-            container[:staff_uc].restore(
-              ::UseCase::Staff::RestoreDto.new(
-                id:      id,
-                version: request.params[:version].to_i,
-              )
-            )
+            container[:staff_uc].restore(::UseCase::Staff::RestoreDto.new(id: id))
           end
           json_response(response, { id: id })
         rescue ::Domain::ConflictError => e

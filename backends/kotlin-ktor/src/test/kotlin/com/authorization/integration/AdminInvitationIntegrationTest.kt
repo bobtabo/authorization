@@ -36,7 +36,7 @@ class AdminInvitationIntegrationTest {
         application { module(TestHelper.cfg) }
         val staff = TestHelper.createStaff()
         val response = client.get("/api/admin/invitation/issue?role=2") {
-            header(HttpHeaders.Cookie, "staff_id=${staff.id}")
+            header(HttpHeaders.Cookie, "staff_id=${TestHelper.signStaffCookie(staff.id)}")
         }
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject

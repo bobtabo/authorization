@@ -1,0 +1,101 @@
+using Authorization.Api.Domain.Invitation;
+using Authorization.Api.Domain.Staff;
+using Authorization.Api.Support;
+using Authorization.Api.Tests.UseCase.Auth;
+using Authorization.Api.UseCase.Invitation;
+
+namespace Authorization.Api.Tests.UseCase.Invitation;
+
+public class InvitationServiceTests
+{
+    [Fact]
+    public async Task CurrentAsync_NotFound_ThrowsNotFound()
+    {
+        var uc = new InvitationService(new FakeInvitationRepository(), new FakeInvitationAuthRepository());
+
+        var ex = await Assert.ThrowsAsync<AppException>(() => uc.CurrentAsync(StaffRole.Admin));
+
+        Assert.Equal(404, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task CurrentAsync_Found_ReturnsInvitation()
+    {
+        var vo = new InvitationVo("tok-1", StaffRole.Admin, "https://example.com/i/tok-1", "example.com/i/tok-1");
+        var repo = new FakeInvitationRepository().Add(vo);
+        var uc = new InvitationService(repo, new FakeInvitationAuthRepository());
+
+        var result = await uc.CurrentAsync(StaffRole.Admin);
+
+        Assert.Equal("tok-1", result.Token);
+    }
+
+    [Fact]
+    public async Task IssueAsync_DelegatesToRepository()
+    {
+        var repo = new FakeInvitationRepository();
+        var uc = new InvitationService(repo, new FakeInvitationAuthRepository());
+
+        var result = await uc.IssueAsync(StaffRole.Member);
+
+        Assert.Equal(StaffRole.Member, result.Role);
+        Assert.Equal(1, repo.IssueCallCount);
+    }
+
+    [Fact]
+    public async Task IssueAsync_WithPreviousInvitation_InvalidatesOldTokenCache()
+    {
+        var previous = new InvitationVo("tok-old", StaffRole.Member, "https://example.com/i/tok-old", "example.com/i/tok-old");
+        var repo = new FakeInvitationRepository().Add(previous);
+        var authRepo = new FakeInvitationAuthRepository().Add("tok-old", StaffRole.Member);
+        var uc = new InvitationService(repo, authRepo);
+
+        var result = await uc.IssueAsync(StaffRole.Member);
+
+        Assert.NotEqual("tok-old", result.Token);
+        Assert.Contains("tok-old", authRepo.Removed);
+        Assert.Contains("tok-old", repo.Retired);
+    }
+
+    [Fact]
+    public async Task IssueAsync_WithPreviousInvitation_OldTokenNoLongerResolvable()
+    {
+        // ローテーション後、古いトークンを永続化層で無効化しているため、
+        // FindByTokenAsync が再度キャッシュを復活させることができないことを確認する
+        // （認可キャッシュ削除だけでは、再アクセスによるキャッシュ再生成レースを防げないため）。
+        var previous = new InvitationVo("tok-old", StaffRole.Member, "https://example.com/i/tok-old", "example.com/i/tok-old");
+        var repo = new FakeInvitationRepository().Add(previous);
+        var authRepo = new FakeInvitationAuthRepository().Add("tok-old", StaffRole.Member);
+        var uc = new InvitationService(repo, authRepo);
+
+        await uc.IssueAsync(StaffRole.Member);
+
+        var ex = await Assert.ThrowsAsync<AppException>(() => uc.FindByTokenAsync("tok-old"));
+        Assert.Equal(404, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task FindByTokenAsync_NotFound_ThrowsNotFound()
+    {
+        var uc = new InvitationService(new FakeInvitationRepository(), new FakeInvitationAuthRepository());
+
+        var ex = await Assert.ThrowsAsync<AppException>(() => uc.FindByTokenAsync("unknown"));
+
+        Assert.Equal(404, ex.StatusCode);
+    }
+
+    [Fact]
+    public async Task FindByTokenAsync_Found_CachesRoleForLogin()
+    {
+        var vo = new InvitationVo("tok-1", StaffRole.Admin, "https://example.com/i/tok-1", "example.com/i/tok-1");
+        var repo = new FakeInvitationRepository().Add(vo);
+        var authRepo = new FakeInvitationAuthRepository();
+        var uc = new InvitationService(repo, authRepo);
+
+        var result = await uc.FindByTokenAsync("tok-1");
+
+        Assert.Equal("tok-1", result.Token);
+        Assert.Equal(StaffRole.Admin, await authRepo.GetRoleAsync("tok-1"));
+        Assert.Equal(600, authRepo.Ttls["tok-1"]);
+    }
+}

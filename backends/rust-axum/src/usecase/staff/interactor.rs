@@ -3,14 +3,11 @@
 //! # Author
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
-use std::sync::Arc;
+use super::dto::{DestroyDto, UpdateRoleDto};
 use crate::domain::staff::{
-    condition::Condition,
-    entity::Staff,
-    repository::Repository,
-    value_objects::ListItem,
+    condition::Condition, entity::Staff, repository::Repository, value_objects::ListItem,
 };
-use super::dto::{UpdateRoleDto, DestroyDto};
+use std::sync::Arc;
 
 pub type UseCaseError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -26,15 +23,32 @@ impl Interactor {
     }
 
     /// 検索条件に合致するスタッフ一覧と件数を返します。
-    pub async fn find_by_condition_with_count(&self, cond: Condition) -> Result<(Vec<ListItem>, i64), UseCaseError> {
-        let count  = self.repo.count_by_condition(cond.clone()).await?;
+    pub async fn find_by_condition_with_count(
+        &self,
+        cond: Condition,
+    ) -> Result<(Vec<ListItem>, i64), UseCaseError> {
+        let count = self.repo.count_by_condition(cond.clone()).await?;
         let staffs = self.repo.find_by_condition(cond).await?;
         Ok((staffs.into_iter().map(to_list_item).collect(), count))
     }
 
-    /// スタッフのロールを更新します。楽観排他エラーまたは未存在の場合は Err を返します。
+    /// スタッフのロールを更新します。未認証・実行者がAdmin以外・楽観排他エラー・
+    /// 未存在の場合は Err を返します。
     pub async fn update_role(&self, dto: UpdateRoleDto) -> Result<(), UseCaseError> {
-        self.repo.update_role(dto.id, dto.role, dto.executor_id, dto.version).await?;
+        if dto.executor_id == 0 {
+            return Err("unauthenticated".to_string().into());
+        }
+        // find_by_id は論理削除済みを除外するため、無効化(削除)済みAdminも
+        // None として弾かれる（forbiddenと同じ扱いになる）。
+        let executor = self.repo.find_by_id(dto.executor_id).await?;
+        match executor {
+            Some(e) if e.role == 1 => {}
+            _ => return Err("forbidden".to_string().into()),
+        }
+
+        self.repo
+            .update_role(dto.id, dto.role, dto.executor_id, dto.version)
+            .await?;
         Ok(())
     }
 
@@ -49,7 +63,9 @@ impl Interactor {
 
     /// スタッフを論理削除します。楽観排他エラーまたは未存在の場合は Err を返します。
     pub async fn destroy(&self, dto: DestroyDto) -> Result<(), UseCaseError> {
-        self.repo.soft_delete(dto.id, dto.executor_id, dto.version).await?;
+        self.repo
+            .soft_delete(dto.id, dto.executor_id, dto.version)
+            .await?;
         Ok(())
     }
 }
@@ -57,11 +73,12 @@ impl Interactor {
 fn to_list_item(s: Staff) -> ListItem {
     let status = if s.deleted_at.is_some() { 0 } else { 1 };
     ListItem {
-        id:         s.id,
-        name:       s.name,
-        email:      s.email,
-        role:       s.role,
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        role: s.role,
         status,
+        version: s.version,
         created_at: s.created_at,
         updated_at: s.updated_at,
     }
@@ -70,28 +87,33 @@ fn to_list_item(s: Staff) -> ListItem {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use std::sync::Mutex;
     use crate::domain::staff::{
         condition::Condition,
         entity::Staff,
         repository::{DomainError, Repository},
     };
+    use async_trait::async_trait;
+    use std::sync::Mutex;
 
     struct MockRepo {
         find_by_condition: Mutex<Option<Vec<Staff>>>,
-        update_role_ok:    Mutex<bool>,
-        restore_ok:        Mutex<bool>,
-        soft_delete_ok:    Mutex<bool>,
+        // update_role の実行者チェックで参照するAdminロール値。None は「未存在または
+        // 論理削除済み」を表す（実際のリポジトリの find_by_id も論理削除済みを除外して
+        // Noneを返すため、同じ意味で扱える）。デフォルトは有効なAdmin。
+        find_by_id_role: Mutex<Option<i32>>,
+        update_role_ok: Mutex<bool>,
+        restore_ok: Mutex<bool>,
+        soft_delete_ok: Mutex<bool>,
     }
 
     impl MockRepo {
         fn new() -> Self {
             Self {
                 find_by_condition: Mutex::new(None),
-                update_role_ok:    Mutex::new(true),
-                restore_ok:        Mutex::new(true),
-                soft_delete_ok:    Mutex::new(true),
+                find_by_id_role: Mutex::new(Some(1)),
+                update_role_ok: Mutex::new(true),
+                restore_ok: Mutex::new(true),
+                soft_delete_ok: Mutex::new(true),
             }
         }
     }
@@ -100,33 +122,47 @@ mod tests {
         let now = chrono::Utc::now();
         Staff {
             id,
-            name:          "Test Staff".to_string(),
-            email:         "staff@example.com".to_string(),
-            provider:      1,
-            provider_id:   "google123".to_string(),
-            avatar:        None,
-            role:          2,
+            name: "Test Staff".to_string(),
+            email: "staff@example.com".to_string(),
+            provider: 1,
+            provider_id: "google123".to_string(),
+            avatar: None,
+            role: 2,
             last_login_at: None,
-            created_at:    now,
-            created_by:    None,
-            updated_at:    now,
-            updated_by:    None,
-            deleted_at:    if deleted { Some(now) } else { None },
-            deleted_by:    None,
-            version:       0,
+            created_at: now,
+            created_by: None,
+            updated_at: now,
+            updated_by: None,
+            deleted_at: if deleted { Some(now) } else { None },
+            deleted_by: None,
+            version: 0,
         }
     }
 
     #[async_trait]
     impl Repository for MockRepo {
         async fn count_by_condition(&self, _cond: Condition) -> Result<i64, DomainError> {
-            Ok(self.find_by_condition.lock().unwrap().as_ref().map(|v| v.len() as i64).unwrap_or(0))
+            Ok(self
+                .find_by_condition
+                .lock()
+                .unwrap()
+                .as_ref()
+                .map(|v| v.len() as i64)
+                .unwrap_or(0))
         }
         async fn find_by_condition(&self, _cond: Condition) -> Result<Vec<Staff>, DomainError> {
-            Ok(self.find_by_condition.lock().unwrap().take().unwrap_or_default())
+            Ok(self
+                .find_by_condition
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or_default())
         }
         async fn find_by_id(&self, id: u32) -> Result<Option<Staff>, DomainError> {
-            Ok(Some(make_staff(id, false)))
+            Ok(self.find_by_id_role.lock().unwrap().map(|role| Staff {
+                role,
+                ..make_staff(id, false)
+            }))
         }
         async fn find_by_provider(&self, _: i32, _: &str) -> Result<Option<Staff>, DomainError> {
             Ok(None)
@@ -139,11 +175,19 @@ mod tests {
         }
         async fn update_role(&self, _: u32, _: i32, _: u32, _: i32) -> Result<bool, DomainError> {
             let ok = *self.update_role_ok.lock().unwrap();
-            if ok { Ok(true) } else { Err("optimistic_lock_conflict".to_string().into()) }
+            if ok {
+                Ok(true)
+            } else {
+                Err("optimistic_lock_conflict".to_string().into())
+            }
         }
         async fn soft_delete(&self, _: u32, _: u32, _: i32) -> Result<bool, DomainError> {
             let ok = *self.soft_delete_ok.lock().unwrap();
-            if ok { Ok(true) } else { Err("optimistic_lock_conflict".to_string().into()) }
+            if ok {
+                Ok(true)
+            } else {
+                Err("optimistic_lock_conflict".to_string().into())
+            }
         }
         async fn restore(&self, _: u32) -> Result<bool, DomainError> {
             Ok(*self.restore_ok.lock().unwrap())
@@ -151,18 +195,27 @@ mod tests {
     }
 
     fn default_cond() -> Condition {
-        Condition { keyword: None, roles: vec![], offset: 0, limit: 20, sort: None, sort_type: None }
+        Condition {
+            keyword: None,
+            roles: vec![],
+            statuses: vec![],
+            offset: 0,
+            limit: 20,
+            sort: None,
+            sort_type: None,
+        }
     }
 
     #[tokio::test]
     async fn test_find_by_condition_maps_status() {
         let mock = Arc::new(MockRepo::new());
-        *mock.find_by_condition.lock().unwrap() = Some(vec![
-            make_staff(1, false),
-            make_staff(2, true),
-        ]);
+        *mock.find_by_condition.lock().unwrap() =
+            Some(vec![make_staff(1, false), make_staff(2, true)]);
         let uc = Interactor::new(mock);
-        let (items, _count) = uc.find_by_condition_with_count(default_cond()).await.unwrap();
+        let (items, _count) = uc
+            .find_by_condition_with_count(default_cond())
+            .await
+            .unwrap();
         assert_eq!(items.len(), 2);
         assert_eq!(items[0].status, 1);
         assert_eq!(items[1].status, 0);
@@ -172,7 +225,12 @@ mod tests {
     async fn test_update_role_success() {
         let mock = Arc::new(MockRepo::new());
         let uc = Interactor::new(mock);
-        let dto = UpdateRoleDto { id: 1, role: 1, executor_id: 99, version: 0 };
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 99,
+            version: 0,
+        };
         assert!(uc.update_role(dto).await.is_ok());
     }
 
@@ -181,15 +239,70 @@ mod tests {
         let mock = Arc::new(MockRepo::new());
         *mock.update_role_ok.lock().unwrap() = false;
         let uc = Interactor::new(mock);
-        let dto = UpdateRoleDto { id: 999, role: 1, executor_id: 99, version: 0 };
+        let dto = UpdateRoleDto {
+            id: 999,
+            role: 1,
+            executor_id: 99,
+            version: 0,
+        };
         assert!(uc.update_role(dto).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_update_role_unauthenticated() {
+        let mock = Arc::new(MockRepo::new());
+        let uc = Interactor::new(mock);
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 0,
+            version: 0,
+        };
+        let err = uc.update_role(dto).await.unwrap_err();
+        assert_eq!(err.to_string(), "unauthenticated");
+    }
+
+    #[tokio::test]
+    async fn test_update_role_non_admin_executor_forbidden() {
+        let mock = Arc::new(MockRepo::new());
+        *mock.find_by_id_role.lock().unwrap() = Some(2); // Member
+        let uc = Interactor::new(mock);
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 99,
+            version: 0,
+        };
+        let err = uc.update_role(dto).await.unwrap_err();
+        assert_eq!(err.to_string(), "forbidden");
+    }
+
+    #[tokio::test]
+    async fn test_update_role_deleted_admin_executor_forbidden() {
+        // find_by_id は論理削除済みを除外するため None を返す状況を再現する
+        // （署名済みクッキーは有効だが実行者は無効化されている状態に相当）。
+        let mock = Arc::new(MockRepo::new());
+        *mock.find_by_id_role.lock().unwrap() = None;
+        let uc = Interactor::new(mock);
+        let dto = UpdateRoleDto {
+            id: 1,
+            role: 1,
+            executor_id: 99,
+            version: 0,
+        };
+        let err = uc.update_role(dto).await.unwrap_err();
+        assert_eq!(err.to_string(), "forbidden");
     }
 
     #[tokio::test]
     async fn test_destroy_success() {
         let mock = Arc::new(MockRepo::new());
         let uc = Interactor::new(mock);
-        let dto = DestroyDto { id: 1, executor_id: 99, version: 0 };
+        let dto = DestroyDto {
+            id: 1,
+            executor_id: 99,
+            version: 0,
+        };
         assert!(uc.destroy(dto).await.is_ok());
     }
 

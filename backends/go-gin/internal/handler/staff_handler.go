@@ -14,16 +14,18 @@ import (
 
 // StaffHandler はスタッフ関連のHTTPハンドラーを提供します。
 type StaffHandler struct {
-	db         *gorm.DB
-	newStaffUC func(*gorm.DB) *ustaff.Interactor
+	db           *gorm.DB
+	newStaffUC   func(*gorm.DB) *ustaff.Interactor
+	cookieSecret string
 }
 
 // NewStaffHandler は StaffHandler を生成します。
 //
 // db: GORM DB インスタンス
 // newStaffUC: スタッフユースケースファクトリ
-func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{db: db, newStaffUC: newStaffUC}
+// cookieSecret: staff_id クッキー署名用シークレット
+func NewStaffHandler(db *gorm.DB, newStaffUC func(*gorm.DB) *ustaff.Interactor, cookieSecret string) *StaffHandler {
+	return &StaffHandler{db: db, newStaffUC: newStaffUC, cookieSecret: cookieSecret}
 }
 
 // Index は検索条件に合致するスタッフ一覧を返します。
@@ -35,6 +37,7 @@ func (h *StaffHandler) Index(c *gin.Context) {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(c.QueryArray("roles"))
+	cond.Statuses = parseIntList(c.QueryArray("statuses"))
 
 	limit := 10
 	if v := c.Query("limit"); v != "" {
@@ -86,18 +89,20 @@ func (h *StaffHandler) UpdateRole(c *gin.Context) {
 	}
 
 	var body struct {
-		Role int `json:"role" binding:"required"`
+		Role    int `json:"role" binding:"required"`
+		Version int `json:"version"`
 	}
 	if err = c.ShouldBindJSON(&body); err != nil {
 		_ = c.Error(apperror.BadRequest("validation_error"))
 		return
 	}
 
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
 			Role:       body.Role,
+			Version:    body.Version,
 			ExecutorID: executorID,
 		})
 	}); txErr != nil {
@@ -132,7 +137,7 @@ func (h *StaffHandler) Destroy(c *gin.Context) {
 		_ = c.Error(apperror.BadRequest("invalid_id"))
 		return
 	}
-	executorID := staffIDFromCookie(c)
+	executorID := staffIDFromCookie(c, h.cookieSecret)
 	if txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		return h.newStaffUC(tx).Destroy(ustaff.DestroyDto{
 			ID:         id,
@@ -157,6 +162,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []gin.H {
 			"email":      s.Email,
 			"role":       s.Role,
 			"status":     s.Status,
+			"version":    s.Version,
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})

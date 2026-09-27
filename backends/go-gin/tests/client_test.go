@@ -27,6 +27,22 @@ func TestClient_Index(t *testing.T) {
 			t.Errorf("want 200, got %d", w.Code)
 		}
 	})
+
+	t.Run("keywordの%はワイルドカードとして解釈されない", func(t *testing.T) {
+		truncateTables(t)
+		createClient(t, map[string]interface{}{"identifier": "c-percent", "name": "50%割引プラン"})
+		createClient(t, map[string]interface{}{"identifier": "c-nomatch", "name": "50個セット", "email": "nomatch@example.com"})
+
+		w := do(http.MethodGet, "/api/clients?keyword=50%25", nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
+		}
+		body := parseBody(w)
+		data, _ := body["data"].([]interface{})
+		if len(data) != 1 {
+			t.Errorf("want 1 result (literal \"50%%\" match only), got %d: %s", len(data), w.Body.String())
+		}
+	})
 }
 
 func TestClient_Show(t *testing.T) {
@@ -89,7 +105,7 @@ func TestClient_Store(t *testing.T) {
 			"tel":        "0312345678",
 			"email":      "notif@example.com",
 		}
-		w := do(http.MethodPost, "/api/clients/store", payload, withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+		w := do(http.MethodPost, "/api/clients/store", payload, withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusCreated {
 			t.Errorf("want 201, got %d: %s", w.Code, w.Body.String())
 		}

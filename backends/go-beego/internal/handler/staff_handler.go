@@ -16,12 +16,13 @@ import (
 )
 
 type StaffHandler struct {
-	ormer      orm.Ormer
-	newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor
+	ormer        orm.Ormer
+	newStaffUC   func(persistence.QueryOrmer) *ustaff.Interactor
+	cookieSecret string
 }
 
-func NewStaffHandler(ormer orm.Ormer, newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor) *StaffHandler {
-	return &StaffHandler{ormer: ormer, newStaffUC: newStaffUC}
+func NewStaffHandler(ormer orm.Ormer, newStaffUC func(persistence.QueryOrmer) *ustaff.Interactor, cookieSecret string) *StaffHandler {
+	return &StaffHandler{ormer: ormer, newStaffUC: newStaffUC, cookieSecret: cookieSecret}
 }
 
 func (h *StaffHandler) Index(ctx *beecontext.Context) {
@@ -31,6 +32,7 @@ func (h *StaffHandler) Index(ctx *beecontext.Context) {
 		cond.Keyword = &kw
 	}
 	cond.Roles = parseIntList(ctx.Request.URL.Query()["roles"])
+	cond.Statuses = parseIntList(ctx.Request.URL.Query()["statuses"])
 
 	limit := 10
 	if v := ctx.Input.Query("limit"); v != "" {
@@ -80,18 +82,20 @@ func (h *StaffHandler) UpdateRole(ctx *beecontext.Context) {
 	}
 
 	var body struct {
-		Role int `json:"role"`
+		Role    int `json:"role"`
+		Version int `json:"version"`
 	}
 	if err = json.Unmarshal(ctx.Input.RequestBody, &body); err != nil || body.Role == 0 {
 		writeError(ctx, apperror.BadRequest("validation_error"))
 		return
 	}
 
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).UpdateRole(ustaff.UpdateRoleDto{
 			ID:         id,
 			Role:       body.Role,
+			Version:    body.Version,
 			ExecutorID: executorID,
 		})
 	}); txErr != nil {
@@ -122,7 +126,7 @@ func (h *StaffHandler) Destroy(ctx *beecontext.Context) {
 		writeError(ctx, apperror.BadRequest("invalid_id"))
 		return
 	}
-	executorID := staffIDFromCookie(ctx)
+	executorID := staffIDFromCookie(ctx, h.cookieSecret)
 	if txErr := h.ormer.DoTx(func(_ context.Context, tx orm.TxOrmer) error {
 		return h.newStaffUC(tx).Destroy(ustaff.DestroyDto{
 			ID:         id,
@@ -144,6 +148,7 @@ func mapStaffList(staffs []*domstaff.ListItem) []map[string]interface{} {
 			"email":      s.Email,
 			"role":       s.Role,
 			"status":     s.Status,
+			"version":    s.Version,
 			"created_at": formatTime(s.CreatedAt),
 			"updated_at": formatTime(s.UpdatedAt),
 		})

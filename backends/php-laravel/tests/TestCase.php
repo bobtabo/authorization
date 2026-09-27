@@ -7,6 +7,7 @@
 
 namespace Tests;
 
+use App\Support\Http\StaffSession;
 use App\Support\Tests\CreatesApplication;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\File;
@@ -27,8 +28,8 @@ abstract class TestCase extends BaseTestCase
     /**
      * リフレクションメソッドを取得します。
      *
-     * @param string $class クラス名
-     * @param string $method メソッド名
+     * @param  string  $class  クラス名
+     * @param  string  $method  メソッド名
      * @return ReflectionMethod メソッド
      * @throws \ReflectionException リフレクションエラー時にスローされる例外です
      */
@@ -43,8 +44,8 @@ abstract class TestCase extends BaseTestCase
     /**
      * リフレクションプロパティを取得します。
      *
-     * @param string $class クラス名
-     * @param string $property プロパティ名
+     * @param  string  $class  クラス名
+     * @param  string  $property  プロパティ名
      * @return ReflectionProperty プロパティ
      * @throws \ReflectionException リフレクションエラー時にスローされる例外です
      */
@@ -59,17 +60,18 @@ abstract class TestCase extends BaseTestCase
     /**
      * メソッドを実行します。
      *
-     * @param string $class クラス名
-     * @param string $method メソッド名
-     * @param array<int, mixed> $args メソッド引数
-     * @param bool $useApp クラスのインスタンス生成に app が不要な場合 false を設定します
+     * @param  string  $class  クラス名
+     * @param  string  $method  メソッド名
+     * @param  array<int, mixed>  $args  メソッド引数
+     * @param  bool  $useApp  クラスのインスタンス生成に app が不要な場合 false を設定します
      * @return mixed メソッド戻り値
      * @throws \ReflectionException リフレクションエラー時にスローされる例外です
      */
     public function executeMethod(string $class, string $method, array $args = [], bool $useApp = true)
     {
         $method = $this->reflectionMethod($class, $method);
-        $instance = $useApp ? new $class($this->app) : new $class();
+        $instance = $useApp ? new $class($this->app) : new $class;
+
         return $method->invokeArgs($instance, $args);
     }
 
@@ -77,19 +79,18 @@ abstract class TestCase extends BaseTestCase
      * テスト用 staff_id クッキーを生成します。
      * staff_id は EncryptCookies の除外対象のため withUnencryptedCookies() で渡します。
      *
-     * @param int $staffId スタッフID
+     * @param  int  $staffId  スタッフID
      * @return array<string, string> クッキー配列
      */
     protected function staffCookies(int $staffId): array
     {
-        return ['staff_id' => (string)$staffId];
+        return ['staff_id' => StaffSession::sign($staffId, config('authorization.app.staff_cookie_secret'), 3600)];
     }
 
     /**
      * テストリクエストに staff_id クッキーを設定します（非暗号化）。
      *
-     * @param int $staffId スタッフID
-     * @return static
+     * @param  int  $staffId  スタッフID
      */
     protected function withStaffCookie(int $staffId): static
     {
@@ -99,43 +100,44 @@ abstract class TestCase extends BaseTestCase
     /**
      * リクエストパラメータを取得します。
      *
-     * @param string $jsonFile データファイル名
-     * @param array $mergeData マージデータ連想配列
+     * @param  string  $jsonFile  データファイル名
+     * @param  array  $mergeData  マージデータ連想配列
      * @return array リクエストパラメータ連想配列
      */
     protected function getRequestParams(string $jsonFile, array $mergeData = []): array
     {
-        return $this->getTestData('/Feature/Requests/' . $jsonFile, $mergeData);
+        return $this->getTestData('/Feature/Requests/'.$jsonFile, $mergeData);
     }
 
     /**
      * レスポンスデータを取得します。
      *
-     * @param string $jsonFile データファイル名
-     * @param array $mergeData マージデータ連想配列
+     * @param  string  $jsonFile  データファイル名
+     * @param  array  $mergeData  マージデータ連想配列
      * @return array リクエストパラメータ連想配列
      */
     protected function getResponseData(string $jsonFile, array $mergeData = []): array
     {
-        return $this->getTestData('/Feature/Responses/' . $jsonFile, $mergeData);
+        return $this->getTestData('/Feature/Responses/'.$jsonFile, $mergeData);
     }
 
     /**
      * テストデータを取得します。
      *
-     * @param string $jsonFilePath データファイルパス
-     * @param array $mergeData マージデータ連想配列
+     * @param  string  $jsonFilePath  データファイルパス
+     * @param  array  $mergeData  マージデータ連想配列
      * @return array リクエストパラメータ連想配列
      */
     protected function getTestData(string $jsonFilePath, array $mergeData = []): array
     {
-        $json = File::get(base_path('tests') . $jsonFilePath, true);
+        $json = File::get(base_path('tests').$jsonFilePath, true);
         $result = json_decode($json, true);
         if (!empty($mergeData)) {
             foreach ($mergeData as $key => $value) {
                 $result[$key] = $value;
             }
         }
+
         return $result;
     }
 }

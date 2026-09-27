@@ -28,6 +28,8 @@
 | [`local/app-go-gin/`](local/app-go-gin/)     | Go（Gin）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                  |
 | [`local/app-go-echo/`](local/app-go-echo/)   | Go（Echo）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
 | [`local/app-go-beego/`](local/app-go-beego/) | Go（Beego）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                |
+| [`local/app-csharp/`](local/app-csharp/)     | C#（ASP.NET Core）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。         |
+| [`local/app-java/`](local/app-java/)         | Java（Spring Boot）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。         |
 | [`local/app-kotlin/`](local/app-kotlin/)     | Kotlin（Ktor）実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。             |
 | [`local/app-php/`](local/app-php/)           | PHP 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                    |
 | [`local/app-python/`](local/app-python/)     | Python 実行環境。`jwilder/nginx-proxy` 経由でホスト名で振り分ける。                 |
@@ -147,6 +149,12 @@ bin/docker-go-echo.sh up
 # Go（Beego）環境を起動する
 bin/docker-go-beego.sh up
 
+# C#（ASP.NET Core）環境を起動する
+bin/docker-csharp.sh up
+
+# Java（Spring Boot）環境を起動する
+bin/docker-java.sh up
+
 # Kotlin（Ktor）環境を起動する
 bin/docker-kotlin.sh up
 
@@ -181,6 +189,12 @@ bin/docker-go-echo.sh exec
 # Go（Beego）環境に入る
 bin/docker-go-beego.sh exec
 
+# C#（ASP.NET Core）環境に入る
+bin/docker-csharp.sh exec
+
+# Java（Spring Boot）環境に入る
+bin/docker-java.sh exec
+
 # Kotlin（Ktor）環境に入る
 bin/docker-kotlin.sh exec
 
@@ -214,6 +228,12 @@ bin/docker-go-echo.sh down
 
 # Go（Beego）環境を破棄する
 bin/docker-go-beego.sh down
+
+# C#（ASP.NET Core）環境を破棄する
+bin/docker-csharp.sh down
+
+# Java（Spring Boot）環境を破棄する
+bin/docker-java.sh down
 
 # Kotlin（Ktor）環境を破棄する
 bin/docker-kotlin.sh down

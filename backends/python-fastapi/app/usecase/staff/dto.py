@@ -24,6 +24,7 @@ class StaffUpdateRoleDto:
 
     staff_id: int
     role: int
+    version: int
     executor_id: int
 
 
@@ -32,4 +33,5 @@ class StaffDestroyDto:
     """スタッフ論理削除 Dto。"""
 
     staff_id: int
+    version: int
     executor_id: int

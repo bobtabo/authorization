@@ -14,12 +14,13 @@ import (
 )
 
 type AdminInvitationHandler struct {
-	ormer       orm.Ormer
-	newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor
+	ormer        orm.Ormer
+	newInviteUC  func(persistence.QueryOrmer) *uinvitation.Interactor
+	cookieSecret string
 }
 
-func NewAdminInvitationHandler(ormer orm.Ormer, newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor) *AdminInvitationHandler {
-	return &AdminInvitationHandler{ormer: ormer, newInviteUC: newInviteUC}
+func NewAdminInvitationHandler(ormer orm.Ormer, newInviteUC func(persistence.QueryOrmer) *uinvitation.Interactor, cookieSecret string) *AdminInvitationHandler {
+	return &AdminInvitationHandler{ormer: ormer, newInviteUC: newInviteUC, cookieSecret: cookieSecret}
 }
 
 func (h *AdminInvitationHandler) Index(ctx *beecontext.Context) {
@@ -37,7 +38,7 @@ func (h *AdminInvitationHandler) Index(ctx *beecontext.Context) {
 }
 
 func (h *AdminInvitationHandler) Issue(ctx *beecontext.Context) {
-	staffID := staffIDFromCookie(ctx)
+	staffID := staffIDFromCookie(ctx, h.cookieSecret)
 	if staffID == 0 {
 		writeError(ctx, apperror.Unauthorized("unauthenticated"))
 		return

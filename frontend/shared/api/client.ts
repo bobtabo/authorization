@@ -36,6 +36,10 @@ export const apiClient = axios.create({
   },
   withCredentials: true,
   timeout: 10000,
+  // OpenAPI仕様（style: form, explode: true）に合わせ、配列パラメータを
+  // `roles[]=1&roles[]=2` ではなく `roles=1&roles=2` の繰り返し形式で送る。
+  // axiosのデフォルトはブラケット付きで送るため、一部バックエンドで絞り込みが効かなくなる。
+  paramsSerializer: { indexes: null },
 });
 
 const PUBLIC_PATHS = ["/login", "/invitation", "/register", "/error"];

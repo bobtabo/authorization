@@ -51,6 +51,7 @@ def _map_staff(s) -> dict:
         "email": s.email,
         "role": s.role,
         "status": s.status,
+        "version": s.version,
         "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
         "updated_at": s.updated_at.strftime("%Y-%m-%d %H:%M") if s.updated_at else None,
     }
@@ -60,6 +61,7 @@ def _map_staff(s) -> dict:
 def index(
     keyword: Optional[str] = Query(default=None),
     roles: Optional[list[int]] = Query(default=None),
+    statuses: Optional[list[int]] = Query(default=None),
     limit: int = Query(default=10, ge=1),
     page: int = Query(default=1, ge=1),
     sort: Optional[str] = Query(default=None),
@@ -68,7 +70,13 @@ def index(
 ):
     offset = limit * (page - 1)
     staffs, count = interactor.find_by_condition(
-        keyword=keyword, roles=roles or [], offset=offset, limit=limit, sort=sort, sort_type=sort_type
+        keyword=keyword,
+        roles=roles or [],
+        statuses=statuses or [],
+        offset=offset,
+        limit=limit,
+        sort=sort,
+        sort_type=sort_type,
     )
     pager = _build_pager(count, limit, offset, len(staffs))
     return {"data": [_map_staff(s) for s in staffs], "pager": pager}
@@ -76,6 +84,11 @@ def index(
 
 class UpdateRoleBody(BaseModel):
     role: int
+    version: int = 0
+
+
+class DestroyBody(BaseModel):
+    version: int = 0
 
 
 @router.patch("/staffs/{staff_id}/updateRole")
@@ -85,7 +98,7 @@ def update_role(
     executor_id: int = Depends(get_staff_id_from_cookie),
     interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    dto = StaffUpdateRoleDto(staff_id=staff_id, role=body.role, executor_id=executor_id)
+    dto = StaffUpdateRoleDto(staff_id=staff_id, role=body.role, version=body.version, executor_id=executor_id)
     interactor.update_role(dto)
     return {"id": staff_id}
 
@@ -99,9 +112,10 @@ def restore(staff_id: int, interactor: StaffInteractor = Depends(get_staff_inter
 @router.delete("/staffs/{staff_id}/delete")
 def destroy(
     staff_id: int,
+    body: DestroyBody = DestroyBody(),
     executor_id: int = Depends(get_staff_id_from_cookie),
     interactor: StaffInteractor = Depends(get_staff_interactor),
 ):
-    dto = StaffDestroyDto(staff_id=staff_id, executor_id=executor_id)
+    dto = StaffDestroyDto(staff_id=staff_id, version=body.version, executor_id=executor_id)
     interactor.destroy(dto)
     return {"id": staff_id}

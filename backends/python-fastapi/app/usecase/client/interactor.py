@@ -126,7 +126,7 @@ class ClientInteractor:
     def find_all(
         self,
         keyword: Optional[str] = None,
-        status: Optional[int] = None,
+        statuses: Optional[list[int]] = None,
         offset: int = 0,
         limit: int = 10,
         sort: Optional[str] = None,
@@ -136,7 +136,7 @@ class ClientInteractor:
 
         Args:
             keyword: キーワード検索文字列
-            status: ステータスフィルター
+            statuses: ステータスフィルター
             offset: 取得開始位置
             limit: 取得件数
             sort: ソート対象
@@ -147,7 +147,7 @@ class ClientInteractor:
         """
         cond = ClientCondition(
             keyword=keyword,
-            status=status,
+            statuses=statuses or [],
             offset=offset,
             limit=limit,
             sort=sort,

@@ -95,21 +95,29 @@ class StaffRepository(ABC):
         ...
 
     @abstractmethod
-    def update_staff_role(self, staff: Staff, role: int) -> None:
+    def update_staff_role(self, staff: Staff, role: int, version: int) -> None:
         """スタッフの権限を更新します。
 
         Args:
             staff: 更新対象のスタッフエンティティ
             role: 新しい権限値
+            version: 楽観排他ロック用バージョン
+
+        Raises:
+            AppError: version が現在の値と一致しない場合
         """
         ...
 
     @abstractmethod
-    def soft_delete_staff(self, staff: Staff) -> None:
+    def soft_delete_staff(self, staff: Staff, version: int) -> None:
         """スタッフを論理削除します。
 
         Args:
             staff: 論理削除するスタッフエンティティ
+            version: 楽観排他ロック用バージョン
+
+        Raises:
+            AppError: version が現在の値と一致しない場合
         """
         ...
 

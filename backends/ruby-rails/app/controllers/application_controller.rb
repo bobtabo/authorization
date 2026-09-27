@@ -12,4 +12,12 @@ class ApplicationController < ActionController::API
   rescue_from Domain::ConflictError do |e|
     render json: { error: e.message }, status: :conflict
   end
+
+  rescue_from Domain::UnauthorizedError do |e|
+    render json: { error: e.message }, status: :unauthorized
+  end
+
+  rescue_from Domain::ForbiddenError do |e|
+    render json: { error: e.message }, status: :forbidden
+  end
 end

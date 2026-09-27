@@ -38,7 +38,7 @@ RSpec.describe "Admin::Invitations" do
 
     it "認証クッキーがあれば新しい招待を発行して返す" do
       staff = create_staff
-      set_cookie "staff_id=#{staff[:id]}"
+      set_cookie "staff_id=#{sign_staff_cookie(staff[:id])}"
       get "/api/admin/invitation/issue"
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
@@ -48,7 +48,7 @@ RSpec.describe "Admin::Invitations" do
 
     it "role=1 で管理者招待を発行する" do
       staff = create_staff
-      set_cookie "staff_id=#{staff[:id]}"
+      set_cookie "staff_id=#{sign_staff_cookie(staff[:id])}"
       get "/api/admin/invitation/issue?role=1"
       expect(last_response.status).to eq(200)
       body = JSON.parse(last_response.body)
@@ -57,7 +57,7 @@ RSpec.describe "Admin::Invitations" do
 
     it "role が不正な値なら 400 を返す" do
       staff = create_staff
-      set_cookie "staff_id=#{staff[:id]}"
+      set_cookie "staff_id=#{sign_staff_cookie(staff[:id])}"
       get "/api/admin/invitation/issue?role=0"
       expect(last_response.status).to eq(400)
     end

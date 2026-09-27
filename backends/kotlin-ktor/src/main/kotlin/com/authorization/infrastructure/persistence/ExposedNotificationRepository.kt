@@ -118,6 +118,14 @@ class ExposedNotificationRepository(private val db: Database) : Repository {
         }
     }
 
+    override suspend fun existsForStaff(staffId: Long, id: Long): Boolean = newSuspendedTransaction(db = db) {
+        Notifications.selectAll().where {
+            (Notifications.id eq id) and
+                (Notifications.staffId eq staffId) and
+                Notifications.deletedAt.isNull()
+        }.limit(1).any()
+    }
+
     /**
      * 通知を保存します。
      *

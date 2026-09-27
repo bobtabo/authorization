@@ -76,6 +76,13 @@ export class DrizzleNotificationRepository implements NotificationRepository {
     return updated;
   }
 
+  async existsForStaff(staffId: number, id: number): Promise<boolean> {
+    const rows = await this.db.select({ id: notifications.id }).from(notifications)
+      .where(and(eq(notifications.id, id), eq(notifications.staffId, staffId)))
+      .limit(1);
+    return rows.length > 0;
+  }
+
   async insert(data: typeof notifications.$inferInsert): Promise<void> {
     await this.db.insert(notifications).values(data);
   }

@@ -4,7 +4,7 @@
  * @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
  */
 import { Hono } from "hono";
-import { unauthorized, badRequest } from "../lib/errors.js";
+import { unauthorized, badRequest, notFound } from "../lib/errors.js";
 import { getStaffIdFromCookie } from "../lib/cookie.js";
 import { config } from "../config.js";
 import { db, asTx } from "../db/client.js";
@@ -52,11 +52,15 @@ app.patch("/notifications", async (c) => {
 });
 
 app.patch("/notifications/:id", async (c) => {
+  const staffId = getStaffIdFromCookie(c);
+  if (!staffId) throw unauthorized("unauthenticated");
   const id = parseInt(c.req.param("id"), 10);
   if (!id || id <= 0) throw badRequest("invalid_id");
   await db.transaction(async (tx) => {
-    const uc = new NotificationInteractor(new DrizzleNotificationRepository(asTx(tx)), new DrizzleStaffRepository(asTx(tx)));
-    await uc.patch(id, { read: true });
+    const repo = new DrizzleNotificationRepository(asTx(tx));
+    const uc = new NotificationInteractor(repo, new DrizzleStaffRepository(asTx(tx)));
+    const updated = await uc.bulkRead(staffId, [id], false);
+    if (updated === 0 && !(await repo.existsForStaff(staffId, id))) throw notFound("notification_not_found");
   });
   return c.json({ id });
 });

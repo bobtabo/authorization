@@ -73,8 +73,8 @@ func main() {
 
 	// --- Handlers ---
 	authH := handler.NewAuthHandler(database, newAuthUC, newInviteUC, cfg)
-	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo, cfg.App.FrontendURL)
-	staffH := handler.NewStaffHandler(database, newStaffUC)
+	clientH := handler.NewClientHandler(database, newClientUC, newNotifUC, mailer, jwtHistoryRepo, cfg.App.FrontendURL, cfg.App.StaffCookieSecret)
+	staffH := handler.NewStaffHandler(database, newStaffUC, cfg.App.StaffCookieSecret)
 	adminInvitationH := handler.NewAdminInvitationHandler(database, newInviteUC)
 	gateH := handler.NewGateHandler(gateUC)
 	notificationH := handler.NewNotificationHandler(database, newNotifUC, cfg)

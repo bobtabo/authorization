@@ -88,7 +88,7 @@ def _map_detail(c) -> dict:
 @router.get("/clients")
 def index(
     keyword: Optional[str] = Query(default=None),
-    status: Optional[int] = Query(default=None),
+    statuses: Optional[list[int]] = Query(default=None),
     limit: int = Query(default=10, ge=1),
     page: int = Query(default=1, ge=1),
     sort: Optional[str] = Query(default=None),
@@ -98,7 +98,7 @@ def index(
     actual_offset = limit * (page - 1)
     clients, count = interactor.find_all(
         keyword=keyword,
-        status=status,
+        statuses=statuses or [],
         offset=actual_offset,
         limit=limit,
         sort=sort,

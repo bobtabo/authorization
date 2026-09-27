@@ -9,7 +9,7 @@ from app.domain.staff.entity import Staff
 from app.domain.staff.condition import StaffCondition
 from app.domain.staff.repository import StaffRepository
 from app.domain.staff.value_objects import StaffListItem
-from app.exceptions import not_found, bad_request
+from app.exceptions import not_found, bad_request, unauthorized, forbidden
 from app.usecase.staff.dto import StaffUpdateRoleDto, StaffDestroyDto
 
 
@@ -29,6 +29,7 @@ def _to_list_item(staff: Staff) -> StaffListItem:
         email=staff.email,
         role=staff.role,
         status=status,
+        version=staff.version,
         created_at=staff.created_at,
         updated_at=staff.updated_at,
     )
@@ -53,6 +54,7 @@ class StaffInteractor:
         self,
         keyword: Optional[str] = None,
         roles: Optional[list[int]] = None,
+        statuses: Optional[list[int]] = None,
         offset: int = 0,
         limit: int = 10,
         sort: Optional[str] = None,
@@ -63,6 +65,7 @@ class StaffInteractor:
         Args:
             keyword: キーワード検索文字列
             roles: ロールフィルター
+            statuses: 状態フィルター（1=有効, 0=無効）
             offset: オフセット
             limit: 取得件数
             sort: ソート対象
@@ -71,7 +74,15 @@ class StaffInteractor:
         Returns:
             StaffListItem のリストと総件数のタプル
         """
-        cond = StaffCondition(keyword=keyword, roles=roles or [], offset=offset, limit=limit, sort=sort, sort_type=sort_type)
+        cond = StaffCondition(
+            keyword=keyword,
+            roles=roles or [],
+            statuses=statuses or [],
+            offset=offset,
+            limit=limit,
+            sort=sort,
+            sort_type=sort_type,
+        )
         count = self.repository.count_staffs(cond)
         staffs = self.repository.find_all_staffs(cond)
         return [_to_list_item(s) for s in staffs], count
@@ -83,14 +94,25 @@ class StaffInteractor:
             dto: ロール更新 Dto
 
         Raises:
-            AppException: 自分自身のロール更新、またはスタッフが存在しない場合
+            AppException: 未認証・実行者がAdmin以外・自分自身のロール更新、またはスタッフが存在しない場合
         """
+        if dto.executor_id == 0:
+            raise unauthorized("unauthenticated")
+
+        # role の実際の値は 1=Admin, 2=Member（domain.staff.enums の ROLE_* 定数は
+        # どこからも参照されておらず値が実態と一致していないため使用しない）。
+        executor = self.repository.find_staff_by_id_include_deleted(dto.executor_id)
+        if executor is None or executor.deleted_at is not None or executor.role != 1:
+            raise forbidden("forbidden")
+
         if dto.staff_id == dto.executor_id:
             raise bad_request("cannot_update_own_role")
-        staff = self.repository.find_staff_by_id(dto.staff_id)
+
+        # 無効化（論理削除）はログイン可否にのみ影響するため、権限更新は無効スタッフも対象に含める。
+        staff = self.repository.find_staff_by_id_include_deleted(dto.staff_id)
         if staff is None:
             raise not_found("staff_not_found")
-        self.repository.update_staff_role(staff, dto.role)
+        self.repository.update_staff_role(staff, dto.role, dto.version)
 
     def restore(self, staff_id: int) -> None:
         """スタッフの論理削除を復元します。
@@ -120,4 +142,4 @@ class StaffInteractor:
         staff = self.repository.find_staff_by_id(dto.staff_id)
         if staff is None:
             raise not_found("staff_not_found")
-        self.repository.soft_delete_staff(staff)
+        self.repository.soft_delete_staff(staff, dto.version)

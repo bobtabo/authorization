@@ -144,9 +144,11 @@ export async function mockLogout(page: Page, apiPrefix: string): Promise<void> {
 /** バックエンドランタイム定義。 */
 export const BACKENDS = [
   { value: "php",       label: "PHP",           apiPrefix: "**/function/php/api" },
+  { value: "csharp",    label: "C#",            apiPrefix: "**/function/csharp/api" },
   { value: "go-gin",    label: "Go (Gin)",      apiPrefix: "**/function/go-gin/api" },
   { value: "go-beego",  label: "Go (Beego)",    apiPrefix: "**/function/go-beego/api" },
   { value: "go-echo",   label: "Go (Echo)",     apiPrefix: "**/function/go-echo/api" },
+  { value: "java",      label: "Java",          apiPrefix: "**/function/java/api" },
   { value: "kotlin",    label: "Kotlin",        apiPrefix: "**/function/kotlin/api" },
   { value: "python",    label: "Python",        apiPrefix: "**/function/python/api" },
   { value: "rb-hanami", label: "Ruby (Hanami)", apiPrefix: "**/function/rb-hanami/api" },

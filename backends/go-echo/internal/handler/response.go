@@ -4,7 +4,6 @@ import (
 	"authorization-go-echo/ent"
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -12,16 +11,12 @@ import (
 
 const timeFormat = "2006-01-02 15:04"
 
-func staffIDFromCookie(c echo.Context) uint {
+func staffIDFromCookie(c echo.Context, secret string) uint {
 	cookie, err := c.Cookie("staff_id")
 	if err != nil || cookie.Value == "" {
 		return 0
 	}
-	id, err := strconv.ParseUint(cookie.Value, 10, 32)
-	if err != nil {
-		return 0
-	}
-	return uint(id)
+	return verifyStaffID(cookie.Value, secret)
 }
 
 func formatTime(t time.Time) string {
@@ -36,10 +31,10 @@ func formatTimePtr(t *time.Time) *string {
 	return &s
 }
 
-func setStaffCookie(c echo.Context, staffID uint, maxAge int, secure bool) {
+func setStaffCookie(c echo.Context, staffID uint, maxAge int, secure bool, secret string) {
 	c.SetCookie(&http.Cookie{
 		Name:     "staff_id",
-		Value:    strconv.Itoa(int(staffID)),
+		Value:    SignStaffID(staffID, secret, time.Duration(maxAge)*time.Second),
 		MaxAge:   maxAge,
 		Path:     "/",
 		Secure:   secure,

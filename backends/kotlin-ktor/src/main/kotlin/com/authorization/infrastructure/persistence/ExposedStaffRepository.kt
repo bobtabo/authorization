@@ -11,6 +11,7 @@ import com.authorization.domain.staff.Staff
 import com.authorization.infrastructure.model.Staffs
 import com.authorization.support.AppException
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.LikePattern
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -38,10 +39,21 @@ class ExposedStaffRepository(private val db: Database) : Repository {
     override suspend fun countByCondition(cond: Condition): Int = newSuspendedTransaction(db = db) {
         var query = Staffs.selectAll()
         cond.keyword?.let { kw ->
-            query = query.andWhere { (Staffs.name like "%$kw%") or (Staffs.email like "%$kw%") }
+            val like = LikePattern("%${escapeLikeKeyword(kw)}%", '\\')
+            query = query.andWhere { (Staffs.name like like) or (Staffs.email like like) }
         }
         if (cond.roles.isNotEmpty()) {
             query = query.andWhere { Staffs.role inList cond.roles }
+        }
+        // staffs テーブルに status カラムは無く、deletedAt の有無で有効/無効を判定する。
+        if (cond.statuses.isNotEmpty()) {
+            val active = cond.statuses.contains(1)
+            val inactive = cond.statuses.contains(0)
+            if (active && !inactive) {
+                query = query.andWhere { Staffs.deletedAt.isNull() }
+            } else if (inactive && !active) {
+                query = query.andWhere { Staffs.deletedAt.isNotNull() }
+            }
         }
         query.count().toInt()
     }
@@ -55,10 +67,21 @@ class ExposedStaffRepository(private val db: Database) : Repository {
     override suspend fun findByCondition(cond: Condition): List<Staff> = newSuspendedTransaction(db = db) {
         var query = Staffs.selectAll()
         cond.keyword?.let { kw ->
-            query = query.andWhere { (Staffs.name like "%$kw%") or (Staffs.email like "%$kw%") }
+            val like = LikePattern("%${escapeLikeKeyword(kw)}%", '\\')
+            query = query.andWhere { (Staffs.name like like) or (Staffs.email like like) }
         }
         if (cond.roles.isNotEmpty()) {
             query = query.andWhere { Staffs.role inList cond.roles }
+        }
+        // staffs テーブルに status カラムは無く、deletedAt の有無で有効/無効を判定する。
+        if (cond.statuses.isNotEmpty()) {
+            val active = cond.statuses.contains(1)
+            val inactive = cond.statuses.contains(0)
+            if (active && !inactive) {
+                query = query.andWhere { Staffs.deletedAt.isNull() }
+            } else if (inactive && !active) {
+                query = query.andWhere { Staffs.deletedAt.isNotNull() }
+            }
         }
 
         val sortOrder = if (cond.sortType == "desc") SortOrder.DESC else SortOrder.ASC

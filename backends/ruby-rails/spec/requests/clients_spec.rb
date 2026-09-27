@@ -19,6 +19,15 @@ RSpec.describe "Clients", type: :request do
       expect(response).to have_http_status(200)
       expect(JSON.parse(response.body)["data"]).to eq([])
     end
+
+    it "keywordの%はワイルドカードとして解釈されない" do
+      create_client(identifier: "c-percent", name: "50%割引プラン", email: "percent@example.com")
+      create_client(identifier: "c-nomatch", name: "50個セット", email: "nomatch@example.com")
+      get "/api/clients", params: { keyword: "50%" }
+      expect(response).to have_http_status(200)
+      body = JSON.parse(response.body)
+      expect(body["data"].size).to eq(1)
+    end
   end
 
   describe "GET /api/clients/:id" do
@@ -51,7 +60,7 @@ RSpec.describe "Clients", type: :request do
       }
       post "/api/clients/store",
            params: payload.to_json,
-           headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{staff.id}" }
+           headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}" }
       expect(response).to have_http_status(201)
       body = JSON.parse(response.body)
       expect(body["id"]).not_to be_nil
@@ -64,7 +73,7 @@ RSpec.describe "Clients", type: :request do
       client = create_client
       put "/api/clients/#{client.id}/update",
           params: { name: "更新後クライアント名", version: 1 }.to_json,
-          headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{staff.id}" }
+          headers: { "Content-Type" => "application/json", "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}" }
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
       expect(body["name"]).to eq("更新後クライアント名")
@@ -77,7 +86,7 @@ RSpec.describe "Clients", type: :request do
       client = create_client
       delete "/api/clients/#{client.id}/delete",
              params:  { version: 1 }.to_json,
-             headers: { "Cookie" => "staff_id=#{staff.id}", "Content-Type" => "application/json" }
+             headers: { "Cookie" => "staff_id=#{sign_staff_cookie(staff.id)}", "Content-Type" => "application/json" }
       expect(response).to have_http_status(200)
     end
   end

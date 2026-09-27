@@ -35,7 +35,7 @@ RSpec.describe "Admin::Invitations", type: :request do
     end
 
     it "新しい招待を発行して返す（デフォルト role=2）" do
-      cookies[:staff_id] = "1"
+      cookies[:staff_id] = sign_staff_cookie(1)
       get "/api/admin/invitation/issue"
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
@@ -44,7 +44,7 @@ RSpec.describe "Admin::Invitations", type: :request do
     end
 
     it "role=1 を指定すると管理者向け招待を発行して返す" do
-      cookies[:staff_id] = "1"
+      cookies[:staff_id] = sign_staff_cookie(1)
       get "/api/admin/invitation/issue?role=1"
       expect(response).to have_http_status(200)
       body = JSON.parse(response.body)
@@ -53,7 +53,7 @@ RSpec.describe "Admin::Invitations", type: :request do
     end
 
     it "role が不正なら 400 を返す" do
-      cookies[:staff_id] = "1"
+      cookies[:staff_id] = sign_staff_cookie(1)
       get "/api/admin/invitation/issue?role=0"
       expect(response).to have_http_status(400)
     end

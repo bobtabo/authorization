@@ -91,6 +91,7 @@ jobs:
           CACHE_PREFIX: ""
           GATE_JWT_CACHE_TTL: "1800"
           FRONTEND_URL: "http://localhost:3000"
+          STAFF_COOKIE_SECRET: test-staff-cookie-secret
 
       # インテグレーションテストを実行（DB競合を避けるため単一スレッドで実行）
       - name: Run integration tests
@@ -110,3 +111,4 @@ jobs:
           CACHE_PREFIX: ""
           GATE_JWT_CACHE_TTL: "1800"
           FRONTEND_URL: "http://localhost:3000"
+          STAFF_COOKIE_SECRET: test-staff-cookie-secret

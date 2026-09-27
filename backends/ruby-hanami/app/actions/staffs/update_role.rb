@@ -31,6 +31,10 @@ module Authorization
           json_response(response, { id: id })
         rescue ::Domain::ConflictError => e
           json_response(response, { error: e.message }, status: 409)
+        rescue ::Domain::UnauthorizedError => e
+          json_response(response, { error: e.message }, status: 401)
+        rescue ::Domain::ForbiddenError => e
+          json_response(response, { error: e.message }, status: 403)
         end
       end
     end

@@ -72,8 +72,8 @@ function mapDetail(c: ClientDetailVo) {
 
 app.get("/clients", async (c) => {
   const keyword = c.req.query("keyword");
-  const statusStr = c.req.query("status");
-  const status = statusStr !== undefined ? parseInt(statusStr, 10) : undefined;
+  const statusesRaw = c.req.queries("statuses") ?? [];
+  const statuses = statusesRaw.flatMap(s => s.split(",")).map(Number).filter(n => !isNaN(n));
   const limitStr = c.req.query("limit");
   const pageStr = c.req.query("page");
   const sort = c.req.query("sort");
@@ -84,7 +84,7 @@ app.get("/clients", async (c) => {
   const offset = limit * (page - 1);
 
   const uc = new ClientInteractor(new DrizzleClientRepository(db));
-  const { items, count } = await uc.getAllClients(keyword, status, { offset, limit, sort, sortType });
+  const { items, count } = await uc.getAllClients(keyword, statuses, { offset, limit, sort, sortType });
   const pager = buildPager(count, limit, offset, items.length);
   return c.json({ data: items.map(mapListItem), pager });
 });

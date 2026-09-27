@@ -67,11 +67,11 @@ export class ClientInteractor {
    */
   async getAllClients(
     keyword?: string,
-    status?: number,
+    statuses?: number[],
     options?: { offset?: number; limit?: number; sort?: string; sortType?: string },
   ): Promise<{ items: ClientListItem[]; count: number }> {
-    const count = await this.repo.countAll(keyword, status);
-    const clients = await this.repo.findAll(keyword, status, options);
+    const count = await this.repo.countAll(keyword, statuses);
+    const clients = await this.repo.findAll(keyword, statuses, options);
     return { items: mapper.mapArray(clients, ClientSymbol, ClientListItemSymbol), count };
   }
 

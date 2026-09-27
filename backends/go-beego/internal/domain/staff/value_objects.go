@@ -8,6 +8,7 @@ type ListItem struct {
 	Email     string
 	Role      int
 	Status    int
+	Version   int
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

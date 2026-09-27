@@ -50,6 +50,10 @@ module Infrastructure
         end
       end
 
+      def exists_for_staff?(staff_id, id)
+        !@ds.where(staff_id: staff_id, id: id, deleted_at: nil).empty?
+      end
+
       def store(staff_id, message_type, title, message, created_by, url)
         now = Time.now
         @ds.insert(

@@ -25,6 +25,11 @@ module Domain
       def bulk_mark_read(staff_id, ids, all)                                     = raise NotImplementedError
 
       # @param staff_id [Integer] スタッフ ID
+      # @param id [Integer] 通知 ID
+      # @return [Boolean] 指定スタッフの通知が存在するか
+      def exists_for_staff?(staff_id, id)                                       = raise NotImplementedError
+
+      # @param staff_id [Integer] スタッフ ID
       # @param message_type [Integer] メッセージ種別
       # @param title [String] タイトル
       # @param message [String] メッセージ本文

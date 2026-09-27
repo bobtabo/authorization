@@ -5,6 +5,16 @@
 # @author Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 module Domain
+  # HTTP 401 Unauthorized に対応するアプリケーション例外です。
+  class UnauthorizedError < StandardError
+    attr_reader :code
+
+    def initialize(msg = "unauthenticated")
+      super(msg)
+      @code = 401
+    end
+  end
+
   # HTTP 403 Forbidden に対応するアプリケーション例外です。
   class ForbiddenError < StandardError
     attr_reader :code

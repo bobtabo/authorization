@@ -6,10 +6,12 @@ import com.authorization.domain.notification.Repository
 import com.authorization.domain.staff.Condition
 import com.authorization.domain.staff.Repository as StaffRepository
 import com.authorization.domain.staff.Staff
+import com.authorization.support.AppException
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class InteractorTest {
 
@@ -37,6 +39,7 @@ class InteractorTest {
         override suspend fun listPage(staffId: Long, cursor: String?, limit: Int) = page
         override suspend fun counts(staffId: Long)                                 = counts
         override suspend fun bulkMarkRead(staffId: Long, ids: List<Long>, all: Boolean) = 0L
+        override suspend fun existsForStaff(staffId: Long, id: Long) = false
         override suspend fun store(staffId: Long, messageType: Int, title: String, message: String, createdBy: Long, url: String?) = Unit
         override suspend fun patch(id: Long, attrs: Map<String, Any?>)            = true
     }
@@ -85,15 +88,36 @@ class InteractorTest {
     }
 
     @Test
-    fun `markRead calls patch with read true`() = runBlocking {
-        var patchedId = 0L
+    fun `markRead calls bulkMarkRead scoped to staff and target id`() = runBlocking {
+        var calledStaffId = 0L
+        var calledIds = emptyList<Long>()
         val repo = object : Repository by mockNotifRepo() {
-            override suspend fun patch(id: Long, attrs: Map<String, Any?>): Boolean {
-                patchedId = id; return true
+            override suspend fun bulkMarkRead(staffId: Long, ids: List<Long>, all: Boolean): Long {
+                calledStaffId = staffId; calledIds = ids; return 1L
             }
         }
-        Interactor(repo, mockStaffRepo()).markRead(7L)
-        assertEquals(7L, patchedId)
+        Interactor(repo, mockStaffRepo()).markRead(10L, 7L)
+        assertEquals(10L, calledStaffId)
+        assertEquals(listOf(7L), calledIds)
+    }
+
+    @Test
+    fun `markRead throws not found when nothing updated`() = runBlocking {
+        val repo = object : Repository by mockNotifRepo() {
+            override suspend fun bulkMarkRead(staffId: Long, ids: List<Long>, all: Boolean): Long = 0L
+        }
+        assertFailsWith<AppException> {
+            Interactor(repo, mockStaffRepo()).markRead(10L, 7L)
+        }
+        Unit
+    }
+
+    @Test
+    fun `markRead succeeds when notification is already read`() = runBlocking {
+        val repo = object : Repository by mockNotifRepo() {
+            override suspend fun existsForStaff(staffId: Long, id: Long): Boolean = true
+        }
+        Interactor(repo, mockStaffRepo()).markRead(10L, 7L)
     }
 
     @Test

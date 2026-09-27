@@ -94,19 +94,19 @@ class NotificationInteractor:
         """
         return self.notif_repo.bulk_mark_read(staff_id, [], True)
 
-    def mark_read(self, notification_id: int) -> None:
+    def mark_read(self, staff_id: int, notification_id: int) -> None:
         """通知を既読にします。
 
         Args:
+            staff_id: 操作者スタッフID
             notification_id: 通知ID
 
         Raises:
-            AppException: 通知が存在しない場合
+            AppException: 通知が存在しない、または他スタッフの通知の場合
         """
-        notif = self.notif_repo.find_by_id(notification_id)
-        if notif is None:
+        updated = self.notif_repo.bulk_mark_read(staff_id, [notification_id], False)
+        if updated == 0 and not self.notif_repo.exists_for_staff(staff_id, notification_id):
             raise not_found("notification_not_found")
-        self.notif_repo.patch(notif, {"read": True})
 
     def fan_out(
         self,

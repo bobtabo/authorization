@@ -5,51 +5,54 @@
  */
 
 return [
-    //フロントエンドURL
+    // フロントエンドURL
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
-    //API GatewayエミュレータのベースURL（QRコードのディープリンクに使用）
+    // API GatewayエミュレータのベースURL（QRコードのディープリンクに使用）
     'api_gateway_url' => env('API_GATEWAY_URL', 'http://localhost:8080'),
-    //バックエンドランタイム識別子（GitHub コールバック dispatcher の振り分けに使用）
+    // バックエンドランタイム識別子（GitHub コールバック dispatcher の振り分けに使用）
     'runtime' => env('APP_RUNTIME', 'php'),
-    //スタッフクッキー有効期間（分）
-    'staff_cookie_lifetime' => (int)env('STAFF_COOKIE_LIFETIME', 60 * 24 * 7),
-    //通知一覧デフォルト取得件数
+    // スタッフクッキー有効期間（分）
+    'staff_cookie_lifetime' => (int) env('STAFF_COOKIE_LIFETIME', 60 * 24 * 7),
+    // staff_id クッキーのHMAC署名シークレット（空シークレットでのHMAC署名は誰でも同じ署名を
+    // 再現できてしまい検証が無意味になるため、未設定時は起動時に止める）
+    'staff_cookie_secret' => env('STAFF_COOKIE_SECRET') ?: throw new RuntimeException('STAFF_COOKIE_SECRET must be set'),
+    // 通知一覧デフォルト取得件数
     'notification_default_limit' => 10,
-    //キャッシュPrefix
+    // キャッシュPrefix
     'cache_prefix' => env('CACHE_PREFIX'),
-    //クエリーキャッシュ
+    // クエリーキャッシュ
     'query_cache' => env('DB_QUERY_CACHE', false),
-    //JWT 設定
+    // JWT 設定
     'jwt' => [
-        //発行者識別子（iss クレーム）
+        // 発行者識別子（iss クレーム）
         'issuer' => 'authorization',
-        //署名アルゴリズム
+        // 署名アルゴリズム
         'algorithm' => 'RS256',
-        //JWT 有効期間（秒）
+        // JWT 有効期間（秒）
         'ttl' => 1800,
-        //JWT キャッシュ有効期間（秒）。JWT の有効期限以下を推奨
-        'cache_ttl' => (int)env('GATE_JWT_CACHE_TTL', 1800),
+        // JWT キャッシュ有効期間（秒）。JWT の有効期限以下を推奨
+        'cache_ttl' => (int) env('GATE_JWT_CACHE_TTL', 1800),
     ],
-    //メール設定
+    // メール設定
     'mail' => [
         'host' => env('MAIL_HOST'),
         'port' => env('MAIL_PORT'),
         'from' => env('MAIL_FROM_ADDRESS'),
         'subject' => [
-            'prefix' => '【' . env('APP_NAME') . ' / PHP】',
+            'prefix' => '【'.env('APP_NAME').' / PHP】',
             'activate' => 'ご利用開始のご案内',
         ],
         'template' => [
             'activate' => 'templates.mails.activate',
         ],
     ],
-    //ページング設定
+    // ページング設定
     'pager' => [
-        //現在ページ
+        // 現在ページ
         'current' => 1,
-        //ページ番号の表示数
+        // ページ番号の表示数
         'page' => 5,
-        //1ページのデータ表示件数
+        // 1ページのデータ表示件数
         'limit' => 10,
     ],
 ];

@@ -1,5 +1,5 @@
 // Package main はローカル開発用の HTTP サーバーエントリ。
-// API Gateway HTTP API v2 が行う HTTP ↔ Lambda イベント変換を担い、
+// API Gateway REST API（v1 プロキシ統合）が行う HTTP ↔ Lambda イベント変換を担い、
 // Lambda コンテナ（RIE）へリクエストを転送する。
 // 本番では API Gateway が同等の変換を行うため、ローカルのみで使用する。
 package main
@@ -39,27 +39,33 @@ func main() {
 
 		body, _ := io.ReadAll(r.Body)
 
-		// HTTP リクエスト → APIGatewayV2HTTPRequest に変換する（API Gateway 相当）
+		// HTTP リクエスト → APIGatewayProxyRequest に変換する（API Gateway 相当）
 		headers := make(map[string]string, len(r.Header))
+		multiHeaders := make(map[string][]string, len(r.Header))
 		for k, v := range r.Header {
 			headers[k] = v[0]
+			multiHeaders[k] = v
 		}
-		queryParams := make(map[string]string)
-		for k, v := range r.URL.Query() {
+		query := r.URL.Query()
+		queryParams := make(map[string]string, len(query))
+		multiQueryParams := make(map[string][]string, len(query))
+		for k, v := range query {
 			queryParams[k] = v[0]
+			multiQueryParams[k] = v
 		}
-		event := events.APIGatewayV2HTTPRequest{
-			RawPath:               r.URL.Path,
-			RawQueryString:        r.URL.RawQuery,
-			Headers:               headers,
-			QueryStringParameters: queryParams,
-			Body:                  string(body),
-			RequestContext: events.APIGatewayV2HTTPRequestContext{
-				RequestID: r.Header.Get("X-Request-Id"),
-				HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
-					Method: r.Method,
-					Path:   r.URL.Path,
-				},
+		event := events.APIGatewayProxyRequest{
+			Resource:                        "/{proxy+}",
+			Path:                            r.URL.Path,
+			HTTPMethod:                      r.Method,
+			Headers:                         headers,
+			MultiValueHeaders:               multiHeaders,
+			QueryStringParameters:           queryParams,
+			MultiValueQueryStringParameters: multiQueryParams,
+			Body:                            string(body),
+			RequestContext: events.APIGatewayProxyRequestContext{
+				RequestID:  r.Header.Get("X-Request-Id"),
+				HTTPMethod: r.Method,
+				Path:       r.URL.Path,
 			},
 		}
 
@@ -71,12 +77,15 @@ func main() {
 			return
 		}
 
-		// APIGatewayV2HTTPResponse → HTTP レスポンスに変換する（API Gateway 相当）
+		// APIGatewayProxyResponse → HTTP レスポンスに変換する（API Gateway 相当）
 		for k, v := range resp.Headers {
 			w.Header().Set(k, v)
 		}
-		for _, c := range resp.Cookies {
-			w.Header().Add("Set-Cookie", c)
+		for k, vs := range resp.MultiValueHeaders {
+			w.Header().Del(k)
+			for _, v := range vs {
+				w.Header().Add(k, v)
+			}
 		}
 		w.WriteHeader(resp.StatusCode)
 		_, _ = w.Write([]byte(resp.Body))
@@ -94,7 +103,7 @@ type lambdaInvoker struct {
 }
 
 // invoke は Lambda RIE のエンドポイントへイベントを送信し、レスポンスを返す。
-func (l *lambdaInvoker) invoke(ctx context.Context, event events.APIGatewayV2HTTPRequest) (*events.APIGatewayV2HTTPResponse, error) {
+func (l *lambdaInvoker) invoke(ctx context.Context, event events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	payload, err := json.Marshal(event)
 	if err != nil {
 		return nil, err
@@ -112,7 +121,7 @@ func (l *lambdaInvoker) invoke(ctx context.Context, event events.APIGatewayV2HTT
 	}
 	defer httpResp.Body.Close()
 
-	var lambdaResp events.APIGatewayV2HTTPResponse
+	var lambdaResp events.APIGatewayProxyResponse
 	if err := json.NewDecoder(httpResp.Body).Decode(&lambdaResp); err != nil {
 		return nil, err
 	}

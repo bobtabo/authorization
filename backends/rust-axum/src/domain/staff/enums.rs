@@ -4,7 +4,7 @@
 //! Satoshi Nagashiba <satoshi.nagashiba@gmail.com>
 
 /// スタッフロール: 管理者。
-pub const ROLE_ADMIN:  i32 = 1;
+pub const ROLE_ADMIN: i32 = 1;
 /// スタッフロール: 一般メンバー。
 pub const ROLE_MEMBER: i32 = 2;
 
