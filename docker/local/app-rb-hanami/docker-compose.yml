@@ -1,3 +1,5 @@
+name: auth-rb-hanami
+
 networks:
   authorization:
     external: true

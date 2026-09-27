@@ -1,3 +1,5 @@
+name: auth-rb-rails
+
 networks:
   authorization:
     external: true

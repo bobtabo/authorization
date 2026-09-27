@@ -1,3 +1,5 @@
+name: auth-python
+
 networks:
   authorization:
     external: true

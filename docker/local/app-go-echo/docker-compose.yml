@@ -1,3 +1,5 @@
+name: auth-go-echo
+
 networks:
   authorization:
     external: true

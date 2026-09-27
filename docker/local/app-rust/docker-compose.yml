@@ -1,3 +1,5 @@
+name: auth-rust
+
 networks:
   authorization:
     external: true
