@@ -1,3 +1,5 @@
+name: auth-go-beego
+
 networks:
   authorization:
     external: true

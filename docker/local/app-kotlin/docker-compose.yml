@@ -1,3 +1,5 @@
+name: auth-kotlin
+
 networks:
   authorization:
     external: true
