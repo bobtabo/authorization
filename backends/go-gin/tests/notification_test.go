@@ -105,7 +105,7 @@ func TestNotification_Read(t *testing.T) {
 		n := createNotification(t, staff.ID, "個別通知")
 
 		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil,
-			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+			withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -117,7 +117,7 @@ func TestNotification_Read(t *testing.T) {
 		testDB.Model(n).Update("read", true)
 
 		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil,
-			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+			withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusOK {
 			t.Errorf("want 200, got %d: %s", w.Code, w.Body.String())
 		}
@@ -139,7 +139,7 @@ func TestNotification_Read(t *testing.T) {
 		n := createNotification(t, other.ID, "個別通知")
 
 		w := do(http.MethodPatch, fmt.Sprintf("/api/notifications/%d", n.ID), nil,
-			withCookie("staff_id", fmt.Sprintf("%d", staff.ID)))
+			withCookie("staff_id", signStaffCookie(staff.ID)))
 		if w.Code != http.StatusNotFound {
 			t.Errorf("want 404, got %d: %s", w.Code, w.Body.String())
 		}

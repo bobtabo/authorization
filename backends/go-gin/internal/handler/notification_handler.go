@@ -97,7 +97,7 @@ func (h *NotificationHandler) ReadAll(c *gin.Context) {
 // Read は通知を既読にします。
 // PATCH /api/notifications/:id
 func (h *NotificationHandler) Read(c *gin.Context) {
-	staffID := staffIDFromCookie(c)
+	staffID := staffIDFromCookie(c, h.cfg.App.StaffCookieSecret)
 	if staffID == 0 {
 		_ = c.Error(apperror.Unauthorized("unauthenticated"))
 		return
